@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earthbux — Cause</title>
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
+  <style>
+
+    /* ── Cause color injection via CSS variable ──────────────────
+       --cause-color is set on <body> by JS after data loads       */
+
+    /* ── Header ── */
+    .cause-header {
+      background: #0f1a14;
+      padding: var(--sp-xl) 0 0;
+      position: relative;
+      overflow: hidden;
+      border-bottom: 3px solid var(--cause-color, var(--clr-moss));
+    }
+
+    .cause-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 60 L60 0' stroke='%234e7a4e' stroke-width='0.3' opacity='0.25'/%3E%3C/svg%3E");
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* Color wash overlay keyed to cause */
+    .cause-header::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 80% 50%, var(--cause-color, #4e7a4e), transparent);
+      opacity: 0.08;
+      pointer-events: none;
+    }
+
+    .cause-header__inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--sp-xl);
+      align-items: start;
+      padding-bottom: var(--sp-xl);
+    }
+
+    .cause-header__emoji {
+      font-size: 3rem;
+      line-height: 1;
+      margin-bottom: var(--sp-sm);
+      display: block;
+    }
+
+    .cause-header__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cause-color, var(--clr-honey));
+      margin-bottom: var(--sp-sm);
+      opacity: 0.8;
+    }
+
+    .cause-header__title {
+      color: var(--clr-parchment);
+      margin-bottom: var(--sp-md);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+    }
+
+    .cause-header__desc {
+      color: rgba(245,240,232,0.6);
+      font-size: 1rem;
+      max-width: 520px;
+      line-height: 1.7;
+    }
+
+    /* Cycle timeline panel */
+    .cause-timeline {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-lg);
+      min-width: 260px;
+      max-width: 280px;
+    }
+
+    .cause-timeline__label {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cause-color, var(--clr-honey));
+      margin-bottom: var(--sp-md);
+      opacity: 0.75;
+    }
+
+    .timeline-row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-md);
+      padding: var(--sp-sm) 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .timeline-row:last-child { border-bottom: none; }
+
+    .timeline-row__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(245,240,232,0.2);
+      flex-shrink: 0;
+      margin-top: 3px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .timeline-row__dot.active {
+      background: var(--cause-color, var(--clr-moss));
+      border-color: var(--cause-color, var(--clr-moss));
+      box-shadow: 0 0 6px var(--cause-color, var(--clr-moss));
+    }
+
+    .timeline-row__dot.done {
+      background: rgba(245,240,232,0.25);
+      border-color: rgba(245,240,232,0.25);
+    }
+
+    .timeline-row__body { flex: 1; }
+
+    .timeline-row__name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: rgba(245,240,232,0.85);
+      line-height: 1.2;
+    }
+
+    .timeline-row__date {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: rgba(245,240,232,0.35);
+      margin-top: 2px;
+    }
+
+    .timeline-row.active .timeline-row__name {
+      color: var(--cause-color, var(--clr-honey));
+    }
+
+    /* Phase progress bar along bottom of header */
+    .cause-phase-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cause-phase-bar__fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      background: var(--cause-color, var(--clr-moss));
+      transition: width 1s ease;
+      opacity: 0.7;
+    }
+
+    /* ── Page tabs ── */
+    .cause-tabs {
+      background: var(--clr-surface);
+      border-bottom: 1px solid var(--clr-border);
+      position: sticky;
+      top: var(--nav-height);
+      z-index: 50;
+    }
+
+    .cause-tabs__inner {
+      display: flex;
+      gap: 0;
+    }
+
+    .cause-tab {
+      padding: var(--sp-md) var(--sp-lg);
+      font-size: 0.82rem;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: var(--clr-ink-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: color var(--transition), border-color var(--transition);
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      white-space: nowrap;
+    }
+
+    .cause-tab:hover { color: var(--clr-ink); }
+
+    .cause-tab.active {
+      color: var(--clr-ink);
+      border-bottom-color: var(--cause-color, var(--clr-amber));
+    }
+
+    /* ── Tab panels ── */
+    .cause-panel { display: none; }
+    .cause-panel.active { display: block; }
+
+    /* ── Initiatives list ── */
+    .init-row {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-left: 4px solid var(--cause-color, var(--clr-moss));
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--sp-lg);
+      align-items: center;
+      text-decoration: none;
+      color: inherit;
+      transition: box-shadow var(--transition), transform var(--transition);
+    }
+
+    .init-row:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .init-row__index {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--clr-ink-light);
+      margin-bottom: 3px;
+    }
+
+    .init-row__title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .init-row__desc {
+      font-size: 0.82rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.55;
+    }
+
+    .init-row__right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--sp-sm);
+      flex-shrink: 0;
+    }
+
+    .init-row__status {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+
+    .init-row__status--active    { background:rgba(49,163,84,.1); color:#4a9e5c; }
+    .init-row__status--suggested { background:rgba(201,124,42,.1); color:var(--clr-amber); }
+
+    .init-row__cta {
+      font-size: 0.72rem;
+      color: var(--cause-color, var(--clr-moss));
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* ── History panel ── */
+    .history-empty {
+      text-align: center;
+      padding: var(--sp-3xl) var(--sp-lg);
+      color: var(--clr-ink-light);
+    }
+
+    .history-empty__icon {
+      font-size: 2.5rem;
+      margin-bottom: var(--sp-md);
+      opacity: 0.4;
+    }
+
+    .history-cycle {
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      margin-bottom: var(--sp-lg);
+    }
+
+    .history-cycle__header {
+      background: var(--clr-surface);
+      padding: var(--sp-md) var(--sp-lg);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--clr-border);
+    }
+
+    .history-cycle__title {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .history-cycle__dates {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--clr-ink-light);
+    }
+
+    .history-cycle__body {
+      padding: var(--sp-lg);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-lg);
+    }
+
+    /* ── Feed panel ── */
+    .feed-list { display: flex; flex-direction: column; gap: var(--sp-lg); }
+
+    .feed-post {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+    }
+
+    .feed-post__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      margin-bottom: var(--sp-sm);
+      flex-wrap: wrap;
+    }
+
+    .feed-post__author {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .feed-post__author.earthbux { color: var(--cause-color, var(--clr-forest)); }
+    .feed-post__author.org      { color: var(--clr-amber); }
+    .feed-post__author.benefactor { color: var(--clr-ink-muted); }
+
+    .feed-post__time {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--clr-ink-light);
+    }
+
+    .feed-post__title {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      margin-bottom: var(--sp-sm);
+      line-height: 1.3;
+    }
+
+    .feed-post__body {
+      font-size: 0.88rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.65;
+      margin-bottom: var(--sp-md);
+    }
+
+    .feed-post__footer {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+      font-size: 0.78rem;
+      color: var(--clr-ink-light);
+      border-top: 1px solid var(--clr-border);
+      padding-top: var(--sp-sm);
+    }
+
+    .feed-post__like-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.78rem;
+      color: var(--clr-ink-light);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0;
+      transition: color var(--transition);
+    }
+
+    .feed-post__like-btn:hover { color: var(--cause-color, var(--clr-amber)); }
+
+    /* ── Opinions/Propose panel ── */
+    .opinions-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: var(--sp-xl);
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .opinions-layout { grid-template-columns: 1fr; }
+      .cause-header__inner { grid-template-columns: 1fr; }
+      .cause-timeline { min-width: auto; max-width: 100%; }
+    }
+
+    .opinion-composer {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      position: sticky;
+      top: calc(var(--nav-height) + 52px);
+    }
+
+    .opinion-composer__title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: var(--sp-md);
+      color: var(--clr-earth);
+    }
+
+    .opinion-type-toggle {
+      display: flex;
+      gap: var(--sp-xs);
+      margin-bottom: var(--sp-md);
+    }
+
+    .type-btn {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1.5px solid var(--clr-border);
+      border-radius: var(--radius-sm);
+      background: none;
+      cursor: pointer;
+      color: var(--clr-ink-muted);
+      transition: all var(--transition);
+    }
+
+    .type-btn.active {
+      border-color: var(--cause-color, var(--clr-moss));
+      color: var(--cause-color, var(--clr-moss));
+      background: rgba(0,0,0,0.03);
+    }
+
+    .composer-textarea {
+      width: 100%;
+      min-height: 100px;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-sm);
+      padding: var(--sp-sm) var(--sp-md);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--clr-ink);
+      resize: vertical;
+      outline: none;
+      transition: border-color var(--transition);
+      margin-bottom: var(--sp-md);
+    }
+
+    .composer-textarea:focus {
+      border-color: var(--cause-color, var(--clr-moss));
+    }
+
+    .opinion-card {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-md) var(--sp-lg);
+      margin-bottom: var(--sp-md);
+    }
+
+    .opinion-card__meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--sp-sm);
+      flex-wrap: wrap;
+      gap: var(--sp-xs);
+    }
+
+    .opinion-card__author {
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+
+    .opinion-card__body {
+      font-size: 0.85rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.6;
+    }
+
+    .opinion-card__footer {
+      margin-top: var(--sp-sm);
+      display: flex;
+      gap: var(--sp-md);
+      font-size: 0.75rem;
+      color: var(--clr-ink-light);
+    }
+
+    /* ── Org cards in history ── */
+    .org-card {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-sm);
+      padding: var(--sp-md);
+    }
+
+    .org-card__name {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: var(--sp-xs);
+    }
+
+    .org-card__desc {
+      font-size: 0.78rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.5;
+    }
+
+    .org-card__verified {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--clr-moss);
+      margin-top: var(--sp-xs);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="ebx-nav-mount"></div>
+
+  <!-- ══ CAUSE HEADER ═══════════════════════════ -->
+  <div class="cause-header" id="cause-header">
+    <div class="container">
+      <div class="cause-header__inner">
+
+        <!-- Left: cause identity + description -->
+        <div>
+          <span class="cause-header__emoji" id="cause-emoji">🌱</span>
+          <div class="cause-header__eyebrow" id="cause-eyebrow">Cause</div>
+          <h1 class="cause-header__title" id="cause-title">Loading…</h1>
+          <p class="cause-header__desc" id="cause-desc"></p>
+        </div>
+
+        <!-- Right: cycle timeline -->
+        <div class="cause-timeline" id="cause-timeline">
+          <div class="cause-timeline__label">Current cycle</div>
+          <div id="timeline-rows">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="cause-phase-bar">
+      <div class="cause-phase-bar__fill" id="phase-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- ══ TABS ══════════════════════════════════ -->
+  <div class="cause-tabs">
+    <div class="container">
+      <div class="cause-tabs__inner">
+        <button class="cause-tab active" data-tab="initiatives">Initiatives</button>
+        <button class="cause-tab" data-tab="history">History</button>
+        <button class="cause-tab" data-tab="feed">Feed</button>
+        <button class="cause-tab" data-tab="opinions">Discuss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB PANELS ═════════════════════════════ -->
+  <main>
+
+    <!-- INITIATIVES -->
+    <div class="cause-panel active section" id="panel-initiatives">
+      <div class="container">
+
+        <!-- Cause switcher -->
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-md); margin-bottom:var(--sp-xl);">
+          <div>
+            <div class="section-header__eyebrow" id="inits-eyebrow">Initiatives</div>
+            <h2 class="section-header__title" style="margin:0;">What should we fund?</h2>
+          </div>
+          <div style="display:flex; align-items:center; gap:var(--sp-sm);">
+            <label style="font-size:0.78rem; color:var(--clr-ink-muted); white-space:nowrap;">View cause:</label>
+            <select id="cause-switcher"
+              style="padding:8px 12px; border:1.5px solid var(--cause-color,var(--clr-border));
+                     border-radius:var(--radius-sm); font-family:var(--font-body); font-size:0.85rem;
+                     color:var(--clr-ink); background:white; cursor:pointer; outline:none;">
+            </select>
+          </div>
+        </div>
+
+        <p class="text-sm text-muted" style="margin-bottom:var(--sp-xl); max-width:520px; line-height:1.65;">
+          Each initiative below is proposed for this cause. Click any initiative to open its
+          discussion in the Feed — where it was debated, refined, and decided by the community.
+        </p>
+
+        <div id="initiatives-list" style="display:flex; flex-direction:column; gap:var(--sp-md);">
+          <!-- Populated by JS -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="cause-panel section" id="panel-history">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-header__eyebrow">Past cycles</div>
+          <h2 class="section-header__title">History</h2>
+          <p class="section-header__subtitle">Previous initiatives and the organizations that carried them out.</p>
+        </div>
+        <div id="history-content">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- FEED -->
+    <div class="cause-panel section" id="panel-feed">
+      <div class="container">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-xl); flex-wrap:wrap; gap:var(--sp-md);">
+          <div>
+            <div class="section-header__eyebrow" id="feed-eyebrow">Coverage &amp; updates</div>
+            <h2 class="section-header__title" style="margin:0;">Feed</h2>
+          </div>
+          <div style="display:flex; gap:var(--sp-sm);">
+            <button class="btn btn-ghost btn-sm feed-filter active" data-filter="all">All</button>
+            <button class="btn btn-ghost btn-sm feed-filter" data-filter="earthbux">Earthbux</button>
+            <button class="btn btn-ghost btn-sm feed-filter" data-filter="org">Orgs</button>
+            <button class="btn btn-ghost btn-sm feed-filter" data-filter="benefactor">Benefactors</button>
+          </div>
+        </div>
+        <div class="feed-list" id="feed-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- DISCUSS / OPINIONS -->
+    <div class="cause-panel section" id="panel-opinions">
+      <div class="container">
+        <div class="opinions-layout">
+
+          <!-- Left: existing opinions -->
+          <div>
+            <div class="section-header">
+              <div class="section-header__eyebrow">Community</div>
+              <h2 class="section-header__title">Opinions</h2>
+              <p class="section-header__subtitle">
+                Weigh in on initiatives and organizations. Opinions with positive feedback earn EBX.
+              </p>
+            </div>
+            <div id="opinions-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+
+          <!-- Right: composer -->
+          <div class="opinion-composer">
+            <div class="opinion-composer__title">Share your opinion</div>
+            <div class="opinion-type-toggle">
+              <button class="type-btn active" data-type="initiative">Initiative</button>
+              <button class="type-btn" data-type="org">Org</button>
+              <button class="type-btn" data-type="other">Other</button>
+            </div>
+            <textarea class="composer-textarea" id="opinion-textarea"
+              placeholder="What do you think? Positive feedback earns you EBX."></textarea>
+            <div style="margin-bottom:var(--sp-md);">
+              <label style="font-size:0.78rem; color:var(--clr-ink-muted); display:block; margin-bottom:4px;">
+                Related initiative (optional)
+              </label>
+              <select id="opinion-initiative-select"
+                style="width:100%; padding:6px 10px; border:1px solid var(--clr-border); border-radius:var(--radius-sm); font-family:var(--font-body); font-size:0.82rem; color:var(--clr-ink); background:white;">
+                <option value="">— none —</option>
+              </select>
+            </div>
+            <button class="btn btn-forest" style="width:100%;"
+              onclick="submitOpinion()">Post opinion</button>
+            <p class="text-xs text-muted mt-md" style="line-height:1.5;">
+              You must be signed in to post. Opinions are public and permanently attached to your credit.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div id="ebx-footer-mount"></div>
+
+  <script src="resources/js/ebx_shared.js"></script>
+  <script>
+  (async function () {
+
+    /* ── 1. Determine which cause we're on ── */
+    const causeId = EBX.getParam('id');
+    if (!causeId) {
+      document.getElementById('cause-title').textContent = 'Cause not found';
+      return;
+    }
+
+    await EBX.loadAll();
+    const causes      = EBX.config.causes;
+    const initiatives = EBX.config.initiatives;
+    const cause       = causes.find(c => c.id === causeId);
+
+    if (!cause) {
+      document.getElementById('cause-title').textContent = 'Unknown cause';
+      return;
+    }
+
+    /* ── 2. Inject cause color globally ── */
+    document.body.style.setProperty('--cause-color', cause.color);
+    document.title = `Earthbux — ${cause.name}`;
+
+    /* ── 3. Populate header ── */
+    document.getElementById('cause-emoji').textContent    = cause.emoji;
+    document.getElementById('cause-eyebrow').textContent  = `Cause #${cause.index + 1} of 7`;
+    document.getElementById('cause-title').textContent    = cause.name;
+    document.getElementById('cause-desc').textContent     = cause.description;
+    document.getElementById('inits-eyebrow').textContent  =
+      `Suggested initiatives · ${cause.name}`;
+    document.getElementById('feed-eyebrow').textContent   =
+      `${cause.name} coverage & updates`;
+
+    /* ── 4. Cycle timeline ── */
+    const CYCLE_START  = new Date('2026-01-01T00:00:00');
+    const CAUSE_DAYS   = 14;
+    const MS_DAY       = 86400000;
+    const cycleNum     = Math.floor((Date.now() - CYCLE_START.getTime()) / (98 * MS_DAY));
+    const state        = EBX.Cycle.now();
+
+    function windowStart(cIdx, cn) {
+      return new Date(CYCLE_START.getTime() + cn * 98 * MS_DAY + cIdx * CAUSE_DAYS * MS_DAY);
+    }
+    function fmt(d) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function fmtFull(d) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    const winStart   = windowStart(cause.index, cycleNum);
+    const debateEnd  = new Date(winStart.getTime() + 12 * MS_DAY);
+    const voteEnd    = new Date(winStart.getTime() + 14 * MS_DAY);
+    const now        = new Date();
+
+    // Phase progress: 0–100% across 14-day window
+    const msInWindow = Math.max(0, now - winStart);
+    const phasePct   = Math.min(100, (msInWindow / (CAUSE_DAYS * MS_DAY)) * 100);
+    document.getElementById('phase-bar-fill').style.width = phasePct.toFixed(1) + '%';
+
+    // Determine current phase state for this cause
+    const isActiveCause    = state.causeIndex === cause.index;
+    const beforeWindow     = now < winStart;
+    const inDebate         = now >= winStart && now < debateEnd;
+    const inVote           = now >= debateEnd && now < voteEnd;
+    const windowDone       = now >= voteEnd;
+
+    const timelineRows = document.getElementById('timeline-rows');
+    const rows = [
+      {
+        name:   'Initiative Debate',
+        date:   `${fmt(winStart)} – ${fmt(debateEnd)}`,
+        state:  beforeWindow ? 'upcoming' : inDebate ? 'active' : 'done',
+      },
+      {
+        name:   'Org Vote',
+        date:   `${fmt(debateEnd)} – ${fmt(voteEnd)}`,
+        state:  (beforeWindow || inDebate) ? 'upcoming' : inVote ? 'active' : 'done',
+      },
+      {
+        name:   'Next cycle begins',
+        date:   fmtFull(voteEnd),
+        state:  windowDone ? 'done' : 'upcoming',
+      },
+    ];
+
+    timelineRows.innerHTML = rows.map(r => `
+      <div class="timeline-row ${r.state === 'active' ? 'active' : ''}">
+        <div class="timeline-row__dot ${r.state}"></div>
+        <div class="timeline-row__body">
+          <div class="timeline-row__name">${r.name}</div>
+          <div class="timeline-row__date">${r.date}</div>
+        </div>
+      </div>
+    `).join('');
+
+    /* ── 5. Cause switcher dropdown + initiative list ── */
+
+    // Populate dropdown with all 7 causes
+    const switcher = document.getElementById('cause-switcher');
+    causes.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = `${c.emoji || ''} ${c.name}`.trim();
+      if (c.id === causeId) opt.selected = true;
+      switcher.appendChild(opt);
+    });
+
+    switcher.addEventListener('change', () => {
+      window.location.href = `cause.html?id=${switcher.value}`;
+    });
+
+    // Render initiative rows
+    function renderInitiatives(activeCause) {
+      const causeInits = initiatives
+        .filter(i => i.cause_index === activeCause.index)
+        .sort((a,b) => {
+          // active missions first, then by index
+          if (a.status === 'active' && b.status !== 'active') return -1;
+          if (b.status === 'active' && a.status !== 'active') return  1;
+          return a.index - b.index;
+        });
+
+      const list = document.getElementById('initiatives-list');
+      if (!causeInits.length) {
+        list.innerHTML = `
+          <div style="text-align:center; padding:var(--sp-3xl); color:var(--clr-ink-light);">
+            <div style="font-size:2rem; margin-bottom:var(--sp-md);">🌱</div>
+            <p class="text-sm">No initiatives proposed yet for ${activeCause.name}. Be the first.</p>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = causeInits.map(init => {
+        const isActive = init.status === 'active' && init.winning_org;
+        // Link to feed filtered by this initiative
+        const feedHref = `feed.html?initiative=${init.id}`;
+        return `
+          <a class="init-row" href="${feedHref}">
+            <div>
+              <div class="init-row__index">#${String(init.index).padStart(3,'0')} · proposed by ${init.proposed_by}</div>
+              <div class="init-row__title">${init.emoji || '🌱'} ${init.title}</div>
+              <div class="init-row__desc">${init.description}</div>
+              ${isActive ? `<div style="margin-top:var(--sp-sm); font-size:0.75rem; font-weight:600; color:var(--cause-color);">
+                Active Mission · ${init.winning_org}</div>` : ''}
+            </div>
+            <div class="init-row__right">
+              <div class="init-row__status init-row__status--${isActive ? 'active' : 'suggested'}">
+                ${isActive ? 'Active' : 'Suggested'}
+              </div>
+              <div class="init-row__cta">View discussion →</div>
+            </div>
+          </a>`;
+      }).join('');
+    }
+
+    renderInitiatives(cause);
+
+    /* ── 6. Populate initiative select in composer ── */
+    const causeInits = initiatives.filter(i => i.cause_index === cause.index);
+    const sel = document.getElementById('opinion-initiative-select');
+    causeInits.forEach(init => {
+      const opt = document.createElement('option');
+      opt.value = init.id;
+      opt.textContent = `${init.emoji || ''} ${init.title}`.trim();
+      sel.appendChild(opt);
+    });
+
+    /* ── 7. History panel ── */
+    // For now: show a placeholder for previous cycles.
+    // When real history data exists, this would iterate past cycleNums.
+    const histContent = document.getElementById('history-content');
+    if (cycleNum === 0) {
+      histContent.innerHTML = `
+        <div class="history-empty">
+          <div class="history-empty__icon">📜</div>
+          <h3 style="margin-bottom:var(--sp-sm);">No history yet</h3>
+          <p class="text-sm">
+            The first ${cause.name} cycle began ${fmtFull(windowStart(cause.index, 0))}.
+            History will appear here after the first org vote completes.
+          </p>
+        </div>`;
+    } else {
+      // Show past cycles
+      let html = '';
+      for (let cn = cycleNum - 1; cn >= Math.max(0, cycleNum - 3); cn--) {
+        const cStart  = windowStart(cause.index, cn);
+        const cEnd    = new Date(cStart.getTime() + CAUSE_DAYS * MS_DAY);
+        html += `
+          <div class="history-cycle">
+            <div class="history-cycle__header">
+              <span class="history-cycle__title">Cycle ${cn + 1}</span>
+              <span class="history-cycle__dates">${fmtFull(cStart)} – ${fmtFull(cEnd)}</span>
+            </div>
+            <div class="history-cycle__body">
+              <div>
+                <div class="text-xs text-muted mb-sm" style="text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-mono);">Initiative</div>
+                <div class="card-flat">
+                  <p class="text-sm text-muted">No initiative record for this cycle.</p>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs text-muted mb-sm" style="text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-mono);">Winning org</div>
+                <div class="card-flat">
+                  <p class="text-sm text-muted">No org record for this cycle.</p>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+      histContent.innerHTML = html;
+    }
+
+    /* ── 8. Load and render feed ── */
+    const allPosts = await EBX.fetchJSON('feed.json') || [];
+    const causePosts = allPosts
+      .filter(p => p.cause_index === cause.index)
+      .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+    let currentFilter = 'all';
+
+    function renderFeed(filter) {
+      const filtered = filter === 'all'
+        ? causePosts
+        : causePosts.filter(p => p.author_type === filter);
+      const list = document.getElementById('feed-list');
+      if (!filtered.length) {
+        list.innerHTML = `<div style="text-align:center;padding:var(--sp-2xl);color:var(--clr-ink-light);">
+          <p class="text-sm">No posts in this category yet.</p></div>`;
+        return;
+      }
+      list.innerHTML = filtered.map(p => {
+        const typeLabel = { earthbux: 'Editorial', org: 'Org Update', benefactor: 'Opinion' }[p.author_type] || '';
+        return `
+          <div class="feed-post">
+            <div class="feed-post__meta">
+              <span class="feed-post__author ${p.author_type}">${p.author}</span>
+              <span class="tag tag-${p.author_type === 'earthbux' ? 'forest' : p.author_type === 'org' ? 'amber' : 'neutral'}">${typeLabel}</span>
+              <span class="feed-post__time">${EBX.timeAgo(p.created_at)}</span>
+            </div>
+            ${p.title ? `<div class="feed-post__title">${p.title}</div>` : ''}
+            <div class="feed-post__body">${p.body}</div>
+            <div class="feed-post__footer">
+              <button class="feed-post__like-btn" onclick="this.querySelector('.like-count').textContent=parseInt(this.querySelector('.like-count').textContent)+1">
+                ♥ <span class="like-count">${p.likes}</span>
+              </button>
+              ${p.initiative_id ? `<span>re: ${initiatives.find(i=>i.id===p.initiative_id)?.title || p.initiative_id}</span>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    renderFeed('all');
+
+    document.querySelectorAll('.feed-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.feed-filter').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.filter;
+        renderFeed(currentFilter);
+      });
+    });
+
+    /* ── 9. Opinions (from feed posts typed "opinion") ── */
+    const opinions = causePosts.filter(p => p.type === 'opinion');
+    const opinionsList = document.getElementById('opinions-list');
+
+    if (opinions.length) {
+      opinionsList.innerHTML = opinions.map(op => {
+        const relInit = op.initiative_id
+          ? initiatives.find(i => i.id === op.initiative_id)
+          : null;
+        return `
+          <div class="opinion-card">
+            <div class="opinion-card__meta">
+              <span class="opinion-card__author">${op.author}</span>
+              <div style="display:flex;gap:var(--sp-xs);align-items:center;">
+                ${op.opinion_type ? `<span class="tag tag-${op.opinion_type === 'initiative' ? 'amber' : 'forest'}">${op.opinion_type}</span>` : ''}
+                <span class="text-xs text-muted">${EBX.timeAgo(op.created_at)}</span>
+              </div>
+            </div>
+            ${relInit ? `<div class="text-xs text-muted mb-sm">re: ${relInit.emoji || ''} ${relInit.title}</div>` : ''}
+            <div class="opinion-card__body">${op.body}</div>
+            <div class="opinion-card__footer">
+              <span>♥ ${op.likes} feedback</span>
+            </div>
+          </div>`;
+      }).join('');
+    } else {
+      opinionsList.innerHTML = `
+        <div style="text-align:center;padding:var(--sp-2xl) 0;color:var(--clr-ink-light);">
+          <p class="text-sm">No opinions yet. Share yours →</p>
+        </div>`;
+    }
+
+    /* ── 10. Tab switching ── */
+    document.querySelectorAll('.cause-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.cause-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.cause-panel').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+      });
+    });
+
+    /* ── 11. Opinion type toggle ── */
+    document.querySelectorAll('.type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+  })();
+
+  /* ── Opinion submit (stub) ── */
+  function submitOpinion() {
+    const text = document.getElementById('opinion-textarea').value.trim();
+    if (!text) return;
+    alert('Sign-in required to post opinions. Profile system coming soon.');
+  }
+  </script>
+</body>
+</html>

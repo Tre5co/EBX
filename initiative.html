@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Earthbux — Initiatives</title>
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css"/>
+  <style>
+
+    /* ── Page header ── */
+    .repo-header {
+      background: #0f1a14;
+      padding: var(--sp-xl) 0 var(--sp-lg);
+      border-bottom: 3px solid var(--clr-amber);
+    }
+    .repo-header::before {
+      content:'';position:absolute;inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 60 L60 0' stroke='%234e7a4e' stroke-width='0.3' opacity='0.25'/%3E%3C/svg%3E");
+      background-size:60px 60px;pointer-events:none;
+    }
+    .repo-header { position:relative; }
+
+    .repo-header__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--clr-honey);
+      opacity: 0.75;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .repo-header__title {
+      color: var(--clr-parchment);
+      font-size: clamp(1.6rem,4vw,2.6rem);
+      margin-bottom: var(--sp-sm);
+    }
+
+    .repo-header__sub {
+      color: rgba(245,240,232,0.45);
+      font-size: 0.9rem;
+      max-width: 560px;
+      line-height: 1.65;
+    }
+
+    /* ── Pick dialog ── */
+    .pick-dialog {
+      background: white;
+      border: 2px solid var(--clr-amber);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+      margin: var(--sp-2xl) 0 var(--sp-xl);
+    }
+
+    .pick-dialog__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--sp-lg);
+      margin-bottom: var(--sp-lg);
+      flex-wrap: wrap;
+    }
+
+    .pick-dialog__title {
+      font-size: 1.15rem;
+      margin-bottom: var(--sp-xs);
+    }
+
+    .pick-dialog__sub {
+      font-size: 0.82rem;
+      color: var(--clr-ink-muted);
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .pick-counter {
+      background: var(--clr-forest);
+      color: var(--clr-parchment);
+      border-radius: var(--radius-md);
+      padding: var(--sp-md) var(--sp-lg);
+      text-align: center;
+      flex-shrink: 0;
+      min-width: 120px;
+    }
+
+    .pick-counter__num {
+      font-family: var(--font-display);
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--clr-honey);
+      line-height: 1;
+    }
+
+    .pick-counter__label {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      opacity: 0.5;
+      margin-top: 4px;
+    }
+
+    /* Cause sections within the picker */
+    .pick-cause-section {
+      margin-bottom: var(--sp-xl);
+    }
+
+    .pick-cause-section:last-child { margin-bottom: 0; }
+
+    .pick-cause-label {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      margin-bottom: var(--sp-md);
+      padding-bottom: var(--sp-sm);
+      border-bottom: 2px solid var(--cause-c, #ccc);
+    }
+
+    .pick-cause-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .pick-cause-name {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+    }
+
+    .pick-cause-note {
+      font-size: 0.72rem;
+      color: var(--clr-ink-light);
+      margin-left: auto;
+    }
+
+    /* Initiative pick tiles */
+    .pick-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+      gap: var(--sp-md);
+    }
+
+    .pick-tile {
+      border: 2px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-md);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+      user-select: none;
+      position: relative;
+      background: white;
+    }
+
+    .pick-tile:hover {
+      border-color: var(--cause-c, #ccc);
+      transform: translateY(-1px);
+    }
+
+    .pick-tile.selected {
+      border-color: var(--cause-c, #ccc);
+      background: color-mix(in srgb, var(--cause-c, #ccc) 8%, white);
+    }
+
+    .pick-tile.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 8px; right: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--cause-c, #ccc);
+    }
+
+    .pick-tile.locked {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pick-tile__emoji {
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .pick-tile__title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .pick-tile__desc {
+      font-size: 0.72rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.45;
+    }
+
+    .pick-actions {
+      display: flex;
+      gap: var(--sp-md);
+      align-items: center;
+      margin-top: var(--sp-xl);
+      padding-top: var(--sp-lg);
+      border-top: 1px solid var(--clr-border);
+      flex-wrap: wrap;
+    }
+
+    .picks-summary {
+      font-size: 0.78rem;
+      color: var(--clr-ink-muted);
+      flex: 1;
+    }
+
+    .picks-summary strong { color: var(--clr-earth); }
+
+    /* ── Filters & cause tabs ── */
+    .repo-controls {
+      background: var(--clr-surface);
+      border-bottom: 1px solid var(--clr-border);
+      position: sticky;
+      top: var(--nav-height);
+      z-index: 50;
+    }
+
+    .repo-controls__inner {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow-x: auto;
+    }
+
+    .repo-tab {
+      padding: 12px 18px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--clr-ink-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      background: none;
+      border-top: none; border-left: none; border-right: none;
+      transition: color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .repo-tab:hover { color: var(--clr-ink); }
+
+    .repo-tab.active {
+      color: var(--clr-earth);
+      border-bottom-color: var(--tab-color, var(--clr-amber));
+    }
+
+    /* ── Initiative list ── */
+    .repo-panel { display: none; }
+    .repo-panel.active { display: block; }
+
+    .init-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-md);
+    }
+
+    .init-row {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-left: 4px solid var(--row-color, var(--clr-moss));
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--sp-lg);
+      align-items: start;
+      transition: box-shadow 0.2s;
+    }
+
+    .init-row:hover { box-shadow: var(--shadow-md); }
+
+    .init-row__index {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--clr-ink-light);
+      margin-bottom: 4px;
+    }
+
+    .init-row__title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      margin-bottom: 4px;
+      line-height: 1.25;
+    }
+
+    .init-row__desc {
+      font-size: 0.82rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.55;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .init-row__meta {
+      display: flex;
+      gap: var(--sp-md);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .init-row__right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--sp-sm);
+      min-width: 130px;
+    }
+
+    .init-row__status {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 3px;
+    }
+
+    .init-row__status--active   { background:rgba(49,163,84,.1); color:#4a9e5c; }
+    .init-row__status--suggested{ background:rgba(201,124,42,.1); color:var(--clr-amber); }
+
+    /* Active mission bars */
+    .mission-bars {
+      width: 130px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .mb-row { display: flex; flex-direction: column; gap: 2px; }
+
+    .mb-label {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--clr-ink-light);
+    }
+
+    .mb-track {
+      height: 4px;
+      background: var(--clr-border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .mb-fill { height: 100%; border-radius: 2px; }
+    .mb-fill--p { background: var(--row-color, var(--clr-moss)); }
+    .mb-fill--f { background: var(--clr-amber); opacity: 0.8; }
+
+    /* ── Orgs panel ── */
+    .orgs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+      gap: var(--sp-lg);
+    }
+
+    .org-card {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .org-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+    .org-card__head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .org-card__name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+    }
+
+    .org-card__badge {
+      font-family: var(--font-mono);
+      font-size: 0.57rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .org-card__badge--verified   { background:rgba(78,122,78,.1); color:var(--clr-moss); }
+    .org-card__badge--unverified { background:var(--clr-surface); color:var(--clr-ink-light); }
+
+    .org-card__desc { font-size:0.82rem; color:var(--clr-ink-muted); line-height:1.55; margin-bottom:var(--sp-md); }
+
+    .org-card__causes {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .org-cause-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      title: '';
+    }
+
+    .org-card__footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: var(--sp-sm);
+      border-top: 1px solid var(--clr-border);
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--clr-ink-light);
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="ebx-nav-mount"></div>
+
+  <!-- ── Page header ── -->
+  <div class="repo-header">
+    <div class="container">
+      <div class="repo-header__eyebrow">Community · All causes</div>
+      <h1 class="repo-header__title">Initiatives</h1>
+      <p class="repo-header__sub">
+        Every proposed, active, and completed initiative across all seven causes.
+        Select your preferred next initiatives — one per cause.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Pick dialog ── -->
+  <div class="container">
+    <div class="pick-dialog" id="pick-dialog">
+      <div class="pick-dialog__header">
+        <div>
+          <h2 class="pick-dialog__title">Which 7 initiatives should we fund next?</h2>
+          <p class="pick-dialog__sub">
+            Select one initiative per cause. Your picks commit 3% of your EBX as a signal.
+            The initiative with the most committed EBX per cause goes to the org vote.
+            You can change your picks any time before the vote opens.
+          </p>
+        </div>
+        <div class="pick-counter">
+          <div class="pick-counter__num" id="pick-count">0</div>
+          <div class="pick-counter__label">of 7 selected</div>
+        </div>
+      </div>
+      <div id="pick-causes"><!-- populated by JS --></div>
+      <div class="pick-actions">
+        <div class="picks-summary" id="picks-summary">Select one initiative per cause to signal your support.</div>
+        <button class="btn btn-ghost btn-sm" onclick="clearPicks()">Clear all</button>
+        <button class="btn btn-primary" id="submit-picks" disabled onclick="submitPicks()">
+          Commit my picks →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Cause tabs + lists ── -->
+  <div class="repo-controls">
+    <div class="container">
+      <div class="repo-controls__inner" id="repo-tabs">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <main class="section">
+    <div class="container">
+      <div id="repo-panels"><!-- populated by JS --></div>
+    </div>
+  </main>
+
+  <div id="ebx-footer-mount"></div>
+
+  <script src="resources/js/ebx_shared.js"></script>
+  <script>
+  (async function () {
+
+    await EBX.loadAll();
+    const causes      = EBX.config.causes;
+    const initiatives = EBX.config.initiatives;
+    const allOrgs     = await EBX.fetchJSON('orgs.json') || [];
+
+    /* ── User picks: one per cause (causeIndex → initId) ── */
+    let picks = {};
+    try {
+      const stored = localStorage.getItem('ebx_picks');
+      if (stored) picks = JSON.parse(stored);
+    } catch(e){}
+
+    function savePicks() {
+      try { localStorage.setItem('ebx_picks', JSON.stringify(picks)); } catch(e){}
+    }
+
+    function updatePickCounter() {
+      const count = Object.keys(picks).length;
+      document.getElementById('pick-count').textContent = count;
+      const btn = document.getElementById('submit-picks');
+      btn.disabled = count < 7;
+      // Update summary
+      const names = Object.values(picks).map(id => {
+        const i = initiatives.find(x => x.id === id);
+        return i ? i.title : id;
+      });
+      document.getElementById('picks-summary').innerHTML = count === 7
+        ? `<strong>All 7 selected.</strong> Ready to commit.`
+        : `<strong>${count}/7 selected.</strong> Pick one initiative per remaining cause.`;
+      // Refresh tile states
+      document.querySelectorAll('.pick-tile').forEach(tile => {
+        const ci  = parseInt(tile.dataset.cause);
+        const id  = tile.dataset.id;
+        const sel = picks[ci] === id;
+        const locked = picks[ci] && picks[ci] !== id;
+        tile.classList.toggle('selected', sel);
+        tile.classList.toggle('locked', locked);
+      });
+    }
+
+    function togglePick(causeIdx, initId) {
+      if (picks[causeIdx] === initId) {
+        delete picks[causeIdx];
+      } else {
+        picks[causeIdx] = initId;
+      }
+      savePicks();
+      updatePickCounter();
+    }
+
+    window.clearPicks = function() {
+      picks = {};
+      savePicks();
+      updatePickCounter();
+    };
+
+    window.submitPicks = function() {
+      alert('Sign-in required to commit your picks. Profile coming soon.');
+    };
+
+    /* ── Build pick dialog ── */
+    const pickCausesEl = document.getElementById('pick-causes');
+    pickCausesEl.innerHTML = causes.map(cause => {
+      const cInits = initiatives.filter(i => i.cause_index === cause.index);
+      return `
+        <div class="pick-cause-section">
+          <div class="pick-cause-label" style="--cause-c:${cause.color}">
+            <div class="pick-cause-dot" style="background:${cause.color}"></div>
+            <div class="pick-cause-name">${cause.name}</div>
+            <div class="pick-cause-note">${cause.emoji || ''}</div>
+          </div>
+          <div class="pick-tiles">
+            ${cInits.map(init => `
+              <div class="pick-tile ${picks[cause.index]===init.id?'selected':''} ${picks[cause.index]&&picks[cause.index]!==init.id?'locked':''}"
+                   style="--cause-c:${cause.color}"
+                   data-cause="${cause.index}"
+                   data-id="${init.id}"
+                   onclick="togglePick(${cause.index},'${init.id}')">
+                <div class="pick-tile__emoji">${init.emoji || '🌱'}</div>
+                <div class="pick-tile__title">${init.title}</div>
+                <div class="pick-tile__desc">${init.description}</div>
+              </div>`).join('')}
+            ${cInits.length === 0
+              ? `<div style="padding:var(--sp-md);color:var(--clr-ink-light);font-size:0.8rem;">
+                   No initiatives proposed yet for ${cause.name}.
+                 </div>`
+              : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    updatePickCounter();
+
+    /* ── Build cause tabs ── */
+    const tabsEl   = document.getElementById('repo-tabs');
+    const panelsEl = document.getElementById('repo-panels');
+
+    // "All" tab first
+    const allTab = document.createElement('button');
+    allTab.className = 'repo-tab active';
+    allTab.textContent = 'All';
+    allTab.dataset.tab = 'all';
+    allTab.style.setProperty('--tab-color', 'var(--clr-amber)');
+    tabsEl.appendChild(allTab);
+
+    // One tab per cause
+    causes.forEach(cause => {
+      const btn = document.createElement('button');
+      btn.className = 'repo-tab';
+      btn.textContent = `${cause.emoji || ''} ${cause.name}`;
+      btn.dataset.tab = cause.id;
+      btn.style.setProperty('--tab-color', cause.color);
+      tabsEl.appendChild(btn);
+    });
+
+    // Orgs tab
+    const orgsTab = document.createElement('button');
+    orgsTab.className = 'repo-tab';
+    orgsTab.textContent = 'Organizations';
+    orgsTab.dataset.tab = 'orgs';
+    orgsTab.style.setProperty('--tab-color', 'var(--clr-ink-muted)');
+    tabsEl.appendChild(orgsTab);
+
+    /* ── Build panels ── */
+    function initRowHTML(init, cause) {
+      const color     = cause?.color || '#888';
+      const isActive  = init.status === 'active' && init.winning_org;
+      const progressP = isActive ? Math.floor(Math.random()*55+20) : 0;
+      const fundsP    = isActive ? Math.floor(progressP*0.7) : 0;
+
+      return `
+        <div class="init-row" style="--row-color:${color}">
+          <div>
+            <div class="init-row__index">#${String(init.index).padStart(3,'0')} · ${cause?.name || ''}</div>
+            <div class="init-row__title">${init.emoji||'🌱'} ${init.title}</div>
+            <div class="init-row__desc">${init.description}</div>
+            <div class="init-row__meta">
+              <span class="text-xs text-muted">by ${init.proposed_by}</span>
+              ${init.winning_org
+                ? `<span class="text-xs" style="color:${color};font-weight:600;">${init.winning_org}</span>`
+                : ''}
+            </div>
+          </div>
+          <div class="init-row__right">
+            <div class="init-row__status init-row__status--${init.status==='active'?'active':'suggested'}">
+              ${init.status==='active'?'Active Mission':'Suggested'}
+            </div>
+            ${isActive ? `
+              <div class="mission-bars">
+                <div class="mb-row">
+                  <div class="mb-label"><span>Progress</span><span>${progressP}%</span></div>
+                  <div class="mb-track"><div class="mb-fill mb-fill--p" style="width:${progressP}%"></div></div>
+                </div>
+                <div class="mb-row">
+                  <div class="mb-label"><span>Funds spent</span><span>${fundsP}%</span></div>
+                  <div class="mb-track"><div class="mb-fill mb-fill--f" style="width:${fundsP}%"></div></div>
+                </div>
+              </div>` : ''}
+          </div>
+        </div>`;
+    }
+
+    // All panel
+    const allPanel = document.createElement('div');
+    allPanel.className = 'repo-panel active init-list';
+    allPanel.id = 'panel-all';
+    allPanel.innerHTML = initiatives
+      .sort((a,b) => a.index - b.index)
+      .map(i => initRowHTML(i, causes.find(c=>c.index===i.cause_index)))
+      .join('');
+    panelsEl.appendChild(allPanel);
+
+    // Per-cause panels
+    causes.forEach(cause => {
+      const panel = document.createElement('div');
+      panel.className = 'repo-panel init-list';
+      panel.id = `panel-${cause.id}`;
+      const cInits = initiatives.filter(i=>i.cause_index===cause.index).sort((a,b)=>a.index-b.index);
+      panel.innerHTML = cInits.length
+        ? cInits.map(i => initRowHTML(i, cause)).join('')
+        : `<div style="text-align:center;padding:var(--sp-3xl);color:var(--clr-ink-light);">
+             <p class="text-sm">No initiatives proposed for ${cause.name} yet.</p>
+           </div>`;
+      panelsEl.appendChild(panel);
+    });
+
+    // Orgs panel
+    const orgsPanel = document.createElement('div');
+    orgsPanel.className = 'repo-panel';
+    orgsPanel.id = 'panel-orgs';
+    orgsPanel.innerHTML = `
+      <div class="orgs-grid">
+        ${allOrgs.map(org => {
+          const orgCauses = org.causes.map(ci => causes.find(c=>c.index===ci)).filter(Boolean);
+          return `
+            <div class="org-card">
+              <div class="org-card__head">
+                <div class="org-card__name">${org.name}</div>
+                <div class="org-card__badge org-card__badge--${org.verified?'verified':'unverified'}">
+                  ${org.verified?'✓ Verified':'Unverified'}
+                </div>
+              </div>
+              <div class="org-card__causes">
+                ${orgCauses.map(c=>`
+                  <span class="org-cause-dot" style="background:${c.color}" title="${c.name}"></span>
+                  <span style="font-size:0.72rem;color:var(--clr-ink-muted);">${c.name}</span>
+                `).join('')}
+              </div>
+              <div class="org-card__desc">${org.description}</div>
+              <div class="org-card__footer">
+                <span>Est. ${org.founded}</span>
+                <a href="#" style="font-size:0.72rem;color:var(--clr-forest);">View profile →</a>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+    panelsEl.appendChild(orgsPanel);
+
+    /* ── Tab switching ── */
+    tabsEl.addEventListener('click', e => {
+      const btn = e.target.closest('.repo-tab');
+      if (!btn) return;
+      tabsEl.querySelectorAll('.repo-tab').forEach(t => t.classList.remove('active'));
+      panelsEl.querySelectorAll('.repo-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById(`panel-${btn.dataset.tab}`);
+      if (panel) panel.classList.add('active');
+    });
+
+    /* ── Handle ?cause=x or ?tab=orgs from external links ── */
+    const qCause = EBX.getParam('cause');
+    const qTab   = EBX.getParam('tab');
+    if (qCause || qTab) {
+      const target = qTab === 'orgs' ? 'orgs' : qCause || 'all';
+      const btn    = tabsEl.querySelector(`[data-tab="${target}"]`);
+      if (btn) btn.click();
+    }
+
+    // Also scroll pick dialog into view if ?tab=pick
+    if (qTab === 'discuss') {
+      document.getElementById('pick-dialog')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Earthbux — Funding the Planet</title>
+<link rel="stylesheet" href="resources/css/ebx_frontend.css">
+</head>
+
+<div class="stats-wrap">
+    <div class="page-header">
+        <h1>📊 Stats & Directory</h1>
+        <p>Every initiative, organization, and decision — searchable and dated. Earthbux is fully transparent.</p>
+    </div>
+
+    <div class="stats-controls">
+        <input class="search-box" type="text" id="statsSearch" placeholder="Search initiatives, orgs, causes…" oninput="filterStats()">
+        <div class="filter-pills">
+            <button class="filter-pill active" onclick="setPillFilter('all', this)">All</button>
+            <button class="filter-pill" onclick="setPillFilter('initiative', this)">Initiatives</button>
+            <button class="filter-pill" onclick="setPillFilter('org', this)">Organizations</button>
+            <button class="filter-pill" onclick="setPillFilter('decision', this)">Decisions</button>
+        </div>
+    </div>
+
+    <div id="statsContent"></div>
+</div>

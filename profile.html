@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earthbux — Your Profile</title>
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
+  <style>
+
+    /* ── New profile onboarding flow ── */
+    .onboarding {
+      min-height: calc(100vh - var(--nav-height));
+      background: #0f1a14;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--sp-2xl) var(--sp-lg);
+    }
+
+    .onboarding__card {
+      width: 100%;
+      max-width: 560px;
+      background: rgba(30,42,30,0.85);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    /* Progress bar across top */
+    .onboarding__progress {
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .onboarding__progress-fill {
+      height: 100%;
+      background: var(--clr-amber);
+      transition: width 0.4s ease;
+    }
+
+    .onboarding__body {
+      padding: var(--sp-2xl) var(--sp-xl);
+    }
+
+    .onboarding__step-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--clr-honey);
+      opacity: 0.7;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .onboarding__title {
+      color: var(--clr-parchment);
+      font-size: 1.5rem;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .onboarding__subtitle {
+      color: rgba(245,240,232,0.5);
+      font-size: 0.88rem;
+      line-height: 1.65;
+      margin-bottom: var(--sp-xl);
+    }
+
+    /* Form fields */
+    .ob-field {
+      margin-bottom: var(--sp-lg);
+    }
+
+    .ob-label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(245,240,232,0.7);
+      margin-bottom: var(--sp-xs);
+      letter-spacing: 0.02em;
+    }
+
+    .ob-label span {
+      font-weight: 400;
+      opacity: 0.5;
+      font-size: 0.72rem;
+    }
+
+    .ob-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: var(--radius-sm);
+      color: var(--clr-parchment);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .ob-input:focus {
+      border-color: var(--clr-amber);
+    }
+
+    .ob-input::placeholder {
+      color: rgba(245,240,232,0.2);
+    }
+
+    .ob-input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-md);
+    }
+
+    /* Cause interest selector */
+    .cause-picker {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+      gap: var(--sp-sm);
+    }
+
+    .cause-pick {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      padding: 10px 12px;
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      user-select: none;
+    }
+
+    .cause-pick:hover {
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .cause-pick.selected {
+      border-color: var(--pick-color, var(--clr-amber));
+      background: color-mix(in srgb, var(--pick-color, var(--clr-amber)) 10%, transparent);
+    }
+
+    .cause-pick input[type="checkbox"] {
+      display: none;
+    }
+
+    .cause-pick__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .cause-pick__name {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: rgba(245,240,232,0.7);
+    }
+
+    .cause-pick.selected .cause-pick__name {
+      color: rgba(245,240,232,0.95);
+    }
+
+    /* Donation amount tiles */
+    .amount-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--sp-sm);
+      margin-bottom: var(--sp-md);
+    }
+
+    .amount-tile {
+      padding: 12px 8px;
+      text-align: center;
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s;
+      background: none;
+      color: rgba(245,240,232,0.65);
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .amount-tile:hover {
+      border-color: rgba(255,255,255,0.25);
+      color: var(--clr-parchment);
+    }
+
+    .amount-tile.selected {
+      border-color: var(--clr-amber);
+      background: rgba(201,124,42,0.12);
+      color: var(--clr-honey);
+    }
+
+    .amount-tile__sub {
+      display: block;
+      font-family: var(--font-body);
+      font-size: 0.6rem;
+      font-weight: 400;
+      opacity: 0.5;
+      margin-top: 2px;
+    }
+
+    /* Type choice: benefactor vs org */
+    .type-choice {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-md);
+    }
+
+    .type-card {
+      padding: var(--sp-lg);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s;
+      background: none;
+      text-align: left;
+    }
+
+    .type-card:hover {
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .type-card.selected {
+      border-color: var(--clr-amber);
+      background: rgba(201,124,42,0.08);
+    }
+
+    .type-card__icon {
+      font-size: 1.5rem;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .type-card__title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--clr-parchment);
+      margin-bottom: 4px;
+    }
+
+    .type-card__desc {
+      font-size: 0.75rem;
+      color: rgba(245,240,232,0.45);
+      line-height: 1.5;
+    }
+
+    /* Navigation buttons */
+    .onboarding__actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--sp-xl);
+      padding-top: var(--sp-lg);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .ob-back {
+      font-size: 0.82rem;
+      color: rgba(245,240,232,0.35);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    .ob-back:hover { color: rgba(245,240,232,0.65); }
+
+    /* Step dots */
+    .step-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .step-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .step-dot.active {
+      background: var(--clr-amber);
+      transform: scale(1.3);
+    }
+
+    .step-dot.done {
+      background: rgba(245,240,232,0.4);
+    }
+
+    /* ── Existing profile view ── */
+    .profile-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: var(--sp-xl);
+      align-items: start;
+      padding: var(--sp-2xl) 0;
+    }
+
+    @media (max-width: 800px) {
+      .profile-layout { grid-template-columns: 1fr; }
+    }
+
+    .profile-sidebar {
+      position: sticky;
+      top: calc(var(--nav-height) + var(--sp-lg));
+    }
+
+    .profile-card {
+      background: var(--clr-forest);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+      color: var(--clr-parchment);
+      margin-bottom: var(--sp-lg);
+    }
+
+    .profile-card__avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 900;
+      margin-bottom: var(--sp-md);
+      color: var(--clr-honey);
+    }
+
+    .profile-card__handle {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      opacity: 0.5;
+      margin-bottom: var(--sp-xs);
+    }
+
+    .profile-card__name {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .profile-card__type {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--clr-honey);
+      opacity: 0.7;
+    }
+
+    .wallet-card {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      margin-bottom: var(--sp-lg);
+    }
+
+    .wallet-card__label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--clr-ink-light);
+      margin-bottom: var(--sp-xs);
+    }
+
+    .wallet-card__balance {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--clr-earth);
+      margin-bottom: 4px;
+    }
+
+    .wallet-card__sub {
+      font-size: 0.75rem;
+      color: var(--clr-ink-light);
+      margin-bottom: var(--sp-md);
+    }
+
+    /* Credit badge section */
+    .credits-section {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+    }
+
+    .credits-section__title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: var(--sp-md);
+      color: var(--clr-earth);
+    }
+
+    .credit-badge-row {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-md);
+      padding: var(--sp-sm) 0;
+      border-bottom: 1px solid var(--clr-border);
+      cursor: pointer;
+      transition: background 0.15s;
+      border-radius: var(--radius-sm);
+    }
+
+    .credit-badge-row:last-child { border-bottom: none; }
+    .credit-badge-row:hover { background: var(--clr-surface); }
+
+    .credit-badge-row__info { flex: 1; }
+
+    .credit-badge-row__title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--clr-earth);
+    }
+
+    .credit-badge-row__meta {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--clr-ink-light);
+    }
+
+    /* Main content area */
+    .profile-main {}
+
+    .profile-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--clr-border);
+      margin-bottom: var(--sp-xl);
+    }
+
+    .profile-tab {
+      padding: var(--sp-md) var(--sp-lg);
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--clr-ink-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .profile-tab:hover { color: var(--clr-ink); }
+
+    .profile-tab.active {
+      color: var(--clr-earth);
+      border-bottom-color: var(--clr-amber);
+    }
+
+    .profile-panel { display: none; }
+    .profile-panel.active { display: block; }
+
+    /* Activity feed items */
+    .activity-item {
+      display: flex;
+      gap: var(--sp-md);
+      padding: var(--sp-md) 0;
+      border-bottom: 1px solid var(--clr-border);
+    }
+
+    .activity-item:last-child { border-bottom: none; }
+
+    .activity-item__icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--clr-surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .activity-item__body { flex: 1; }
+
+    .activity-item__text {
+      font-size: 0.85rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.5;
+    }
+
+    .activity-item__time {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--clr-ink-light);
+      margin-top: 2px;
+    }
+
+    /* Settings form */
+    .settings-group {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      margin-bottom: var(--sp-lg);
+    }
+
+    .settings-group__title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      margin-bottom: var(--sp-lg);
+      padding-bottom: var(--sp-sm);
+      border-bottom: 1px solid var(--clr-border);
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--sp-sm) 0;
+      border-bottom: 1px solid var(--clr-border);
+      gap: var(--sp-md);
+    }
+
+    .settings-row:last-child { border-bottom: none; }
+
+    .settings-row__label {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--clr-ink);
+    }
+
+    .settings-row__sub {
+      font-size: 0.75rem;
+      color: var(--clr-ink-light);
+      margin-top: 1px;
+    }
+
+    .toggle {
+      width: 40px;
+      height: 22px;
+      border-radius: 11px;
+      background: var(--clr-border);
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+
+    .toggle.on { background: var(--clr-moss); }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+
+    .toggle.on::after { transform: translateX(18px); }
+
+  </style>
+</head>
+<body>
+
+  <div id="ebx-nav-mount"></div>
+
+  <!-- JS decides whether to show onboarding or profile -->
+  <div id="app-root"></div>
+
+  <div id="ebx-footer-mount"></div>
+
+  <script src="resources/js/ebx_shared.js"></script>
+  <script>
+  (async function () {
+
+    await EBX.loadAll();
+    const causes = EBX.config.causes;
+
+    /* ── Read profile from localStorage ── */
+    let profile = null;
+    try {
+      const stored = localStorage.getItem('ebx_profile');
+      if (stored) profile = JSON.parse(stored);
+    } catch(e) {}
+
+    /* ═══════════════════════════════════════════
+       ONBOARDING FLOW
+       ═════════════════════════════════════════= */
+
+    if (!profile) {
+      renderOnboarding();
+      return;
+    }
+
+    /* ═══════════════════════════════════════════
+       EXISTING PROFILE VIEW
+       ═════════════════════════════════════════= */
+
+    renderProfile(profile);
+
+
+    /* ─────────────────────────────────────────
+       ONBOARDING
+       ───────────────────────────────────────── */
+
+    function renderOnboarding() {
+      const root = document.getElementById('app-root');
+      root.innerHTML = `<div class="onboarding" id="ob-wrap"></div>`;
+
+      const steps = [
+        { id: 'type',     title: 'Who are you?',           subtitle: 'Tell us how you\'ll be using Earthbux. You can always change this later.' },
+        { id: 'identity', title: 'Set up your identity',   subtitle: 'This is how the community will know you. Your real name is never required.' },
+        { id: 'causes',   title: 'What do you care about?', subtitle: 'Select the causes you want to follow. This shapes your feed and credit portfolio.' },
+        { id: 'donation', title: 'Make your first donation', subtitle: 'Every two weeks a new pool forms. Your first donation mints your first earthbucks and creates your credit.' },
+        { id: 'confirm',  title: 'You\'re in.',             subtitle: 'Your profile is ready. Your earthbucks will be minted on the next pool date.' },
+      ];
+
+      let currentStep = 0;
+      const formData  = { type: 'benefactor', handle: '', display: '', causes: [], amount: 20 };
+
+      function saveAndAdvance() {
+        if (currentStep < steps.length - 1) {
+          currentStep++;
+          drawStep();
+        } else {
+          // Save profile
+          profile = {
+            type:        formData.type,
+            handle:      formData.handle || 'anon_' + Math.floor(Math.random() * 9999),
+            display:     formData.display || 'Anonymous',
+            causes:      formData.causes,
+            amount:      formData.amount,
+            joined:      new Date().toISOString(),
+            ebx_balance: 0,
+            credits:     [],
+          };
+          try { localStorage.setItem('ebx_profile', JSON.stringify(profile)); } catch(e) {}
+          renderProfile(profile);
+        }
+      }
+
+      function drawStep() {
+        const step     = steps[currentStep];
+        const pct      = ((currentStep + 1) / steps.length) * 100;
+        const dotsHTML = steps.map((_,i) =>
+          `<div class="step-dot ${i < currentStep ? 'done' : i === currentStep ? 'active' : ''}"></div>`
+        ).join('');
+
+        document.getElementById('ob-wrap').innerHTML = `
+          <div class="onboarding__card">
+            <div class="onboarding__progress">
+              <div class="onboarding__progress-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="onboarding__body">
+              <div class="onboarding__step-label">Step ${currentStep + 1} of ${steps.length}</div>
+              <h2 class="onboarding__title">${step.title}</h2>
+              <p class="onboarding__subtitle">${step.subtitle}</p>
+              <div id="ob-step-content"></div>
+              <div class="onboarding__actions">
+                <button class="ob-back" id="ob-back-btn"
+                  ${currentStep === 0 ? 'style="visibility:hidden"' : ''}>← Back</button>
+                <div class="step-dots">${dotsHTML}</div>
+                <button class="btn btn-primary" id="ob-next-btn">
+                  ${currentStep === steps.length - 1 ? 'Go to my profile' : 'Continue →'}
+                </button>
+              </div>
+            </div>
+          </div>`;
+
+        // Render step content
+        const content = document.getElementById('ob-step-content');
+
+        if (step.id === 'type') {
+          content.innerHTML = `
+            <div class="type-choice">
+              <button class="type-card ${formData.type==='benefactor'?'selected':''}"
+                      data-type="benefactor" onclick="pickType(this)">
+                <div class="type-card__icon">🌱</div>
+                <div class="type-card__title">Benefactor</div>
+                <div class="type-card__desc">I donate and want to guide how the money is used. I vote on initiatives and orgs.</div>
+              </button>
+              <button class="type-card ${formData.type==='org'?'selected':''}"
+                      data-type="org" onclick="pickType(this)">
+                <div class="type-card__icon">🏛️</div>
+                <div class="type-card__title">Organization</div>
+                <div class="type-card__desc">We bid on initiatives and carry out funded missions. We report progress to unlock payment.</div>
+              </button>
+            </div>`;
+
+        } else if (step.id === 'identity') {
+          content.innerHTML = `
+            <div class="ob-input-row">
+              <div class="ob-field">
+                <label class="ob-label">Handle <span>(public, unique)</span></label>
+                <input class="ob-input" id="ob-handle" type="text"
+                  placeholder="e.g. terra_watcher"
+                  value="${formData.handle}"
+                  oninput="formData.handle=this.value" />
+              </div>
+              <div class="ob-field">
+                <label class="ob-label">Display name <span>(optional)</span></label>
+                <input class="ob-input" id="ob-display" type="text"
+                  placeholder="e.g. Maya R."
+                  value="${formData.display}"
+                  oninput="formData.display=this.value" />
+              </div>
+            </div>
+            <div class="ob-field">
+              <label class="ob-label">Email <span>(private, for notifications)</span></label>
+              <input class="ob-input" id="ob-email" type="email"
+                placeholder="you@example.com" />
+            </div>
+            <p style="font-size:0.75rem;color:rgba(245,240,232,0.3);margin-top:var(--sp-sm);line-height:1.6;">
+              Your handle is the only thing other users see. Your email is never shared. No password required yet — full auth is coming soon.
+            </p>`;
+
+        } else if (step.id === 'causes') {
+          content.innerHTML = `
+            <div class="cause-picker" id="cause-picker">
+              ${causes.map(c => `
+                <label class="cause-pick ${formData.causes.includes(c.index)?'selected':''}"
+                       style="--pick-color:${c.color}"
+                       onclick="toggleCause(${c.index},this)">
+                  <input type="checkbox" ${formData.causes.includes(c.index)?'checked':''} />
+                  <div class="cause-pick__dot" style="background:${c.color}"></div>
+                  <span class="cause-pick__name">${c.name}</span>
+                </label>`).join('')}
+            </div>
+            <p style="font-size:0.75rem;color:rgba(245,240,232,0.3);margin-top:var(--sp-md);line-height:1.6;">
+              You can follow all causes or just a few. Causes you select appear first in your feed and your credit badges will reflect them.
+            </p>`;
+
+        } else if (step.id === 'donation') {
+          const amounts = [10, 20, 50, 100];
+          content.innerHTML = `
+            <div class="amount-grid">
+              ${amounts.map(a => `
+                <button class="amount-tile ${formData.amount===a?'selected':''}"
+                        onclick="pickAmount(${a},this)">
+                  $${a}
+                  <span class="amount-tile__sub">/ cycle</span>
+                </button>`).join('')}
+            </div>
+            <div class="ob-field">
+              <label class="ob-label">Or enter a custom amount</label>
+              <input class="ob-input" type="number" min="1" placeholder="$"
+                oninput="formData.amount=parseFloat(this.value)||formData.amount" />
+            </div>
+            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
+                        border-radius:var(--radius-sm);padding:var(--sp-md);margin-top:var(--sp-md);">
+              <div style="font-size:0.75rem;color:rgba(245,240,232,0.5);line-height:1.8;">
+                <div>🌱 <strong style="color:rgba(245,240,232,0.85);">5/16</strong> goes to Earthbux operations</div>
+                <div>💸 <strong style="color:rgba(245,240,232,0.85);">1/16</strong> to the winning org, immediately in cash</div>
+                <div>🔓 <strong style="color:rgba(245,240,232,0.85);">3/8</strong> becomes your earthbucks, released over 12 weeks</div>
+                <div>📅 <strong style="color:rgba(245,240,232,0.85);">1/4</strong> released to the org weekly, contingent on reporting</div>
+              </div>
+            </div>`;
+
+        } else if (step.id === 'confirm') {
+          const causeNames = formData.causes
+            .map(ci => causes.find(c=>c.index===ci)?.name)
+            .filter(Boolean).join(', ') || 'All causes';
+          const nextPool = getNextPoolDate();
+          content.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:var(--sp-md);">
+              <div style="background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);padding:var(--sp-lg);">
+                <div style="font-size:0.72rem;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;
+                            color:rgba(245,240,232,0.35);margin-bottom:var(--sp-sm);">Your profile</div>
+                <div style="font-size:0.9rem;color:rgba(245,240,232,0.85);margin-bottom:4px;">
+                  <strong>@${formData.handle || 'anon'}</strong>${formData.display ? ` · ${formData.display}` : ''}
+                </div>
+                <div style="font-size:0.78rem;color:rgba(245,240,232,0.45);">
+                  ${formData.type === 'org' ? 'Organization' : 'Benefactor'} · Following: ${causeNames}
+                </div>
+              </div>
+              <div style="background:rgba(201,124,42,0.1);border:1px solid rgba(201,124,42,0.25);
+                          border-radius:var(--radius-sm);padding:var(--sp-lg);">
+                <div style="font-size:0.72rem;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;
+                            color:var(--clr-honey);opacity:.7;margin-bottom:var(--sp-sm);">First donation</div>
+                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:900;color:var(--clr-honey);">
+                  $${formData.amount}
+                </div>
+                <div style="font-size:0.78rem;color:rgba(245,240,232,0.4);margin-top:4px;">
+                  Minted on next pool date: ${nextPool}
+                </div>
+              </div>
+              <p style="font-size:0.78rem;color:rgba(245,240,232,0.35);line-height:1.65;margin:0;">
+                Your earthbucks and credit will appear in your wallet after the pool closes.
+                You can adjust your donation amount or causes at any time from your profile.
+              </p>
+            </div>`;
+        }
+
+        // Wire buttons
+        document.getElementById('ob-next-btn').addEventListener('click', saveAndAdvance);
+        const back = document.getElementById('ob-back-btn');
+        if (back) back.addEventListener('click', () => {
+          if (currentStep > 0) { currentStep--; drawStep(); }
+        });
+      }
+
+      // Expose helpers to inline handlers
+      window.formData   = formData;
+      window.pickType   = (el) => {
+        formData.type = el.dataset.type;
+        document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+      };
+      window.toggleCause = (idx, el) => {
+        if (formData.causes.includes(idx)) {
+          formData.causes = formData.causes.filter(c => c !== idx);
+          el.classList.remove('selected');
+        } else {
+          formData.causes.push(idx);
+          el.classList.add('selected');
+        }
+      };
+      window.pickAmount = (a, el) => {
+        formData.amount = a;
+        document.querySelectorAll('.amount-tile').forEach(t => t.classList.remove('selected'));
+        el.classList.add('selected');
+      };
+
+      drawStep();
+    }
+
+
+    /* ─────────────────────────────────────────
+       PROFILE VIEW
+       ───────────────────────────────────────── */
+
+    function renderProfile(p) {
+      document.title = `Earthbux — @${p.handle}`;
+      const root = document.getElementById('app-root');
+
+      const initials = (p.display || p.handle || '?')
+        .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
+
+      // Credit badges — render mini annulus for each cause they follow
+      const creditBadgesHTML = (p.causes || []).length
+        ? p.causes.map(ci => {
+            const c = causes.find(x => x.index === ci);
+            if (!c) return '';
+            return `
+              <div class="credit-badge-row" onclick="window.location.href='cause.html?id=${c.id}'">
+                ${EBX.creditBadge([{causeIndex:ci, amount: p.ebx_balance || 0}], 40)}
+                <div class="credit-badge-row__info">
+                  <div class="credit-badge-row__title">${c.name}</div>
+                  <div class="credit-badge-row__meta">0 EBX · no missions yet</div>
+                </div>
+              </div>`;
+          }).join('')
+        : `<p class="text-sm text-muted">No credits yet. Your first pool mints your first credit.</p>`;
+
+      const nextPool = getNextPoolDate();
+
+      root.innerHTML = `
+        <div style="background:var(--clr-bg);">
+          <div class="container">
+            <div class="profile-layout">
+
+              <!-- Sidebar -->
+              <aside class="profile-sidebar">
+
+                <div class="profile-card">
+                  <div class="profile-card__avatar">${initials}</div>
+                  <div class="profile-card__handle">@${p.handle}</div>
+                  <div class="profile-card__name">${p.display || p.handle}</div>
+                  <div class="profile-card__type">${p.type === 'org' ? 'Organization' : 'Benefactor'}</div>
+                </div>
+
+                <div class="wallet-card">
+                  <div class="wallet-card__label">Wallet balance</div>
+                  <div class="wallet-card__balance">${EBX.formatEBX(p.ebx_balance || 0)}</div>
+                  <div class="wallet-card__sub">Next pool: ${nextPool}</div>
+                  <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-sm">Donate</button>
+                    <button class="btn btn-ghost btn-sm">Cash out</button>
+                  </div>
+                </div>
+
+                <div class="credits-section">
+                  <div class="credits-section__title">Credit portfolio</div>
+                  ${creditBadgesHTML}
+                </div>
+
+              </aside>
+
+              <!-- Main -->
+              <main class="profile-main">
+
+                <div class="profile-tabs">
+                  <button class="profile-tab active" data-ptab="activity">Activity</button>
+                  <button class="profile-tab" data-ptab="opinions">Opinions</button>
+                  <button class="profile-tab" data-ptab="settings">Settings</button>
+                </div>
+
+                <!-- Activity -->
+                <div class="profile-panel active" id="ptab-activity">
+                  <div style="background:white;border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:var(--sp-lg);">
+                    <div class="activity-item">
+                      <div class="activity-item__icon">🌱</div>
+                      <div class="activity-item__body">
+                        <div class="activity-item__text">Profile created. Welcome to Earthbux.</div>
+                        <div class="activity-item__time">${EBX.timeAgo(p.joined)}</div>
+                      </div>
+                    </div>
+                    <div class="activity-item" style="opacity:0.35;">
+                      <div class="activity-item__icon">💸</div>
+                      <div class="activity-item__body">
+                        <div class="activity-item__text">Your first donation will be pooled on ${nextPool}.</div>
+                        <div class="activity-item__time">Pending</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Opinions -->
+                <div class="profile-panel" id="ptab-opinions">
+                  <div style="text-align:center;padding:var(--sp-3xl);color:var(--clr-ink-light);">
+                    <div style="font-size:2rem;margin-bottom:var(--sp-md);">💬</div>
+                    <p class="text-sm">No opinions posted yet.</p>
+                    <a href="feed.html" class="btn btn-ghost btn-sm mt-md">Explore the feed →</a>
+                  </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="profile-panel" id="ptab-settings">
+
+                  <div class="settings-group">
+                    <div class="settings-group__title">Identity</div>
+                    <div class="settings-row">
+                      <div>
+                        <div class="settings-row__label">Handle</div>
+                        <div class="settings-row__sub">@${p.handle}</div>
+                      </div>
+                      <button class="btn btn-ghost btn-sm">Edit</button>
+                    </div>
+                    <div class="settings-row">
+                      <div>
+                        <div class="settings-row__label">Display name</div>
+                        <div class="settings-row__sub">${p.display || '—'}</div>
+                      </div>
+                      <button class="btn btn-ghost btn-sm">Edit</button>
+                    </div>
+                    <div class="settings-row">
+                      <div>
+                        <div class="settings-row__label">Account type</div>
+                        <div class="settings-row__sub">${p.type === 'org' ? 'Organization' : 'Benefactor'}</div>
+                      </div>
+                      <button class="btn btn-ghost btn-sm">Switch</button>
+                    </div>
+                  </div>
+
+                  <div class="settings-group">
+                    <div class="settings-group__title">Donation</div>
+                    <div class="settings-row">
+                      <div>
+                        <div class="settings-row__label">Amount per cycle</div>
+                        <div class="settings-row__sub">$${p.amount || 0} every 14 days</div>
+                      </div>
+                      <button class="btn btn-ghost btn-sm">Change</button>
+                    </div>
+                    <div class="settings-row">
+                      <div>
+                        <div class="settings-row__label">Payment method</div>
+                        <div class="settings-row__sub">Not connected</div>
+                      </div>
+                      <button class="btn btn-primary btn-sm">Connect</button>
+                    </div>
+                  </div>
+
+                  <div class="settings-group">
+                    <div class="settings-group__title">Notifications</div>
+                    ${[
+                      ['New org vote opens',        'Notified when a cause enters org vote phase', true],
+                      ['Initiative results',         'Results when org vote closes',                true],
+                      ['Feedback on your opinions', 'When someone likes your opinion',             false],
+                      ['Weekly EBX release',         'Remind me when EBX unlocks from my credit',  true],
+                    ].map(([label, sub, on]) => `
+                      <div class="settings-row">
+                        <div>
+                          <div class="settings-row__label">${label}</div>
+                          <div class="settings-row__sub">${sub}</div>
+                        </div>
+                        <div class="toggle ${on?'on':''}" onclick="this.classList.toggle('on')"></div>
+                      </div>`).join('')}
+                  </div>
+
+                  <div class="settings-group">
+                    <div class="settings-group__title">Causes I follow</div>
+                    ${causes.map(c => `
+                      <div class="settings-row">
+                        <div style="display:flex;align-items:center;gap:var(--sp-sm);">
+                          <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
+                          <div class="settings-row__label">${c.name}</div>
+                        </div>
+                        <div class="toggle ${(p.causes||[]).includes(c.index)?'on':''}"
+                             onclick="this.classList.toggle('on')"></div>
+                      </div>`).join('')}
+                  </div>
+
+                  <div style="margin-top:var(--sp-xl);padding-top:var(--sp-lg);border-top:1px solid var(--clr-border);">
+                    <button class="btn btn-ghost btn-sm" style="color:var(--clr-ink-light);"
+                      onclick="if(confirm('Clear your local profile?')){localStorage.removeItem('ebx_profile');location.reload();}">
+                      Reset profile (dev)
+                    </button>
+                  </div>
+
+                </div>
+
+              </main>
+            </div>
+          </div>
+        </div>`;
+
+      // Profile tab switching
+      document.querySelectorAll('.profile-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.profile-panel').forEach(p => p.classList.remove('active'));
+          tab.classList.add('active');
+          document.getElementById(`ptab-${tab.dataset.ptab}`).classList.add('active');
+        });
+      });
+    }
+
+
+    /* ── Next pool date: next 14-day boundary from cycle start ── */
+    function getNextPoolDate() {
+      const CYCLE_START = new Date('2026-01-01T00:00:00');
+      const MS_14       = 14 * 86400000;
+      const elapsed     = Date.now() - CYCLE_START.getTime();
+      const nextMs      = CYCLE_START.getTime() + (Math.floor(elapsed / MS_14) + 1) * MS_14;
+      return new Date(nextMs).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+  })();
+  </script>
+</body>
+</html>
