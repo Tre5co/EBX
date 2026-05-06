@@ -744,15 +744,12 @@
       `${cause.name} coverage & updates`;
 
     /* ── 4. Cycle timeline ── */
-    const CYCLE_START  = new Date('2026-01-01T00:00:00');
-    const CAUSE_DAYS   = 14;
-    const MS_DAY       = 86400000;
-    const cycleNum     = Math.floor((Date.now() - CYCLE_START.getTime()) / (98 * MS_DAY));
-    const state        = EBX.Cycle.now();
+    const CAUSE_DAYS = EBX.config.causeLengthDays;
+    const MS_DAY     = EBX.Cycle.MS_PER_DAY;
+    const cycleNum   = EBX.Cycle.currentCycleNum();
+    const state      = EBX.Cycle.now();
 
-    function windowStart(cIdx, cn) {
-      return new Date(CYCLE_START.getTime() + cn * 98 * MS_DAY + cIdx * CAUSE_DAYS * MS_DAY);
-    }
+    function windowStart(cIdx, cn) { return EBX.Cycle.windowStart(cIdx, cn); }
     function fmt(d) {
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
@@ -845,10 +842,9 @@
 
       list.innerHTML = causeInits.map(init => {
         const isActive = init.status === 'active' && init.winning_org;
-        // Link to feed filtered by this initiative
         const feedHref = `feed.html?initiative=${init.id}`;
         return `
-          <a class="init-row" href="${feedHref}">
+          <div class="init-row">
             <div>
               <div class="init-row__index">#${String(init.index).padStart(3,'0')} · proposed by ${init.proposed_by}</div>
               <div class="init-row__title">${init.emoji || '🌱'} ${init.title}</div>
@@ -860,9 +856,18 @@
               <div class="init-row__status init-row__status--${isActive ? 'active' : 'suggested'}">
                 ${isActive ? 'Active' : 'Suggested'}
               </div>
-              <div class="init-row__cta">View discussion →</div>
+              <div style="display:flex;gap:var(--sp-xs);margin-top:auto;">
+                <button class="btn btn-ghost btn-sm"
+                  data-vote-initiative="${init.id}" data-vote-dir="up"
+                  title="Vote for this initiative">▲ Vote</button>
+                <button class="btn btn-ghost btn-sm"
+                  data-commit-initiative="${init.id}"
+                  title="Commit EBX to this initiative">+ Commit</button>
+              </div>
+              <a class="init-row__cta" href="${feedHref}">View discussion →</a>
             </div>
-          </a>`;
+          </div>`;
+      }).join('');
       }).join('');
     }
 
@@ -1025,12 +1030,194 @@
 
   })();
 
-  /* ── Opinion submit (stub) ── */
-  function submitOpinion() {
-    const text = document.getElementById('opinion-textarea').value.trim();
-    if (!text) return;
-    alert('Sign-in required to post opinions. Profile system coming soon.');
+  /* ══════════════════════════════════════════════════
+     SUPABASE INTEGRATION
+     ══════════════════════════════════════════════════
+
+     Setup (one-time, in your repo):
+       1. npm install @supabase/supabase-js
+          OR use the CDN import below (already included).
+       2. Create a `.env` / Netlify env var:
+            SUPABASE_URL=https://xxxx.supabase.co
+            SUPABASE_ANON_KEY=eyJ...
+       3. Replace the two placeholder strings below with
+          your actual project URL and anon key.
+       4. Run the SQL in /supabase/schema.sql (provided
+          in ebx_shared.js comments) to create the tables.
+
+     Auth model:
+       - Supabase Auth (magic link or OAuth).
+       - `users` table has a shared row for both
+         benefactors and orgs, with a `user_type` column.
+       - RLS policies: users can only INSERT their own posts,
+         votes, commits; SELECT is open for all.
+  ══════════════════════════════════════════════════ */
+
+  // ── Supabase client (CDN) ──────────────────────────
+  // In production: import via your bundler instead.
+  // The script tag below should go in <head> of your layout.
+  //   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  const SUPABASE_URL     = 'https://utodidayoclmwrgvfems.supabase.co';      // e.g. https://abcdef.supabase.co
+  const SUPABASE_ANON    = 'Ysb_publishable_QudaQZ2WoVIx5zXl0F-Raw_CRwmLgzx; // public anon key, safe to expose
+
+  // Guard: only init if the Supabase CDN has been loaded
+  const sbClient = (typeof supabase !== 'undefined')
+    ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+    : null;
+
+  // ── Auth helpers ───────────────────────────────────
+  async function getCurrentUser() {
+    if (!sbClient) return null;
+    const { data: { user } } = await sbClient.auth.getUser();
+    return user;
   }
+
+  async function signInWithMagicLink(email) {
+    if (!sbClient) return;
+    const { error } = await sbClient.auth.signInWithOtp({ email });
+    if (error) throw error;
+  }
+
+  // ── Post (opinion / initiative review / update) ────
+  /**
+   * Insert a post into `posts` table.
+   * @param {{ body: string, type: 'opinion'|'initiative_review'|'org_review'|'update',
+   *           initiative_id?: string, cause_index: number }} payload
+   */
+  async function submitPost(payload) {
+    const user = await getCurrentUser();
+    if (!user) {
+      showAuthPrompt();
+      return;
+    }
+    if (!sbClient) { alert('[EBX] Supabase not connected.'); return; }
+
+    const { error } = await sbClient.from('posts').insert({
+      author_id:    user.id,
+      cause_index:  payload.cause_index,
+      initiative_id: payload.initiative_id || null,
+      type:         payload.type,
+      body:         payload.body,
+      likes:        0,
+      created_at:   new Date().toISOString(),
+    });
+
+    if (error) { console.error('[EBX] Post failed:', error); throw error; }
+  }
+
+  // ── Vote (on an initiative) ────────────────────────
+  /**
+   * Cast or toggle a vote for an initiative.
+   * Uses upsert with (user_id, initiative_id) unique constraint.
+   * @param {string} initiativeId
+   * @param {'up'|'down'} direction
+   */
+  async function castVote(initiativeId, direction = 'up') {
+    const user = await getCurrentUser();
+    if (!user) { showAuthPrompt(); return; }
+    if (!sbClient) return;
+
+    const { error } = await sbClient.from('votes').upsert({
+      user_id:      user.id,
+      initiative_id: initiativeId,
+      direction,
+      created_at:   new Date().toISOString(),
+    }, { onConflict: 'user_id,initiative_id' });
+
+    if (error) console.error('[EBX] Vote failed:', error);
+  }
+
+  // ── Commit (pledge EBX to an initiative) ──────────
+  /**
+   * Record a benefactor commit.
+   * The actual EBX deduction happens server-side via a
+   * Supabase Edge Function (see /functions/commit.ts).
+   * This call triggers that function.
+   * @param {string} initiativeId
+   * @param {number} amountEbx
+   */
+  async function commitEbx(initiativeId, amountEbx) {
+    const user = await getCurrentUser();
+    if (!user) { showAuthPrompt(); return; }
+    if (!sbClient) return;
+
+    // Call Edge Function for atomic balance check + debit
+    const { data, error } = await sbClient.functions.invoke('commit', {
+      body: { initiative_id: initiativeId, amount_ebx: amountEbx }
+    });
+
+    if (error) { console.error('[EBX] Commit failed:', error); throw error; }
+    return data;
+  }
+
+  // ── Auth prompt (shown when action needs sign-in) ──
+  function showAuthPrompt() {
+    // Swap this with a proper modal once profile.html auth flow is built
+    const email = window.prompt(
+      'Sign in to post, vote, or commit.\nEnter your email for a magic link:'
+    );
+    if (email && email.includes('@')) {
+      signInWithMagicLink(email)
+        .then(() => alert('Check your email for a sign-in link!'))
+        .catch(e => alert('Error: ' + e.message));
+    }
+  }
+
+  // ── Wire up the opinion composer ──────────────────
+  async function submitOpinion() {
+    const body = document.getElementById('opinion-textarea').value.trim();
+    if (!body) return;
+
+    const causeId    = EBX.getParam('id');
+    const causes     = EBX.config.causes;
+    const cause      = causes.find(c => c.id === causeId);
+    const initSelect = document.getElementById('opinion-initiative-select');
+    const typeBtn    = document.querySelector('.type-btn.active');
+
+    try {
+      await submitPost({
+        body,
+        type:          typeBtn?.dataset.type === 'org' ? 'org_review' : 'opinion',
+        initiative_id: initSelect?.value || null,
+        cause_index:   cause?.index ?? 0,
+      });
+      document.getElementById('opinion-textarea').value = '';
+      alert('Posted! It will appear after the next feed refresh.');
+    } catch (e) {
+      if (e?.message?.includes('auth')) showAuthPrompt();
+      else alert('Could not post: ' + e.message);
+    }
+  }
+
+  // ── Wire up vote buttons (added dynamically by renderInitiatives) ──
+  document.addEventListener('click', async e => {
+    const voteBtn = e.target.closest('[data-vote-initiative]');
+    if (!voteBtn) return;
+    e.preventDefault();
+    const id  = voteBtn.dataset.voteInitiative;
+    const dir = voteBtn.dataset.voteDir || 'up';
+    voteBtn.disabled = true;
+    await castVote(id, dir);
+    voteBtn.textContent = dir === 'up' ? '▲ Voted' : '▼ Voted';
+  });
+
+  // ── Wire up commit buttons (added dynamically) ─────
+  document.addEventListener('click', async e => {
+    const commitBtn = e.target.closest('[data-commit-initiative]');
+    if (!commitBtn) return;
+    e.preventDefault();
+    const id  = commitBtn.dataset.commitInitiative;
+    const amt = parseFloat(window.prompt('How many EBX to commit?', '10'));
+    if (!amt || isNaN(amt) || amt <= 0) return;
+    commitBtn.disabled = true;
+    try {
+      await commitEbx(id, amt);
+      commitBtn.textContent = `✓ ${amt} EBX committed`;
+    } catch {
+      commitBtn.disabled = false;
+    }
+  });
   </script>
 </body>
 </html>

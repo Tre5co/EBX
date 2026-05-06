@@ -116,6 +116,44 @@ const EBX = {
     },
 
     /**
+     * Returns the current cycle number (0-based count of completed 98-day cycles).
+     */
+    currentCycleNum() {
+      const cfg = EBX.config;
+      return Math.floor(
+        (Date.now() - cfg.cycleStart.getTime()) /
+        (cfg.cycleLengthDays * EBX.Cycle.MS_PER_DAY)
+      );
+    },
+
+    /**
+     * Returns the Date when a cause window opens.
+     * @param {number} causeIndex  0-6
+     * @param {number} cycleNum
+     */
+    windowStart(causeIndex, cycleNum) {
+      const cfg = EBX.config;
+      return new Date(
+        cfg.cycleStart.getTime() +
+        cycleNum * cfg.cycleLengthDays * EBX.Cycle.MS_PER_DAY +
+        causeIndex * cfg.causeLengthDays * EBX.Cycle.MS_PER_DAY
+      );
+    },
+
+    /**
+     * Returns the Date when the org-vote window closes for a given cause.
+     * @param {number} causeIndex  0-6
+     * @param {number} cycleNum
+     */
+    voteCloseDate(causeIndex, cycleNum) {
+      const cfg = EBX.config;
+      return new Date(
+        EBX.Cycle.windowStart(causeIndex, cycleNum).getTime() +
+        cfg.causeLengthDays * EBX.Cycle.MS_PER_DAY
+      );
+    },
+
+    /**
      * Get the phase label for a given cause index relative to current cycle.
      * Causes ahead of the active one are in initiative debate.
      * The active one is in org vote or debate depending on day.
@@ -316,27 +354,15 @@ const EBX = {
       // Apply rotation
       group.style.transform = `rotate(${state.rotationDeg}deg)`;
 
-      // Keep labels upright and populate dates
-      const CYCLE_START_A = new Date('2026-01-01T00:00:00');
-      const MS_DAY_A = 86400000;
-      const cycleNumA = Math.floor((Date.now() - CYCLE_START_A.getTime()) / (98 * MS_DAY_A));
-      const innerR_A = 118, outerR_A = 180;
+      // Keep labels upright and populate vote-close dates
+      const cycleNum = EBX.Cycle.currentCycleNum();
 
       EBX.Annulus._labelElements.forEach(({ el, lx, ly }, i) => {
-        // Counter-rotate entire label group so text stays upright
         el.setAttribute('transform', `rotate(${-state.rotationDeg}, ${lx}, ${ly})`);
-
-        // Populate the date sub-label for this cause index
         const dateLine = el.querySelector('[data-date-label]');
         if (dateLine) {
-          const voteCloseMs = CYCLE_START_A.getTime()
-            + cycleNumA * 98 * MS_DAY_A
-            + i * 14 * MS_DAY_A
-            + 14 * MS_DAY_A;
-          const voteCloseDate = new Date(voteCloseMs);
-          dateLine.textContent = voteCloseDate.toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric'
-          });
+          dateLine.textContent = EBX.Cycle.voteCloseDate(i, cycleNum)
+            .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
       });
 

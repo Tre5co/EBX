@@ -517,20 +517,13 @@
     const causes      = EBX.config.causes;
     const initiatives = EBX.config.initiatives;
 
-    /* ── Date / cycle helpers ── */
-    const CYCLE_START = new Date('2026-01-01T00:00:00');
-    const MS_DAY = 86400000;
+    /* ── Date / cycle helpers (now delegates to EBX.Cycle) ── */
+    const MS_DAY = EBX.Cycle.MS_PER_DAY;
 
-    function cycleNum() {
-      return Math.floor((Date.now() - CYCLE_START.getTime()) / (98 * MS_DAY));
-    }
-    function windowStart(ci, cn) {
-      return new Date(CYCLE_START.getTime() + cn * 98 * MS_DAY + ci * 14 * MS_DAY);
-    }
-    function voteClose(ci, cn) {
-      return new Date(windowStart(ci, cn).getTime() + 14 * MS_DAY);
-    }
-    function fmtShort(d) {
+    function cycleNum()         { return EBX.Cycle.currentCycleNum(); }
+    function windowStart(ci,cn) { return EBX.Cycle.windowStart(ci, cn); }
+    function voteClose(ci,cn)   { return EBX.Cycle.voteCloseDate(ci, cn); }
+    function fmtShort(d)        {
       return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
@@ -541,13 +534,18 @@
       const n      = 7;
       const cn     = cycleNum();
 
-      /* ── Election panel: countdown only ── */
+      /* ── Election panel ── */
       const activeCause = causes.find(c => c.index === active);
       const color       = activeCause?.color || '#4e7a4e';
       const ep = document.getElementById('election-panel');
       ep.style.setProperty('--ep-color', color);
 
-      // Election panel title: "Organization election for [initiative]"
+      // Derive winner BEFORE it's used in the title
+      const activeInits = initiatives
+        .filter(i => i.cause_index === active)
+        .sort((a,b) => (b.committed_ebx||0) - (a.committed_ebx||0));
+      const winner = activeInits[0];
+
       const epInitTitle = document.getElementById('ep-initiative-title');
       const epTimer     = document.getElementById('ep-timer-large');
       if (epInitTitle) epInitTitle.textContent = winner
@@ -556,11 +554,7 @@
       if (epTimer) epTimer.textContent =
         `${state.daysRemaining}d ${state.hoursRemaining}h remaining`;
 
-      // Org rows + action links (unchanged)
-      const activeInits = initiatives
-        .filter(i => i.cause_index === active)
-        .sort((a,b) => (b.committed_ebx||0) - (a.committed_ebx||0));
-      const winner = activeInits[0];
+      // Org vote breakdown
       const sampleOrgs = [
         { name: 'CarbonBridge Foundation', pct: 38 },
         { name: 'Skywatch Collective',      pct: 31 },
