@@ -1,0 +1,15 @@
+{
+  "name": "earthbucks-frontend",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020",
+    "dev": "esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020 --watch --sourcemap",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}

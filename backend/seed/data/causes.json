@@ -1,0 +1,58 @@
+[
+  {
+    "id": "atmosphere",
+    "index": 0,
+    "name": "Atmosphere",
+    "color": "#6baed6",
+    "description": "Reducing greenhouse gas emissions and restoring atmospheric balance through clean energy, carbon capture, and policy advocacy.",
+    "emoji": "🌤️"
+  },
+  {
+    "id": "oceans",
+    "index": 1,
+    "name": "Oceans",
+    "color": "#3182bd",
+    "description": "Protecting ocean ecosystems from pollution, acidification, and overfishing while restoring marine biodiversity.",
+    "emoji": "🌊"
+  },
+  {
+    "id": "land",
+    "index": 2,
+    "name": "Land",
+    "color": "#74c476",
+    "description": "Restoring degraded soils, protecting indigenous land rights, and promoting regenerative agriculture at scale.",
+    "emoji": "🌾"
+  },
+  {
+    "id": "forests",
+    "index": 3,
+    "name": "Forests",
+    "color": "#31a354",
+    "description": "Halting deforestation and funding large-scale reforestation across the world's most critical forest ecosystems.",
+    "emoji": "🌲"
+  },
+  {
+    "id": "wildlife",
+    "index": 4,
+    "name": "Wildlife",
+    "color": "#e6550d",
+    "description": "Protecting endangered species, restoring habitats, and ending illegal wildlife trade through community-led conservation.",
+    "emoji": "🐾"
+  },
+  {
+    "id": "human-rights",
+    "index": 5,
+    "name": "Human Rights",
+    "color": "#756bb1",
+    "description": "Supporting frontline communities disproportionately affected by environmental harm and advocating for environmental justice.",
+    "emoji": "✊"
+  },
+  {
+    "id": "human-progress",
+    "index": 6,
+    "name": "Human Progress",
+    "color": "#bdbdbd",
+    "description": "Funding access to clean water, renewable energy, and sustainable infrastructure in underserved communities globally.",
+    "emoji": "📚"
+  }
+]

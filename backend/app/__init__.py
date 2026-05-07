@@ -1,0 +1,1 @@
+"""Earthbucks FastAPI application package."""

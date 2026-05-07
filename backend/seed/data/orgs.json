@@ -1,0 +1,15 @@
+[
+  { "id": "org-001", "name": "CarbonBridge Foundation", "causes": [0], "verified": true, "description": "Nonprofit deploying direct air capture units in partnership with city governments.", "founded": 2019 },
+  { "id": "org-002", "name": "Skywatch Collective",       "causes": [0], "verified": true, "description": "Satellite monitoring consortium tracking industrial emissions across 40 nations.", "founded": 2021 },
+  { "id": "org-003", "name": "Oceana Deep",              "causes": [1], "verified": true, "description": "Marine conservation org specializing in international seabed governance.", "founded": 2015 },
+  { "id": "org-004", "name": "ReefGen Labs",             "causes": [1], "verified": false, "description": "Biotech startup growing heat-resistant coral at commercial scale.", "founded": 2022 },
+  { "id": "org-005", "name": "Groundwork Alliance",      "causes": [2], "verified": true, "description": "Soil science collective working with indigenous farmers on regenerative practices.", "founded": 2018 },
+  { "id": "org-006", "name": "Wildlands Network EU",     "causes": [3], "verified": true, "description": "European rewilding organization focused on predator corridor restoration.", "founded": 2011 },
+  { "id": "org-007", "name": "Amazon Guardian Fund",     "causes": [3], "verified": true, "description": "Community-led deforestation alert and legal response network in Brazil.", "founded": 2017 },
+  { "id": "org-008", "name": "Species Ark",              "causes": [4], "verified": true, "description": "AI-assisted biodiversity monitoring deployed in six global hotspots.", "founded": 2020 },
+  { "id": "org-009", "name": "Traffick Watch",           "causes": [4], "verified": false, "description": "Investigative network mapping illegal wildlife trade routes globally.", "founded": 2023 },
+  { "id": "org-010", "name": "EarthLaw Center",          "causes": [5], "verified": true, "description": "Pro-bono legal representation for frontline environmental communities.", "founded": 2016 },
+  { "id": "org-011", "name": "Press For Planet",         "causes": [5], "verified": true, "description": "Legal defense and relocation fund for at-risk environmental journalists.", "founded": 2020 },
+  { "id": "org-012", "name": "GridSpark",                "causes": [6], "verified": true, "description": "Cooperative solar infrastructure developer for off-grid communities.", "founded": 2019 },
+  { "id": "org-013", "name": "AquaCommons",              "causes": [6], "verified": true, "description": "Community water system builder and governance trainer in South Asia and East Africa.", "founded": 2014 }
+]
