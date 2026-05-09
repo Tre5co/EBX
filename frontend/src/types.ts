@@ -50,15 +50,26 @@ export interface FeedPost {
   opinion_type?: 'org' | 'initiative' | string;
 }
 
+// Cycle model: seven causes, each running a 7-week debate + simultaneous org
+// election. The 7 cause windows are staggered by 1 week, so every week one
+// cause has its decision day. Annulus rotates 1/7 of a turn per week.
 export interface CycleState {
   causeIndex: number;
-  causePhase: 'debate' | 'vote' | 'recap';
-  dayInCause: number;
   daysRemaining: number;
   hoursRemaining: number;
   rotationDeg: number;
-  isRecap: boolean;
-  cycleDay: number;
+  weekNum: number;
+  dayInWeek: number;
+}
+
+// One row in a cause's vote distribution.
+export interface VoteShare {
+  org_id: string;
+  org_name: string;
+  pct: number;
+  rank: number;
+  isOther: boolean;
+  color: string;
 }
 
 export interface CreditHolding {
@@ -74,10 +85,3 @@ export interface TokenChip {
   amount?: number;
 }
 
-export interface Opinion {
-  type: 'org' | 'initiative' | 'other' | string;
-  body: string;
-  author_handle: string;
-  feedback: number;
-  created_at: string;
-}

@@ -1,20 +1,36 @@
-.env
-*.db
-*.sqlite
-*.sqlite3
+# ── Earthbucks .gitignore (project root) ─────────────────────────
+
+# Python (backend/)
 __pycache__/
 *.pyc
+*.pyo
 .venv/
 venv/
 .alembic_cache/
 
-# Node
-node_modules/
+# SQLite databases (don't commit local DB state)
+*.db
+*.sqlite
+*.sqlite3
 
-# Python
-__pycache__/
-*.pyc
+# Environment / secrets
 .env
+.env.local
+.env.*.local
 
-# General
+# Node (frontend/)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+*.tsbuildinfo
+
+# Editor / OS
 .DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

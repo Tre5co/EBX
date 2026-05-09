@@ -3,14 +3,18 @@
   // src/ebx_shared.ts
   var config = {
     dataRoot: "/data/",
-    apiBase: "http://localhost:8000",
-    version: "0.3.0",
+    apiBase: "",
+    // empty means same origin — works when FastAPI hosts the static files
+    version: "0.4.0",
     cycleStart: /* @__PURE__ */ new Date("2026-01-01T00:00:00"),
-    causeLengthDays: 14,
-    cycleLengthDays: 98,
-    useApi: false,
+    causeLengthDays: 49,
+    // 7 weeks per cause
+    decisionIntervalDays: 7,
+    // one decision per week
+    useApi: true,
     causes: [],
     initiatives: [],
+    organizations: [],
     feed: []
   };
   async function fetchJSON(path) {
@@ -43,12 +47,30 @@
   async function loadInitiatives() {
     const data = config.useApi ? await fetchAPI("/initiatives") : await fetchJSON("causes/initiatives.json");
     if (data) {
-      config.initiatives = data.map((i) => ({
-        ...i,
-        committed_ebx: i.committed_ebx ?? i.ebx_committed ?? 0
-      }));
+      config.initiatives = data.map((i) => {
+        const causeIndex = i.cause_index ?? (config.causes.find((c) => c.id === i.cause_id)?.index ?? 0);
+        return {
+          ...i,
+          cause_index: causeIndex,
+          committed_ebx: i.committed_ebx ?? i.ebx_committed ?? 0
+        };
+      });
     }
     return config.initiatives;
+  }
+  async function loadOrganizations() {
+    const data = config.useApi ? await fetchAPI("/organizations") : await fetchJSON("causes/orgs.json");
+    if (data) {
+      config.organizations = data.map((o) => ({
+        id: o.id,
+        name: o.name,
+        causes: o.causes ?? [],
+        verified: o.verified ?? false,
+        description: o.description,
+        founded: o.founded ?? o.founded_year
+      }));
+    }
+    return config.organizations;
   }
   async function loadFeed() {
     const data = config.useApi ? await fetchAPI("/posts?limit=50") : await fetchJSON("causes/feed.json");
@@ -56,73 +78,161 @@
     return config.feed;
   }
   async function loadAll() {
-    await Promise.all([loadCauses(), loadInitiatives(), loadFeed()]);
+    await loadCauses();
+    await Promise.all([loadInitiatives(), loadOrganizations(), loadFeed()]);
   }
   var MS_PER_DAY = 864e5;
   var Cycle = {
     MS_PER_DAY,
+    /** Current state — which cause has its decision THIS week, etc. */
     now() {
-      const elapsed = Date.now() - config.cycleStart.getTime();
-      const cycleLengthMs = config.cycleLengthDays * MS_PER_DAY;
-      const causeLengthMs = config.causeLengthDays * MS_PER_DAY;
-      const cycleMs = (elapsed % cycleLengthMs + cycleLengthMs) % cycleLengthMs;
-      const cycleDay = Math.floor(cycleMs / MS_PER_DAY) + 1;
-      const causeIndex = Math.floor(cycleMs / causeLengthMs) % 7;
-      const msInCause = cycleMs % causeLengthMs;
-      const dayInCause = Math.floor(msInCause / MS_PER_DAY) + 1;
-      const causePhase = dayInCause <= 12 ? "debate" : "vote";
-      const msRemaining = causeLengthMs - msInCause;
-      const daysRemaining = Math.floor(msRemaining / MS_PER_DAY);
-      const hoursRemaining = Math.floor(msRemaining % MS_PER_DAY / 36e5);
+      const elapsedMs = Date.now() - config.cycleStart.getTime();
+      const dayMs = MS_PER_DAY;
+      const weekMs = config.decisionIntervalDays * dayMs;
+      const totalDays = Math.floor(elapsedMs / dayMs);
+      const weekNum = Math.floor(elapsedMs / weekMs);
+      const causeIndex = (weekNum % 7 + 7) % 7;
+      const dayInWeek = totalDays - weekNum * config.decisionIntervalDays;
+      const decisionMs = (weekNum + 1) * weekMs - elapsedMs;
+      const daysRemaining = Math.max(0, Math.floor(decisionMs / dayMs));
+      const hoursRemaining = Math.max(
+        0,
+        Math.floor(decisionMs % dayMs / 36e5)
+      );
       const anglePerSeg = 360 / 7;
-      const baseRotation = -(causeIndex * anglePerSeg);
-      const subProgress = msInCause / causeLengthMs;
-      const rotationDeg = baseRotation - subProgress * anglePerSeg;
+      const subProgress = elapsedMs % weekMs / weekMs;
+      const rotationDeg = -(causeIndex * anglePerSeg) - subProgress * anglePerSeg;
       return {
         causeIndex,
-        causePhase,
-        dayInCause,
         daysRemaining,
         hoursRemaining,
         rotationDeg,
-        isRecap: false,
-        cycleDay
+        weekNum,
+        dayInWeek
       };
     },
-    currentCycleNum() {
-      return Math.floor(
-        (Date.now() - config.cycleStart.getTime()) / (config.cycleLengthDays * MS_PER_DAY)
-      );
-    },
-    windowStart(causeIndex, cycleNum) {
-      return new Date(
-        config.cycleStart.getTime() + cycleNum * config.cycleLengthDays * MS_PER_DAY + causeIndex * config.causeLengthDays * MS_PER_DAY
-      );
-    },
-    voteCloseDate(causeIndex, cycleNum) {
-      return new Date(
-        Cycle.windowStart(causeIndex, cycleNum).getTime() + config.causeLengthDays * MS_PER_DAY
-      );
-    },
-    phaseForCause(causeIndex) {
+    /** Decision date for any cause: the next end-of-week when (weekNum % 7) === causeIndex. */
+    nextDecisionDate(causeIndex) {
       const state = Cycle.now();
-      if (state.isRecap) return "recap";
-      if (causeIndex === state.causeIndex) return state.causePhase;
       const offset = (causeIndex - state.causeIndex + 7) % 7;
-      return offset === 0 ? state.causePhase : "debate";
+      const targetWeek = state.weekNum + offset;
+      return new Date(
+        config.cycleStart.getTime() + (targetWeek + 1) * config.decisionIntervalDays * MS_PER_DAY
+      );
+    },
+    /** Date when this cause's CURRENT 7-week debate window opened. */
+    windowStart(causeIndex) {
+      const decision = Cycle.nextDecisionDate(causeIndex);
+      return new Date(decision.getTime() - config.causeLengthDays * MS_PER_DAY);
+    },
+    /** Back-compat alias (older inline scripts called voteCloseDate). */
+    voteCloseDate(causeIndex) {
+      return Cycle.nextDecisionDate(causeIndex);
+    },
+    /** 0-based count of completed full rotations since cycleStart. */
+    currentCycleNum() {
+      const elapsedMs = Date.now() - config.cycleStart.getTime();
+      return Math.floor(
+        elapsedMs / (7 * config.decisionIntervalDays * MS_PER_DAY)
+      );
     },
     initiativeForCause(causeIndex) {
       return config.initiatives.find((i) => i.cause_index === causeIndex) ?? null;
     }
   };
+  var RANK_COLORS = [
+    "#a78bfa",
+    // 1 violet
+    "#818cf8",
+    // 2 indigo
+    "#60a5fa",
+    // 3 blue
+    "#34d399",
+    // 4 green
+    "#fbbf24",
+    // 5 yellow
+    "#fb923c",
+    // 6 orange
+    "#f87171"
+    // 7 red
+  ];
+  var OTHER_COLOR = "#6b7280";
+  function rankColor(rank) {
+    if (rank < 0) return OTHER_COLOR;
+    return RANK_COLORS[Math.min(rank, RANK_COLORS.length - 1)];
+  }
+  function pseudoRandom(seed) {
+    const x = Math.sin(seed * 12.9898) * 43758.5453;
+    return x - Math.floor(x);
+  }
+  var Votes = {
+    RANK_COLORS,
+    OTHER_COLOR,
+    rankColor,
+    /**
+     * Synthesize a stable vote distribution for (causeIndex, cycleNum, orgs).
+     * Bucket anything < 5% into a single gray "Other" slice.
+     */
+    forCause(causeIndex, cycleNum, orgs) {
+      if (!orgs.length) return [];
+      const weights = orgs.map((o, i) => {
+        const seed = causeIndex * 1009 + cycleNum * 31 + i * 17 + hashString(o.id);
+        return Math.pow(pseudoRandom(seed) + 0.05, 2.4);
+      });
+      const total = weights.reduce((a, b) => a + b, 0) || 1;
+      const shares = orgs.map((o, i) => ({
+        org_id: o.id,
+        org_name: o.name,
+        pct: weights[i] / total * 100
+      })).sort((a, b) => b.pct - a.pct);
+      const main = shares.filter((s) => s.pct >= 5);
+      const tail = shares.filter((s) => s.pct < 5);
+      const result = main.map((s, idx) => ({
+        ...s,
+        rank: idx,
+        isOther: false,
+        color: rankColor(idx)
+      }));
+      if (tail.length) {
+        result.push({
+          org_id: "other",
+          org_name: `Other (${tail.length})`,
+          pct: tail.reduce((a, b) => a + b.pct, 0),
+          rank: -1,
+          isOther: true,
+          color: OTHER_COLOR
+        });
+      }
+      return result;
+    },
+    /** Pick the orgs that will appear in a given cause's race. */
+    orgsForCause(causeIndex) {
+      const all = config.organizations;
+      if (!all.length) return [];
+      const tagged = all.filter((o) => (o.causes || []).includes(causeIndex));
+      return tagged.length ? tagged : all;
+    }
+  };
+  function hashString(s) {
+    let h = 2166136261;
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = h * 16777619 >>> 0;
+    }
+    return h % 1e5;
+  }
   var Annulus = {
     _rafId: null,
-    _connectorLines: [],
-    _segments: [],
-    _labelElements: [],
     _rotatingGroup: null,
+    _segments: [],
     _svg: null,
-    _vertices: [],
+    _cx: 200,
+    _cy: 200,
+    _outerR: 184,
+    _midR: 144,
+    // boundary between outer ring and inner ring
+    _innerR: 104,
+    // inner edge of the inner ring
     mount(container) {
       const el = typeof container === "string" ? document.querySelector(container) : container;
       if (!el) return;
@@ -130,18 +240,9 @@
         console.warn("[EBX.Annulus] No causes loaded \u2014 call EBX.loadCauses() first.");
         return;
       }
-      const cx = 200, cy = 200, outerR = 180, innerR = 118;
+      const { _cx: cx, _cy: cy, _outerR: outerR, _midR: midR, _innerR: innerR } = Annulus;
       const n = 7;
       const anglePerSeg = 2 * Math.PI / n;
-      Annulus._vertices = [];
-      for (let i = 0; i < n; i++) {
-        const angle = i * anglePerSeg - Math.PI / 2;
-        Annulus._vertices.push({
-          x: cx + outerR * Math.cos(angle),
-          y: cy + outerR * Math.sin(angle),
-          angle
-        });
-      }
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.setAttribute("viewBox", "0 0 400 400");
       svg.style.cssText = "width:100%;height:100%;display:block;overflow:visible;";
@@ -154,91 +255,74 @@
       const core = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       core.setAttribute("cx", String(cx));
       core.setAttribute("cy", String(cy));
-      core.setAttribute("r", String(innerR - 4));
+      core.setAttribute("r", String(innerR - 2));
       core.setAttribute("fill", "#0f1a14");
       core.setAttribute("opacity", "0.95");
       group.appendChild(core);
       Annulus._segments = [];
-      Annulus._labelElements = [];
       for (let i = 0; i < n; i++) {
         const cause = config.causes[i];
         const startAngle = i * anglePerSeg - Math.PI / 2;
         const endAngle = startAngle + anglePerSeg;
-        const x1 = cx + outerR * Math.cos(startAngle);
-        const y1 = cy + outerR * Math.sin(startAngle);
-        const x2 = cx + outerR * Math.cos(endAngle);
-        const y2 = cy + outerR * Math.sin(endAngle);
-        const x3 = cx + innerR * Math.cos(endAngle);
-        const y3 = cy + innerR * Math.sin(endAngle);
-        const x4 = cx + innerR * Math.cos(startAngle);
-        const y4 = cy + innerR * Math.sin(startAngle);
-        const d = `M ${x1} ${y1} A ${outerR} ${outerR} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 0 0 ${x4} ${y4} Z`;
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", d);
-        path.setAttribute("fill", cause.color);
-        path.setAttribute("fill-opacity", "0.88");
-        path.setAttribute("stroke", "#0f1a14");
-        path.setAttribute("stroke-width", "2");
-        path.style.cursor = "pointer";
-        path.style.transition = "filter 0.2s";
-        path.addEventListener("mouseenter", () => {
-          path.style.filter = "brightness(1.25)";
+        const innerPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        innerPath.setAttribute("d", annularSectorPath(cx, cy, midR, innerR, startAngle, endAngle));
+        innerPath.setAttribute("fill", cause.color);
+        innerPath.setAttribute("fill-opacity", "0.92");
+        innerPath.setAttribute("stroke", "#0f1a14");
+        innerPath.setAttribute("stroke-width", "1.5");
+        innerPath.style.cursor = "pointer";
+        innerPath.style.transition = "filter 0.2s";
+        innerPath.addEventListener("mouseenter", () => {
+          innerPath.style.filter = "brightness(1.25)";
         });
-        path.addEventListener("mouseleave", () => {
-          path.style.filter = "none";
+        innerPath.addEventListener("mouseleave", () => {
+          innerPath.style.filter = "none";
         });
-        path.addEventListener("click", () => {
+        innerPath.addEventListener("click", () => {
           window.location.href = `cause.html?id=${cause.id}`;
         });
-        group.appendChild(path);
-        Annulus._segments.push(path);
+        group.appendChild(innerPath);
+        const outerGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        outerGroup.setAttribute("data-segment", String(i));
+        group.appendChild(outerGroup);
         const midAngle = startAngle + anglePerSeg / 2;
-        const labelR = (outerR + innerR) / 2;
+        const labelR = (midR + innerR) / 2;
         const lx = cx + labelR * Math.cos(midAngle);
         const ly = cy + labelR * Math.sin(midAngle);
-        const labelG = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        labelG.setAttribute("pointer-events", "none");
+        const labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        labelGroup.setAttribute("pointer-events", "none");
         const nameLine = document.createElementNS("http://www.w3.org/2000/svg", "text");
         nameLine.setAttribute("x", String(lx));
-        nameLine.setAttribute("y", String(ly - 7));
+        nameLine.setAttribute("y", String(ly - 6));
         nameLine.setAttribute("text-anchor", "middle");
         nameLine.setAttribute("dominant-baseline", "middle");
         nameLine.setAttribute("font-size", "10");
         nameLine.setAttribute("font-weight", "700");
-        nameLine.setAttribute("fill", "#e8f5ec");
+        nameLine.setAttribute("fill", "#0f1a14");
         nameLine.textContent = cause.name;
-        labelG.appendChild(nameLine);
+        labelGroup.appendChild(nameLine);
         const dateLine = document.createElementNS("http://www.w3.org/2000/svg", "text");
         dateLine.setAttribute("x", String(lx));
         dateLine.setAttribute("y", String(ly + 7));
         dateLine.setAttribute("text-anchor", "middle");
         dateLine.setAttribute("dominant-baseline", "middle");
         dateLine.setAttribute("font-size", "8");
-        dateLine.setAttribute("font-weight", "400");
-        dateLine.setAttribute("fill", "#e8f5ec");
-        dateLine.setAttribute("opacity", "0.65");
+        dateLine.setAttribute("fill", "#0f1a14");
+        dateLine.setAttribute("opacity", "0.7");
         dateLine.setAttribute("data-date-label", String(i));
         dateLine.textContent = "\u2026";
-        labelG.appendChild(dateLine);
-        group.appendChild(labelG);
-        Annulus._labelElements.push({ el: labelG, lx, ly });
+        labelGroup.appendChild(dateLine);
+        group.appendChild(labelGroup);
+        Annulus._segments.push({
+          innerPath,
+          outerGroup,
+          labelGroup,
+          midX: lx,
+          midY: ly
+        });
       }
       el.appendChild(svg);
-      Annulus._initConnectors(svg, n);
       Annulus._tick();
-    },
-    _initConnectors(svg, n) {
-      Annulus._connectorLines.forEach((l) => l.remove());
-      Annulus._connectorLines = [];
-      for (let i = 0; i < n; i++) {
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("stroke", "#a7d7c5");
-        line.setAttribute("stroke-width", "1.5");
-        line.setAttribute("stroke-dasharray", "3 2");
-        line.setAttribute("opacity", "0.6");
-        svg.appendChild(line);
-        Annulus._connectorLines.push(line);
-      }
     },
     _tick() {
       Annulus._update();
@@ -250,42 +334,94 @@
       if (!group) return;
       group.style.transform = `rotate(${state.rotationDeg}deg)`;
       const cycleNum = Cycle.currentCycleNum();
-      Annulus._labelElements.forEach(({ el, lx, ly }, i) => {
-        el.setAttribute("transform", `rotate(${-state.rotationDeg}, ${lx}, ${ly})`);
-        const dateLine = el.querySelector("[data-date-label]");
-        if (dateLine) {
-          dateLine.textContent = Cycle.voteCloseDate(i, cycleNum).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-        }
-      });
+      const { _cx: cx, _cy: cy, _outerR: outerR, _midR: midR } = Annulus;
+      const n = 7;
+      const anglePerSeg = 2 * Math.PI / n;
       Annulus._segments.forEach((seg, i) => {
+        seg.labelGroup.setAttribute(
+          "transform",
+          `rotate(${-state.rotationDeg}, ${seg.midX}, ${seg.midY})`
+        );
+        const dateLine = seg.labelGroup.querySelector("[data-date-label]");
+        if (dateLine) {
+          dateLine.textContent = Cycle.nextDecisionDate(i).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        }
         if (i === state.causeIndex) {
-          seg.setAttribute("stroke", "#ffffff");
-          seg.setAttribute("stroke-width", "3.5");
-          seg.setAttribute("filter", "drop-shadow(0 0 8px rgba(255,255,200,0.55))");
+          seg.innerPath.setAttribute("stroke", "#ffffff");
+          seg.innerPath.setAttribute("stroke-width", "3");
+          seg.innerPath.setAttribute("filter", "drop-shadow(0 0 8px rgba(255,255,200,0.55))");
         } else {
-          seg.setAttribute("stroke", "#0f1a14");
-          seg.setAttribute("stroke-width", "2");
-          seg.removeAttribute("filter");
+          seg.innerPath.setAttribute("stroke", "#0f1a14");
+          seg.innerPath.setAttribute("stroke-width", "1.5");
+          seg.innerPath.removeAttribute("filter");
+        }
+        const startAngle = i * anglePerSeg - Math.PI / 2;
+        const endAngle = startAngle + anglePerSeg;
+        const orgs = Votes.orgsForCause(i);
+        const shares = Votes.forCause(i, cycleNum, orgs);
+        while (seg.outerGroup.firstChild) {
+          seg.outerGroup.removeChild(seg.outerGroup.firstChild);
+        }
+        let cursor = startAngle;
+        const totalAngle = endAngle - startAngle;
+        shares.forEach((share) => {
+          const arcSize = totalAngle * (share.pct / 100);
+          const a0 = cursor;
+          const a1 = Math.min(endAngle, cursor + arcSize);
+          const sub = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          sub.setAttribute("d", annularSectorPath(cx, cy, outerR, midR, a0, a1));
+          sub.setAttribute("fill", share.color);
+          sub.setAttribute("fill-opacity", i === state.causeIndex ? "0.95" : "0.7");
+          sub.setAttribute("stroke", "#0f1a14");
+          sub.setAttribute("stroke-width", "0.6");
+          const titleEl = document.createElementNS("http://www.w3.org/2000/svg", "title");
+          titleEl.textContent = `${share.org_name} \u2014 ${share.pct.toFixed(1)}%`;
+          sub.appendChild(titleEl);
+          seg.outerGroup.appendChild(sub);
+          cursor = a1;
+        });
+        if (i === state.causeIndex) {
+          const outline = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          outline.setAttribute("d", annularSectorPath(cx, cy, outerR, midR, startAngle, endAngle));
+          outline.setAttribute("fill", "none");
+          outline.setAttribute("stroke", "#ffffff");
+          outline.setAttribute("stroke-width", "2");
+          outline.setAttribute("opacity", "0.9");
+          seg.outerGroup.appendChild(outline);
         }
       });
       const nameEl = document.getElementById("ebx-cause-name");
       const timerEl = document.getElementById("ebx-cause-timer");
-      const phaseEl = document.getElementById("ebx-cause-phase");
-      if (nameEl && state.causeIndex !== null) {
+      if (nameEl) {
         const cause = config.causes[state.causeIndex];
         if (cause) nameEl.textContent = cause.name;
       }
       if (timerEl) {
         timerEl.textContent = `${state.daysRemaining}d ${state.hoursRemaining}h`;
       }
-      if (phaseEl) {
-        phaseEl.textContent = state.causePhase === "vote" ? "Org Vote" : "Initiative Debate";
-      }
     },
     stop() {
       if (Annulus._rafId !== null) cancelAnimationFrame(Annulus._rafId);
     }
   };
+  function annularSectorPath(cx, cy, rOuter, rInner, a0, a1) {
+    const x1 = cx + rOuter * Math.cos(a0);
+    const y1 = cy + rOuter * Math.sin(a0);
+    const x2 = cx + rOuter * Math.cos(a1);
+    const y2 = cy + rOuter * Math.sin(a1);
+    const x3 = cx + rInner * Math.cos(a1);
+    const y3 = cy + rInner * Math.sin(a1);
+    const x4 = cx + rInner * Math.cos(a0);
+    const y4 = cy + rInner * Math.sin(a0);
+    const largeArc = a1 - a0 > Math.PI ? 1 : 0;
+    return [
+      `M ${x1} ${y1}`,
+      `A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${x2} ${y2}`,
+      `L ${x3} ${y3}`,
+      `A ${rInner} ${rInner} 0 ${largeArc} 0 ${x4} ${y4}`,
+      "Z"
+    ].join(" ");
+  }
   function initFooter() {
     const mount = document.getElementById("ebx-footer-mount");
     if (!mount) return;
@@ -380,6 +516,7 @@
   var formatEBX = (n) => `${formatNumber(n)} EBX`;
   var formatPercent = (v, d = 1) => `${Number(v).toFixed(d)}%`;
   var formatDate = (iso) => new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  var formatShortDate = (d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   function timeAgo(iso) {
     const diff = Date.now() - new Date(iso).getTime();
     const mins = Math.floor(diff / 6e4);
@@ -413,16 +550,8 @@
       const opacity = holding ? 0.9 : 0.15;
       const startAngle = i * anglePerSeg - Math.PI / 2;
       const endAngle = startAngle + anglePerSeg;
-      const x1 = cx + outerR * Math.cos(startAngle);
-      const y1 = cy + outerR * Math.sin(startAngle);
-      const x2 = cx + outerR * Math.cos(endAngle);
-      const y2 = cy + outerR * Math.sin(endAngle);
-      const x3 = cx + innerR * Math.cos(endAngle);
-      const y3 = cy + innerR * Math.sin(endAngle);
-      const x4 = cx + innerR * Math.cos(startAngle);
-      const y4 = cy + innerR * Math.sin(startAngle);
-      const d = `M ${x1} ${y1} A ${outerR} ${outerR} 0 0 1 ${x2} ${y2} L ${x3} ${y3} A ${innerR} ${innerR} 0 0 0 ${x4} ${y4} Z`;
-      return `<path d="${d}" fill="${cause.color}" fill-opacity="${opacity}" stroke="#0f1a14" stroke-width="0.8"/>`;
+      return `<path d="${annularSectorPath(cx, cy, outerR, innerR, startAngle, endAngle)}"
+      fill="${cause.color}" fill-opacity="${opacity}" stroke="#0f1a14" stroke-width="0.8"/>`;
     }).join("");
     const totalEBX = holdings.reduce((s, h) => s + h.amount, 0);
     return `
@@ -535,6 +664,47 @@
     </a>
   `;
   }
+  function raceCard(causeIndex) {
+    const cause = config.causes.find((c) => c.index === causeIndex);
+    if (!cause) return "";
+    const init = config.initiatives.filter((i) => i.cause_index === causeIndex).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+    const cycleNum = Cycle.currentCycleNum();
+    const orgs = Votes.orgsForCause(causeIndex);
+    const shares = Votes.forCause(causeIndex, cycleNum, orgs);
+    const decision = Cycle.nextDecisionDate(causeIndex);
+    return `
+    <a class="race-card" href="cause.html?id=${cause.id}"
+       style="--rc-color:${cause.color};
+              display:block;text-decoration:none;width:228px;
+              background:rgba(15,26,20,0.72);
+              border:1px solid var(--rc-color);border-radius:10px;
+              padding:11px 13px;transition:background 0.2s;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+        <span style="font-family:var(--font-mono);font-size:0.54rem;letter-spacing:0.12em;
+                     text-transform:uppercase;color:var(--rc-color);opacity:0.85;">${cause.name}</span>
+        <span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.4);">
+          ${formatShortDate(decision)}
+        </span>
+      </div>
+      <div style="font-size:0.78rem;font-weight:600;color:rgba(245,240,232,0.9);
+                  line-height:1.3;margin-bottom:8px;
+                  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+        ${init ? `${init.emoji ?? ""} ${init.title}` : "No initiative yet"}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        ${shares.slice(0, 4).map((s) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;
+                      font-family:var(--font-mono);font-size:0.6rem;
+                      color:${s.color};">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+                         max-width:140px;">${s.org_name}</span>
+            <span style="opacity:0.75;">${s.pct.toFixed(0)}%</span>
+          </div>
+        `).join("")}
+      </div>
+    </a>
+  `;
+  }
   function filterBySearch(items, query, fields) {
     if (!query) return items;
     const q = query.toLowerCase();
@@ -598,35 +768,31 @@
   };
   var EBX = {
     config,
-    // data
     fetchJSON,
     fetchAPI,
     loadCauses,
     loadInitiatives,
+    loadOrganizations,
     loadFeed,
     loadAll,
-    // engine
     Cycle,
     Annulus,
-    // page setup
+    Votes,
     initFooter,
     initPage,
-    // url
     getParam,
     buildURL,
-    // dom
     $,
     $$,
     render,
     renderSkeleton,
     renderEmpty,
-    // formatting
     formatNumber,
     formatEBX,
     formatPercent,
     formatDate,
+    formatShortDate,
     timeAgo,
-    // components
     tokenChip,
     creditBadge,
     tag,
@@ -635,11 +801,10 @@
     initiativeCard,
     opinionCard,
     feedCard,
-    // filters
+    raceCard,
     filterBySearch,
     filterByField,
     sortBy,
-    // auth
     Auth
   };
   window.EBX = EBX;

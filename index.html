@@ -23,155 +23,15 @@
       background-size: 60px 60px;
       pointer-events: none;
     }
+    .hero .container { position: relative; }
 
-    /* ── Election panel ── */
-    .election-panel {
-      margin-bottom: var(--sp-lg);
-      border: 1.5px solid rgba(255,255,255,0.75);
-      box-shadow: 0 0 14px rgba(255,255,255,0.18), 0 0 4px rgba(255,255,255,0.3);
-      border-radius: 10px;
-      background: rgba(15,26,20,0.65);
-      backdrop-filter: blur(6px);
-      overflow: hidden;
-    }
-
-    .election-panel__header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      gap: var(--sp-md);
-      flex-wrap: wrap;
-    }
-
-    .ep__eyebrow {
-      font-family: var(--font-mono);
-      font-size: 0.58rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--ep-color, var(--clr-honey));
-      opacity: 0.75;
-      margin-bottom: 3px;
-    }
-
-    .ep__title {
-      font-family: var(--font-display);
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: rgba(245,240,232,0.95);
-      line-height: 1.2;
-    }
-
-    .ep__timer {
-      font-family: var(--font-mono);
-      font-size: 0.68rem;
-      color: rgba(245,240,232,0.35);
-      white-space: nowrap;
-    }
-
-    .ep__body {
-      display: flex;
-      align-items: stretch;
-      gap: 1px;
-      background: rgba(255,255,255,0.04);
-    }
-
-    /* Org columns */
-    .ep__orgs {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px,1fr));
-      gap: 1px;
-      flex: 1;
-      background: rgba(255,255,255,0.04);
-    }
-
-    .ep__org-cell {
-      background: rgba(15,26,20,0.75);
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .ep__org-name {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: rgba(245,240,232,0.85);
-    }
-
-    .ep__org-bar {
-      height: 3px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .ep__org-bar-fill {
-      height: 100%;
-      border-radius: 2px;
-      background: var(--ep-color, #4e7a4e);
-      transition: width 0.8s ease;
-    }
-
-    .ep__org-pct {
-      font-family: var(--font-mono);
-      font-size: 0.6rem;
-      color: rgba(245,240,232,0.3);
-    }
-
-    /* Action links column */
-    .ep__actions {
-      background: rgba(15,26,20,0.8);
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: var(--sp-sm);
-      min-width: 180px;
-      border-left: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .ep__link {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: rgba(245,240,232,0.55);
-      text-decoration: none;
-      padding: 6px 10px;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 5px;
-      transition: border-color 0.2s, color 0.2s;
-      white-space: nowrap;
-      text-align: center;
-    }
-
-    .ep__link:hover {
-      border-color: var(--ep-color, #4e7a4e);
-      color: rgba(245,240,232,0.9);
-    }
-
-    .ep__link--primary {
-      background: var(--ep-color, #4e7a4e);
-      border-color: var(--ep-color, #4e7a4e);
-      color: #0f1a14;
-      font-weight: 700;
-    }
-
-    .ep__link--primary:hover {
-      filter: brightness(1.15);
-      color: #0f1a14;
-    }
-
-    /* ── Main 3-col layout ── */
+    /* ── 3-col layout: left cards · annulus · right cards ── */
     .hero__layout {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       gap: var(--sp-lg);
       align-items: center;
     }
-
-    /* ── Side panels ── */
     .hero__side {
       display: flex;
       flex-direction: column;
@@ -180,113 +40,14 @@
     .hero__left  { align-items: flex-end; }
     .hero__right { align-items: flex-start; }
 
-    /* ── Side slot: single mission card ── */
-    .side-slot { width: 224px; }
+    /* Hover state on race cards */
+    .race-card:hover { background: rgba(15,26,20,0.92) !important; }
 
-    /* Mission card — full rounded, no top box */
-    .slot-mission {
-      background: rgba(15,26,20,0.72);
-      border: 1px solid var(--slot-color, #4e7a4e);
-      border-radius: 8px;
-      padding: 11px 13px;
-      text-decoration: none;
-      display: block;
-      transition: background 0.2s;
-      position: relative;
-    }
-    .slot-mission:hover { background: rgba(15,26,20,0.92); }
-
-    /* Corner arrow pointing at annulus */
-    .hero__left .slot-mission::after {
-      content: '';
-      position: absolute;
-      right: -9px; top: 50%;
-      transform: translateY(-50%);
-      width: 0; height: 0;
-      border-top: 7px solid transparent;
-      border-bottom: 7px solid transparent;
-      border-left: 9px solid var(--slot-color, #4e7a4e);
-      opacity: 0.4;
-    }
-    .hero__right .slot-mission::after {
-      content: '';
-      position: absolute;
-      left: -9px; top: 50%;
-      transform: translateY(-50%);
-      width: 0; height: 0;
-      border-top: 7px solid transparent;
-      border-bottom: 7px solid transparent;
-      border-right: 9px solid var(--slot-color, #4e7a4e);
-      opacity: 0.4;
-    }
-
-    /* card top row: cause left, day right */
-    .slot-mission__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      margin-bottom: 4px;
-    }
-
-    .slot-mission__cause {
-      font-family: var(--font-mono);
-      font-size: 0.54rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--slot-color, #4e7a4e);
-      opacity: 0.7;
-    }
-
-    .slot-mission__day {
-      font-family: var(--font-mono);
-      font-size: 0.54rem;
-      font-weight: 600;
-      color: rgba(245,240,232,0.35);
-      letter-spacing: 0.04em;
-    }
-
-    .slot-mission__org {
-      font-size: 0.74rem;
-      font-weight: 600;
-      color: rgba(245,240,232,0.85);
-      line-height: 1.35;
-      margin-bottom: 9px;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-    }
-
-    /* Progress bars */
-    .slot-bars { display: flex; flex-direction: column; gap: 5px; }
-
-    .slot-bar-row { display: flex; flex-direction: column; gap: 2px; }
-
-    .slot-bar-label {
-      display: flex;
-      justify-content: space-between;
-      font-family: var(--font-mono);
-      font-size: 0.55rem;
-      color: rgba(245,240,232,0.28);
-      letter-spacing: 0.05em;
-    }
-
-    .slot-bar-track {
-      height: 4px;
-      background: rgba(255,255,255,0.07);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .slot-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
-    .slot-bar-fill--progress { background: var(--slot-color, #4e7a4e); }
-    .slot-bar-fill--funds    { background: var(--clr-amber); opacity: 0.75; }
-
-    /* ── Annulus ── */
+    /* ── Annulus wrapper ── */
     .hero__annulus-wrap {
       position: relative;
-      width: 380px;
-      height: 380px;
+      width: 400px;
+      height: 400px;
       flex-shrink: 0;
     }
 
@@ -297,61 +58,52 @@
       text-align: center;
       z-index: 10;
       pointer-events: none;
-      background: rgba(15,26,20,0.88);
+      background: rgba(15,26,20,0.92);
       backdrop-filter: blur(8px);
       padding: 11px 16px;
       border-radius: 12px;
-      width: 148px;
+      width: 158px;
     }
-
     .ebx-center__today {
       font-family: var(--font-mono);
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 700;
       color: rgba(245,240,232,0.9);
-      letter-spacing: 0.03em;
+      letter-spacing: 0.04em;
     }
-
     .ebx-center__divider {
       width: 100%;
       height: 1px;
       background: rgba(255,255,255,0.1);
       margin: 5px 0;
     }
-
     .ebx-center__label {
       font-family: var(--font-mono);
-      font-size: 0.52rem;
-      letter-spacing: 0.1em;
+      font-size: 0.5rem;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: rgba(245,240,232,0.35);
+      color: rgba(245,240,232,0.45);
     }
-
-    .ebx-center__date {
-      font-family: var(--font-mono);
-      font-size: 0.68rem;
+    .ebx-center__cause {
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--clr-honey);
-      margin-top: 1px;
-    }
-
-    .ebx-center__phase {
-      font-size: 0.6rem;
-      color: rgba(245,240,232,0.55);
-      line-height: 1.5;
       margin-top: 2px;
     }
-
-    #ebx-connector-svg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: visible;
+    .ebx-center__date {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: rgba(245,240,232,0.55);
+      margin-top: 1px;
+    }
+    .ebx-center__phase {
+      font-size: 0.58rem;
+      color: rgba(245,240,232,0.5);
+      line-height: 1.5;
+      margin-top: 3px;
     }
 
-    /* ── Tagline below wheel ── */
+    /* ── Tagline + actions below the wheel ── */
     .hero__copy {
       text-align: center;
       margin-top: var(--sp-xl);
@@ -369,23 +121,7 @@
     .hero__stats .stat-block__value { color: var(--clr-honey); }
     .hero__stats .stat-block__label { color: rgba(245,240,232,0.35); }
 
-    /* ── How it works ── */
-    .how-step { display:flex; gap:var(--sp-lg); align-items:flex-start; }
-    .how-step__num { font-family:var(--font-display); font-size:3rem; font-weight:900; color:var(--clr-border); line-height:1; flex-shrink:0; width:56px; text-align:right; }
-    .how-step__body h3 { margin-bottom:var(--sp-xs); }
-    .how-step__body p  { color:var(--clr-ink-muted); font-size:0.95rem; }
-
-    .cta-band { background:var(--clr-amber); padding:var(--sp-2xl) 0; }
-    .cta-band h2 { color:var(--clr-earth); }
-    .cta-band p  { color:rgba(26,26,18,0.7); }
-
-    @media (max-width: 1000px) {
-      .hero__side { display: none; }
-      .hero__layout { grid-template-columns: 1fr; justify-items: center; }
-      .hero__annulus-wrap { width: 300px; height: 300px; }
-    }
-
-    /* ── Feed strip (3 most recent posts, below the annulus) ── */
+    /* ── Feed strip (3 most recent posts, below the annulus block) ── */
     .feed-strip {
       margin-top: var(--sp-2xl);
       padding-top: var(--sp-xl);
@@ -419,6 +155,21 @@
     }
     .ebx-feed-card:hover { background: rgba(15,26,20,0.85) !important; }
 
+    /* ── How it works ── */
+    .how-step { display:flex; gap:var(--sp-lg); align-items:flex-start; }
+    .how-step__num { font-family:var(--font-display); font-size:3rem; font-weight:900; color:var(--clr-border); line-height:1; flex-shrink:0; width:56px; text-align:right; }
+    .how-step__body h3 { margin-bottom:var(--sp-xs); }
+    .how-step__body p  { color:var(--clr-ink-muted); font-size:0.95rem; }
+
+    .cta-band { background:var(--clr-amber); padding:var(--sp-2xl) 0; }
+    .cta-band h2 { color:var(--clr-earth); }
+    .cta-band p  { color:rgba(26,26,18,0.7); }
+
+    @media (max-width: 1000px) {
+      .hero__side { display: none; }
+      .hero__layout { grid-template-columns: 1fr; justify-items: center; }
+      .hero__annulus-wrap { width: 320px; height: 320px; }
+    }
     @media (max-width: 800px) {
       .feed-strip__grid { grid-template-columns: 1fr; }
     }
@@ -429,40 +180,24 @@
   <section class="hero">
     <div class="container">
 
-      <!-- ── Election panel ── -->
-      <div class="election-panel" id="election-panel">
-        <div class="election-panel__header">
-          <div>
-            <div class="ep__eyebrow" id="ep-eyebrow">Organization Election</div>
-            <div class="ep__title" id="ep-initiative-title">—</div>
-          </div>
-          <div class="ep__timer" id="ep-timer-large" style="font-family:var(--font-mono);font-size:0.78rem;color:rgba(245,240,232,0.4);white-space:nowrap;">—</div>
-        </div>
-        <div class="ep__body" id="ep-body"></div>
-      </div>
-
-      <!-- ── Annulus + side panels ── -->
+      <!-- ── Annulus + side race cards ── -->
       <div class="hero__layout">
-
         <div class="hero__side hero__left" id="left-panel"></div>
 
         <div style="display:flex;align-items:center;justify-content:center;">
           <div class="hero__annulus-wrap" id="ebx-annulus-mount">
-            <svg id="ebx-connector-svg" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg"></svg>
             <div class="ebx-center">
-              <div class="ebx-center__row ebx-center__today" id="ebx-center-today">—</div>
+              <div class="ebx-center__today" id="ebx-center-today">—</div>
               <div class="ebx-center__divider"></div>
-              <div class="ebx-center__row ebx-center__label">Next decision</div>
-              <div class="ebx-center__row ebx-center__date" id="ebx-center-next-date">—</div>
-              <div class="ebx-center__divider"></div>
-              <div class="ebx-center__row ebx-center__phase" id="ebx-center-org-vote">—</div>
-              <div class="ebx-center__row ebx-center__phase" id="ebx-center-init-decision">—</div>
+              <div class="ebx-center__label">Decision this week</div>
+              <div class="ebx-center__cause" id="ebx-center-cause">—</div>
+              <div class="ebx-center__date" id="ebx-center-date">—</div>
+              <div class="ebx-center__phase" id="ebx-center-countdown">—</div>
             </div>
           </div>
         </div>
 
         <div class="hero__side hero__right" id="right-panel"></div>
-
       </div>
 
       <!-- ── Feed strip: 3 most recent posts ── -->
@@ -494,8 +229,8 @@
           <div class="stat-block__label">Suggested initiatives</div>
         </div>
         <div class="stat-block">
-          <div class="stat-block__value" id="stat-missions">7</div>
-          <div class="stat-block__label">Active missions</div>
+          <div class="stat-block__value" id="stat-orgs">—</div>
+          <div class="stat-block__label">Active organizations</div>
         </div>
       </div>
     </div>
@@ -513,28 +248,28 @@
           <div class="how-step__num">01</div>
           <div class="how-step__body">
             <h3>Donate &amp; receive EBX</h3>
-            <p>Every two weeks a new pool forms from donations. You receive earthbucks with a living credit that modulates your token's value as the mission progresses.</p>
+            <p>Every week a new pool forms from donations for the cause whose decision is coming up. You receive earthbucks with a living credit that modulates your token's value as the mission progresses.</p>
           </div>
         </div>
         <div class="how-step">
           <div class="how-step__num">02</div>
           <div class="how-step__body">
-            <h3>Decide the next initiative</h3>
-            <p>Benefactors and organizations propose ideas for each cause. Commit EBX to the ones you support. The leading initiative goes to an org vote.</p>
+            <h3>Debate &amp; commit</h3>
+            <p>Each cause runs a 7-week debate. Benefactors and orgs propose initiatives; benefactors commit EBX to the ones they support. The leader is decided at the end of the window.</p>
           </div>
         </div>
         <div class="how-step">
           <div class="how-step__num">03</div>
           <div class="how-step__body">
             <h3>Elect an organization</h3>
-            <p>One person, one vote. The winning org gets 1/16 of the pool immediately. The rest unlocks over 12 weeks, contingent on their reporting.</p>
+            <p>The org race runs alongside the debate for the same 7 weeks. One person, one vote. The winning org receives 1/16 of the pool immediately; the rest unlocks over time, contingent on reporting.</p>
           </div>
         </div>
         <div class="how-step">
           <div class="how-step__num">04</div>
           <div class="how-step__body">
             <h3>Follow the mission</h3>
-            <p>Track progress and spending in real time. When Earthbux judges the issue resolved, a buyback begins — returning value to benefactors in cash or other EBX.</p>
+            <p>Track progress and spending in real time. When Earthbux judges the issue resolved, a buyback begins — returning value to benefactors in cash or other EBX. Active missions live in the feed.</p>
           </div>
         </div>
       </div>
@@ -557,200 +292,40 @@
   <script src="resources/js/ebx_shared.js"></script>
   <script>
   (async function () {
-
     await EBX.loadAll();
-    const causes      = EBX.config.causes;
-    const initiatives = EBX.config.initiatives;
 
-    /* ── Date / cycle helpers (now delegates to EBX.Cycle) ── */
-    const MS_DAY = EBX.Cycle.MS_PER_DAY;
-
-    function cycleNum()         { return EBX.Cycle.currentCycleNum(); }
-    function windowStart(ci,cn) { return EBX.Cycle.windowStart(ci, cn); }
-    function voteClose(ci,cn)   { return EBX.Cycle.voteCloseDate(ci, cn); }
-    function fmtShort(d)        {
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    function fmtShort(d) {
+      return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    /* ── Render everything ── */
     function render() {
-      const state  = EBX.Cycle.now();
-      const active = state.causeIndex ?? 0;
-      const n      = 7;
-      const cn     = cycleNum();
+      const state = EBX.Cycle.now();
+      const n = 7;
+      const active = state.causeIndex;
 
-      /* ── Election panel ── */
-      const activeCause = causes.find(c => c.index === active);
-      const color       = activeCause?.color || '#4e7a4e';
-      const ep = document.getElementById('election-panel');
-      ep.style.setProperty('--ep-color', color);
-
-      // Derive winner BEFORE it's used in the title
-      const activeInits = initiatives
-        .filter(i => i.cause_index === active)
-        .sort((a,b) => (b.committed_ebx||0) - (a.committed_ebx||0));
-      const winner = activeInits[0];
-
-      const epInitTitle = document.getElementById('ep-initiative-title');
-      const epTimer     = document.getElementById('ep-timer-large');
-      if (epInitTitle) epInitTitle.textContent = winner
-        ? `Organization election for: ${winner.emoji || ''} ${winner.title}`
-        : `Organization election · ${activeCause?.name || ''}`;
-      if (epTimer) epTimer.textContent =
+      // ── Center info block ──
+      const activeCause = EBX.config.causes.find(c => c.index === active);
+      const todayStr = new Date().toLocaleDateString('en-US',
+        { month: 'short', day: 'numeric', year: 'numeric' });
+      document.getElementById('ebx-center-today').textContent   = todayStr;
+      document.getElementById('ebx-center-cause').textContent   = activeCause ? activeCause.name : '—';
+      document.getElementById('ebx-center-date').textContent    = fmtShort(EBX.Cycle.nextDecisionDate(active));
+      document.getElementById('ebx-center-countdown').textContent =
         `${state.daysRemaining}d ${state.hoursRemaining}h remaining`;
 
-      // Org vote breakdown
-      const sampleOrgs = [
-        { name: 'CarbonBridge Foundation', pct: 38 },
-        { name: 'Skywatch Collective',      pct: 31 },
-        { name: 'GreenBridge Intl.',        pct: 19 },
-        { name: 'EarthRestore Co.',         pct: 12 },
-      ];
-      document.getElementById('ep-body').innerHTML = `
-        <div class="ep__orgs">
-          ${sampleOrgs.map(o => `
-            <div class="ep__org-cell">
-              <div class="ep__org-name">${o.name}</div>
-              <div class="ep__org-bar">
-                <div class="ep__org-bar-fill" style="width:${o.pct}%"></div>
-              </div>
-              <div class="ep__org-pct">${o.pct}% of votes</div>
-            </div>`).join('')}
-        </div>
-        <div class="ep__actions">
-          <a class="ep__link ep__link--primary"
-             href="mission.html?cause=${activeCause?.id || ''}">
-            Browse organizations →
-          </a>
-          <a class="ep__link"
-             href="feed.html?initiative=${winner?.id || ''}">
-            Discussion
-          </a>
-        </div>`;
+      // ── Side cards: 3 left (preceding causes), 3 right (upcoming) ──
+      const left  = [-3, -2, -1].map(off => ((active + off) % n + n) % n);
+      const right = [1, 2, 3].map(off => ((active + off) % n + n) % n);
+      document.getElementById('left-panel').innerHTML  = left.map(i => EBX.raceCard(i)).join('');
+      document.getElementById('right-panel').innerHTML = right.map(i => EBX.raceCard(i)).join('');
 
-      /* ── Side cards ── */
-      function sideSlot(causeIdx) {
-        const cause = causes.find(c => c.index === causeIdx);
-        if (!cause) return '';
-
-        const cInits        = initiatives
-          .filter(i => i.cause_index === causeIdx)
-          .sort((a,b) => (b.committed_ebx||0) - (a.committed_ebx||0));
-        const activeMission = cInits.find(i => i.status === 'active' && i.winning_org);
-        const slotColor     = cause.color;
-
-        const electionDate  = new Date('2026-03-01');
-        const daysElected   = Math.max(0, Math.floor((Date.now() - electionDate.getTime()) / MS_DAY));
-
-        // Stable per-cause progress (no random re-seed each render)
-        const seed        = (causeIdx * 37 + 13) % 55;
-        const progressPct = activeMission ? 20 + seed : 0;
-        const fundsPct    = activeMission ? Math.floor(progressPct * 0.7) : 0;
-
-        const orgName    = activeMission?.winning_org || 'No active org';
-        const initTitle  = activeMission?.title || (cInits[0]?.title || 'No initiative');
-        const missionHref = activeMission
-          ? `mission.html?id=${activeMission.id}`
-          : `cause.html?id=${cause.id}`;
-
-        return `
-          <div class="side-slot" style="--slot-color:${slotColor}">
-            <a class="slot-mission" href="${missionHref}">
-              <div class="slot-mission__header">
-                <span class="slot-mission__cause">${cause.name}</span>
-                <span class="slot-mission__day">Day ${daysElected}</span>
-              </div>
-              <div class="slot-mission__org">${initTitle} by ${orgName}</div>
-              <div class="slot-bars">
-                <div class="slot-bar-row">
-                  <div class="slot-bar-label">
-                    <span>Progress</span><span>${progressPct}%</span>
-                  </div>
-                  <div class="slot-bar-track">
-                    <div class="slot-bar-fill slot-bar-fill--progress" style="width:${progressPct}%"></div>
-                  </div>
-                </div>
-                <div class="slot-bar-row">
-                  <div class="slot-bar-label">
-                    <span>Funds spent</span><span>${fundsPct}%</span>
-                  </div>
-                  <div class="slot-bar-track">
-                    <div class="slot-bar-fill slot-bar-fill--funds" style="width:${fundsPct}%"></div>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>`;
-      }
-
-      document.getElementById('left-panel').innerHTML =
-        [-1,-2,-3].map(off => sideSlot(((active+off)%n+n)%n)).join('');
-
-      /* Right panel: NID label to the LEFT of the first card, same row as cause text */
-      const rightCauses   = [1,2,3].map(off => ((active+off)%n+n)%n);
-      const topRightCause = causes.find(c => c.index === rightCauses[0]);
-      const nidDate       = fmtShort(voteClose(rightCauses[0], cn));
-      const nidColor      = topRightCause?.color || '#4e7a4e';
-
-      // Build the first card, then wrap it in a flex row with the NID label
-      const firstCard = sideSlot(rightCauses[0]);
-
-      document.getElementById('right-panel').innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
-          <!-- First card: NID label to its left, same row -->
-          <div style="display:flex;align-items:flex-start;gap:0;">
-            <!-- NID label: rotated vertically, sitting to the left, top-aligned with cause text -->
-            <div style="
-              display:flex;
-              flex-direction:column;
-              align-items:flex-end;
-              justify-content:flex-start;
-              padding-top:12px;
-              padding-right:7px;
-              gap:3px;
-            ">
-              <div style="
-                writing-mode:vertical-rl;
-                text-orientation:mixed;
-                transform:rotate(180deg);
-                font-family:var(--font-mono);
-                font-size:0.52rem;
-                letter-spacing:0.1em;
-                text-transform:uppercase;
-                color:${nidColor};
-                opacity:0.8;
-                white-space:nowrap;
-                line-height:1;
-              ">Next Initiative Decision</div>
-              <div style="
-                width:1px;
-                flex:1;
-                min-height:6px;
-                background:${nidColor};
-                opacity:0.35;
-                margin:0 auto;
-              "></div>
-              <div style="
-                font-family:var(--font-mono);
-                font-size:0.54rem;
-                color:${nidColor};
-                opacity:0.65;
-                writing-mode:vertical-rl;
-                transform:rotate(180deg);
-                white-space:nowrap;
-              ">${nidDate}</div>
-            </div>
-            ${firstCard}
-          </div>
-          <!-- Remaining two cards -->
-          ${rightCauses.slice(1).map(ci => sideSlot(ci)).join('')}
-        </div>`;
-
-      /* ── Stats ── */
+      // ── Stats ──
       document.getElementById('stat-initiatives').textContent =
-        initiatives.filter(i => i.status === 'suggested').length;
+        EBX.config.initiatives.filter(i => i.status === 'suggested').length;
+      document.getElementById('stat-orgs').textContent =
+        EBX.config.organizations.length || '—';
 
-      /* ── Feed strip: 3 most recent posts ── */
+      // ── Feed strip: 3 most recent posts ──
       const feedGrid = document.getElementById('feed-strip-grid');
       if (feedGrid) {
         const feed = (EBX.config.feed || [])
@@ -759,68 +334,13 @@
           .slice(0, 3);
         feedGrid.innerHTML = feed.length
           ? feed.map(p => EBX.feedCard(p)).join('')
-          : `<div style="grid-column:1/-1;text-align:center;padding:32px;
-                color:rgba(245,240,232,0.4);font-size:0.85rem;">No posts yet.</div>`;
+          : `<div style="grid-column:1/-1;text-align:center;padding:32px;color:rgba(245,240,232,0.4);font-size:0.85rem;">No posts yet.</div>`;
       }
     }
-
-    /* ── Annulus override: center 4-line block + vertical stem + connector SVG ── */
-    const _orig = EBX.Annulus._update.bind(EBX.Annulus);
-
-    EBX.Annulus._update = function () {
-      _orig();
-
-      const state  = EBX.Cycle.now();
-      const active = state.causeIndex ?? 0;
-      const cn2    = cycleNum();
-      const n      = 7;
-
-      /* Center four-line block */
-      const activeCause2   = causes.find(c => c.index === active);
-      const nextCauseIdx   = ((active + 1) % n + n) % n;
-      const nextCause      = causes.find(c => c.index === nextCauseIdx);
-
-      // Today
-      const todayStr = new Date().toLocaleDateString('en-US',
-        { month: 'short', day: 'numeric', year: 'numeric' });
-      // Next decision = voteClose for active cause
-      const nextDecisionDate = fmtShort(voteClose(active, cn2));
-      // Org vote is for the active cause
-      const orgVotePhase = `Org vote · ${activeCause2?.name || ''}`;
-      // Initiative decision = next cause after active
-      const initDecisionPhase = `Init. decision · ${nextCause?.name || ''}`;
-
-      const todayEl   = document.getElementById('ebx-center-today');
-      const dateEl    = document.getElementById('ebx-center-next-date');
-      const orgEl     = document.getElementById('ebx-center-org-vote');
-      const initEl    = document.getElementById('ebx-center-init-decision');
-      if (todayEl) todayEl.textContent       = todayStr;
-      if (dateEl)  dateEl.textContent        = nextDecisionDate;
-      if (orgEl)   orgEl.textContent         = orgVotePhase;
-      if (initEl)  initEl.textContent        = initDecisionPhase;
-
-      /* Vertical white stem from 12 o'clock — drawn in overlay SVG */
-      const svg = document.getElementById('ebx-connector-svg');
-      if (!svg) return;
-
-      // Annulus shared.js uses viewBox 400×400, cx=200,cy=200, outerR=180
-      // But our overlay SVG uses viewBox 400×400 too (updated below), same coords
-      const cx = 200, cy = 200, outerR = 180;
-
-      svg.innerHTML = `
-        <!-- White dot at 12 o'clock -->
-        <circle cx="${cx}" cy="${cy - outerR}" r="3.5" fill="white" opacity="0.95"/>
-        <!-- Vertical stem upward -->
-        <line x1="${cx}" y1="${cy - outerR}"
-              x2="${cx}" y2="${cy - outerR - 55}"
-              stroke="white" stroke-width="1.5" opacity="0.75"/>
-      `;
-    };
 
     EBX.Annulus.mount('#ebx-annulus-mount');
     render();
     setInterval(render, 60000);
-
   })();
   </script>
 </body>
