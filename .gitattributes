@@ -1,0 +1,20 @@
+# Normalize line endings: store as LF in the repo; check out as your OS prefers.
+* text=auto eol=lf
+
+# Windows-only scripts must stay CRLF
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Treat these as binary (no end-of-line manipulation)
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.svg   text eol=lf
+*.pdf   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.db    binary
+*.sqlite binary

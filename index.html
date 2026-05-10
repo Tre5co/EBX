@@ -6,26 +6,70 @@
   <title>Earthbux — You donate, we follow.</title>
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
+    /* ── Top bar (3-up: tagline · election banner · user badge) ── */
+    .ebx-topbar {
+      background: #0f1a14;
+      border-bottom: 1px solid rgba(245,240,232,0.07);
+      position: relative;
+      z-index: 5;
+    }
+    .ebx-topbar__inner {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) auto minmax(160px, 1fr);
+      align-items: center;
+      gap: var(--sp-md);
+      padding: 14px 0;
+    }
+    .ebx-topbar__tagline {
+      color: rgba(245,240,232,0.92);
+      font-family: var(--font-display);
+      font-size: clamp(1rem, 1.5vw, 1.2rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.005em;
+    }
+    .ebx-topbar__tagline em { color: var(--clr-honey); font-style: normal; }
+    .ebx-topbar__tagline a { text-decoration: none; color: inherit; }
+    .ebx-topbar__center { display: flex; justify-content: center; }
+    .ebx-topbar__right  { display: flex; justify-content: flex-end; }
 
     /* ── Hero shell ── */
     .hero {
       background: #0f1a14;
       color: var(--clr-parchment);
-      padding: var(--sp-xl) 0 var(--sp-2xl);
+      padding: var(--sp-xl) 0 var(--sp-xl);
       position: relative;
       overflow: visible;
     }
     .hero::before {
-      content: '';
+      content: "";
       position: absolute;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 60 L60 0' stroke='%234e7a4e' stroke-width='0.3' opacity='0.3'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'%3E%3Cpath d=\'M0 60 L60 0\' stroke=\'%234e7a4e\' stroke-width=\'0.3\' opacity=\'0.3\'/%3E%3C/svg%3E");
       background-size: 60px 60px;
       pointer-events: none;
     }
     .hero .container { position: relative; }
 
-    /* ── 3-col layout: left cards · annulus · right cards ── */
+    /* ── Tether line: connects election banner to top of wheel ── */
+    .ebx-tether {
+      position: absolute;
+      left: 50%;
+      top: -22px;
+      transform: translateX(-50%);
+      width: 1.5px;
+      height: 64px;
+      background: linear-gradient(to bottom,
+                  rgba(255,255,255,0) 0%,
+                  rgba(255,255,255,0.85) 25%,
+                  rgba(255,255,255,0.85) 75%,
+                  rgba(255,255,255,0) 100%);
+      box-shadow: 0 0 8px rgba(255,255,255,0.45);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    /* ── 3-col hero: cards | wheel | cards ── */
     .hero__layout {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
@@ -39,18 +83,14 @@
     }
     .hero__left  { align-items: flex-end; }
     .hero__right { align-items: flex-start; }
-
-    /* Hover state on race cards */
     .race-card:hover { background: rgba(15,26,20,0.92) !important; }
 
-    /* ── Annulus wrapper ── */
+    .hero__center { display: flex; justify-content: center; }
     .hero__annulus-wrap {
       position: relative;
-      width: 400px;
-      height: 400px;
-      flex-shrink: 0;
+      width: 420px;
+      height: 420px;
     }
-
     .ebx-center {
       position: absolute;
       top: 50%; left: 50%;
@@ -90,67 +130,56 @@
       color: var(--clr-honey);
       margin-top: 2px;
     }
-    .ebx-center__date {
-      font-family: var(--font-mono);
-      font-size: 0.62rem;
-      color: rgba(245,240,232,0.55);
-      margin-top: 1px;
-    }
-    .ebx-center__phase {
-      font-size: 0.58rem;
-      color: rgba(245,240,232,0.5);
-      line-height: 1.5;
-      margin-top: 3px;
-    }
 
-    /* ── Tagline + actions below the wheel ── */
-    .hero__copy {
-      text-align: center;
+    /* ── Mission strip (7-up squares below the wheel) ── */
+    .mission-strip {
       margin-top: var(--sp-xl);
-      padding-top: var(--sp-xl);
+      padding-top: var(--sp-lg);
       border-top: 1px solid rgba(245,240,232,0.07);
     }
-    .hero__copy h1    { color: var(--clr-parchment); font-size: clamp(1.4rem,3vw,2.2rem); margin-bottom: var(--sp-sm); }
-    .hero__copy h1 em { color: var(--clr-honey); font-style: normal; }
-    .hero__copy p     { color: rgba(245,240,232,0.5); font-size: 0.95rem; max-width: 480px; margin: 0 auto var(--sp-lg); }
-    .hero__actions    { display: flex; gap: var(--sp-md); justify-content: center; flex-wrap: wrap; }
-
-    .hero__stats {
-      display: flex; justify-content: center; gap: var(--sp-3xl); margin-top: var(--sp-xl);
+    .mission-strip__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.45);
+      margin-bottom: var(--sp-sm);
     }
-    .hero__stats .stat-block__value { color: var(--clr-honey); }
-    .hero__stats .stat-block__label { color: rgba(245,240,232,0.35); }
+    .mission-strip__grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(96px, 1fr));
+      gap: 10px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scroll-snap-type: x proximity;
+    }
+    .mission-strip__grid::-webkit-scrollbar { height: 6px; }
+    .mission-strip__grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius:3px; }
+    .mission-link { scroll-snap-align: start; }
+    .mission-link:hover { background: rgba(15,26,20,0.85) !important; transform: translateY(-1px); }
 
-    /* ── Feed strip (3 most recent posts, below the annulus block) ── */
+    /* ── Feed strip ── */
     .feed-strip {
       margin-top: var(--sp-2xl);
       padding-top: var(--sp-xl);
       border-top: 1px solid rgba(245,240,232,0.07);
     }
     .feed-strip__header {
-      display: flex;
-      align-items: baseline;
+      display: flex; align-items: baseline;
       justify-content: space-between;
       margin-bottom: var(--sp-md);
     }
     .feed-strip__eyebrow {
-      font-family: var(--font-mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
+      font-family: var(--font-mono); font-size: 0.62rem;
+      letter-spacing: 0.18em; text-transform: uppercase;
       color: rgba(245,240,232,0.45);
     }
     .feed-strip__more {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      color: var(--clr-honey);
-      text-decoration: none;
-      letter-spacing: 0.04em;
+      font-family: var(--font-mono); font-size: 0.7rem;
+      color: var(--clr-honey); text-decoration: none;
     }
-    .feed-strip__more:hover { color: rgba(232,168,76,0.8); }
     .feed-strip__grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      display: grid; grid-template-columns: repeat(3, 1fr);
       gap: var(--sp-md);
     }
     .ebx-feed-card:hover { background: rgba(15,26,20,0.85) !important; }
@@ -165,39 +194,61 @@
     .cta-band h2 { color:var(--clr-earth); }
     .cta-band p  { color:rgba(26,26,18,0.7); }
 
-    @media (max-width: 1000px) {
+    @media (max-width: 1100px) {
+      .ebx-topbar__inner { grid-template-columns: 1fr; row-gap: 8px; }
+      .ebx-topbar__center, .ebx-topbar__right { justify-content: flex-start; }
       .hero__side { display: none; }
       .hero__layout { grid-template-columns: 1fr; justify-items: center; }
       .hero__annulus-wrap { width: 320px; height: 320px; }
+      .ebx-tether { display: none; }
     }
-    @media (max-width: 800px) {
+    @media (max-width: 600px) {
       .feed-strip__grid { grid-template-columns: 1fr; }
+      .ebx-topbar__tagline { font-size: 0.95rem; }
     }
   </style>
 </head>
 <body>
 
+  <!-- ── Top bar: tagline · electionBanner · userBadge ── -->
+  <div class="ebx-topbar">
+    <div class="container ebx-topbar__inner">
+      <div class="ebx-topbar__tagline">
+        <a href="index.html">You donate. <em>We follow.</em></a>
+      </div>
+      <div class="ebx-topbar__center" id="ebx-election-banner-mount"></div>
+      <div class="ebx-topbar__right"  id="ebx-user-badge-mount"></div>
+    </div>
+  </div>
+
+  <!-- ── Hero: 3 race cards | wheel | 3 race cards ── -->
   <section class="hero">
     <div class="container">
 
-      <!-- ── Annulus + side race cards ── -->
-      <div class="hero__layout">
-        <div class="hero__side hero__left" id="left-panel"></div>
+      <!-- Tether line: connects banner above to top of wheel below -->
+      <div class="ebx-tether"></div>
 
-        <div style="display:flex;align-items:center;justify-content:center;">
+      <div class="hero__layout">
+        <div class="hero__side hero__left"  id="left-panel"></div>
+
+        <div class="hero__center">
           <div class="hero__annulus-wrap" id="ebx-annulus-mount">
             <div class="ebx-center">
               <div class="ebx-center__today" id="ebx-center-today">—</div>
               <div class="ebx-center__divider"></div>
               <div class="ebx-center__label">Decision this week</div>
               <div class="ebx-center__cause" id="ebx-center-cause">—</div>
-              <div class="ebx-center__date" id="ebx-center-date">—</div>
-              <div class="ebx-center__phase" id="ebx-center-countdown">—</div>
             </div>
           </div>
         </div>
 
         <div class="hero__side hero__right" id="right-panel"></div>
+      </div>
+
+      <!-- ── Mission strip: 7 squares ── -->
+      <div class="mission-strip">
+        <div class="mission-strip__eyebrow">Active missions</div>
+        <div class="mission-strip__grid" id="mission-strip-grid"></div>
       </div>
 
       <!-- ── Feed strip: 3 most recent posts ── -->
@@ -209,30 +260,6 @@
         <div class="feed-strip__grid" id="feed-strip-grid"></div>
       </div>
 
-      <!-- ── Tagline ── -->
-      <div class="hero__copy">
-        <h1>You donate, <em>we follow.</em></h1>
-        <p>Earthbux is a news company and donation platform that aims to make philanthropy fun, interesting and profitable.</p>
-        <div class="hero__actions">
-          <a href="feed.html"       class="btn btn-primary btn-lg">Read the Feed</a>
-          <a href="initiative.html" class="btn btn-outline btn-lg">All Initiatives</a>
-        </div>
-      </div>
-
-      <div class="hero__stats">
-        <div class="stat-block">
-          <div class="stat-block__value">7</div>
-          <div class="stat-block__label">Permanent causes</div>
-        </div>
-        <div class="stat-block">
-          <div class="stat-block__value" id="stat-initiatives">—</div>
-          <div class="stat-block__label">Suggested initiatives</div>
-        </div>
-        <div class="stat-block">
-          <div class="stat-block__value" id="stat-orgs">—</div>
-          <div class="stat-block__label">Active organizations</div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -248,28 +275,28 @@
           <div class="how-step__num">01</div>
           <div class="how-step__body">
             <h3>Donate &amp; receive EBX</h3>
-            <p>Every week a new pool forms from donations for the cause whose decision is coming up. You receive earthbucks with a living credit that modulates your token's value as the mission progresses.</p>
+            <p>Each cause runs a 7-week debate. Donate to receive earthbucks with a living credit that modulates your token\'s value as the mission progresses.</p>
           </div>
         </div>
         <div class="how-step">
           <div class="how-step__num">02</div>
           <div class="how-step__body">
             <h3>Debate &amp; commit</h3>
-            <p>Each cause runs a 7-week debate. Benefactors and orgs propose initiatives; benefactors commit EBX to the ones they support. The leader is decided at the end of the window.</p>
+            <p>Benefactors and orgs propose initiatives; benefactors commit EBX to the ones they support. The leader is decided at the end of the window.</p>
           </div>
         </div>
         <div class="how-step">
           <div class="how-step__num">03</div>
           <div class="how-step__body">
             <h3>Elect an organization</h3>
-            <p>The org race runs alongside the debate for the same 7 weeks. One person, one vote. The winning org receives 1/16 of the pool immediately; the rest unlocks over time, contingent on reporting.</p>
+            <p>The org race runs alongside the debate. One person, one vote. The winning org gets 1/16 of the pool immediately; the rest unlocks over time.</p>
           </div>
         </div>
         <div class="how-step">
           <div class="how-step__num">04</div>
           <div class="how-step__body">
             <h3>Follow the mission</h3>
-            <p>Track progress and spending in real time. When Earthbux judges the issue resolved, a buyback begins — returning value to benefactors in cash or other EBX. Active missions live in the feed.</p>
+            <p>Track progress and spending in real time. When Earthbux judges the issue resolved, a buyback begins. Active missions live in the feed.</p>
           </div>
         </div>
       </div>
@@ -294,51 +321,41 @@
   (async function () {
     await EBX.loadAll();
 
-    function fmtShort(d) {
-      return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
+    document.getElementById("ebx-user-badge-mount").innerHTML = EBX.userBadge();
 
     function render() {
       const state = EBX.Cycle.now();
-      const n = 7;
       const active = state.causeIndex;
-
-      // ── Center info block ──
+      const n = 7;
       const activeCause = EBX.config.causes.find(c => c.index === active);
-      const todayStr = new Date().toLocaleDateString('en-US',
-        { month: 'short', day: 'numeric', year: 'numeric' });
-      document.getElementById('ebx-center-today').textContent   = todayStr;
-      document.getElementById('ebx-center-cause').textContent   = activeCause ? activeCause.name : '—';
-      document.getElementById('ebx-center-date').textContent    = fmtShort(EBX.Cycle.nextDecisionDate(active));
-      document.getElementById('ebx-center-countdown').textContent =
-        `${state.daysRemaining}d ${state.hoursRemaining}h remaining`;
 
-      // ── Side cards: 3 left (preceding causes), 3 right (upcoming) ──
+      document.getElementById("ebx-center-today").textContent =
+        new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      document.getElementById("ebx-center-cause").textContent = activeCause ? activeCause.name : "—";
+
+      document.getElementById("ebx-election-banner-mount").innerHTML = EBX.electionBanner(active);
+
+      // 3 left, 3 right race cards (the 6 non-active causes)
       const left  = [-3, -2, -1].map(off => ((active + off) % n + n) % n);
       const right = [1, 2, 3].map(off => ((active + off) % n + n) % n);
-      document.getElementById('left-panel').innerHTML  = left.map(i => EBX.raceCard(i)).join('');
-      document.getElementById('right-panel').innerHTML = right.map(i => EBX.raceCard(i)).join('');
+      document.getElementById("left-panel").innerHTML  = left.map(i => EBX.raceCard(i)).join("");
+      document.getElementById("right-panel").innerHTML = right.map(i => EBX.raceCard(i)).join("");
 
-      // ── Stats ──
-      document.getElementById('stat-initiatives').textContent =
-        EBX.config.initiatives.filter(i => i.status === 'suggested').length;
-      document.getElementById('stat-orgs').textContent =
-        EBX.config.organizations.length || '—';
+      document.getElementById("mission-strip-grid").innerHTML = EBX.missionStrip();
 
-      // ── Feed strip: 3 most recent posts ──
-      const feedGrid = document.getElementById('feed-strip-grid');
+      const feedGrid = document.getElementById("feed-strip-grid");
       if (feedGrid) {
         const feed = (EBX.config.feed || [])
           .slice()
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .slice(0, 3);
         feedGrid.innerHTML = feed.length
-          ? feed.map(p => EBX.feedCard(p)).join('')
+          ? feed.map(p => EBX.feedCard(p)).join("")
           : `<div style="grid-column:1/-1;text-align:center;padding:32px;color:rgba(245,240,232,0.4);font-size:0.85rem;">No posts yet.</div>`;
       }
     }
 
-    EBX.Annulus.mount('#ebx-annulus-mount');
+    EBX.Annulus.mount("#ebx-annulus-mount");
     render();
     setInterval(render, 60000);
   })();

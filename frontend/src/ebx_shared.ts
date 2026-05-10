@@ -21,7 +21,7 @@ import type {
   CreditHolding,
   CycleState,
   FeedPost,
-  Initiative
+  Initiative,
   Organization,
   TokenChip,
   VoteShare,
@@ -298,7 +298,12 @@ const Votes = {
       ...s,
       rank: idx,
       isOther: false,
-      color: rankColor(idx),
+      color: idx === 0
+        ? (config.causes[causeIndex]?.color ?? '#888')
+        : fadeToWhite(
+            config.causes[causeIndex]?.color ?? '#888',
+            Math.min(0.92, idx / Math.max(2, main.length - 1))
+          ),
     }));
     if (tail.length) {
       result.push({
@@ -431,10 +436,10 @@ const Annulus = {
 
       const nameLine = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       nameLine.setAttribute('x', String(lx));
-      nameLine.setAttribute('y', String(ly - 6));
+      nameLine.setAttribute('y', String(ly));
       nameLine.setAttribute('text-anchor', 'middle');
       nameLine.setAttribute('dominant-baseline', 'middle');
-      nameLine.setAttribute('font-size', '10');
+      nameLine.setAttribute('font-size', '11');
       nameLine.setAttribute('font-weight', '700');
       nameLine.setAttribute('fill', '#0f1a14');
       nameLine.textContent = cause.name;
@@ -487,11 +492,6 @@ const Annulus = {
         'transform',
         `rotate(${-state.rotationDeg}, ${seg.midX}, ${seg.midY})`
       );
-      const dateLine = seg.labelGroup.querySelector('[data-date-label]');
-      if (dateLine) {
-        dateLine.textContent = Cycle.nextDecisionDate(i)
-          .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      }
 
       // Highlight the active cause's inner segment.
       if (i === state.causeIndex) {
@@ -504,69 +504,9 @@ const Annulus = {
         seg.innerPath.removeAttribute('filter');
       }
 
-      // ── Outer ring rendering ─────────────────────────────────────
-      // Active cause: leave the outer band empty (a "chunk" cut out of the
-      // wheel), the right-side election panel picks it up.
-      // Non-active causes: stack initiative sub-arcs sized by ebx_committed,
-      // leader gets the full cause color, runners-up fade toward white.
+      // Single-tier mode: no outer-ring rendering for now.
       while (seg.outerGroup.firstChild) {
         seg.outerGroup.removeChild(seg.outerGroup.firstChild);
-      }
-      const startAngle = i * anglePerSeg - Math.PI / 2;
-      const endAngle = startAngle + anglePerSeg;
-
-      if (i === state.causeIndex) {
-        // Empty outer band, faint dashed outline so the slot is visible.
-        const ghost = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        ghost.setAttribute('d', annularSectorPath(cx, cy, outerR, midR, startAngle, endAngle));
-        ghost.setAttribute('fill', 'rgba(15,26,20,0.4)');
-        ghost.setAttribute('stroke', config.causes[i]?.color ?? '#ffffff');
-        ghost.setAttribute('stroke-width', '1');
-        ghost.setAttribute('stroke-dasharray', '3 3');
-        ghost.setAttribute('opacity', '0.55');
-        seg.outerGroup.appendChild(ghost);
-      } else {
-        const inits = config.initiatives
-          .filter(x => x.cause_index === i)
-          .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
-        const total = inits.reduce((s, x) => s + (x.committed_ebx || 0), 0);
-        const causeColor = config.causes[i]?.color ?? '#888';
-
-        // If nothing is committed yet, give every initiative an equal slice
-        // so the ring isn't empty.
-        const useEqual = total <= 0 && inits.length > 0;
-        const denom = useEqual ? inits.length : total;
-
-        let cursor = startAngle;
-        const totalAngle = endAngle - startAngle;
-        inits.forEach((init, rank) => {
-          const weight = useEqual ? 1 : (init.committed_ebx || 0);
-          if (weight <= 0) return;
-          const arcSize = totalAngle * (weight / denom);
-          const a0 = cursor;
-          const a1 = Math.min(endAngle, cursor + arcSize);
-          // Fade: 0 = full cause color, 1 = white. Curve so first 3 ranks stay vivid.
-          const t = inits.length === 1 ? 0 : Math.min(1, rank / Math.max(2, inits.length - 1));
-          const sub = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          sub.setAttribute('d', annularSectorPath(cx, cy, outerR, midR, a0, a1));
-          sub.setAttribute('fill', fadeToWhite(causeColor, t));
-          sub.setAttribute('fill-opacity', '0.85');
-          sub.setAttribute('stroke', '#0f1a14');
-          sub.setAttribute('stroke-width', '0.6');
-          const titleEl = document.createElementNS('http://www.w3.org/2000/svg', 'title');
-          titleEl.textContent = `${init.title} — ${init.committed_ebx ?? 0} EBX`;
-          sub.appendChild(titleEl);
-          seg.outerGroup.appendChild(sub);
-          cursor = a1;
-        });
-
-        if (inits.length === 0) {
-          const empty = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-          empty.setAttribute('d', annularSectorPath(cx, cy, outerR, midR, startAngle, endAngle));
-          empty.setAttribute('fill', causeColor);
-          empty.setAttribute('fill-opacity', '0.18');
-          seg.outerGroup.appendChild(empty);
-        }
       }
     });;
 
@@ -898,37 +838,64 @@ function raceCard(causeIndex: number): string {
   const cycleNum = Cycle.currentCycleNum();
   const orgs = Votes.orgsForCause(causeIndex);
   const shares = Votes.forCause(causeIndex, cycleNum, orgs);
+  const leader = shares[0];
   const decision = Cycle.nextDecisionDate(causeIndex);
+
+  // The vote week: 7 days ending on the decision date.
+  const voteStart = new Date(decision.getTime() - 6 * MS_PER_DAY);
+  const sameMonth = voteStart.getMonth() === decision.getMonth();
+  const dateRange = sameMonth
+    ? `${voteStart.toLocaleDateString('en-US', { month: 'short' })} ${voteStart.getDate()}–${decision.getDate()}`
+    : `${formatShortDate(voteStart)} – ${formatShortDate(decision)}`;
+
+  // Per-process row builder. For now the same data goes into both halves;
+  // once the dual-decision-week (init week vs org week) is wired up, each
+  // process will pull its own initiative + leading org separately.
+  const processRow = (label: string) => `
+    <div style="padding:9px 12px;">
+      <div style="font-family:var(--font-mono);font-size:0.5rem;letter-spacing:0.14em;
+                  text-transform:uppercase;color:rgba(245,240,232,0.42);margin-bottom:3px;">
+        ${label}
+      </div>
+      <div style="font-size:0.74rem;color:rgba(245,240,232,0.9);font-weight:600;
+                  line-height:1.25;
+                  display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;">
+        ${init ? init.title : 'No initiative yet'}
+      </div>
+      <div style="font-family:var(--font-mono);font-size:0.6rem;
+                  color:rgba(245,240,232,0.6);margin-top:2px;
+                  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+        ${leader ? `${leader.org_name} · ${leader.pct.toFixed(0)}%` : '—'}
+      </div>
+    </div>
+  `;
 
   return `
     <a class="race-card" href="cause.html?id=${cause.id}"
        style="--rc-color:${cause.color};
-              display:block;text-decoration:none;width:228px;
+              display:block;text-decoration:none;width:248px;
               background:rgba(15,26,20,0.72);
               border:1px solid var(--rc-color);border-radius:10px;
-              padding:11px 13px;transition:background 0.2s;">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
-        <span style="font-family:var(--font-mono);font-size:0.54rem;letter-spacing:0.12em;
-                     text-transform:uppercase;color:var(--rc-color);opacity:0.85;">${cause.name}</span>
-        <span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.4);">
-          ${formatShortDate(decision)}
+              overflow:hidden;
+              transition:background 0.2s;">
+      <!-- Header: cause name + Next Vote date range -->
+      <div style="padding:8px 12px;background:rgba(0,0,0,0.18);
+                  border-bottom:1px solid var(--rc-color);
+                  display:flex;justify-content:space-between;align-items:baseline;">
+        <span style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.12em;
+                     text-transform:uppercase;color:var(--rc-color);font-weight:700;">
+          ${cause.name}
+        </span>
+        <span style="font-family:var(--font-mono);font-size:0.54rem;
+                     color:rgba(245,240,232,0.55);white-space:nowrap;">
+          Next Vote ${dateRange}
         </span>
       </div>
-      <div style="font-size:0.78rem;font-weight:600;color:rgba(245,240,232,0.9);
-                  line-height:1.3;margin-bottom:8px;
-                  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-        ${init ? `${init.emoji ?? ''} ${init.title}` : 'No initiative yet'}
-      </div>
-      <div style="display:flex;flex-direction:column;gap:3px;">
-        ${shares.slice(0, 4).map(s => `
-          <div style="display:flex;justify-content:space-between;align-items:center;
-                      font-family:var(--font-mono);font-size:0.6rem;
-                      color:${s.color};">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-                         max-width:140px;">${s.org_name}</span>
-            <span style="opacity:0.75;">${s.pct.toFixed(0)}%</span>
-          </div>
-        `).join('')}
+      <!-- Two equal process sections -->
+      <div style="display:grid;grid-template-rows:1fr 1px 1fr;">
+        ${processRow('Initiative')}
+        <div style="background:rgba(255,255,255,0.06);"></div>
+        ${processRow('Org election')}
       </div>
     </a>
   `;
@@ -1121,6 +1088,152 @@ function electionPanel(causeIndex: number): string {
   `;
 }
 
+
+
+/* ─────────────────────────────────────────
+   User badge (top-bar widget)
+   Logged out → "Log in or register" pill.
+   Logged in → small annulus shell + initials in center.
+   The annulus filling per cause is a TODO once we fetch the user's
+   contributions from /auth/me + /contributions.
+   ───────────────────────────────────────── */
+function userBadge(opts: { handle?: string | null } = {}): string {
+  const loggedIn = Auth.isLoggedIn();
+  if (!loggedIn) {
+    return `
+      <a href="profile.html" class="ebx-user-badge ebx-user-badge--guest"
+         style="display:inline-flex;align-items:center;gap:8px;
+                font-family:var(--font-mono);font-size:0.72rem;font-weight:600;
+                letter-spacing:0.06em;text-transform:uppercase;
+                color:var(--clr-honey);text-decoration:none;
+                padding:8px 14px;border-radius:999px;
+                background:rgba(15,26,20,0.6);
+                border:1px solid rgba(232,168,76,0.45);
+                transition:background 0.2s;">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--clr-honey);
+                     box-shadow:0 0 6px rgba(232,168,76,0.6);"></span>
+        Log in or register
+      </a>
+    `;
+  }
+  // Logged-in stub: same geometry as the credit badge, initials in the center,
+  // 7 cause segments dimmed (filled state arrives later).
+  const initials = (opts.handle ?? 'EB').slice(0, 2).toUpperCase();
+  const size = 44;
+  const cx = size / 2, cy = size / 2;
+  const outerR = size * 0.46, innerR = size * 0.27;
+  const n = 7;
+  const anglePerSeg = (2 * Math.PI) / n;
+  const segs = config.causes.slice(0, n).map((cause, i) => {
+    const a0 = i * anglePerSeg - Math.PI / 2;
+    const a1 = a0 + anglePerSeg;
+    return `<path d="${annularSectorPath(cx, cy, outerR, innerR, a0, a1)}"
+      fill="${cause.color}" fill-opacity="0.22" stroke="#0f1a14" stroke-width="0.6"/>`;
+  }).join('');
+  return `
+    <a href="profile.html" class="ebx-user-badge"
+       style="display:inline-flex;align-items:center;gap:10px;
+              text-decoration:none;color:rgba(245,240,232,0.85);
+              padding:4px 14px 4px 4px;border-radius:999px;
+              background:rgba(15,26,20,0.6);
+              border:1px solid rgba(255,255,255,0.12);">
+      <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"
+           style="display:block;">
+        <circle cx="${cx}" cy="${cy}" r="${outerR + 0.5}" fill="#0f1a14" opacity="0.7"/>
+        ${segs}
+        <circle cx="${cx}" cy="${cy}" r="${innerR - 1}" fill="#0f1a14" opacity="0.95"/>
+        <text x="${cx}" y="${cy + 3}" text-anchor="middle"
+              font-size="9" font-weight="700" fill="rgba(245,240,232,0.9)"
+              font-family="var(--font-mono)">${initials}</text>
+      </svg>
+      <span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:600;">${opts.handle ?? ''}</span>
+    </a>
+  `;
+}
+
+
+
+/* ─────────────────────────────────────────
+   Compact election banner (for the top bar)
+   ───────────────────────────────────────── */
+function electionBanner(causeIndex: number): string {
+  const cause = config.causes.find(c => c.index === causeIndex);
+  if (!cause) return '';
+  const cycleNum = Cycle.currentCycleNum();
+  const orgs = Votes.orgsForCause(causeIndex);
+  const shares = Votes.forCause(causeIndex, cycleNum, orgs).slice(0, 5);
+  const decision = Cycle.nextDecisionDate(causeIndex);
+  const state = Cycle.now();
+
+  const init = config.initiatives
+    .filter(i => i.cause_index === causeIndex)
+    .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+
+  const bars = shares.map(s => `
+    <div title="${s.org_name} - ${s.pct.toFixed(1)}%"
+         style="height:6px;flex:${Math.max(2, s.pct).toFixed(2)};
+                background:${s.color};opacity:0.95;border-radius:1px;"></div>
+  `).join('');
+
+  return `
+    <a href="cause.html?id=${cause.id}" class="ebx-election-banner"
+       style="--ebc:${cause.color};
+              display:flex;align-items:center;gap:14px;
+              padding:9px 16px;border-radius:999px;
+              background:rgba(15,26,20,0.7);
+              border:1.5px solid rgba(255,255,255,0.85);
+              box-shadow:0 0 16px rgba(255,255,255,0.32),
+                         0 0 4px rgba(255,255,255,0.55) inset;
+              text-decoration:none;color:rgba(245,240,232,0.95);
+              max-width:560px;">
+      <span style="font-family:var(--font-mono);font-size:0.55rem;letter-spacing:0.14em;
+                   text-transform:uppercase;color:var(--ebc);font-weight:700;
+                   white-space:nowrap;">
+        ${cause.name} election
+      </span>
+      <span style="font-size:0.78rem;color:rgba(245,240,232,0.85);font-weight:600;
+                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+                   min-width:0;flex:1;">
+        ${init ? init.title : 'No initiative committed yet'}
+      </span>
+      <span style="display:flex;align-items:stretch;gap:1px;width:90px;height:8px;
+                   border-radius:2px;overflow:hidden;background:rgba(255,255,255,0.05);">
+        ${bars || ''}
+      </span>
+      <span style="font-family:var(--font-mono);font-size:0.62rem;
+                   color:rgba(245,240,232,0.55);white-space:nowrap;">
+        ${state.daysRemaining}d ${state.hoursRemaining}h
+      </span>
+    </a>
+  `;
+}
+
+
+/* ─────────────────────────────────────────
+   Mission strip — 7 links to active missions, one per cause.
+   Placeholder copy until Mission seed data exists.
+   ───────────────────────────────────────── */
+function missionStrip(): string {
+  return config.causes.map(cause => {
+    return `
+      <a href="mission.html?cause=${cause.id}" class="mission-link"
+         title="${cause.name} mission"
+         style="--mc:${cause.color};
+                display:flex;align-items:center;justify-content:center;
+                aspect-ratio:1 / 1;min-width:0;
+                text-decoration:none;color:inherit;
+                background:rgba(15,26,20,0.65);
+                border:1px solid rgba(255,255,255,0.07);
+                border-top:3px solid var(--mc);
+                border-radius:8px;
+                font-size:1.5rem;
+                transition:background 0.2s, transform 0.2s;">
+        <span style="opacity:0.9;line-height:1;">${cause.emoji ?? '◆'}</span>
+      </a>
+    `;
+  }).join('');
+}
+
 const EBX = {
   config,
   fetchJSON, fetchAPI,
@@ -1131,7 +1244,7 @@ const EBX = {
   $: $, $$: $$, render, renderSkeleton, renderEmpty,
   formatNumber, formatEBX, formatPercent, formatDate, formatShortDate, timeAgo,
   tokenChip, creditBadge, tag, progressBar, statBlock,
-  initiativeCard, electionPanel, feedCard, raceCard,
+  initiativeCard, electionPanel, electionBanner, missionStrip, userBadge, feedCard, raceCard,
   filterBySearch, filterByField, sortBy,
   Auth,
 };
