@@ -573,6 +573,7 @@
   </style>
 </head>
 <body>
+  <a href="index.html" class="ebx-home-mark">EBX</a>
 
   <!-- JS decides whether to show onboarding or profile -->
   <div id="app-root"></div>
@@ -586,31 +587,184 @@
     await EBX.loadAll();
     const causes = EBX.config.causes;
 
-    /* ── Read profile from localStorage ── */
-    let profile = null;
-    try {
-      const stored = localStorage.getItem('ebx_profile');
-      if (stored) profile = JSON.parse(stored);
-    } catch(e) {}
+    // Shared nav: home mark + user badge on every page
+    await EBX.initPage();
 
     /* ═══════════════════════════════════════════
-       ONBOARDING FLOW
+       AUTH GATE — check real API session first
        ═════════════════════════════════════════= */
 
-    if (!profile) {
-      renderOnboarding();
+    // If a JWT token exists, validate it with the API
+    let apiUser = null;
+    if (EBX.Auth.isLoggedIn()) {
+      apiUser = await EBX.Auth.fetchMe();
+      // fetchMe clears the token if invalid; apiUser===null means expired
+    }
+
+    if (apiUser) {
+      /* ── Logged-in: merge API identity with any localStorage extras ── */
+      let extras = {};
+      try { extras = JSON.parse(localStorage.getItem('ebx_profile') || '{}'); } catch(e) {}
+      const profile = {
+        handle:      apiUser.handle,
+        email:       apiUser.email,
+        joined:      apiUser.created_at,
+        ebx_balance: extras.ebx_balance ?? 0,
+        credits:     extras.credits     ?? [],
+        causes:      extras.causes      ?? [],
+        amount:      extras.amount      ?? 20,
+        type:        extras.type        ?? 'benefactor',
+      };
+      renderProfile(profile);
       return;
     }
 
-    /* ═══════════════════════════════════════════
-       EXISTING PROFILE VIEW
-       ═════════════════════════════════════════= */
+    /* ── Not logged in: show login/signup gate ── */
+    renderAuthGate();
+    return;
 
-    renderProfile(profile);
+    /* ═══════════════════════════════════════════
+       (unreachable guard — renderOnboarding kept
+        for the localStorage-only fallback path
+        reached from within renderAuthGate)
+       ═════════════════════════════════════════= */
 
 
     /* ─────────────────────────────────────────
-       ONBOARDING
+       AUTH GATE (login + signup tabs, inline)
+       ───────────────────────────────────────── */
+
+    function renderAuthGate() {
+      const root = document.getElementById('app-root');
+      root.style.cssText = 'background:#0f1a14;min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:24px;';
+
+      root.innerHTML = `
+        <div style="width:100%;max-width:400px;">
+          <div style="text-align:center;margin-bottom:28px;">
+            <div style="font-family:var(--font-display);font-size:2rem;font-weight:900;
+                        color:var(--clr-parchment);letter-spacing:-0.02em;">Earthbux</div>
+            <div style="font-family:var(--font-mono);font-size:0.68rem;letter-spacing:.12em;
+                        text-transform:uppercase;color:rgba(245,240,232,0.4);margin-top:6px;">
+              Your profile
+            </div>
+          </div>
+          <div style="background:rgba(22,34,24,0.98);border:1px solid rgba(255,255,255,0.1);
+                      border-radius:14px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.4);">
+            <div id="ag-tabs" style="display:grid;grid-template-columns:1fr 1fr;
+                        border-bottom:1px solid rgba(255,255,255,0.07);">
+              <button id="ag-tab-login" onclick="agShowTab('login')"
+                style="padding:14px;background:rgba(232,168,76,0.06);border:none;cursor:pointer;
+                       border-bottom:2px solid var(--clr-honey);
+                       font-family:var(--font-mono);font-size:.72rem;font-weight:600;
+                       letter-spacing:.08em;text-transform:uppercase;color:var(--clr-honey);">Log In</button>
+              <button id="ag-tab-signup" onclick="agShowTab('signup')"
+                style="padding:14px;background:none;border:none;cursor:pointer;
+                       border-bottom:2px solid transparent;
+                       font-family:var(--font-mono);font-size:.72rem;font-weight:600;
+                       letter-spacing:.08em;text-transform:uppercase;color:rgba(245,240,232,0.4);">Sign Up</button>
+            </div>
+            <div id="ag-panel-login" style="padding:24px;">
+              <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:.76rem;font-weight:600;color:rgba(245,240,232,0.6);margin-bottom:6px;">Email or handle</label>
+                <input id="ag-lg-user" type="text" autocomplete="username" placeholder="you@example.com or @handle"
+                  style="width:100%;box-sizing:border-box;padding:10px 13px;background:rgba(255,255,255,0.05);
+                         border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--clr-parchment);font-size:.9rem;outline:none;" />
+              </div>
+              <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:.76rem;font-weight:600;color:rgba(245,240,232,0.6);margin-bottom:6px;">Password</label>
+                <input id="ag-lg-pass" type="password" autocomplete="current-password" placeholder="••••••••"
+                  style="width:100%;box-sizing:border-box;padding:10px 13px;background:rgba(255,255,255,0.05);
+                         border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--clr-parchment);font-size:.9rem;outline:none;" />
+              </div>
+              <button onclick="agDoLogin()"
+                style="width:100%;padding:11px;background:var(--clr-amber);border:none;border-radius:8px;cursor:pointer;
+                       font-family:var(--font-mono);font-size:.78rem;font-weight:700;letter-spacing:.06em;color:#0f1a14;">
+                Log In →
+              </button>
+              <div id="ag-lg-msg" style="font-size:.76rem;margin-top:10px;text-align:center;min-height:18px;"></div>
+            </div>
+            <div id="ag-panel-signup" style="padding:24px;display:none;">
+              <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:.76rem;font-weight:600;color:rgba(245,240,232,0.6);margin-bottom:6px;">Email</label>
+                <input id="ag-su-email" type="email" autocomplete="email" placeholder="you@example.com"
+                  style="width:100%;box-sizing:border-box;padding:10px 13px;background:rgba(255,255,255,0.05);
+                         border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--clr-parchment);font-size:.9rem;outline:none;" />
+              </div>
+              <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:.76rem;font-weight:600;color:rgba(245,240,232,0.6);margin-bottom:6px;">
+                  Handle <span style="font-weight:400;opacity:.5;font-size:.72rem;">(public · no spaces)</span>
+                </label>
+                <input id="ag-su-handle" type="text" autocomplete="username" placeholder="terra_watcher"
+                  style="width:100%;box-sizing:border-box;padding:10px 13px;background:rgba(255,255,255,0.05);
+                         border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--clr-parchment);font-size:.9rem;outline:none;" />
+              </div>
+              <div style="margin-bottom:16px;">
+                <label style="display:block;font-size:.76rem;font-weight:600;color:rgba(245,240,232,0.6);margin-bottom:6px;">
+                  Password <span style="font-weight:400;opacity:.5;font-size:.72rem;">(8+ chars)</span>
+                </label>
+                <input id="ag-su-pass" type="password" autocomplete="new-password" placeholder="••••••••"
+                  style="width:100%;box-sizing:border-box;padding:10px 13px;background:rgba(255,255,255,0.05);
+                         border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--clr-parchment);font-size:.9rem;outline:none;" />
+              </div>
+              <button onclick="agDoSignup()"
+                style="width:100%;padding:11px;background:var(--clr-amber);border:none;border-radius:8px;cursor:pointer;
+                       font-family:var(--font-mono);font-size:.78rem;font-weight:700;letter-spacing:.06em;color:#0f1a14;">
+                Create Account →
+              </button>
+              <div id="ag-su-msg" style="font-size:.76rem;margin-top:10px;text-align:center;min-height:18px;"></div>
+            </div>
+          </div>
+          <p style="text-align:center;font-size:.72rem;color:rgba(245,240,232,0.25);margin-top:20px;line-height:1.65;">
+            Your handle is your public identity. Email and password are stored securely and never shared.
+          </p>
+        </div>`;
+
+      window.agShowTab = function(tab) {
+        const isL = tab === 'login';
+        document.getElementById('ag-panel-login').style.display  = isL ? 'block' : 'none';
+        document.getElementById('ag-panel-signup').style.display = isL ? 'none'  : 'block';
+        const tl = document.getElementById('ag-tab-login');
+        const ts = document.getElementById('ag-tab-signup');
+        tl.style.color = isL ? 'var(--clr-honey)' : 'rgba(245,240,232,0.4)';
+        tl.style.background = isL ? 'rgba(232,168,76,0.06)' : 'none';
+        tl.style.borderBottomColor = isL ? 'var(--clr-honey)' : 'transparent';
+        ts.style.color = isL ? 'rgba(245,240,232,0.4)' : 'var(--clr-honey)';
+        ts.style.background = isL ? 'none' : 'rgba(232,168,76,0.06)';
+        ts.style.borderBottomColor = isL ? 'transparent' : 'var(--clr-honey)';
+      };
+      window.agDoLogin = async function() {
+        const user = document.getElementById('ag-lg-user').value.trim();
+        const pass = document.getElementById('ag-lg-pass').value;
+        const msg  = document.getElementById('ag-lg-msg');
+        if (!user || !pass) { msg.style.color='#f87171'; msg.textContent='Please fill in all fields.'; return; }
+        msg.style.color='rgba(245,240,232,0.5)'; msg.textContent='Logging in…';
+        const ok = await EBX.Auth.login(user, pass);
+        if (ok) { msg.style.color='#34d399'; msg.textContent='✓ Logged in!'; setTimeout(() => location.reload(), 600); }
+        else    { msg.style.color='#f87171'; msg.textContent='Invalid credentials. Try again.'; }
+      };
+      window.agDoSignup = async function() {
+        const email  = document.getElementById('ag-su-email').value.trim();
+        const handle = document.getElementById('ag-su-handle').value.trim();
+        const pass   = document.getElementById('ag-su-pass').value;
+        const msg    = document.getElementById('ag-su-msg');
+        if (!email || !handle || !pass) { msg.style.color='#f87171'; msg.textContent='Please fill in all fields.'; return; }
+        if (pass.length < 8)  { msg.style.color='#f87171'; msg.textContent='Password must be 8+ characters.'; return; }
+        if (/\s/.test(handle)) { msg.style.color='#f87171'; msg.textContent='Handle cannot contain spaces.'; return; }
+        msg.style.color='rgba(245,240,232,0.5)'; msg.textContent='Creating account…';
+        const created = await EBX.Auth.signup(email, handle, pass);
+        if (!created) { msg.style.color='#f87171'; msg.textContent=EBX.Auth.lastSignupError||'Signup failed.'; return; }
+        msg.textContent='Signing you in…';
+        const ok = await EBX.Auth.login(handle, pass);
+        if (ok) { msg.style.color='#34d399'; msg.textContent='✓ Account created!'; setTimeout(() => location.reload(), 600); }
+        else    { msg.style.color='#34d399'; msg.textContent='✓ Created — please log in.'; setTimeout(() => agShowTab('login'), 1000); }
+      };
+      ['ag-lg-user','ag-lg-pass'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => { if (e.key==='Enter') agDoLogin(); }));
+      ['ag-su-email','ag-su-handle','ag-su-pass'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => { if (e.key==='Enter') agDoSignup(); }));
+      document.getElementById('ag-lg-user')?.focus();
+    }
+
+    /* ─────────────────────────────────────────
+       ONBOARDING (localStorage-only fallback)
        ───────────────────────────────────────── */
 
     function renderOnboarding() {
@@ -1010,10 +1164,14 @@
                       </div>`).join('')}
                   </div>
 
-                  <div style="margin-top:var(--sp-xl);padding-top:var(--sp-lg);border-top:1px solid var(--clr-border);">
+                  <div style="margin-top:var(--sp-xl);padding-top:var(--sp-lg);border-top:1px solid var(--clr-border);display:flex;gap:var(--sp-sm);flex-wrap:wrap;">
                     <button class="btn btn-ghost btn-sm" style="color:var(--clr-ink-light);"
                       onclick="if(confirm('Clear your local profile?')){localStorage.removeItem('ebx_profile');location.reload();}">
-                      Reset profile (dev)
+                      Reset local data (dev)
+                    </button>
+                    <button class="btn btn-ghost btn-sm" style="color:#f87171;"
+                      onclick="if(confirm('Log out?')){EBX.Auth.clear();localStorage.removeItem('ebx_profile');location.reload();}">
+                      Log Out
                     </button>
                   </div>
 

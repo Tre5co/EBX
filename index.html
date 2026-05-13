@@ -214,7 +214,7 @@
   <div class="ebx-topbar">
     <div class="container ebx-topbar__inner">
       <div class="ebx-topbar__tagline">
-        <a href="index.html">You donate. <em>We follow.</em></a>
+        <a href="index.html"><strong>EBX</strong> — You donate. <em>We follow.</em></a>
       </div>
       <div class="ebx-topbar__center" id="ebx-election-banner-mount"></div>
       <div class="ebx-topbar__right"  id="ebx-user-badge-mount"></div>
@@ -321,8 +321,6 @@
   (async function () {
     await EBX.loadAll();
 
-    document.getElementById("ebx-user-badge-mount").innerHTML = EBX.userBadge();
-
     function render() {
       const state = EBX.Cycle.now();
       const active = state.causeIndex;
@@ -336,7 +334,8 @@
       document.getElementById("ebx-election-banner-mount").innerHTML = EBX.electionBanner(active);
 
       // 3 left, 3 right race cards (the 6 non-active causes)
-      const left  = [-3, -2, -1].map(off => ((active + off) % n + n) % n);
+      // Left column: nearest-to-active at top → [-1, -2, -3] so card 6 is above 5 above 4
+      const left  = [-1, -2, -3].map(off => ((active + off) % n + n) % n);
       const right = [1, 2, 3].map(off => ((active + off) % n + n) % n);
       document.getElementById("left-panel").innerHTML  = left.map(i => EBX.raceCard(i)).join("");
       document.getElementById("right-panel").innerHTML = right.map(i => EBX.raceCard(i)).join("");
@@ -347,7 +346,7 @@
       if (feedGrid) {
         const feed = (EBX.config.feed || [])
           .slice()
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .slice(0, 3);
         feedGrid.innerHTML = feed.length
           ? feed.map(p => EBX.feedCard(p)).join("")
@@ -358,6 +357,7 @@
     EBX.Annulus.mount("#ebx-annulus-mount");
     render();
     setInterval(render, 60000);
+    await EBX.initPage();
   })();
   </script>
 </body>

@@ -74,7 +74,7 @@ def root_page() -> FileResponse:
     return _html("index")
 
 
-_HTML_PAGES = ("index", "cause", "initiative", "mission", "profile")
+_HTML_PAGES = ("index", "cause", "initiative", "mission", "profile", "feed", "about")
 
 def _make_handler(page: str):
     def handler() -> FileResponse:

@@ -229,6 +229,9 @@
     _rotatingGroup: null,
     _segments: [],
     _svg: null,
+    /** Cached refs for legacy inline-script hooks — set once in mount(). */
+    _nameEl: null,
+    _timerEl: null,
     _cx: 200,
     _cy: 200,
     _outerR: 184,
@@ -325,6 +328,8 @@
         });
       }
       el.appendChild(svg);
+      Annulus._nameEl = document.getElementById("ebx-cause-name");
+      Annulus._timerEl = document.getElementById("ebx-cause-timer");
       Annulus._tick();
     },
     _tick() {
@@ -354,19 +359,13 @@
           seg.innerPath.setAttribute("stroke-width", "1.5");
           seg.innerPath.removeAttribute("filter");
         }
-        while (seg.outerGroup.firstChild) {
-          seg.outerGroup.removeChild(seg.outerGroup.firstChild);
-        }
       });
-      ;
-      const nameEl = document.getElementById("ebx-cause-name");
-      const timerEl = document.getElementById("ebx-cause-timer");
-      if (nameEl) {
+      if (Annulus._nameEl) {
         const cause = config.causes[state.causeIndex];
-        if (cause) nameEl.textContent = cause.name;
+        if (cause) Annulus._nameEl.textContent = cause.name;
       }
-      if (timerEl) {
-        timerEl.textContent = `${state.daysRemaining}d ${state.hoursRemaining}h`;
+      if (Annulus._timerEl) {
+        Annulus._timerEl.textContent = `${state.daysRemaining}d ${state.hoursRemaining}h`;
       }
     },
     stop() {
@@ -443,8 +442,24 @@
     </footer>
   `;
   }
-  function initPage() {
+  async function initPage() {
     initFooter();
+    if (!document.querySelector(".ebx-home-mark")) {
+      const a = document.createElement("a");
+      a.href = "index.html";
+      a.className = "ebx-home-mark";
+      a.textContent = "EBX";
+      document.body.insertBefore(a, document.body.firstChild);
+    }
+    let mount = document.getElementById("ebx-user-badge-mount");
+    if (!mount) {
+      mount = document.createElement("div");
+      mount.id = "ebx-user-badge-mount";
+      mount.style.cssText = "position:fixed;top:10px;right:20px;z-index:200;";
+      document.body.appendChild(mount);
+    }
+    const me = await Auth.fetchMe();
+    mount.innerHTML = userBadge({ handle: me?.handle });
   }
   function getParam(key) {
     return new URLSearchParams(window.location.search).get(key);
@@ -699,6 +714,7 @@
   }
   var Auth = {
     tokenKey: "ebx_auth_token",
+    lastSignupError: null,
     getToken() {
       return localStorage.getItem(Auth.tokenKey);
     },
@@ -712,30 +728,297 @@
       return !!Auth.getToken();
     },
     async login(username, password) {
-      const body = new URLSearchParams({ username, password });
-      const res = await fetch(`${config.apiBase}/auth/login`, {
-        method: "POST",
-        body,
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }
-      });
-      if (!res.ok) return false;
-      const data = await res.json();
-      Auth.setToken(data.access_token);
-      return true;
+      try {
+        const body = new URLSearchParams({ username, password });
+        const res = await fetch(`${config.apiBase}/auth/login`, {
+          method: "POST",
+          body,
+          headers: { "Content-Type": "application/x-www-form-urlencoded" }
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        Auth.setToken(data.access_token);
+        return true;
+      } catch {
+        return false;
+      }
     },
     async signup(email, handle, password) {
-      const res = await fetch(`${config.apiBase}/auth/signup`, {
-        method: "POST",
-        body: JSON.stringify({ email, handle, password }),
-        headers: { "Content-Type": "application/json" }
-      });
-      return res.ok;
+      try {
+        const res = await fetch(`${config.apiBase}/auth/signup`, {
+          method: "POST",
+          body: JSON.stringify({ email, handle, password }),
+          headers: { "Content-Type": "application/json" }
+        });
+        if (res.ok) {
+          Auth.lastSignupError = null;
+          return true;
+        }
+        try {
+          const body = await res.json();
+          Auth.lastSignupError = body.detail ?? `Server error (HTTP ${res.status})`;
+        } catch {
+          Auth.lastSignupError = `Server error (HTTP ${res.status})`;
+        }
+        return false;
+      } catch {
+        Auth.lastSignupError = "Cannot reach the server. Is the API running?";
+        return false;
+      }
     },
     async fetchAuthed(path, init = {}) {
       const headers = new Headers(init.headers || {});
       const token = Auth.getToken();
       if (token) headers.set("Authorization", `Bearer ${token}`);
       return fetch(config.apiBase + path, { ...init, headers });
+    },
+    async fetchMe() {
+      const res = await Auth.fetchAuthed("/auth/me");
+      if (!res.ok) {
+        Auth.clear();
+        return null;
+      }
+      return res.json();
+    },
+    /* ── Login/Signup modal ──────────────────────────────────────────
+       Renders a floating modal over the current page.
+       Usage: EBX.Auth.openModal()  or  EBX.Auth.openModal('signup')
+    ─────────────────────────────────────────────────────────────── */
+    openModal(initialTab = "login") {
+      document.getElementById("ebx-auth-modal")?.remove();
+      const MODAL_CSS = `
+      #ebx-auth-modal {
+        position:fixed;inset:0;z-index:9000;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(5,12,8,0.82);backdrop-filter:blur(6px);
+        padding:24px;
+      }
+      #ebx-auth-modal .am-card {
+        width:100%;max-width:400px;
+        background:rgba(22,34,24,0.98);
+        border:1px solid rgba(255,255,255,0.1);
+        border-radius:14px;overflow:hidden;
+        box-shadow:0 24px 64px rgba(0,0,0,0.6);
+      }
+      #ebx-auth-modal .am-tabs {
+        display:grid;grid-template-columns:1fr 1fr;
+        border-bottom:1px solid rgba(255,255,255,0.07);
+      }
+      #ebx-auth-modal .am-tab {
+        padding:14px;text-align:center;cursor:pointer;
+        font-family:var(--font-mono,monospace);font-size:.72rem;
+        font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+        color:rgba(245,240,232,0.4);
+        border:none;background:none;
+        transition:color .15s,background .15s;
+      }
+      #ebx-auth-modal .am-tab.active {
+        color:var(--clr-honey,#e8a84c);
+        background:rgba(232,168,76,0.06);
+        border-bottom:2px solid var(--clr-honey,#e8a84c);
+      }
+      #ebx-auth-modal .am-body { padding:24px; }
+      #ebx-auth-modal .am-field { margin-bottom:16px; }
+      #ebx-auth-modal .am-label {
+        display:block;font-size:.76rem;font-weight:600;
+        color:rgba(245,240,232,0.6);margin-bottom:6px;
+      }
+      #ebx-auth-modal .am-input {
+        width:100%;box-sizing:border-box;
+        padding:10px 13px;
+        background:rgba(255,255,255,0.05);
+        border:1px solid rgba(255,255,255,0.1);
+        border-radius:8px;
+        color:var(--clr-parchment,#f5f0e8);
+        font-size:.9rem;outline:none;
+        transition:border-color .15s;
+      }
+      #ebx-auth-modal .am-input:focus { border-color:rgba(232,168,76,0.55); }
+      #ebx-auth-modal .am-btn {
+        width:100%;padding:11px;margin-top:8px;
+        background:var(--clr-amber,#c97c2a);
+        border:none;border-radius:8px;cursor:pointer;
+        font-family:var(--font-mono,monospace);
+        font-size:.78rem;font-weight:700;letter-spacing:.06em;
+        color:#0f1a14;transition:opacity .15s;
+      }
+      #ebx-auth-modal .am-btn:hover { opacity:.88; }
+      #ebx-auth-modal .am-btn:disabled { opacity:.45;cursor:default; }
+      #ebx-auth-modal .am-msg {
+        font-size:.76rem;margin-top:10px;text-align:center;min-height:18px;
+      }
+      #ebx-auth-modal .am-msg.err { color:#f87171; }
+      #ebx-auth-modal .am-msg.ok  { color:#34d399; }
+      #ebx-auth-modal .am-close {
+        position:absolute;top:14px;right:18px;
+        background:none;border:none;cursor:pointer;
+        font-size:1.3rem;color:rgba(245,240,232,0.35);
+        line-height:1;
+      }
+      #ebx-auth-modal .am-close:hover { color:rgba(245,240,232,0.75); }
+    `;
+      const styleEl = document.createElement("style");
+      styleEl.textContent = MODAL_CSS;
+      const wrap = document.createElement("div");
+      wrap.id = "ebx-auth-modal";
+      wrap.setAttribute("role", "dialog");
+      wrap.setAttribute("aria-modal", "true");
+      wrap.innerHTML = `
+      <div class="am-card" style="position:relative;">
+        <button class="am-close" id="am-close-btn" aria-label="Close">\xD7</button>
+        <div class="am-tabs">
+          <button class="am-tab ${initialTab === "login" ? "active" : ""}" data-tab="login">Log In</button>
+          <button class="am-tab ${initialTab === "signup" ? "active" : ""}" data-tab="signup">Sign Up</button>
+        </div>
+
+        <!-- LOGIN PANEL -->
+        <div class="am-body" id="am-login-panel" style="display:${initialTab === "login" ? "block" : "none"}">
+          <div class="am-field">
+            <label class="am-label">Email or handle</label>
+            <input class="am-input" id="am-login-user" type="text" autocomplete="username" placeholder="you@example.com or @handle" />
+          </div>
+          <div class="am-field">
+            <label class="am-label">Password</label>
+            <input class="am-input" id="am-login-pass" type="password" autocomplete="current-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" />
+          </div>
+          <button class="am-btn" id="am-login-btn">Log In \u2192</button>
+          <div class="am-msg" id="am-login-msg"></div>
+        </div>
+
+        <!-- SIGNUP PANEL -->
+        <div class="am-body" id="am-signup-panel" style="display:${initialTab === "signup" ? "block" : "none"}">
+          <div class="am-field">
+            <label class="am-label">Email</label>
+            <input class="am-input" id="am-su-email" type="email" autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="am-field">
+            <label class="am-label">Handle <span style="font-weight:400;opacity:.55;">(public \xB7 no spaces)</span></label>
+            <input class="am-input" id="am-su-handle" type="text" autocomplete="username" placeholder="terra_watcher" />
+          </div>
+          <div class="am-field">
+            <label class="am-label">Password <span style="font-weight:400;opacity:.55;">(8+ chars)</span></label>
+            <input class="am-input" id="am-su-pass" type="password" autocomplete="new-password" placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" />
+          </div>
+          <button class="am-btn" id="am-su-btn">Create Account \u2192</button>
+          <div class="am-msg" id="am-su-msg"></div>
+        </div>
+      </div>
+    `;
+      document.head.appendChild(styleEl);
+      document.body.appendChild(wrap);
+      wrap.addEventListener("click", (e) => {
+        if (e.target === wrap) Auth._closeModal();
+      });
+      document.getElementById("am-close-btn").addEventListener("click", () => Auth._closeModal());
+      wrap.querySelectorAll(".am-tab").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          wrap.querySelectorAll(".am-tab").forEach((t) => t.classList.remove("active"));
+          btn.classList.add("active");
+          const tab = btn.dataset.tab;
+          document.getElementById("am-login-panel").style.display = tab === "login" ? "block" : "none";
+          document.getElementById("am-signup-panel").style.display = tab === "signup" ? "block" : "none";
+        });
+      });
+      const loginBtn = document.getElementById("am-login-btn");
+      const loginMsg = document.getElementById("am-login-msg");
+      loginBtn.addEventListener("click", async () => {
+        const user = document.getElementById("am-login-user").value.trim();
+        const pass = document.getElementById("am-login-pass").value;
+        if (!user || !pass) {
+          loginMsg.className = "am-msg err";
+          loginMsg.textContent = "Please fill in all fields.";
+          return;
+        }
+        loginBtn.disabled = true;
+        loginMsg.className = "am-msg";
+        loginMsg.textContent = "Logging in\u2026";
+        const ok = await Auth.login(user, pass);
+        if (ok) {
+          loginMsg.className = "am-msg ok";
+          loginMsg.textContent = "\u2713 Logged in!";
+          setTimeout(() => {
+            Auth._closeModal();
+            Auth._onLoginSuccess();
+          }, 700);
+        } else {
+          loginMsg.className = "am-msg err";
+          loginMsg.textContent = "Invalid credentials. Try again.";
+          loginBtn.disabled = false;
+        }
+      });
+      ["am-login-user", "am-login-pass"].forEach((id) => {
+        document.getElementById(id).addEventListener("keydown", (e) => {
+          if (e.key === "Enter") loginBtn.click();
+        });
+      });
+      const suBtn = document.getElementById("am-su-btn");
+      const suMsg = document.getElementById("am-su-msg");
+      suBtn.addEventListener("click", async () => {
+        const email = document.getElementById("am-su-email").value.trim();
+        const handle = document.getElementById("am-su-handle").value.trim();
+        const pass = document.getElementById("am-su-pass").value;
+        if (!email || !handle || !pass) {
+          suMsg.className = "am-msg err";
+          suMsg.textContent = "Please fill in all fields.";
+          return;
+        }
+        if (pass.length < 8) {
+          suMsg.className = "am-msg err";
+          suMsg.textContent = "Password must be at least 8 characters.";
+          return;
+        }
+        if (!/^\S+$/.test(handle)) {
+          suMsg.className = "am-msg err";
+          suMsg.textContent = "Handle cannot contain spaces.";
+          return;
+        }
+        suBtn.disabled = true;
+        suMsg.className = "am-msg";
+        suMsg.textContent = "Creating account\u2026";
+        const created = await Auth.signup(email, handle, pass);
+        if (!created) {
+          suMsg.className = "am-msg err";
+          suMsg.textContent = Auth.lastSignupError || "Signup failed.";
+          suBtn.disabled = false;
+          return;
+        }
+        suMsg.textContent = "Signing you in\u2026";
+        const loggedIn = await Auth.login(handle, pass);
+        if (loggedIn) {
+          suMsg.className = "am-msg ok";
+          suMsg.textContent = "\u2713 Account created!";
+          setTimeout(() => {
+            Auth._closeModal();
+            Auth._onLoginSuccess();
+          }, 700);
+        } else {
+          suMsg.className = "am-msg ok";
+          suMsg.textContent = "\u2713 Account created \u2014 please log in.";
+          setTimeout(() => {
+            Auth._closeModal();
+            Auth.openModal("login");
+          }, 1e3);
+        }
+      });
+      setTimeout(() => {
+        const firstInput = wrap.querySelector(".am-input");
+        if (firstInput) firstInput.focus();
+      }, 50);
+    },
+    _closeModal() {
+      document.getElementById("ebx-auth-modal")?.remove();
+    },
+    /* Called after a successful login — refreshes the user badge and
+       optionally navigates to the profile page. */
+    async _onLoginSuccess() {
+      const me = await Auth.fetchMe();
+      const mount = document.getElementById("ebx-user-badge-mount");
+      if (mount && me) {
+        mount.innerHTML = userBadge({ handle: me.handle });
+      }
+      if (window.location.pathname.endsWith("profile.html")) {
+        window.location.reload();
+      }
     }
   };
   function fadeToWhite(hex, t) {

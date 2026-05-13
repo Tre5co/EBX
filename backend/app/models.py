@@ -362,3 +362,23 @@ class Review(Base):
 
     organization: Mapped["Organization"] = relationship(back_populates="reviews")
     benefactor: Mapped[Optional["BenefactorAccount"]] = relationship(back_populates="reviews")
+
+
+# ---------------------------------------------------------------------------
+# Vote (one benefactor vote per initiative cycle — org election)
+# ---------------------------------------------------------------------------
+class Vote(Base):
+    __tablename__ = "votes"
+    __table_args__ = (
+        UniqueConstraint("benefactor_id", "initiative_id", name="uq_vote_benefactor_initiative"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    benefactor_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
+    initiative_id: Mapped[str] = mapped_column(ForeignKey("initiatives.id"), nullable=False)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    benefactor: Mapped["BenefactorAccount"] = relationship()
+    initiative: Mapped["Initiative"] = relationship()
+    org: Mapped["Organization"] = relationship()

@@ -570,3 +570,25 @@ em { font-style: italic; }
 
 /* ── Opinion Card ── */
 .ebx-opinion { margin-bottom: var(--sp-md); }
+
+/* EBX Home Mark (fixed top-left on inner pages) */
+.ebx-home-mark {
+  position: fixed;
+  top: 14px;
+  left: 20px;
+  z-index: 200;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--clr-parchment);
+  opacity: 0.7;
+  text-decoration: none;
+  letter-spacing: -0.02em;
+  transition: opacity var(--transition);
+  line-height: 1;
+  pointer-events: auto;
+}
+.ebx-home-mark:hover {
+  opacity: 1;
+  color: var(--clr-parchment);
+}

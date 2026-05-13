@@ -542,6 +542,8 @@
   </style>
 </head>
 <body>
+  <a href="index.html" class="ebx-home-mark">EBX</a>
+
 
   <!-- ══ CAUSE HEADER ═══════════════════════════ -->
   <div class="cause-header" id="cause-header">
@@ -718,6 +720,7 @@
     }
 
     await EBX.loadAll();
+    EBX.initPage(); // shared nav: home mark + user badge
     const causes      = EBX.config.causes;
     const initiatives = EBX.config.initiatives;
     const cause       = causes.find(c => c.id === causeId);
@@ -1026,148 +1029,56 @@
 
   })();
 
-  /* ══════════════════════════════════════════════════
-     SUPABASE INTEGRATION
-     ══════════════════════════════════════════════════
-
-     Setup (one-time, in your repo):
-       1. npm install @supabase/supabase-js
-          OR use the CDN import below (already included).
-       2. Create a `.env` / Netlify env var:
-            SUPABASE_URL=https://xxxx.supabase.co
-            SUPABASE_ANON_KEY=eyJ...
-       3. Replace the two placeholder strings below with
-          your actual project URL and anon key.
-       4. Run the SQL in /supabase/schema.sql (provided
-          in ebx_shared.js comments) to create the tables.
-
-     Auth model:
-       - Supabase Auth (magic link or OAuth).
-       - `users` table has a shared row for both
-         benefactors and orgs, with a `user_type` column.
-       - RLS policies: users can only INSERT their own posts,
-         votes, commits; SELECT is open for all.
-  ══════════════════════════════════════════════════ */
-
-  // ── Supabase client (CDN) ──────────────────────────
-  // In production: import via your bundler instead.
-  // The script tag below should go in <head> of your layout.
-  //   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-  const SUPABASE_URL     = 'https://utodidayoclmwrgvfems.supabase.co';      // e.g. https://abcdef.supabase.co
-  const SUPABASE_ANON    = 'Ysb_publishable_QudaQZ2WoVIx5zXl0F-Raw_CRwmLgzx'; // public anon key, safe to expose
-
-  // Guard: only init if the Supabase CDN has been loaded
-  const sbClient = (typeof supabase !== 'undefined')
-    ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
-    : null;
-
-  // ── Auth helpers ───────────────────────────────────
-  async function getCurrentUser() {
-    if (!sbClient) return null;
-    const { data: { user } } = await sbClient.auth.getUser();
-    return user;
-  }
-
-  async function signInWithMagicLink(email) {
-    if (!sbClient) return;
-    const { error } = await sbClient.auth.signInWithOtp({ email });
-    if (error) throw error;
-  }
-
-  // ── Post (opinion / initiative review / update) ────
-  /**
-   * Insert a post into `posts` table.
-   * @param {{ body: string, type: 'opinion'|'initiative_review'|'org_review'|'update',
-   *           initiative_id?: string, cause_index: number }} payload
-   */
+  // ── Post via FastAPI ───────────────────────────────────────────────────────
   async function submitPost(payload) {
-    const user = await getCurrentUser();
-    if (!user) {
-      showAuthPrompt();
-      return;
-    }
-    if (!sbClient) { alert('[EBX] Supabase not connected.'); return; }
-
-    const { error } = await sbClient.from('posts').insert({
-      author_id:    user.id,
-      cause_index:  payload.cause_index,
-      initiative_id: payload.initiative_id || null,
-      type:         payload.type,
-      body:         payload.body,
-      likes:        0,
-      created_at:   new Date().toISOString(),
+    const res = await EBX.Auth.fetchAuthed('/posts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id:            crypto.randomUUID(),
+        cause_index:   payload.cause_index,
+        initiative_id: payload.initiative_id || null,
+        type:          payload.type,
+        body:          payload.body,
+        author:        payload.author || 'anonymous',
+        author_type:   'benefactor',
+        likes:         0,
+      }),
     });
-
-    if (error) { console.error('[EBX] Post failed:', error); throw error; }
+    if (res.status === 401) { EBX.Auth.openModal(); throw new Error('auth'); }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
   }
 
-  // ── Vote (on an initiative) ────────────────────────
-  /**
-   * Cast or toggle a vote for an initiative.
-   * Uses upsert with (user_id, initiative_id) unique constraint.
-   * @param {string} initiativeId
-   * @param {'up'|'down'} direction
-   */
+  // ── Vote (Vote model not yet migrated — stub) ─────────────────────────────
   async function castVote(initiativeId, direction = 'up') {
-    const user = await getCurrentUser();
-    if (!user) { showAuthPrompt(); return; }
-    if (!sbClient) return;
-
-    const { error } = await sbClient.from('votes').upsert({
-      user_id:      user.id,
-      initiative_id: initiativeId,
-      direction,
-      created_at:   new Date().toISOString(),
-    }, { onConflict: 'user_id,initiative_id' });
-
-    if (error) console.error('[EBX] Vote failed:', error);
+    const me = await EBX.Auth.fetchMe();
+    if (!me) { EBX.Auth.openModal(); return; }
+    // TODO: wire to POST /initiatives/{id}/vote once Vote model is added
+    alert('Voting is coming soon!');
   }
 
-  // ── Commit (pledge EBX to an initiative) ──────────
-  /**
-   * Record a benefactor commit.
-   * The actual EBX deduction happens server-side via a
-   * Supabase Edge Function (see /functions/commit.ts).
-   * This call triggers that function.
-   * @param {string} initiativeId
-   * @param {number} amountEbx
-   */
+  // ── Commit via FastAPI ────────────────────────────────────────────────────
   async function commitEbx(initiativeId, amountEbx) {
-    const user = await getCurrentUser();
-    if (!user) { showAuthPrompt(); return; }
-    if (!sbClient) return;
-
-    // Call Edge Function for atomic balance check + debit
-    const { data, error } = await sbClient.functions.invoke('commit', {
-      body: { initiative_id: initiativeId, amount_ebx: amountEbx }
+    const res = await EBX.Auth.fetchAuthed(`/initiatives/${initiativeId}/commit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initiative_id: initiativeId, amount_ebx: amountEbx }),
     });
-
-    if (error) { console.error('[EBX] Commit failed:', error); throw error; }
-    return data;
+    if (res.status === 401) { EBX.Auth.openModal(); throw new Error('auth'); }
+    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
+    return res.json();
   }
 
-  // ── Auth prompt (shown when action needs sign-in) ──
-  function showAuthPrompt() {
-    // Swap this with a proper modal once profile.html auth flow is built
-    const email = window.prompt(
-      'Sign in to post, vote, or commit.\nEnter your email for a magic link:'
-    );
-    if (email && email.includes('@')) {
-      signInWithMagicLink(email)
-        .then(() => alert('Check your email for a sign-in link!'))
-        .catch(e => alert('Error: ' + e.message));
-    }
-  }
-
-  // ── Wire up the opinion composer ──────────────────
+  // ── Opinion composer ──────────────────────────────────────────────────────
   async function submitOpinion() {
     const body = document.getElementById('opinion-textarea').value.trim();
     if (!body) return;
 
+    const me = await EBX.Auth.fetchMe();
+    if (!me) { EBX.Auth.openModal(); return; }
+
     const causeId    = EBX.getParam('id');
-    const causes     = EBX.config.causes;
-    const cause      = causes.find(c => c.id === causeId);
+    const cause      = EBX.config.causes.find(c => c.id === causeId);
     const initSelect = document.getElementById('opinion-initiative-select');
     const typeBtn    = document.querySelector('.type-btn.active');
 
@@ -1177,16 +1088,16 @@
         type:          typeBtn?.dataset.type === 'org' ? 'org_review' : 'opinion',
         initiative_id: initSelect?.value || null,
         cause_index:   cause?.index ?? 0,
+        author:        me.handle,
       });
       document.getElementById('opinion-textarea').value = '';
-      alert('Posted! It will appear after the next feed refresh.');
+      alert('Posted!');
     } catch (e) {
-      if (e?.message?.includes('auth')) showAuthPrompt();
-      else alert('Could not post: ' + e.message);
+      alert('Could not post: ' + e.message);
     }
   }
 
-  // ── Wire up vote buttons (added dynamically by renderInitiatives) ──
+  // ── Vote buttons (added dynamically by renderInitiatives) ─────────────────
   document.addEventListener('click', async e => {
     const voteBtn = e.target.closest('[data-vote-initiative]');
     if (!voteBtn) return;
@@ -1195,10 +1106,10 @@
     const dir = voteBtn.dataset.voteDir || 'up';
     voteBtn.disabled = true;
     await castVote(id, dir);
-    voteBtn.textContent = dir === 'up' ? '▲ Voted' : '▼ Voted';
+    voteBtn.disabled = false;
   });
 
-  // ── Wire up commit buttons (added dynamically) ─────
+  // ── Commit buttons (added dynamically) ───────────────────────────────────
   document.addEventListener('click', async e => {
     const commitBtn = e.target.closest('[data-commit-initiative]');
     if (!commitBtn) return;
@@ -1216,4 +1127,4 @@
   });
   </script>
 </body>
-</html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Earthbux — About</title>
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css"/>
+  <style>
+
+    /* ── Hero header ── */
+    .about-hero {
+      background: #0f1a14;
+      padding: var(--sp-3xl) 0;
+      border-bottom: 3px solid #4e7a4e;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .about-hero::before {
+      content:''; position:absolute; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 60 L60 0' stroke='%234e7a4e' stroke-width='0.3' opacity='0.25'/%3E%3C/svg%3E");
+      background-size:60px 60px; pointer-events:none;
+    }
+
+    .about-hero__inner {
+      position: relative; z-index: 1;
+      max-width: 640px;
+    }
+
+    .about-hero__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #6ecf8a;
+      margin-bottom: var(--sp-md);
+    }
+
+    .about-hero__title {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      color: var(--clr-parchment);
+      line-height: 1.05;
+      margin-bottom: var(--sp-lg);
+    }
+
+    .about-hero__title em {
+      color: var(--clr-honey);
+      font-style: normal;
+    }
+
+    .about-hero__lead {
+      font-size: 1.05rem;
+      color: rgba(245,240,232,0.7);
+      line-height: 1.65;
+      max-width: 540px;
+    }
+
+    /* ── Content sections ── */
+    .about-section {
+      padding: var(--sp-3xl) 0;
+      border-bottom: 1px solid var(--clr-border);
+    }
+
+    .about-section:last-of-type { border-bottom: none; }
+
+    .about-section--alt { background: var(--clr-surface); }
+
+    .about-section__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--clr-moss);
+      margin-bottom: var(--sp-sm);
+    }
+
+    .about-section__title {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--clr-earth);
+      line-height: 1.15;
+      margin-bottom: var(--sp-md);
+    }
+
+    .about-section__body {
+      font-size: 0.93rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.7;
+      max-width: 600px;
+    }
+
+    .about-section__body + .about-section__body {
+      margin-top: var(--sp-md);
+    }
+
+    /* ── 2-col layout for some sections ── */
+    .about-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-2xl);
+      align-items: start;
+    }
+
+    @media (max-width: 700px) {
+      .about-two-col { grid-template-columns: 1fr; }
+    }
+
+    /* ── How it works steps ── */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-xl);
+      margin-top: var(--sp-xl);
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: var(--sp-lg);
+      align-items: start;
+    }
+
+    .step__num {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: var(--clr-moss);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .step__title {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      margin-bottom: 4px;
+    }
+
+    .step__desc {
+      font-size: 0.85rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Causes grid ── */
+    .causes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: var(--sp-md);
+      margin-top: var(--sp-xl);
+    }
+
+    .cause-card {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      border-top: 4px solid currentColor;
+    }
+
+    .cause-card__emoji {
+      font-size: 1.8rem;
+      margin-bottom: var(--sp-sm);
+    }
+
+    .cause-card__name {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      margin-bottom: 4px;
+    }
+
+    .cause-card__desc {
+      font-size: 0.75rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.5;
+    }
+
+    /* ── EBX token explainer ── */
+    .token-explainer {
+      background: #0f1a14;
+      border-radius: var(--radius-lg);
+      padding: var(--sp-2xl);
+      color: var(--clr-parchment);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .token-explainer::before {
+      content:''; position:absolute; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 60 L60 0' stroke='%234e7a4e' stroke-width='0.3' opacity='0.25'/%3E%3C/svg%3E");
+      background-size:60px 60px; pointer-events:none;
+    }
+
+    .token-explainer__inner { position: relative; z-index: 1; }
+
+    .token-explainer__title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--clr-parchment);
+      margin-bottom: var(--sp-md);
+    }
+
+    .token-explainer__body {
+      font-size: 0.88rem;
+      color: rgba(245,240,232,0.65);
+      line-height: 1.7;
+      max-width: 520px;
+    }
+
+    .token-stat-row {
+      display: flex;
+      gap: var(--sp-xl);
+      margin-top: var(--sp-xl);
+      flex-wrap: wrap;
+    }
+
+    .token-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .token-stat__value {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #6ecf8a;
+      line-height: 1;
+    }
+
+    .token-stat__label {
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.35);
+    }
+
+    /* ── CTA section ── */
+    .about-cta {
+      background: var(--clr-moss);
+      color: white;
+      padding: var(--sp-3xl) 0;
+      text-align: center;
+    }
+
+    .about-cta__title {
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 900;
+      margin-bottom: var(--sp-md);
+    }
+
+    .about-cta__sub {
+      font-size: 1rem;
+      opacity: 0.8;
+      margin-bottom: var(--sp-xl);
+    }
+
+    .about-cta .btn {
+      background: white;
+      color: var(--clr-moss);
+      border: 2px solid white;
+    }
+
+    .about-cta .btn:hover { background: transparent; color: white; }
+
+    .about-cta .btn-ghost-white {
+      border: 2px solid rgba(255,255,255,0.5);
+      color: rgba(255,255,255,0.9);
+      border-radius: var(--radius-sm);
+      padding: 10px 24px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .about-cta .btn-ghost-white:hover {
+      border-color: white;
+      color: white;
+    }
+
+  </style>
+</head>
+<body>
+  <a href="index.html" class="ebx-home-mark">EBX</a>
+
+  <!-- ── Hero ── -->
+  <div class="about-hero">
+    <div class="container">
+      <div class="about-hero__inner">
+        <div class="about-hero__eyebrow">About Earthbux</div>
+        <h1 class="about-hero__title">
+          Collective action,<br><em>measured in impact.</em>
+        </h1>
+        <p class="about-hero__lead">
+          Earthbux is a transparent giving platform where your donation funds
+          real missions, executed by vetted organizations, tracked publicly
+          from day one to delivery.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── What is Earthbux ── -->
+  <div class="about-section">
+    <div class="container">
+      <div class="about-two-col">
+        <div>
+          <div class="about-section__eyebrow">What we are</div>
+          <h2 class="about-section__title">A giving platform built for accountability.</h2>
+          <p class="about-section__body">
+            Most donation platforms move money from your wallet to an organization
+            and call that the end of the story. Earthbux treats that as the
+            beginning. Every dollar donated is tied to a specific initiative
+            and a specific elected organization, with funds released in weekly
+            tranches only after that organization files verified progress reports.
+          </p>
+          <p class="about-section__body" style="margin-top:var(--sp-md);">
+            Benefactors hold credit tokens that track the value of their
+            contributions over time. If an organization underperforms, their
+            credit value drops. If they deliver, it rises — and so does yours.
+          </p>
+        </div>
+        <div>
+          <div class="token-explainer">
+            <div class="token-explainer__inner">
+              <div class="token-explainer__title">The EBX Token</div>
+              <p class="token-explainer__body">
+                Every dollar donated converts to EBX tokens. These tokens
+                represent your stake in a mission. Their value is modulated
+                by org transparency, community sentiment, and verified
+                outcomes — not speculation.
+              </p>
+              <div class="token-stat-row">
+                <div class="token-stat">
+                  <div class="token-stat__value">7</div>
+                  <div class="token-stat__label">Active causes</div>
+                </div>
+                <div class="token-stat">
+                  <div class="token-stat__value" id="stat-initiatives">—</div>
+                  <div class="token-stat__label">Initiatives</div>
+                </div>
+                <div class="token-stat">
+                  <div class="token-stat__value" id="stat-orgs">—</div>
+                  <div class="token-stat__label">Vetted orgs</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── How it works ── -->
+  <div class="about-section about-section--alt">
+    <div class="container">
+      <div class="about-section__eyebrow">How it works</div>
+      <h2 class="about-section__title">From donation to delivery.</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step__num">1</div>
+          <div>
+            <div class="step__title">Causes rotate on a cycle</div>
+            <div class="step__desc">
+              Seven causes — Atmosphere, Oceans, Forests, and more — take turns
+              in the spotlight on a weekly cycle. The active cause receives the
+              platform's full funding attention for its window.
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step__num">2</div>
+          <div>
+            <div class="step__title">Benefactors propose and vote on initiatives</div>
+            <div class="step__desc">
+              Any member can propose a concrete initiative for the active cause.
+              The community debates, rates, and votes. The top initiative enters
+              the election phase where vetted organizations compete to execute it.
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step__num">3</div>
+          <div>
+            <div class="step__title">Organizations are elected and funded</div>
+            <div class="step__desc">
+              Benefactors elect the organization they trust most to carry out the
+              initiative. Once elected, funds are released weekly — but only after
+              verified progress reports are filed and reviewed.
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step__num">4</div>
+          <div>
+            <div class="step__title">Progress is public, credit is earned</div>
+            <div class="step__desc">
+              Every milestone, budget line, and fund release is visible to the
+              whole platform. Benefactors earn credit tokens that reflect
+              real-world mission outcomes, not promises.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── The 7 Causes ── -->
+  <div class="about-section">
+    <div class="container">
+      <div class="about-section__eyebrow">The seven causes</div>
+      <h2 class="about-section__title">Every cause. Every cycle.</h2>
+      <p class="about-section__body">
+        Earthbux focuses on seven planetary cause areas. Funding rotates through
+        all seven on a fixed cycle, ensuring every cause receives attention and
+        no single issue monopolizes the platform.
+      </p>
+      <div class="causes-grid" id="causes-grid">
+        <!-- JS renders cause cards -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Transparency ── -->
+  <div class="about-section about-section--alt">
+    <div class="container">
+      <div class="about-two-col">
+        <div>
+          <div class="about-section__eyebrow">Transparency</div>
+          <h2 class="about-section__title">Every dollar, tracked.</h2>
+          <p class="about-section__body">
+            Earthbux publishes budget tables, milestone timelines, fund release
+            schedules, and progress reports for every active mission. There are
+            no silent transfers. No "overhead" line that swallows your donation.
+          </p>
+          <p class="about-section__body" style="margin-top:var(--sp-md);">
+            If an organization misses a milestone, funds are withheld until the
+            issue is resolved. If they miss too many, the community can vote to
+            reassign the mission to a different organization.
+          </p>
+        </div>
+        <div>
+          <div class="about-section__eyebrow">Organizations</div>
+          <h2 class="about-section__title">Vetted, accountable orgs.</h2>
+          <p class="about-section__body">
+            Only verified organizations can run missions on Earthbux. Vetting
+            includes legal status checks, financial history review, and an
+            editorial review of the org's track record. Verification is renewed
+            each funding cycle.
+          </p>
+          <p class="about-section__body" style="margin-top:var(--sp-md);">
+            Organizations earn a public score based on community reviews,
+            on-time milestone completion, and budget accuracy. This score
+            affects their standing in future elections.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CTA ── -->
+  <div class="about-cta">
+    <div class="container">
+      <div class="about-cta__title">Ready to put your earthbucks to work?</div>
+      <p class="about-cta__sub">Create your profile, vote on initiatives, and back the missions that matter.</p>
+      <div style="display:flex;gap:var(--sp-md);justify-content:center;flex-wrap:wrap;">
+        <a href="profile.html" class="btn" style="background:white;color:var(--clr-moss);border:2px solid white;padding:10px 28px;font-size:0.95rem;">
+          Create your profile
+        </a>
+        <a href="index.html" class="btn-ghost-white">
+          See active causes →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div id="ebx-footer-mount"></div>
+
+  <script src="resources/js/ebx_shared.js"></script>
+  <script>
+  (async function () {
+    await EBX.loadAll();
+    EBX.initPage(); // shared nav: home mark + user badge
+    const causes      = EBX.config.causes || [];
+    const initiatives = EBX.config.initiatives || [];
+    const orgsSet     = new Set();
+    initiatives.forEach(i => { if (i.winning_org) orgsSet.add(i.winning_org); });
+
+    document.getElementById('stat-initiatives').textContent = initiatives.length || '—';
+    document.getElementById('stat-orgs').textContent       = orgsSet.size || '—';
+
+    const causeDescriptions = {
+      0: 'Climate, air quality, and greenhouse gas emissions.',
+      1: 'Ocean health, marine ecosystems, and plastic pollution.',
+      2: 'Deforestation, reforestation, and biodiversity.',
+      3: 'Freshwater access, rivers, and wetland protection.',
+      4: 'Soil health, land use, and desertification.',
+      5: 'Endangered species and wildlife corridors.',
+      6: 'Community resilience and climate adaptation.',
+    };
+
+    const grid = document.getElementById('causes-grid');
+    causes.forEach(cause => {
+      const card = document.createElement('div');
+      card.className = 'cause-card';
+      card.style.color = cause.color;
+      card.innerHTML = `
+        <div class="cause-card__emoji">${cause.emoji || '🌍'}</div>
+        <div class="cause-card__name">${cause.name}</div>
+        <div class="cause-card__desc">${causeDescriptions[cause.index] || ''}</div>
+      `;
+      grid.appendChild(card);
+    });
+  })();
+  </script>
+</body>
+</html>

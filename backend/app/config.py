@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./earthbucks.db"
     secret_key: str = "dev-only-change-me"
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 10080  # 7 days; set lower via .env in production
     cors_origins: str = "http://localhost:5173,http://localhost:8000,http://127.0.0.1:5500"
 
     @property

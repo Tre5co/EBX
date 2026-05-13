@@ -183,7 +183,7 @@ class ReviewRead(ReviewBase):
 class BenefactorCreate(BaseModel):
     email: EmailStr
     handle: str = Field(min_length=2, max_length=40)
-    password: str = Field(min_length=8, max_length=128)
+    password: str = Field(min_length=8, max_length=72)
 
 
 class BenefactorRead(BaseModel):

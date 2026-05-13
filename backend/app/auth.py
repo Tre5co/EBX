@@ -2,10 +2,10 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from . import models
@@ -14,19 +14,25 @@ from .database import get_db
 
 settings = get_settings()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 # ---------------------------------------------------------------------------
 # Password helpers
 # ---------------------------------------------------------------------------
+def _pw_bytes(password: str) -> bytes:
+    """Encode password to UTF-8 and hard-cap at 72 bytes (bcrypt's limit).
+    bcrypt >= 4.x raises ValueError for longer inputs; we enforce the limit
+    ourselves so the behaviour is consistent regardless of library version."""
+    return password.encode("utf-8")[:72]
+
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(_pw_bytes(password), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    return bcrypt.checkpw(_pw_bytes(plain), hashed.encode("utf-8"))
 
 
 # ---------------------------------------------------------------------------

@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020",
-    "dev": "esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020 --watch --sourcemap",
+    "build": "grep -q EBX_TAIL_SENTINEL src/ebx_shared.ts && esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020",
+    "dev": "grep -q EBX_TAIL_SENTINEL src/ebx_shared.ts && esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020 --watch --sourcemap",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
