@@ -50,6 +50,7 @@ class OrganizationRead(OrganizationBase):
     id: str
     score: float = 0.0
     date_approved: Optional[datetime] = None
+    causes: list[CauseRead] = []
 
 
 # ---------------------------------------------------------------------------
@@ -174,6 +175,22 @@ class ReviewRead(ReviewBase):
     id: int
     organization_id: str
     benefactor_id: Optional[int] = None
+    created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Votes (org election — one per benefactor per initiative)
+# ---------------------------------------------------------------------------
+class VoteCreate(BaseModel):
+    org_id: str
+
+
+class VoteRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    benefactor_id: int
+    initiative_id: str
+    org_id: str
     created_at: datetime
 
 

@@ -40,7 +40,11 @@ def list_organizations(db: Session, cause_id: Optional[str] = None) -> Sequence[
 
 
 def get_organization(db: Session, org_id: str) -> Optional[models.Organization]:
-    return db.get(models.Organization, org_id)
+    return db.scalar(
+        select(models.Organization)
+        .options(selectinload(models.Organization.causes))
+        .where(models.Organization.id == org_id)
+    )
 
 
 def create_organization(db: Session, data: schemas.OrganizationCreate) -> models.Organization:
@@ -184,6 +188,48 @@ def list_reviews(db: Session, organization_id: str) -> Sequence[models.Review]:
         .where(models.Review.organization_id == organization_id)
         .order_by(models.Review.created_at.desc())
     ).all()
+
+
+# ---------------------------------------------------------------------------
+# Votes (org election)
+# ---------------------------------------------------------------------------
+def cast_vote(
+    db: Session,
+    initiative_id: str,
+    benefactor_id: int,
+    org_id: str,
+) -> models.Vote:
+    """Upsert a benefactor's org vote for an initiative (one vote per benefactor per initiative)."""
+    existing = db.scalar(
+        select(models.Vote)
+        .where(models.Vote.benefactor_id == benefactor_id)
+        .where(models.Vote.initiative_id == initiative_id)
+    )
+    if existing:
+        existing.org_id = org_id
+        db.commit()
+        db.refresh(existing)
+        return existing
+    vote = models.Vote(
+        benefactor_id=benefactor_id,
+        initiative_id=initiative_id,
+        org_id=org_id,
+    )
+    db.add(vote)
+    db.commit()
+    db.refresh(vote)
+    return vote
+
+
+def get_vote_tally(db: Session, initiative_id: str) -> dict[str, int]:
+    """Return a dict of org_id -> vote count for an initiative."""
+    from sqlalchemy import func as sqlfunc
+    rows = db.execute(
+        select(models.Vote.org_id, sqlfunc.count(models.Vote.id).label("cnt"))
+        .where(models.Vote.initiative_id == initiative_id)
+        .group_by(models.Vote.org_id)
+    ).all()
+    return {row.org_id: row.cnt for row in rows}
 
 
 # ---------------------------------------------------------------------------

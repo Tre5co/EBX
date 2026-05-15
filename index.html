@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Earthbux — You donate, we follow.</title>
+  <title>Earthbucks — You donate, we follow.</title>
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
     /* ── Top bar (3-up: tagline · election banner · user badge) ── */
@@ -15,9 +15,9 @@
     }
     .ebx-topbar__inner {
       display: grid;
-      grid-template-columns: minmax(160px, 1fr) auto minmax(160px, 1fr);
+      grid-template-columns: 1fr 420px 1fr;
       align-items: center;
-      gap: var(--sp-md);
+      gap: var(--sp-lg);
       padding: 14px 0;
     }
     .ebx-topbar__tagline {
@@ -81,8 +81,8 @@
       flex-direction: column;
       gap: 10px;
     }
-    .hero__left  { align-items: flex-end; }
-    .hero__right { align-items: flex-start; }
+    .hero__left  { align-items: flex-start; }
+    .hero__right { align-items: flex-end; }
     .race-card:hover { background: rgba(15,26,20,0.92) !important; }
 
     .hero__center { display: flex; justify-content: center; }
@@ -214,7 +214,7 @@
   <div class="ebx-topbar">
     <div class="container ebx-topbar__inner">
       <div class="ebx-topbar__tagline">
-        <a href="index.html"><strong>EBX</strong> — You donate. <em>We follow.</em></a>
+        <a href="index.html">You donate. <em>We follow.</em></a>
       </div>
       <div class="ebx-topbar__center" id="ebx-election-banner-mount"></div>
       <div class="ebx-topbar__right"  id="ebx-user-badge-mount"></div>

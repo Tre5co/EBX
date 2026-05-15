@@ -296,13 +296,17 @@
     /* ── Existing profile view ── */
     .profile-layout {
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 240px 1fr 280px;
       gap: var(--sp-xl);
       align-items: start;
       padding: var(--sp-2xl) 0;
     }
 
-    @media (max-width: 800px) {
+    @media (max-width: 1100px) {
+      .profile-layout { grid-template-columns: 220px 1fr; }
+      .profile-choices-col { display: none; }
+    }
+    @media (max-width: 720px) {
       .profile-layout { grid-template-columns: 1fr; }
     }
 
@@ -429,6 +433,113 @@
       font-family: var(--font-mono);
       font-size: 0.65rem;
       color: var(--clr-ink-light);
+    }
+
+    /* ── Upcoming cause banner (b) ── */
+    .upcoming-banner {
+      background: #0f1a14;
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      margin-bottom: var(--sp-lg);
+      color: var(--clr-parchment);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .upcoming-banner__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: rgba(245,240,232,0.4);
+      margin-bottom: var(--sp-sm);
+    }
+    .upcoming-banner__rows {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .upcoming-banner__row {
+      display: flex; align-items: center; gap: var(--sp-md);
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: var(--radius-sm);
+      border-left: 3px solid rgba(255,255,255,0.1);
+      cursor: pointer; transition: background 0.15s;
+      text-decoration: none;
+    }
+    .upcoming-banner__row:hover { background: rgba(255,255,255,0.07); }
+    .upcoming-banner__row--cause { border-left-color: var(--clr-honey); }
+    .upcoming-banner__row--org   { border-left-color: var(--clr-moss); }
+    .upcoming-banner__row-label {
+      font-family: var(--font-mono); font-size: 0.6rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(245,240,232,0.4); flex-shrink: 0; width: 64px;
+    }
+    .upcoming-banner__row-choice {
+      flex: 1; font-size: 0.85rem; font-weight: 600;
+      color: var(--clr-parchment); line-height: 1.3;
+    }
+    .upcoming-banner__row-meta {
+      font-family: var(--font-mono); font-size: 0.7rem;
+      color: rgba(245,240,232,0.5); text-align: right; flex-shrink: 0;
+    }
+    .upcoming-banner__row-timer {
+      font-family: var(--font-mono); font-size: 0.68rem;
+      color: var(--clr-honey); margin-top: 2px;
+    }
+
+    /* ── Choices table (d) ── */
+    .choices-col-card {
+      background: white;
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .choices-col-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--sp-md) var(--sp-lg);
+      border-bottom: 1px solid var(--clr-border);
+      background: var(--clr-surface);
+    }
+    .choices-col-title {
+      font-family: var(--font-mono); font-size: 0.65rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--clr-ink-muted); font-weight: 600;
+    }
+    .choices-toggle {
+      display: flex; gap: 4px;
+    }
+    .choices-toggle button {
+      padding: 3px 10px;
+      font-family: var(--font-mono); font-size: 0.6rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      border: 1px solid var(--clr-border); border-radius: 3px;
+      background: none; color: var(--clr-ink-muted); cursor: pointer;
+    }
+    .choices-toggle button.active {
+      background: var(--clr-forest); color: white; border-color: var(--clr-forest);
+    }
+    .choices-table { width: 100%; border-collapse: collapse; }
+    .choices-table td {
+      padding: 8px 12px; border-bottom: 1px solid rgba(212,206,194,0.3);
+      font-size: 0.78rem; color: var(--clr-ink-muted);
+    }
+    .choices-table tbody tr:last-child td { border-bottom: none; }
+    .choices-table tbody tr:hover td { background: rgba(78,122,78,0.03); }
+    .choices-table .cause-dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; margin-right: 6px; flex-shrink: 0;
+    }
+    .choices-table .choice-link {
+      font-weight: 600; color: var(--clr-earth);
+      text-decoration: none;
+    }
+    .choices-table .choice-link:hover { text-decoration: underline; }
+    .choices-table .no-choice { color: var(--clr-ink-light); font-style: italic; }
+
+    /* ── Feed history (e) ── */
+    .profile-feed-history {
+      background: var(--clr-bg);
+    }
+    .profile-feed-eyebrow {
+      font-family: var(--font-mono); font-size: 0.6rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--clr-ink-light); margin-bottom: var(--sp-md);
     }
 
     /* Main content area */
@@ -1000,7 +1111,7 @@
       const initials = (p.display || p.handle || '?')
         .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
 
-      // Credit badges — render mini annulus for each cause they follow
+      // ── (c) Credit portfolio — these ARE the wallet ──
       const creditBadgesHTML = (p.causes || []).length
         ? p.causes.map(ci => {
             const c = causes.find(x => x.index === ci);
@@ -1014,16 +1125,104 @@
                 </div>
               </div>`;
           }).join('')
-        : `<p class="text-sm text-muted">No credits yet. Your first pool mints your first credit.</p>`;
+        : `<p class="text-sm text-muted" style="padding:var(--sp-md) 0;">No credits yet. Your first pool mints your first credit.</p>`;
 
+      // ── (b) Upcoming cause banner ──
+      const cycleState = EBX.Cycle.now();
+      const activeCause = causes.find(c => c.index === cycleState.activeCauseIndex);
+      const nextCause   = causes[(cycleState.activeCauseIndex + 1) % causes.length];
       const nextPool = getNextPoolDate();
+      // Countdown: ms until end of active cause window
+      const winStart = EBX.Cycle.windowStart(cycleState.activeCauseIndex, cycleState.cycleNum);
+      const winEnd   = new Date(winStart.getTime() + (EBX.config.causeLengthDays || 14) * EBX.Cycle.MS_PER_DAY);
+      const msLeft   = Math.max(0, winEnd - new Date());
+      const daysLeft = Math.floor(msLeft / EBX.Cycle.MS_PER_DAY);
+      const hrsLeft  = Math.floor((msLeft % EBX.Cycle.MS_PER_DAY) / 3600000);
+      const countdownStr = daysLeft > 0 ? `${daysLeft}d ${hrsLeft}h left` : `${hrsLeft}h left`;
+
+      // User's stored choices from localStorage
+      let userChoices = {};
+      try { userChoices = JSON.parse(localStorage.getItem('ebx_choices') || '{}'); } catch(e) {}
+      const userInitChoice = userChoices[`init_${cycleState.activeCauseIndex}`] || null;
+      const userOrgChoice  = userChoices[`org_${cycleState.activeCauseIndex}`]  || null;
+
+      const upcomingBannerHTML = `
+        <div class="upcoming-banner">
+          <div class="upcoming-banner__eyebrow">Your upcoming decisions</div>
+          <div class="upcoming-banner__rows">
+            <a class="upcoming-banner__row upcoming-banner__row--cause"
+               href="cause.html?id=${activeCause?.id || ''}">
+              <div class="upcoming-banner__row-label">Initiative</div>
+              <div class="upcoming-banner__row-choice">
+                ${activeCause ? `${activeCause.emoji || ''} ${activeCause.name}` : 'Loading…'}
+                ${userInitChoice
+                  ? `<div style="font-size:0.75rem;color:rgba(245,240,232,0.5);font-weight:400;margin-top:2px;">
+                       Your choice: ${userInitChoice}
+                     </div>`
+                  : `<div style="font-size:0.75rem;color:rgba(245,240,232,0.35);font-weight:400;margin-top:2px;">
+                       No vote yet — <span style="color:var(--clr-honey)">commit EBX →</span>
+                     </div>`}
+              </div>
+              <div class="upcoming-banner__row-meta">
+                <div>${EBX.formatEBX ? EBX.formatEBX(p.ebx_balance || 0) : '0 EBX'}</div>
+                <div class="upcoming-banner__row-timer">${countdownStr}</div>
+              </div>
+            </a>
+            <a class="upcoming-banner__row upcoming-banner__row--org"
+               href="cause.html?id=${activeCause?.id || ''}">
+              <div class="upcoming-banner__row-label">Org vote</div>
+              <div class="upcoming-banner__row-choice">
+                ${activeCause ? `${activeCause.emoji || ''} ${activeCause.name}` : 'Loading…'}
+                ${userOrgChoice
+                  ? `<div style="font-size:0.75rem;color:rgba(245,240,232,0.5);font-weight:400;margin-top:2px;">
+                       Your choice: ${userOrgChoice}
+                     </div>`
+                  : `<div style="font-size:0.75rem;color:rgba(245,240,232,0.35);font-weight:400;margin-top:2px;">
+                       Opens in final 2 days of debate
+                     </div>`}
+              </div>
+              <div class="upcoming-banner__row-meta">
+                <div>—</div>
+                <div class="upcoming-banner__row-timer">${countdownStr}</div>
+              </div>
+            </a>
+          </div>
+        </div>`;
+
+      // ── (e) Feed history — posts by this user ──
+      const allPosts = EBX.config.feed || [];
+      const userPosts = allPosts
+        .filter(post => post.author === p.handle || post.author === `@${p.handle}`)
+        .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const feedHistoryHTML = userPosts.length
+        ? userPosts.map(post => `
+            <div class="activity-item">
+              <div class="activity-item__icon" style="font-size:0.75rem;background:var(--clr-surface);">💬</div>
+              <div class="activity-item__body">
+                ${post.title ? `<div style="font-size:0.82rem;font-weight:600;color:var(--clr-ink);margin-bottom:2px;">${post.title}</div>` : ''}
+                <div class="activity-item__text">${(post.body||'').slice(0,120)}${post.body?.length > 120 ? '…' : ''}</div>
+                <div class="activity-item__time">${EBX.timeAgo(post.created_at)}</div>
+              </div>
+            </div>`).join('')
+        : `<div style="color:var(--clr-ink-light);font-size:0.82rem;padding:var(--sp-lg) 0;">
+             No posts yet. <a href="feed.html" style="color:var(--clr-moss);">Join the discussion →</a>
+           </div>`;
+
+      // ── (d) Choices table — per-cause initiative or org choices ──
+      const choicesTableRows = causes.map(c => {
+        const initChoice   = userChoices[`init_${c.index}`]    || null;
+        const initChoiceId = userChoices[`init_id_${c.index}`] || null;
+        const orgChoice    = userChoices[`org_${c.index}`]     || null;
+        const orgChoiceId  = userChoices[`org_id_${c.index}`]  || null;
+        return { cause: c, initChoice, initChoiceId, orgChoice, orgChoiceId };
+      });
 
       root.innerHTML = `
         <div style="background:var(--clr-bg);">
           <div class="container">
             <div class="profile-layout">
 
-              <!-- Sidebar -->
+              <!-- ── (a+c) Left sidebar: handle card + credit portfolio ── -->
               <aside class="profile-sidebar">
 
                 <div class="profile-card">
@@ -1033,16 +1232,6 @@
                   <div class="profile-card__type">${p.type === 'org' ? 'Organization' : 'Benefactor'}</div>
                 </div>
 
-                <div class="wallet-card">
-                  <div class="wallet-card__label">Wallet balance</div>
-                  <div class="wallet-card__balance">${EBX.formatEBX(p.ebx_balance || 0)}</div>
-                  <div class="wallet-card__sub">Next pool: ${nextPool}</div>
-                  <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;">
-                    <button class="btn btn-primary btn-sm">Donate</button>
-                    <button class="btn btn-ghost btn-sm">Cash out</button>
-                  </div>
-                </div>
-
                 <div class="credits-section">
                   <div class="credits-section__title">Credit portfolio</div>
                   ${creditBadgesHTML}
@@ -1050,158 +1239,110 @@
 
               </aside>
 
-              <!-- Main -->
+              <!-- ── (b+e) Center: upcoming banner + feed history ── -->
               <main class="profile-main">
 
-                <div class="profile-tabs">
-                  <button class="profile-tab active" data-ptab="activity">Activity</button>
-                  <button class="profile-tab" data-ptab="opinions">Opinions</button>
-                  <button class="profile-tab" data-ptab="settings">Settings</button>
-                </div>
+                ${upcomingBannerHTML}
 
-                <!-- Activity -->
-                <div class="profile-panel active" id="ptab-activity">
+                <div class="profile-feed-history">
+                  <div class="profile-feed-eyebrow">Your posts</div>
                   <div style="background:white;border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:var(--sp-lg);">
-                    <div class="activity-item">
-                      <div class="activity-item__icon">🌱</div>
-                      <div class="activity-item__body">
-                        <div class="activity-item__text">Profile created. Welcome to Earthbux.</div>
-                        <div class="activity-item__time">${EBX.timeAgo(p.joined)}</div>
-                      </div>
-                    </div>
-                    <div class="activity-item" style="opacity:0.35;">
-                      <div class="activity-item__icon">💸</div>
-                      <div class="activity-item__body">
-                        <div class="activity-item__text">Your first donation will be pooled on ${nextPool}.</div>
-                        <div class="activity-item__time">Pending</div>
-                      </div>
-                    </div>
+                    ${feedHistoryHTML}
                   </div>
                 </div>
 
-                <!-- Opinions -->
-                <div class="profile-panel" id="ptab-opinions">
-                  <div style="text-align:center;padding:var(--sp-3xl);color:var(--clr-ink-light);">
-                    <div style="font-size:2rem;margin-bottom:var(--sp-md);">💬</div>
-                    <p class="text-sm">No opinions posted yet.</p>
-                    <a href="feed.html" class="btn btn-ghost btn-sm mt-md">Explore the feed →</a>
-                  </div>
-                </div>
-
-                <!-- Settings -->
-                <div class="profile-panel" id="ptab-settings">
-
+                <div style="margin-top:var(--sp-2xl);">
+                  <div class="profile-feed-eyebrow">Settings</div>
                   <div class="settings-group">
                     <div class="settings-group__title">Identity</div>
                     <div class="settings-row">
-                      <div>
-                        <div class="settings-row__label">Handle</div>
-                        <div class="settings-row__sub">@${p.handle}</div>
-                      </div>
-                      <button class="btn btn-ghost btn-sm">Edit</button>
+                      <div><div class="settings-row__label">Handle</div><div class="settings-row__sub">@${p.handle}</div></div>
                     </div>
                     <div class="settings-row">
-                      <div>
-                        <div class="settings-row__label">Display name</div>
-                        <div class="settings-row__sub">${p.display || '—'}</div>
-                      </div>
-                      <button class="btn btn-ghost btn-sm">Edit</button>
+                      <div><div class="settings-row__label">Email</div><div class="settings-row__sub">${p.email || '—'}</div></div>
                     </div>
                     <div class="settings-row">
-                      <div>
-                        <div class="settings-row__label">Account type</div>
-                        <div class="settings-row__sub">${p.type === 'org' ? 'Organization' : 'Benefactor'}</div>
-                      </div>
-                      <button class="btn btn-ghost btn-sm">Switch</button>
-                    </div>
-                  </div>
-
-                  <div class="settings-group">
-                    <div class="settings-group__title">Donation</div>
-                    <div class="settings-row">
-                      <div>
-                        <div class="settings-row__label">Amount per cycle</div>
-                        <div class="settings-row__sub">$${p.amount || 0} every 14 days</div>
-                      </div>
+                      <div><div class="settings-row__label">Donation per cycle</div><div class="settings-row__sub">$${p.amount || 0} / 14 days</div></div>
                       <button class="btn btn-ghost btn-sm">Change</button>
                     </div>
-                    <div class="settings-row">
-                      <div>
-                        <div class="settings-row__label">Payment method</div>
-                        <div class="settings-row__sub">Not connected</div>
-                      </div>
-                      <button class="btn btn-primary btn-sm">Connect</button>
-                    </div>
                   </div>
-
-                  <div class="settings-group">
-                    <div class="settings-group__title">Notifications</div>
-                    ${[
-                      ['New org vote opens',        'Notified when a cause enters org vote phase', true],
-                      ['Initiative results',         'Results when org vote closes',                true],
-                      ['Feedback on your opinions', 'When someone likes your opinion',             false],
-                      ['Weekly EBX release',         'Remind me when EBX unlocks from my credit',  true],
-                    ].map(([label, sub, on]) => `
-                      <div class="settings-row">
-                        <div>
-                          <div class="settings-row__label">${label}</div>
-                          <div class="settings-row__sub">${sub}</div>
-                        </div>
-                        <div class="toggle ${on?'on':''}" onclick="this.classList.toggle('on')"></div>
-                      </div>`).join('')}
-                  </div>
-
-                  <div class="settings-group">
-                    <div class="settings-group__title">Causes I follow</div>
-                    ${causes.map(c => `
-                      <div class="settings-row">
-                        <div style="display:flex;align-items:center;gap:var(--sp-sm);">
-                          <div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0;"></div>
-                          <div class="settings-row__label">${c.name}</div>
-                        </div>
-                        <div class="toggle ${(p.causes||[]).includes(c.index)?'on':''}"
-                             onclick="this.classList.toggle('on')"></div>
-                      </div>`).join('')}
-                  </div>
-
-                  <div style="margin-top:var(--sp-xl);padding-top:var(--sp-lg);border-top:1px solid var(--clr-border);display:flex;gap:var(--sp-sm);flex-wrap:wrap;">
-                    <button class="btn btn-ghost btn-sm" style="color:var(--clr-ink-light);"
-                      onclick="if(confirm('Clear your local profile?')){localStorage.removeItem('ebx_profile');location.reload();}">
+                  <div style="padding-top:var(--sp-md);display:flex;gap:var(--sp-sm);">
+                    <button class="btn btn-ghost btn-sm" style="color:var(--clr-ink-light);font-size:0.7rem;"
+                      onclick="if(confirm('Clear local data?')){localStorage.removeItem('ebx_profile');localStorage.removeItem('ebx_choices');location.reload();}">
                       Reset local data (dev)
                     </button>
-                    <button class="btn btn-ghost btn-sm" style="color:#f87171;"
-                      onclick="if(confirm('Log out?')){EBX.Auth.clear();localStorage.removeItem('ebx_profile');location.reload();}">
-                      Log Out
-                    </button>
                   </div>
-
                 </div>
 
               </main>
+
+              <!-- ── (d) Right: choices table ── -->
+              <aside class="profile-choices-col">
+                <div class="choices-col-card">
+                  <div class="choices-col-header">
+                    <div class="choices-col-title">Your choices</div>
+                    <div class="choices-toggle">
+                      <button class="active" id="toggle-inits" onclick="toggleChoicesView('inits')">Initiatives</button>
+                      <button id="toggle-orgs" onclick="toggleChoicesView('orgs')">Orgs</button>
+                    </div>
+                  </div>
+                  <table class="choices-table" id="choices-table-inits">
+                    <tbody>
+                      ${choicesTableRows.map(row => `
+                        <tr>
+                          <td style="width:36px;">
+                            <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
+                          </td>
+                          <td>
+                            <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
+                            ${row.initChoice
+                              ? `<a class="choice-link" href="${row.initChoiceId ? 'initiative.html?id=' + row.initChoiceId : 'cause.html?id=' + row.cause.id}">${row.initChoice}</a>`
+                              : `<span class="no-choice">No vote yet</span>`}
+                          </td>
+                        </tr>`).join('')}
+                    </tbody>
+                  </table>
+                  <table class="choices-table" id="choices-table-orgs" style="display:none;">
+                    <tbody>
+                      ${choicesTableRows.map(row => `
+                        <tr>
+                          <td style="width:36px;">
+                            <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
+                          </td>
+                          <td>
+                            <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
+                            ${row.orgChoice
+                              ? `<a class="choice-link" href="${row.orgChoiceId ? 'mission.html?org=' + row.orgChoiceId : 'mission.html?cause=' + row.cause.id}">${row.orgChoice}</a>`
+                              : `<span class="no-choice">No org vote yet</span>`}
+                          </td>
+                        </tr>`).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </aside>
+
             </div>
           </div>
         </div>`;
 
-      // Profile tab switching
-      document.querySelectorAll('.profile-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('.profile-tab').forEach(t => t.classList.remove('active'));
-          document.querySelectorAll('.profile-panel').forEach(p => p.classList.remove('active'));
-          tab.classList.add('active');
-          document.getElementById(`ptab-${tab.dataset.ptab}`).classList.add('active');
-        });
-      });
+      // Wire choices toggle
+      window.toggleChoicesView = function(view) {
+        document.getElementById('choices-table-inits').style.display = view === 'inits' ? '' : 'none';
+        document.getElementById('choices-table-orgs').style.display  = view === 'orgs'  ? '' : 'none';
+        document.getElementById('toggle-inits').classList.toggle('active', view === 'inits');
+        document.getElementById('toggle-orgs').classList.toggle('active',  view === 'orgs');
+      };
     }
 
-
-    /* ── Next pool date: next 14-day boundary from cycle start ── */
     function getNextPoolDate() {
-      const CYCLE_START = new Date('2026-01-01T00:00:00');
-      const MS_14       = 14 * 86400000;
-      const elapsed     = Date.now() - CYCLE_START.getTime();
-      const nextMs      = CYCLE_START.getTime() + (Math.floor(elapsed / MS_14) + 1) * MS_14;
-      return new Date(nextMs).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      const cycleState = EBX.Cycle.now();
+      const idx = cycleState.activeCauseIndex;
+      const winStart = EBX.Cycle.windowStart(idx, cycleState.cycleNum);
+      const winEnd = new Date(winStart.getTime() + (EBX.config.causeLengthDays || 14) * EBX.Cycle.MS_PER_DAY);
+      return winEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
+
+    EBX.initFooter && EBX.initFooter();
 
   })();
   </script>

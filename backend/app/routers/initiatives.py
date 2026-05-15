@@ -53,3 +53,34 @@ def commit_ebx(
         return crud.commit_ebx(db, initiative_id, user.id, data.amount_ebx)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post(
+    "/{initiative_id}/vote",
+    response_model=schemas.VoteRead,
+    status_code=201,
+)
+def cast_vote(
+    initiative_id: str,
+    data: schemas.VoteCreate,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Cast (or update) a benefactor's org-election vote for an initiative."""
+    init = crud.get_initiative(db, initiative_id)
+    if init is None:
+        raise HTTPException(status_code=404, detail="Initiative not found")
+    try:
+        return crud.cast_vote(db, initiative_id, user.id, data.org_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get(
+    "/{initiative_id}/vote/tally",
+    response_model=dict,
+)
+def vote_tally(initiative_id: str, db: Session = Depends(get_db)):
+    """Return org_id -> vote count for an initiative (public)."""
+    return crud.get_vote_tally(db, initiative_id)
+

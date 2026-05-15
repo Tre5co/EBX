@@ -354,6 +354,7 @@ interface SegmentEntry {
 const Annulus = {
   _rafId: null as number | null,
   _rotatingGroup: null as SVGGElement | null,
+  _nowGroup: null as SVGGElement | null,
   _segments: [] as SegmentEntry[],
   _svg: null as SVGSVGElement | null,
   /** Cached refs for legacy inline-script hooks — set once in mount(). */
@@ -467,6 +468,53 @@ const Annulus = {
         midX: lx, midY: ly,
       });
     }
+
+    // ── Glow filter for the "now" marker ──
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    defs.innerHTML = `
+      <filter id="ebx-now-glow" x="-400%" y="-400%" width="900%" height="900%"
+              color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur1"/>
+        <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur2"/>
+        <feMerge>
+          <feMergeNode in="blur1"/>
+          <feMergeNode in="blur2"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    `;
+    svg.appendChild(defs);
+
+    // ── NOW marker: a fixed glowing white line at 12 o'clock ──
+    // It does NOT rotate with the wheel. As the wheel slowly turns beneath it,
+    // the marker appears to travel through each cause sector across the week,
+    // showing where in the current decision window we are.
+    const nowGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    nowGroup.setAttribute('pointer-events', 'none');
+
+    // The line runs from just inside the inner ring to just past the outer ring.
+    const nowLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    nowLine.setAttribute('x1', String(cx));
+    nowLine.setAttribute('y1', String(cy - outerR - 6));
+    nowLine.setAttribute('x2', String(cx));
+    nowLine.setAttribute('y2', String(cy - innerR + 6));
+    nowLine.setAttribute('stroke', 'rgba(255,255,255,0.88)');
+    nowLine.setAttribute('stroke-width', '1.5');
+    nowLine.setAttribute('stroke-linecap', 'round');
+    nowLine.setAttribute('filter', 'url(#ebx-now-glow)');
+    nowGroup.appendChild(nowLine);
+
+    // Small bright dot at the outer tip — the "needle head"
+    const nowDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    nowDot.setAttribute('cx', String(cx));
+    nowDot.setAttribute('cy', String(cy - outerR - 3));
+    nowDot.setAttribute('r', '3');
+    nowDot.setAttribute('fill', 'white');
+    nowDot.setAttribute('filter', 'url(#ebx-now-glow)');
+    nowGroup.appendChild(nowDot);
+
+    svg.appendChild(nowGroup);
+    Annulus._nowGroup = nowGroup;
 
     el.appendChild(svg);
 
@@ -1007,12 +1055,19 @@ const Auth = {
     const headers = new Headers(init.headers || {});
     const token = Auth.getToken();
     if (token) headers.set('Authorization', `Bearer ${token}`);
+    // Automatically set Content-Type for JSON bodies so FastAPI can parse them.
+    if (typeof init.body === 'string' && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
     return fetch(config.apiBase + path, { ...init, headers });
   },
 
   async fetchMe(): Promise<{ id: number; email: string; handle: string; is_active: boolean; created_at: string } | null> {
     const res = await Auth.fetchAuthed('/auth/me');
-    if (!res.ok) { Auth.clear(); return null; }
+    // Only clear the stored token on an explicit 401 — not on network errors or
+    // temporary server unavailability (which would log the user out unexpectedly).
+    if (res.status === 401) { Auth.clear(); return null; }
+    if (!res.ok) return null;
     return res.json();
   },
 
@@ -1400,24 +1455,37 @@ function userBadge(opts: { handle?: string | null } = {}): string {
     return `<path d="${annularSectorPath(cx, cy, outerR, innerR, a0, a1)}"
       fill="${cause.color}" fill-opacity="0.22" stroke="#0f1a14" stroke-width="0.6"/>`;
   }).join('');
+  const logoutScript = `if(confirm('Log out?')){EBX.Auth.clear();localStorage.removeItem('ebx_profile');location.reload();}`;
   return `
-    <a href="profile.html" class="ebx-user-badge"
-       style="display:inline-flex;align-items:center;gap:10px;
-              text-decoration:none;color:rgba(245,240,232,0.85);
-              padding:4px 14px 4px 4px;border-radius:999px;
-              background:rgba(15,26,20,0.6);
-              border:1px solid rgba(255,255,255,0.12);">
-      <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"
-           style="display:block;">
-        <circle cx="${cx}" cy="${cy}" r="${outerR + 0.5}" fill="#0f1a14" opacity="0.7"/>
-        ${segs}
-        <circle cx="${cx}" cy="${cy}" r="${innerR - 1}" fill="#0f1a14" opacity="0.95"/>
-        <text x="${cx}" y="${cy + 3}" text-anchor="middle"
-              font-size="9" font-weight="700" fill="rgba(245,240,232,0.9)"
-              font-family="var(--font-mono)">${initials}</text>
-      </svg>
-      <span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:600;">${opts.handle ?? ''}</span>
-    </a>
+    <div style="display:inline-flex;align-items:center;gap:6px;">
+      <a href="profile.html" class="ebx-user-badge"
+         style="display:inline-flex;align-items:center;gap:10px;
+                text-decoration:none;color:rgba(245,240,232,0.85);
+                padding:4px 14px 4px 4px;border-radius:999px;
+                background:rgba(15,26,20,0.6);
+                border:1px solid rgba(255,255,255,0.12);">
+        <svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg"
+             style="display:block;">
+          <circle cx="${cx}" cy="${cy}" r="${outerR + 0.5}" fill="#0f1a14" opacity="0.7"/>
+          ${segs}
+          <circle cx="${cx}" cy="${cy}" r="${innerR - 1}" fill="#0f1a14" opacity="0.95"/>
+          <text x="${cx}" y="${cy + 3}" text-anchor="middle"
+                font-size="9" font-weight="700" fill="rgba(245,240,232,0.9)"
+                font-family="var(--font-mono)">${initials}</text>
+        </svg>
+        <span style="font-family:var(--font-mono);font-size:0.7rem;font-weight:600;">${opts.handle ?? ''}</span>
+      </a>
+      <button onclick="${logoutScript}"
+              title="Log out"
+              style="background:none;border:1px solid rgba(255,255,255,0.14);border-radius:999px;
+                     color:rgba(245,240,232,0.5);cursor:pointer;font-size:0.65rem;
+                     font-family:var(--font-mono);letter-spacing:0.04em;
+                     padding:4px 9px;transition:color 0.15s,border-color 0.15s;line-height:1;"
+              onmouseover="this.style.color='rgba(245,240,232,0.9)';this.style.borderColor='rgba(255,255,255,0.35)';"
+              onmouseout="this.style.color='rgba(245,240,232,0.5)';this.style.borderColor='rgba(255,255,255,0.14)';">
+        ↩ out
+      </button>
+    </div>
   `;
 }
 
@@ -1467,6 +1535,67 @@ function electionBanner(causeIndex: number): string {
         ${init ? init.title : 'No initiative committed yet'}
       </span>
       <span style="display:flex;align-items:stretch;gap:1px;width:90px;height:8px;
+                   border-radius:2px;overflow:hidden;background:rgba(255,255,255,0.05);">
+        ${bars || ''}
+      </span>
+      <span style="font-family:var(--font-mono);font-size:0.62rem;
+                   color:rgba(245,240,232,0.55);white-space:nowrap;">
+        ${state.daysRemaining}d ${state.hoursRemaining}h
+      </span>
+    </a>
+  `;
+}
+
+
+/* ─────────────────────────────────────────
+   Mission strip — 7 links to active missions, one per cause.
+   Placeholder copy until Mission seed data exists.
+   ───────────────────────────────────────── */
+function missionStrip(): string {
+  return config.causes.map(cause => {
+    return `
+      <a href="mission.html?cause=${cause.id}" class="mission-link"
+         title="${cause.name} mission"
+         style="--mc:${cause.color};
+                display:flex;align-items:center;justify-content:center;
+                aspect-ratio:1 / 1;min-width:0;
+                text-decoration:none;color:inherit;
+                background:rgba(15,26,20,0.65);
+                border:1px solid rgba(255,255,255,0.07);
+                border-top:3px solid var(--mc);
+                border-radius:8px;
+                font-size:1.5rem;
+                transition:background 0.2s, transform 0.2s;">
+        <span style="opacity:0.9;line-height:1;">${cause.emoji ?? '◆'}</span>
+      </a>
+    `;
+  }).join('');
+}
+
+const EBX = {
+  config,
+  fetchJSON, fetchAPI,
+  loadCauses, loadInitiatives, loadOrganizations, loadFeed, loadAll,
+  Cycle, Annulus, Votes,
+  initFooter, initPage,
+  getParam, buildURL,
+  $: $, $$: $$, render, renderSkeleton, renderEmpty,
+  formatNumber, formatEBX, formatPercent, formatDate, formatShortDate, timeAgo,
+  tokenChip, creditBadge, tag, progressBar, statBlock,
+  initiativeCard, electionPanel, electionBanner, missionStrip, userBadge, feedCard, raceCard,
+  filterBySearch, filterByField, sortBy,
+  Auth,
+};
+
+(window as any).EBX = EBX;
+
+document.addEventListener('DOMContentLoaded', () => {
+  EBX.initPage();
+});
+
+export default EBX;
+// EBX_TAIL_SENTINEL
+h;gap:1px;width:90px;height:8px;
                    border-radius:2px;overflow:hidden;background:rgba(255,255,255,0.05);">
         ${bars || ''}
       </span>

@@ -7,938 +7,1199 @@
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
 
-    /* ── Cause color injection via CSS variable ──────────────────
-       --cause-color is set on <body> by JS after data loads       */
+    /* ── Cause color injection ── */
+    /* --cause-color set on <body> by JS after data loads */
 
-    /* ── Header ── */
-    .cause-header {
+    /* ── Topbar ── */
+    .ebx-topbar {
       background: #0f1a14;
-      padding: var(--sp-xl) 0 0;
+      border-bottom: 1px solid rgba(245,240,232,0.07);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .ebx-topbar__inner {
+      display: grid;
+      grid-template-columns: minmax(120px,1fr) auto minmax(120px,1fr);
+      align-items: center;
+      gap: var(--sp-md);
+      padding: 12px 0;
+    }
+    .ebx-topbar__left {
+      display: flex; align-items: center; gap: var(--sp-md);
+    }
+    .ebx-topbar__right {
+      display: flex; justify-content: flex-end; align-items: center;
+    }
+    .ebx-topbar__center {
+      display: flex; justify-content: center; align-items: center;
+    }
+    .cause-selector-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .cause-selector-label {
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.4);
+    }
+    .cause-selector-select {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-sm);
+      color: var(--clr-honey);
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      cursor: pointer;
+      outline: none;
+      text-align: center;
+    }
+    .cause-selector-select:focus { border-color: var(--cause-color, var(--clr-honey)); }
+
+    /* ── Hero: dark band matching index.html ── */
+    .cause-hero {
+      background: #0f1a14;
+      color: var(--clr-parchment);
+      padding: var(--sp-xl) 0 var(--sp-lg);
       position: relative;
       overflow: hidden;
       border-bottom: 3px solid var(--cause-color, var(--clr-moss));
     }
-
-    .cause-header::before {
-      content: '';
-      position: absolute;
-      inset: 0;
+    .cause-hero::before {
+      content: "";
+      position: absolute; inset: 0;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 60 L60 0' stroke='%234e7a4e' stroke-width='0.3' opacity='0.25'/%3E%3C/svg%3E");
       background-size: 60px 60px;
       pointer-events: none;
     }
+    .cause-hero .container { position: relative; }
 
-    /* Color wash overlay keyed to cause */
-    .cause-header::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 60% 80% at 80% 50%, var(--cause-color, #4e7a4e), transparent);
-      opacity: 0.08;
-      pointer-events: none;
-    }
-
-    .cause-header__inner {
-      position: relative;
-      z-index: 1;
+    /* ── 3-col hero layout ── */
+    .cause-hero__layout {
       display: grid;
-      grid-template-columns: 1fr auto;
-      gap: var(--sp-xl);
-      align-items: start;
-      padding-bottom: var(--sp-xl);
+      grid-template-columns: 1fr auto 1fr;
+      gap: var(--sp-lg);
+      align-items: center;
+      min-height: 360px;
+    }
+    .cause-hero__col {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .cause-hero__col--left  { align-items: flex-end; }
+    .cause-hero__col--right { align-items: flex-start; }
+    .cause-hero__col--center {
+      display: flex; flex-direction: column; align-items: center; gap: var(--sp-sm);
     }
 
-    .cause-header__emoji {
-      font-size: 3rem;
-      line-height: 1;
-      margin-bottom: var(--sp-sm);
+    /* ── Annulus wrap ── */
+    .cause-annulus-wrap {
+      position: relative;
+      width: 340px;
+      height: 340px;
+    }
+    .cause-annulus-wrap svg {
+      width: 100%; height: 100%;
+    }
+    .cause-slice {
+      cursor: pointer;
+      transition: fill-opacity 0.15s, transform 0.15s;
+      transform-origin: center;
+    }
+    .cause-slice:hover { fill-opacity: 0.9 !important; }
+
+    /* ── Column header labels ── */
+    .col-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.4);
+      margin-bottom: 2px;
+    }
+
+    /* ── Initiative card (left/right panels) ── */
+    .init-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-left: 3px solid var(--cause-color, var(--clr-moss));
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      width: 220px;
+      min-width: 180px;
+      max-width: 240px;
+      transition: background 0.15s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
       display: block;
     }
+    .init-card:hover { background: rgba(255,255,255,0.08); }
 
-    .cause-header__eyebrow {
+    .init-card__rank {
       font-family: var(--font-mono);
-      font-size: 0.68rem;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--cause-color, var(--clr-honey));
-      margin-bottom: var(--sp-sm);
-      opacity: 0.8;
-    }
-
-    .cause-header__title {
-      color: var(--clr-parchment);
-      margin-bottom: var(--sp-md);
-      font-size: clamp(2rem, 5vw, 3.2rem);
-    }
-
-    .cause-header__desc {
-      color: rgba(245,240,232,0.6);
-      font-size: 1rem;
-      max-width: 520px;
-      line-height: 1.7;
-    }
-
-    /* Cycle timeline panel */
-    .cause-timeline {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: var(--radius-lg);
-      padding: var(--sp-lg);
-      min-width: 260px;
-      max-width: 280px;
-    }
-
-    .cause-timeline__label {
-      font-family: var(--font-mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--cause-color, var(--clr-honey));
-      margin-bottom: var(--sp-md);
-      opacity: 0.75;
-    }
-
-    .timeline-row {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--sp-md);
-      padding: var(--sp-sm) 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-    }
-
-    .timeline-row:last-child { border-bottom: none; }
-
-    .timeline-row__dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 1.5px solid rgba(245,240,232,0.2);
-      flex-shrink: 0;
-      margin-top: 3px;
-      transition: background 0.3s, border-color 0.3s;
-    }
-
-    .timeline-row__dot.active {
-      background: var(--cause-color, var(--clr-moss));
-      border-color: var(--cause-color, var(--clr-moss));
-      box-shadow: 0 0 6px var(--cause-color, var(--clr-moss));
-    }
-
-    .timeline-row__dot.done {
-      background: rgba(245,240,232,0.25);
-      border-color: rgba(245,240,232,0.25);
-    }
-
-    .timeline-row__body { flex: 1; }
-
-    .timeline-row__name {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: rgba(245,240,232,0.85);
-      line-height: 1.2;
-    }
-
-    .timeline-row__date {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
+      font-size: 0.6rem;
       color: rgba(245,240,232,0.35);
-      margin-top: 2px;
+      margin-bottom: 4px;
+      letter-spacing: 0.1em;
     }
-
-    .timeline-row.active .timeline-row__name {
-      color: var(--cause-color, var(--clr-honey));
+    .init-card__title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--clr-parchment);
+      line-height: 1.35;
+      margin-bottom: 6px;
     }
-
-    /* Phase progress bar along bottom of header */
-    .cause-phase-bar {
-      height: 4px;
-      background: rgba(255,255,255,0.06);
-      position: relative;
+    .init-card__bar-wrap {
+      height: 3px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 2px;
+      margin-bottom: 6px;
       overflow: hidden;
     }
+    .init-card__bar {
+      height: 100%;
+      background: var(--cause-color, var(--clr-moss));
+      border-radius: 2px;
+      transition: width 0.5s ease;
+    }
+    .init-card__meta {
+      display: flex; justify-content: space-between; align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: rgba(245,240,232,0.5);
+    }
+    .init-card__pct {
+      color: var(--cause-color, var(--clr-honey));
+      font-weight: 600;
+    }
+    .init-card__status-badge {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: rgba(49,163,84,0.15);
+      color: #5abd6c;
+      margin-top: 5px;
+    }
+    .init-card__org {
+      font-size: 0.72rem;
+      color: rgba(245,240,232,0.45);
+      margin-top: 4px;
+      font-style: italic;
+    }
 
+    /* ── Phase progress bar ── */
+    .cause-phase-bar {
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      position: relative; overflow: hidden;
+      margin-top: var(--sp-lg);
+    }
     .cause-phase-bar__fill {
-      position: absolute;
-      inset: 0;
+      position: absolute; inset: 0;
       width: 0%;
       background: var(--cause-color, var(--clr-moss));
       transition: width 1s ease;
       opacity: 0.7;
     }
 
-    /* ── Page tabs ── */
-    .cause-tabs {
-      background: var(--clr-surface);
-      border-bottom: 1px solid var(--clr-border);
-      position: sticky;
-      top: var(--nav-height);
-      z-index: 50;
+    /* ── Selected initiative bridge (between hero and table) ── */
+    .init-bridge-section {
+      background: var(--clr-bg);
+      padding: 0 0 var(--sp-2xl);
     }
-
-    .cause-tabs__inner {
-      display: flex;
-      gap: 0;
-    }
-
-    .cause-tab {
-      padding: var(--sp-md) var(--sp-lg);
-      font-size: 0.82rem;
-      font-weight: 500;
-      letter-spacing: 0.03em;
-      color: var(--clr-ink-muted);
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      transition: color var(--transition), border-color var(--transition);
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      white-space: nowrap;
-    }
-
-    .cause-tab:hover { color: var(--clr-ink); }
-
-    .cause-tab.active {
-      color: var(--clr-ink);
-      border-bottom-color: var(--cause-color, var(--clr-amber));
-    }
-
-    /* ── Tab panels ── */
-    .cause-panel { display: none; }
-    .cause-panel.active { display: block; }
-
-    /* ── Initiatives list ── */
-    .init-row {
+    .init-selected-panel {
+      display: none;
       background: white;
-      border: 1px solid var(--clr-border);
       border-left: 4px solid var(--cause-color, var(--clr-moss));
-      border-radius: var(--radius-md);
-      padding: var(--sp-lg);
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: var(--sp-lg);
+      border-top: 1px solid var(--clr-border);
+      border-right: 1px solid var(--clr-border);
+      border-bottom: none;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      padding: var(--sp-xl);
+      margin-bottom: 0;
+    }
+    .init-selected-panel.visible { display: block; }
+    .init-selected__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--clr-ink-light);
+      margin-bottom: var(--sp-xs);
+    }
+    .init-selected__title {
+      font-size: 1.25rem; font-weight: 700;
+      color: var(--clr-earth); line-height: 1.3;
+      margin-bottom: var(--sp-sm);
+    }
+    .init-selected__meta {
+      display: flex; flex-wrap: wrap; gap: var(--sp-md);
+      margin-bottom: var(--sp-md);
+      padding-bottom: var(--sp-md);
+      border-bottom: 1px solid var(--clr-border);
+      font-family: var(--font-mono); font-size: 0.75rem;
+      color: var(--clr-ink-muted);
+    }
+    .init-selected__desc {
+      font-size: 0.9rem; color: var(--clr-ink-muted);
+      line-height: 1.7; margin-bottom: var(--sp-lg);
+    }
+    .init-selected__actions {
+      display: flex; gap: var(--sp-sm); flex-wrap: wrap; align-items: center;
+    }
+    .init-selected__deselect {
+      margin-left: auto; background: none; border: none;
+      font-size: 0.78rem; color: var(--clr-ink-light);
+      cursor: pointer; padding: 4px 8px;
+    }
+    .init-selected__deselect:hover { color: var(--clr-ink); }
+    /* Feed — seamless after selected-init */
+    .init-bridge-feed { padding-top: var(--sp-xl); }
+    .feed-filter-bar { display: flex; gap: var(--sp-sm); margin-bottom: var(--sp-lg); flex-wrap: wrap; }
+    .init-bridge-feed.initiative-filtered .feed-filter-bar { display: none; }
+
+    /* ── Initiative table section ── */
+    .init-table-section {
+      background: var(--clr-parchment);
+      padding: var(--sp-xl) 0;
+    }
+    .init-toolbar {
+      display: flex;
       align-items: center;
-      text-decoration: none;
-      color: inherit;
-      transition: box-shadow var(--transition), transform var(--transition);
+      justify-content: space-between;
+      gap: var(--sp-md);
+      margin-bottom: var(--sp-xl);
+      flex-wrap: wrap;
     }
-
-    .init-row:hover {
-      box-shadow: var(--shadow-md);
-      transform: translateY(-1px);
+    .init-search-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 400px;
     }
+    .init-search-wrap::before {
+      content: "⌕";
+      position: absolute;
+      left: 10px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--clr-ink-light);
+      font-size: 1.1rem;
+      pointer-events: none;
+    }
+    .init-search-input {
+      width: 100%;
+      padding: 9px 12px 9px 32px;
+      border: 1.5px solid var(--clr-border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      color: var(--clr-ink);
+      background: white;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .init-search-input:focus {
+      border-color: var(--cause-color, var(--clr-moss));
+    }
+    .init-search-input::placeholder { color: var(--clr-ink-light); }
 
-    .init-row__index {
+    /* ── Table ── */
+    .init-table-wrap {
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: white;
+    }
+    .init-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .init-table th {
+      background: var(--clr-surface);
       font-family: var(--font-mono);
       font-size: 0.62rem;
-      color: var(--clr-ink-light);
-      margin-bottom: 3px;
-    }
-
-    .init-row__title {
-      font-size: 0.98rem;
-      font-weight: 700;
-      color: var(--clr-earth);
-      margin-bottom: 4px;
-      line-height: 1.3;
-    }
-
-    .init-row__desc {
-      font-size: 0.82rem;
-      color: var(--clr-ink-muted);
-      line-height: 1.55;
-    }
-
-    .init-row__right {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: var(--sp-sm);
-      flex-shrink: 0;
-    }
-
-    .init-row__status {
-      font-family: var(--font-mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 3px;
+      color: var(--clr-ink-muted);
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--clr-border);
+      white-space: nowrap;
+      font-weight: 500;
     }
-
-    .init-row__status--active    { background:rgba(49,163,84,.1); color:#4a9e5c; }
-    .init-row__status--suggested { background:rgba(201,124,42,.1); color:var(--clr-amber); }
-
-    .init-row__cta {
-      font-size: 0.72rem;
-      color: var(--cause-color, var(--clr-moss));
+    .init-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(212,206,194,0.4);
+      color: var(--clr-ink);
+      vertical-align: middle;
+    }
+    .init-table tbody tr {
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .init-table tbody tr:hover { background: rgba(78,122,78,0.04); }
+    .init-table tbody tr.selected { background: rgba(78,122,78,0.08); }
+    .init-table tbody tr:last-child td { border-bottom: none; }
+    .init-table__name {
       font-weight: 600;
+      color: var(--clr-earth);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .init-table__rating {
+      display: flex; align-items: center; gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--clr-amber);
+    }
+    .init-table__stars { letter-spacing: -1px; }
+    .init-table__ebx {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--clr-forest);
+      font-weight: 600;
+    }
+    .init-table__date {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--clr-ink-muted);
       white-space: nowrap;
     }
+    .init-table__status {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+    .status-active    { background:rgba(49,163,84,.1); color:#3da358; }
+    .status-debate    { background:rgba(201,124,42,.1); color:var(--clr-amber); }
+    .status-suggested { background:rgba(122,122,98,.1); color:var(--clr-ink-muted); }
+    .status-resolved  { background:rgba(60,90,60,.1); color:var(--clr-forest); }
 
-    /* ── History panel ── */
-    .history-empty {
+    /* ── Empty state ── */
+    .init-table__empty {
       text-align: center;
       padding: var(--sp-3xl) var(--sp-lg);
       color: var(--clr-ink-light);
     }
 
-    .history-empty__icon {
-      font-size: 2.5rem;
-      margin-bottom: var(--sp-md);
-      opacity: 0.4;
-    }
-
-    .history-cycle {
+    /* ── Initiative detail panel ── */
+    .init-detail {
+      background: white;
       border: 1px solid var(--clr-border);
+      border-left: 4px solid var(--cause-color, var(--clr-moss));
       border-radius: var(--radius-md);
-      overflow: hidden;
-      margin-bottom: var(--sp-lg);
+      padding: var(--sp-xl);
+      margin-top: var(--sp-lg);
+      display: none;
     }
-
-    .history-cycle__header {
-      background: var(--clr-surface);
-      padding: var(--sp-md) var(--sp-lg);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .init-detail.visible { display: block; }
+    .init-detail__header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: var(--sp-md);
+      margin-bottom: var(--sp-lg);
+      flex-wrap: wrap;
+    }
+    .init-detail__title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      line-height: 1.3;
+    }
+    .init-detail__close {
+      background: none; border: none;
+      color: var(--clr-ink-light);
+      cursor: pointer; font-size: 1.2rem;
+      padding: 4px; flex-shrink: 0;
+    }
+    .init-detail__close:hover { color: var(--clr-ink); }
+    .init-detail__meta {
+      display: flex; flex-wrap: wrap; gap: var(--sp-md);
+      margin-bottom: var(--sp-lg);
+      padding-bottom: var(--sp-lg);
       border-bottom: 1px solid var(--clr-border);
     }
-
-    .history-cycle__title {
-      font-weight: 700;
-      font-size: 0.9rem;
+    .init-detail__meta-item {
+      display: flex; flex-direction: column; gap: 3px;
     }
-
-    .history-cycle__dates {
+    .init-detail__meta-label {
       font-family: var(--font-mono);
-      font-size: 0.68rem;
+      font-size: 0.58rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
       color: var(--clr-ink-light);
     }
-
-    .history-cycle__body {
-      padding: var(--sp-lg);
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--sp-lg);
+    .init-detail__meta-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--clr-ink);
+    }
+    .init-detail__desc {
+      font-size: 0.9rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.7;
+      margin-bottom: var(--sp-lg);
+    }
+    .init-detail__actions {
+      display: flex; gap: var(--sp-sm); flex-wrap: wrap;
     }
 
-    /* ── Feed panel ── */
-    .feed-list { display: flex; flex-direction: column; gap: var(--sp-lg); }
-
+    /* ── Feed section ── */
+    .cause-feed-section {
+      background: var(--clr-surface);
+      padding: var(--sp-2xl) 0;
+      border-top: 1px solid var(--clr-border);
+    }
+    .feed-list { display: flex; flex-direction: column; gap: var(--sp-md); }
     .feed-post {
       background: white;
       border: 1px solid var(--clr-border);
       border-radius: var(--radius-md);
       padding: var(--sp-lg);
     }
-
     .feed-post__meta {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-sm);
-      margin-bottom: var(--sp-sm);
+      display: flex; gap: var(--sp-sm); align-items: center;
       flex-wrap: wrap;
-    }
-
-    .feed-post__author {
-      font-weight: 600;
-      font-size: 0.85rem;
-    }
-
-    .feed-post__author.earthbux { color: var(--cause-color, var(--clr-forest)); }
-    .feed-post__author.org      { color: var(--clr-amber); }
-    .feed-post__author.benefactor { color: var(--clr-ink-muted); }
-
-    .feed-post__time {
-      font-family: var(--font-mono);
-      font-size: 0.68rem;
-      color: var(--clr-ink-light);
-    }
-
-    .feed-post__title {
-      font-family: var(--font-display);
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--clr-earth);
       margin-bottom: var(--sp-sm);
-      line-height: 1.3;
+      font-size: 0.78rem;
+      color: var(--clr-ink-muted);
     }
-
+    .feed-post__author { font-weight: 600; color: var(--clr-ink); }
+    .feed-post__author.earthbux { color: var(--clr-moss); }
+    .feed-post__author.org { color: var(--clr-amber); }
+    .feed-post__time { color: var(--clr-ink-light); font-size: 0.72rem; }
+    .feed-post__title {
+      font-weight: 700;
+      margin-bottom: var(--sp-xs);
+      font-size: 0.98rem;
+    }
     .feed-post__body {
-      font-size: 0.88rem;
+      font-size: 0.875rem;
       color: var(--clr-ink-muted);
       line-height: 1.65;
-      margin-bottom: var(--sp-md);
     }
-
     .feed-post__footer {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-md);
-      font-size: 0.78rem;
+      margin-top: var(--sp-sm);
+      display: flex; gap: var(--sp-md);
+      font-size: 0.75rem;
       color: var(--clr-ink-light);
-      border-top: 1px solid var(--clr-border);
-      padding-top: var(--sp-sm);
+      align-items: center;
     }
-
     .feed-post__like-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 0.78rem;
-      color: var(--clr-ink-light);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 0;
+      background: none; border: none;
+      cursor: pointer; color: var(--clr-ink-light);
+      font-size: 0.75rem;
       transition: color var(--transition);
     }
-
-    .feed-post__like-btn:hover { color: var(--cause-color, var(--clr-amber)); }
-
-    /* ── Opinions/Propose panel ── */
-    .opinions-layout {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: var(--sp-xl);
-      align-items: start;
+    .feed-post__like-btn:hover { color: var(--clr-amber); }
+    .feed-filter-bar {
+      display: flex; gap: var(--sp-sm); margin-bottom: var(--sp-lg);
+      flex-wrap: wrap;
     }
 
-    @media (max-width: 800px) {
-      .opinions-layout { grid-template-columns: 1fr; }
-      .cause-header__inner { grid-template-columns: 1fr; }
-      .cause-timeline { min-width: auto; max-width: 100%; }
+    /* ── "Propose" modal backdrop ── */
+    .propose-modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(10,20,12,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
     }
-
-    .opinion-composer {
+    .propose-modal-bg.open { opacity: 1; pointer-events: auto; }
+    .propose-modal {
       background: white;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md);
-      padding: var(--sp-lg);
-      position: sticky;
-      top: calc(var(--nav-height) + 52px);
+      border-radius: var(--radius-lg);
+      padding: var(--sp-xl);
+      width: min(520px, 92vw);
+      box-shadow: var(--shadow-lg);
     }
-
-    .opinion-composer__title {
+    .propose-modal__title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
       font-weight: 700;
-      font-size: 0.95rem;
-      margin-bottom: var(--sp-md);
+      margin-bottom: var(--sp-lg);
       color: var(--clr-earth);
     }
-
-    .opinion-type-toggle {
-      display: flex;
-      gap: var(--sp-xs);
-      margin-bottom: var(--sp-md);
-    }
-
-    .type-btn {
-      flex: 1;
-      padding: 6px 10px;
-      font-size: 0.75rem;
+    .propose-modal label {
+      display: block;
+      font-size: 0.78rem;
       font-weight: 500;
+      color: var(--clr-ink-muted);
+      margin-bottom: 4px;
+    }
+    .propose-modal input,
+    .propose-modal textarea {
+      width: 100%;
+      padding: 8px 12px;
       border: 1.5px solid var(--clr-border);
       border-radius: var(--radius-sm);
-      background: none;
-      cursor: pointer;
-      color: var(--clr-ink-muted);
-      transition: all var(--transition);
-    }
-
-    .type-btn.active {
-      border-color: var(--cause-color, var(--clr-moss));
-      color: var(--cause-color, var(--clr-moss));
-      background: rgba(0,0,0,0.03);
-    }
-
-    .composer-textarea {
-      width: 100%;
-      min-height: 100px;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-sm);
-      padding: var(--sp-sm) var(--sp-md);
       font-family: var(--font-body);
-      font-size: 0.875rem;
+      font-size: 0.88rem;
       color: var(--clr-ink);
-      resize: vertical;
       outline: none;
+      margin-bottom: var(--sp-md);
       transition: border-color var(--transition);
-      margin-bottom: var(--sp-md);
+    }
+    .propose-modal input:focus,
+    .propose-modal textarea:focus { border-color: var(--cause-color, var(--clr-moss)); }
+    .propose-modal textarea { min-height: 90px; resize: vertical; }
+    .propose-modal__actions {
+      display: flex; gap: var(--sp-sm); justify-content: flex-end; flex-wrap: wrap;
     }
 
-    .composer-textarea:focus {
-      border-color: var(--cause-color, var(--clr-moss));
+    /* ── Responsive ── */
+    @media (max-width: 1000px) {
+      .cause-hero__col--left,
+      .cause-hero__col--right { display: none; }
+      .cause-hero__layout { grid-template-columns: 1fr; justify-items: center; }
+      .cause-annulus-wrap { width: 280px; height: 280px; }
+      .ebx-topbar__inner { grid-template-columns: 1fr 1fr; row-gap: 6px; }
+      .ebx-topbar__center { grid-column: 1/-1; }
     }
-
-    .opinion-card {
-      background: var(--clr-surface);
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md);
-      padding: var(--sp-md) var(--sp-lg);
-      margin-bottom: var(--sp-md);
+    @media (max-width: 600px) {
+      .init-table th:nth-child(3),
+      .init-table td:nth-child(3),
+      .init-table th:nth-child(4),
+      .init-table td:nth-child(4) { display: none; }
     }
-
-    .opinion-card__meta {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: var(--sp-sm);
-      flex-wrap: wrap;
-      gap: var(--sp-xs);
-    }
-
-    .opinion-card__author {
-      font-weight: 600;
-      font-size: 0.82rem;
-    }
-
-    .opinion-card__body {
-      font-size: 0.85rem;
-      color: var(--clr-ink-muted);
-      line-height: 1.6;
-    }
-
-    .opinion-card__footer {
-      margin-top: var(--sp-sm);
-      display: flex;
-      gap: var(--sp-md);
-      font-size: 0.75rem;
-      color: var(--clr-ink-light);
-    }
-
-    /* ── Org cards in history ── */
-    .org-card {
-      background: var(--clr-surface);
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-sm);
-      padding: var(--sp-md);
-    }
-
-    .org-card__name {
-      font-weight: 700;
-      font-size: 0.9rem;
-      margin-bottom: var(--sp-xs);
-    }
-
-    .org-card__desc {
-      font-size: 0.78rem;
-      color: var(--clr-ink-muted);
-      line-height: 1.5;
-    }
-
-    .org-card__verified {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: var(--font-mono);
-      font-size: 0.6rem;
-      letter-spacing: 0.07em;
-      text-transform: uppercase;
-      color: var(--clr-moss);
-      margin-top: var(--sp-xs);
-    }
-
   </style>
 </head>
 <body>
   <a href="index.html" class="ebx-home-mark">EBX</a>
 
+  <!-- ══ TOP BAR ══ -->
+  <div class="ebx-topbar">
+    <div class="container ebx-topbar__inner">
+      <div class="ebx-topbar__left">
+        <!-- cause nav hint appears here via JS -->
+      </div>
+      <div class="ebx-topbar__center">
+        <div class="cause-selector-wrap">
+          <div class="cause-selector-label">upcoming decisions</div>
+          <select class="cause-selector-select" id="cause-topbar-selector">
+            <!-- Populated by JS -->
+          </select>
+        </div>
+      </div>
+      <div class="ebx-topbar__right" id="ebx-user-badge-mount"></div>
+    </div>
+  </div>
 
-  <!-- ══ CAUSE HEADER ═══════════════════════════ -->
-  <div class="cause-header" id="cause-header">
+  <!-- ══ HERO: 3 columns ══ -->
+  <section class="cause-hero" id="cause-hero">
     <div class="container">
-      <div class="cause-header__inner">
 
-        <!-- Left: cause identity + description -->
-        <div>
-          <span class="cause-header__emoji" id="cause-emoji">🌱</span>
-          <div class="cause-header__eyebrow" id="cause-eyebrow">Cause</div>
-          <h1 class="cause-header__title" id="cause-title">Loading…</h1>
-          <p class="cause-header__desc" id="cause-desc"></p>
+      <div class="cause-hero__layout">
+
+        <!-- LEFT: Leading Initiatives (top by EBX committed) -->
+        <div class="cause-hero__col cause-hero__col--left">
+          <div class="col-eyebrow">Leading Initiatives</div>
+          <div id="leading-initiatives-panel">
+            <!-- Populated by JS -->
+          </div>
         </div>
 
-        <!-- Right: cycle timeline -->
-        <div class="cause-timeline" id="cause-timeline">
-          <div class="cause-timeline__label">Current cycle</div>
-          <div id="timeline-rows">
+        <!-- CENTER: Cause Annulus + steps strip -->
+        <div class="cause-hero__col cause-hero__col--center">
+          <div class="cause-annulus-wrap" id="cause-annulus-mount">
+            <!-- SVG pie chart injected by JS -->
+          </div>
+        </div>
+
+        <!-- RIGHT: Past / Ongoing Initiatives -->
+        <div class="cause-hero__col cause-hero__col--right">
+          <div class="col-eyebrow">Past &amp; Ongoing</div>
+          <div id="ongoing-initiatives-panel">
             <!-- Populated by JS -->
           </div>
         </div>
 
       </div>
-    </div>
-    <div class="cause-phase-bar">
-      <div class="cause-phase-bar__fill" id="phase-bar-fill"></div>
-    </div>
-  </div>
 
-  <!-- ══ TABS ══════════════════════════════════ -->
-  <div class="cause-tabs">
+      <!-- ── Phase progress bar ── -->
+      <div class="cause-phase-bar">
+        <div class="cause-phase-bar__fill" id="phase-bar-fill"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══ SELECTED INITIATIVE + FEED BRIDGE ══ -->
+  <section class="init-bridge-section">
     <div class="container">
-      <div class="cause-tabs__inner">
-        <button class="cause-tab active" data-tab="initiatives">Initiatives</button>
-        <button class="cause-tab" data-tab="history">History</button>
-        <button class="cause-tab" data-tab="feed">Feed</button>
-        <button class="cause-tab" data-tab="opinions">Discuss</button>
+
+      <!-- Selected initiative panel — shown when a row / annulus slice is clicked -->
+      <div class="init-selected-panel" id="init-selected-panel">
+        <div class="init-selected__eyebrow" id="init-selected-eyebrow">Selected Initiative</div>
+        <div class="init-selected__title" id="init-selected-title"></div>
+        <div class="init-selected__meta" id="init-selected-meta"></div>
+        <div class="init-selected__desc" id="init-selected-desc"></div>
+        <div class="init-selected__actions" id="init-selected-actions"></div>
       </div>
-    </div>
-  </div>
 
-  <!-- ══ TAB PANELS ═════════════════════════════ -->
-  <main>
-
-    <!-- INITIATIVES -->
-    <div class="cause-panel active section" id="panel-initiatives">
-      <div class="container">
-
-        <!-- Cause switcher -->
-        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--sp-md); margin-bottom:var(--sp-xl);">
-          <div>
-            <div class="section-header__eyebrow" id="inits-eyebrow">Initiatives</div>
-            <h2 class="section-header__title" style="margin:0;">What should we fund?</h2>
-          </div>
-          <div style="display:flex; align-items:center; gap:var(--sp-sm);">
-            <label style="font-size:0.78rem; color:var(--clr-ink-muted); white-space:nowrap;">View cause:</label>
-            <select id="cause-switcher"
-              style="padding:8px 12px; border:1.5px solid var(--cause-color,var(--clr-border));
-                     border-radius:var(--radius-sm); font-family:var(--font-body); font-size:0.85rem;
-                     color:var(--clr-ink); background:white; cursor:pointer; outline:none;">
-            </select>
-          </div>
+      <!-- Feed — seamless continuation; filtered to initiative when one is selected -->
+      <div class="init-bridge-feed" id="init-bridge-feed">
+        <div class="feed-filter-bar" id="feed-filter-bar">
+          <button class="btn btn-ghost btn-sm feed-filter active" data-filter="all">All</button>
+          <button class="btn btn-ghost btn-sm feed-filter" data-filter="earthbux">Earthbux</button>
+          <button class="btn btn-ghost btn-sm feed-filter" data-filter="org">Orgs</button>
+          <button class="btn btn-ghost btn-sm feed-filter" data-filter="benefactor">Benefactors</button>
         </div>
-
-        <p class="text-sm text-muted" style="margin-bottom:var(--sp-xl); max-width:520px; line-height:1.65;">
-          Each initiative below is proposed for this cause. Click any initiative to open its
-          discussion in the Feed — where it was debated, refined, and decided by the community.
-        </p>
-
-        <div id="initiatives-list" style="display:flex; flex-direction:column; gap:var(--sp-md);">
-          <!-- Populated by JS -->
-        </div>
-
+        <div class="feed-list" id="feed-list"></div>
       </div>
-    </div>
 
-    <!-- HISTORY -->
-    <div class="cause-panel section" id="panel-history">
-      <div class="container">
-        <div class="section-header">
-          <div class="section-header__eyebrow">Past cycles</div>
-          <h2 class="section-header__title">History</h2>
-          <p class="section-header__subtitle">Previous initiatives and the organizations that carried them out.</p>
+    </div>
+  </section>
+
+  <!-- ══ INITIATIVE TABLE ══ -->
+  <section class="init-table-section">
+    <div class="container">
+
+      <!-- Toolbar: search + propose -->
+      <div class="init-toolbar">
+        <div class="init-search-wrap">
+          <input type="search" class="init-search-input" id="init-search"
+            placeholder="Search initiatives by name, org, or keyword…" />
         </div>
-        <div id="history-content">
-          <!-- Populated by JS -->
-        </div>
+        <button class="btn btn-forest" onclick="openProposeModal()">
+          + Propose an Initiative
+        </button>
       </div>
-    </div>
 
-    <!-- FEED -->
-    <div class="cause-panel section" id="panel-feed">
-      <div class="container">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:var(--sp-xl); flex-wrap:wrap; gap:var(--sp-md);">
-          <div>
-            <div class="section-header__eyebrow" id="feed-eyebrow">Coverage &amp; updates</div>
-            <h2 class="section-header__title" style="margin:0;">Feed</h2>
-          </div>
-          <div style="display:flex; gap:var(--sp-sm);">
-            <button class="btn btn-ghost btn-sm feed-filter active" data-filter="all">All</button>
-            <button class="btn btn-ghost btn-sm feed-filter" data-filter="earthbux">Earthbux</button>
-            <button class="btn btn-ghost btn-sm feed-filter" data-filter="org">Orgs</button>
-            <button class="btn btn-ghost btn-sm feed-filter" data-filter="benefactor">Benefactors</button>
-          </div>
-        </div>
-        <div class="feed-list" id="feed-list">
-          <!-- Populated by JS -->
-        </div>
+      <!-- Table -->
+      <div class="init-table-wrap">
+        <table class="init-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rating</th>
+              <th>Organization</th>
+              <th>Date conceived</th>
+              <th>EBX committed</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="init-table-body">
+            <tr><td colspan="6" class="init-table__empty">Loading…</td></tr>
+          </tbody>
+        </table>
       </div>
+
     </div>
-
-    <!-- DISCUSS / OPINIONS -->
-    <div class="cause-panel section" id="panel-opinions">
-      <div class="container">
-        <div class="opinions-layout">
-
-          <!-- Left: existing opinions -->
-          <div>
-            <div class="section-header">
-              <div class="section-header__eyebrow">Community</div>
-              <h2 class="section-header__title">Opinions</h2>
-              <p class="section-header__subtitle">
-                Weigh in on initiatives and organizations. Opinions with positive feedback earn EBX.
-              </p>
-            </div>
-            <div id="opinions-list">
-              <!-- Populated by JS -->
-            </div>
-          </div>
-
-          <!-- Right: composer -->
-          <div class="opinion-composer">
-            <div class="opinion-composer__title">Share your opinion</div>
-            <div class="opinion-type-toggle">
-              <button class="type-btn active" data-type="initiative">Initiative</button>
-              <button class="type-btn" data-type="org">Org</button>
-              <button class="type-btn" data-type="other">Other</button>
-            </div>
-            <textarea class="composer-textarea" id="opinion-textarea"
-              placeholder="What do you think? Positive feedback earns you EBX."></textarea>
-            <div style="margin-bottom:var(--sp-md);">
-              <label style="font-size:0.78rem; color:var(--clr-ink-muted); display:block; margin-bottom:4px;">
-                Related initiative (optional)
-              </label>
-              <select id="opinion-initiative-select"
-                style="width:100%; padding:6px 10px; border:1px solid var(--clr-border); border-radius:var(--radius-sm); font-family:var(--font-body); font-size:0.82rem; color:var(--clr-ink); background:white;">
-                <option value="">— none —</option>
-              </select>
-            </div>
-            <button class="btn btn-forest" style="width:100%;"
-              onclick="submitOpinion()">Post opinion</button>
-            <p class="text-xs text-muted mt-md" style="line-height:1.5;">
-              You must be signed in to post. Opinions are public and permanently attached to your credit.
-            </p>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-  </main>
+  </section>
 
   <div id="ebx-footer-mount"></div>
+
+  <!-- ══ "Propose" modal ══ -->
+  <div class="propose-modal-bg" id="propose-modal-bg" onclick="closeProposeOnBg(event)">
+    <div class="propose-modal">
+      <div class="propose-modal__title">Propose an Initiative</div>
+      <label>Title *</label>
+      <input type="text" id="propose-title" placeholder="e.g. Ban single-use plastics in national parks" />
+      <label>Description *</label>
+      <textarea id="propose-desc" placeholder="What should happen, why it matters, and how you'd measure success…"></textarea>
+      <label>Your handle</label>
+      <input type="text" id="propose-handle" placeholder="@yourhandle" />
+      <div class="propose-modal__actions">
+        <button class="btn btn-ghost" onclick="closeProposeModal()">Cancel</button>
+        <button class="btn btn-forest" onclick="submitProposal()">Submit proposal</button>
+      </div>
+      <p id="propose-msg" class="text-xs text-muted mt-md" style="line-height:1.5;"></p>
+    </div>
+  </div>
 
   <script src="resources/js/ebx_shared.js"></script>
   <script>
   (async function () {
 
-    /* ── 1. Determine which cause we're on ── */
+    /* ── 1. Identify which cause ── */
     const causeId = EBX.getParam('id');
     if (!causeId) {
-      document.getElementById('cause-title').textContent = 'Cause not found';
-      return;
+      document.getElementById('cause-annulus-mount').innerHTML =
+        '<div style="color:rgba(245,240,232,0.5);padding:40px;text-align:center;">No cause specified.</div>';
     }
 
     await EBX.loadAll();
-    EBX.initPage(); // shared nav: home mark + user badge
-    const causes      = EBX.config.causes;
-    const initiatives = EBX.config.initiatives;
+    EBX.initPage();
+
+    const causes      = EBX.config.causes || [];
+    const initiatives = EBX.config.initiatives || [];
     const cause       = causes.find(c => c.id === causeId);
 
-    if (!cause) {
-      document.getElementById('cause-title').textContent = 'Unknown cause';
-      return;
+    /* ── 2. Apply cause color ── */
+    const CAUSE_COLOR = cause ? cause.color : '#4e7a4e';
+    document.body.style.setProperty('--cause-color', CAUSE_COLOR);
+    if (cause) {
+      document.title = `Earthbux — ${cause.name}`;
     }
 
-    /* ── 2. Inject cause color globally ── */
-    document.body.style.setProperty('--cause-color', cause.color);
-    document.title = `Earthbux — ${cause.name}`;
+    /* ── 3. Topbar cause selector: "[Decision date] — [Cause]" for all 7 ── */
+    const topSel = document.getElementById('cause-topbar-selector');
+    const MS_DAY = EBX.Cycle.MS_PER_DAY;
+    const CAUSE_DAYS = EBX.config.causeLengthDays || 14;
+    const cycleNum = EBX.Cycle.currentCycleNum();
+    const state    = EBX.Cycle.now();
 
-    /* ── 3. Populate header ── */
-    document.getElementById('cause-emoji').textContent    = cause.emoji;
-    document.getElementById('cause-eyebrow').textContent  = `Cause #${cause.index + 1} of 7`;
-    document.getElementById('cause-title').textContent    = cause.name;
-    document.getElementById('cause-desc').textContent     = cause.description;
-    document.getElementById('inits-eyebrow').textContent  =
-      `Suggested initiatives · ${cause.name}`;
-    document.getElementById('feed-eyebrow').textContent   =
-      `${cause.name} coverage & updates`;
-
-    /* ── 4. Cycle timeline ── */
-    const CAUSE_DAYS = EBX.config.causeLengthDays;
-    const MS_DAY     = EBX.Cycle.MS_PER_DAY;
-    const cycleNum   = EBX.Cycle.currentCycleNum();
-    const state      = EBX.Cycle.now();
-
-    function windowStart(cIdx, cn) { return EBX.Cycle.windowStart(cIdx, cn); }
-    function fmt(d) {
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-    function fmtFull(d) {
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    }
-
-    const winStart   = windowStart(cause.index, cycleNum);
-    const debateEnd  = new Date(winStart.getTime() + 12 * MS_DAY);
-    const voteEnd    = new Date(winStart.getTime() + 14 * MS_DAY);
-    const now        = new Date();
-
-    // Phase progress: 0–100% across 14-day window
-    const msInWindow = Math.max(0, now - winStart);
-    const phasePct   = Math.min(100, (msInWindow / (CAUSE_DAYS * MS_DAY)) * 100);
-    document.getElementById('phase-bar-fill').style.width = phasePct.toFixed(1) + '%';
-
-    // Determine current phase state for this cause
-    const isActiveCause    = state.causeIndex === cause.index;
-    const beforeWindow     = now < winStart;
-    const inDebate         = now >= winStart && now < debateEnd;
-    const inVote           = now >= debateEnd && now < voteEnd;
-    const windowDone       = now >= voteEnd;
-
-    const timelineRows = document.getElementById('timeline-rows');
-    const rows = [
-      {
-        name:   'Initiative Debate',
-        date:   `${fmt(winStart)} – ${fmt(debateEnd)}`,
-        state:  beforeWindow ? 'upcoming' : inDebate ? 'active' : 'done',
-      },
-      {
-        name:   'Org Vote',
-        date:   `${fmt(debateEnd)} – ${fmt(voteEnd)}`,
-        state:  (beforeWindow || inDebate) ? 'upcoming' : inVote ? 'active' : 'done',
-      },
-      {
-        name:   'Next cycle begins',
-        date:   fmtFull(voteEnd),
-        state:  windowDone ? 'done' : 'upcoming',
-      },
-    ];
-
-    timelineRows.innerHTML = rows.map(r => `
-      <div class="timeline-row ${r.state === 'active' ? 'active' : ''}">
-        <div class="timeline-row__dot ${r.state}"></div>
-        <div class="timeline-row__body">
-          <div class="timeline-row__name">${r.name}</div>
-          <div class="timeline-row__date">${r.date}</div>
-        </div>
-      </div>
-    `).join('');
-
-    /* ── 5. Cause switcher dropdown + initiative list ── */
-    // Populate dropdown with all 7 causes
-    const switcher = document.getElementById('cause-switcher');
     causes.forEach(c => {
+      const wStart = EBX.Cycle.windowStart(c.index, cycleNum);
+      const decisionDate = new Date(wStart.getTime() + CAUSE_DAYS * MS_DAY);
+      const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = `${c.emoji || ''} ${c.name}`.trim();
+      opt.textContent = `${fmt(decisionDate)} — ${c.emoji || ''} ${c.name}`;
       if (c.id === causeId) opt.selected = true;
-      switcher.appendChild(opt);
+      topSel.appendChild(opt);
     });
 
-    switcher.addEventListener('change', () => {
-      window.location.href = `cause.html?id=${switcher.value}`;
+    topSel.addEventListener('change', () => {
+      window.location.href = `cause.html?id=${topSel.value}`;
     });
 
-    // Render initiative rows
-    function renderInitiatives(activeCause) {
-      const causeInits = initiatives
-        .filter(i => i.cause_index === activeCause.index)
-        .sort((a,b) => {
-          // active missions first, then by index
-          if (a.status === 'active' && b.status !== 'active') return -1;
-          if (b.status === 'active' && a.status !== 'active') return  1;
-          return a.index - b.index;
-        });
+    if (!cause) return;
 
-      const list = document.getElementById('initiatives-list');
-      if (!causeInits.length) {
-        list.innerHTML = `
-          <div style="text-align:center; padding:var(--sp-3xl); color:var(--clr-ink-light);">
-            <div style="font-size:2rem; margin-bottom:var(--sp-md);">🌱</div>
-            <p class="text-sm">No initiatives proposed yet for ${activeCause.name}. Be the first.</p>
-          </div>`;
-        return;
+    /* ── 4. Phase progress bar ── */
+    const winStart  = EBX.Cycle.windowStart(cause.index, cycleNum);
+    const winEnd    = new Date(winStart.getTime() + CAUSE_DAYS * MS_DAY);
+    const now       = new Date();
+    const msIn      = Math.max(0, now - winStart);
+    const phasePct  = Math.min(100, (msIn / (CAUSE_DAYS * MS_DAY)) * 100);
+    document.getElementById('phase-bar-fill').style.width = phasePct.toFixed(1) + '%';
+
+    /* ── 5. Initiatives for this cause ── */
+    const causeInits = initiatives
+      .filter(i => i.cause_index === cause.index || i.cause_id === cause.id)
+      .sort((a, b) => (b.ebx_committed || 0) - (a.ebx_committed || 0));
+
+    /* Vote shares — by EBX committed; equal weight if none */
+    const totalEBX = causeInits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
+    function voteShare(init) {
+      if (causeInits.length === 0) return 0;
+      if (totalEBX === 0) return 1 / causeInits.length;
+      return (init.ebx_committed || 0) / totalEBX;
+    }
+
+    /* ── 6. Cause Annulus (SVG pie chart) ── */
+    function buildAnnulusSVG(inits, color) {
+      const size = 340, cx = size / 2, cy = size / 2;
+      const outerR = 148, innerR = 72;
+      const TAU = Math.PI * 2;
+
+      let paths = '';
+      let labels = '';
+      let startAngle = -Math.PI / 2; // 12 o'clock
+
+      const total = inits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
+      const n = inits.length;
+
+      inits.forEach((init, idx) => {
+        const share = n === 0 ? 0 : (total > 0 ? (init.ebx_committed || 0) / total : 1 / n);
+        const angle = share * TAU;
+        const endAngle = startAngle + angle;
+        // For a single-slice ring, mid-arc points to the bottom (π/2), which looks odd.
+        // Override to 12 o'clock (-π/2) so the label sits at the top of the ring.
+        const mid = n === 1 ? -Math.PI / 2 : (startAngle + endAngle) / 2;
+
+        // Opacity: #1 brightest, descends
+        const baseOpacity = Math.max(0.25, 0.75 - idx * 0.06);
+        // Label in the middle of the arc
+        const labelR = (outerR + innerR) / 2;
+        const lx = cx + labelR * Math.cos(mid);
+        const ly = cy + labelR * Math.sin(mid);
+        const labelVisible = angle > 0.18; // only show label if slice is big enough
+
+        // SVG arcs can't draw a full circle (start == end point), so
+        // when one slice fills the whole ring we split it into two semicircles.
+        let d;
+        if (n === 1) {
+          const midAngle = startAngle + Math.PI;
+          // Top semicircle
+          const ax1 = cx + outerR * Math.cos(startAngle), ay1 = cy + outerR * Math.sin(startAngle);
+          const ax2 = cx + outerR * Math.cos(midAngle),   ay2 = cy + outerR * Math.sin(midAngle);
+          const aix1 = cx + innerR * Math.cos(midAngle),  aiy1 = cy + innerR * Math.sin(midAngle);
+          const aix2 = cx + innerR * Math.cos(startAngle),aiy2 = cy + innerR * Math.sin(startAngle);
+          // Bottom semicircle
+          const bx1 = cx + outerR * Math.cos(midAngle),   by1 = cy + outerR * Math.sin(midAngle);
+          const bx2 = cx + outerR * Math.cos(endAngle - 0.0001), by2 = cy + outerR * Math.sin(endAngle - 0.0001);
+          const bix1 = cx + innerR * Math.cos(endAngle - 0.0001), biy1 = cy + innerR * Math.sin(endAngle - 0.0001);
+          const bix2 = cx + innerR * Math.cos(midAngle), biy2 = cy + innerR * Math.sin(midAngle);
+          d = `M${ax1},${ay1} A${outerR},${outerR} 0 1,1 ${ax2},${ay2} L${aix1},${aiy1} A${innerR},${innerR} 0 1,0 ${aix2},${aiy2} Z` +
+              ` M${bx1},${by1} A${outerR},${outerR} 0 1,1 ${bx2},${by2} L${bix1},${biy1} A${innerR},${innerR} 0 1,0 ${bix2},${biy2} Z`;
+        } else {
+          const x1 = cx + outerR * Math.cos(startAngle);
+          const y1 = cy + outerR * Math.sin(startAngle);
+          const x2 = cx + outerR * Math.cos(endAngle);
+          const y2 = cy + outerR * Math.sin(endAngle);
+          const ix1 = cx + innerR * Math.cos(endAngle);
+          const iy1 = cy + innerR * Math.sin(endAngle);
+          const ix2 = cx + innerR * Math.cos(startAngle);
+          const iy2 = cy + innerR * Math.sin(startAngle);
+          const largeArc = angle > Math.PI ? 1 : 0;
+          d = `M${x1},${y1} A${outerR},${outerR} 0 ${largeArc},1 ${x2},${y2} L${ix1},${iy1} A${innerR},${innerR} 0 ${largeArc},0 ${ix2},${iy2} Z`;
+        }
+
+        paths += `<path d="${d}" fill="${color}" fill-opacity="${baseOpacity}"
+                    stroke="rgba(15,26,20,0.8)" stroke-width="1.5"
+                    class="cause-slice" data-init-idx="${idx}"
+                    onclick="selectInitByAnnulus(${idx})" />`;
+
+        if (labelVisible) {
+          labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
+                       font-family="DM Mono,monospace" font-size="11" font-weight="700"
+                       fill="rgba(245,240,232,0.9)" pointer-events="none">${idx + 1}</text>`;
+        }
+
+        startAngle = endAngle;
+      });
+
+      // If no initiatives, draw a placeholder ring
+      if (n === 0) {
+        paths = `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="${color}" fill-opacity="0.12"
+                   stroke="${color}" stroke-opacity="0.25" stroke-width="1" />
+                 <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="rgba(15,26,20,0.92)" />`;
       }
 
-      list.innerHTML = causeInits.map(init => {
-        const isActive = init.status === 'active' && init.winning_org;
-        const feedHref = `feed.html?initiative=${init.id}`;
-        return `
-          <div class="init-row">
-            <div>
-              <div class="init-row__index">#${String(init.index).padStart(3,'0')} · proposed by ${init.proposed_by}</div>
-              <div class="init-row__title">${init.emoji || '🌱'} ${init.title}</div>
-              <div class="init-row__desc">${init.description}</div>
-              ${isActive ? `<div style="margin-top:var(--sp-sm); font-size:0.75rem; font-weight:600; color:var(--cause-color);">
-                Active Mission · ${init.winning_org}</div>` : ''}
-            </div>
-            <div class="init-row__right">
-              <div class="init-row__status init-row__status--${isActive ? 'active' : 'suggested'}">
-                ${isActive ? 'Active' : 'Suggested'}
+      // ── Outer annulus ring: 7-sector EBX wheel, only this cause colored ──
+      const ringOuter = outerR + 26;
+      const ringInner = outerR + 10;
+      const TAU2 = Math.PI * 2;
+      const nSectors = 7;
+      const sectorAngle = TAU2 / nSectors;
+      let outerRingSvg = '';
+      for (let s = 0; s < nSectors; s++) {
+        const a0 = -Math.PI / 2 + s * sectorAngle;
+        const a1 = a0 + sectorAngle - 0.025; // small gap between sectors
+        const x1r = cx + ringOuter * Math.cos(a0);
+        const y1r = cy + ringOuter * Math.sin(a0);
+        const x2r = cx + ringOuter * Math.cos(a1);
+        const y2r = cy + ringOuter * Math.sin(a1);
+        const ix1r = cx + ringInner * Math.cos(a1);
+        const iy1r = cy + ringInner * Math.sin(a1);
+        const ix2r = cx + ringInner * Math.cos(a0);
+        const iy2r = cy + ringInner * Math.sin(a0);
+        const largeR = (a1 - a0) > Math.PI ? 1 : 0;
+        const dr = `M${x1r},${y1r} A${ringOuter},${ringOuter} 0 ${largeR},1 ${x2r},${y2r} L${ix1r},${iy1r} A${ringInner},${ringInner} 0 ${largeR},0 ${ix2r},${iy2r} Z`;
+        const isActive = s === cause.index;
+        const sectorColor = isActive ? (color || '#4e7a4e') : 'rgba(245,240,232,0.08)';
+        const sectorOpacity = isActive ? 0.85 : 1;
+        outerRingSvg += `<path d="${dr}" fill="${sectorColor}" fill-opacity="${sectorOpacity}"
+          stroke="rgba(15,26,20,0.6)" stroke-width="0.75" />`;
+      }
+
+      return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+        ${outerRingSvg}
+        ${paths}
+        ${labels}
+        <!-- Center hole — clean, no text -->
+        <circle cx="${cx}" cy="${cy}" r="${innerR - 2}" fill="rgba(15,26,20,0.95)" />
+      </svg>`;
+    }
+
+    document.getElementById('cause-annulus-mount').innerHTML =
+      buildAnnulusSVG(causeInits, CAUSE_COLOR);
+
+    /* ── 7. Leading Initiatives (left panel) — top 3 by EBX committed ── */
+    const leading = causeInits.slice(0, 3);
+    const topShare = leading.length ? voteShare(leading[0]) : 1;
+
+    document.getElementById('leading-initiatives-panel').innerHTML = leading.length
+      ? leading.map((init, i) => {
+          const pct = Math.round(voteShare(init) * 100);
+          const barW = topShare > 0 ? Math.round((voteShare(init) / topShare) * 100) : 0;
+          return `
+            <div class="init-card" onclick="jumpToRow('${init.id}')">
+              <div class="init-card__rank">#${i + 1} leading</div>
+              <div class="init-card__title">${init.emoji || '🌱'} ${init.title}</div>
+              <div class="init-card__bar-wrap">
+                <div class="init-card__bar" style="width:${barW}%"></div>
               </div>
-              <div style="display:flex;gap:var(--sp-xs);margin-top:auto;">
-                <button class="btn btn-ghost btn-sm"
-                  data-vote-initiative="${init.id}" data-vote-dir="up"
-                  title="Vote for this initiative">▲ Vote</button>
-                <button class="btn btn-ghost btn-sm"
-                  data-commit-initiative="${init.id}"
-                  title="Commit EBX to this initiative">+ Commit</button>
+              <div class="init-card__meta">
+                <span class="init-card__pct">${pct}% of pool</span>
+                <span>${EBX.formatEBX ? EBX.formatEBX(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' EBX'}</span>
               </div>
-              <a class="init-row__cta" href="${feedHref}">View discussion →</a>
+              ${init.rating > 0 ? `<div class="init-card__meta" style="margin-top:4px;"><span>★ ${init.rating.toFixed(1)}</span></div>` : ''}
+            </div>`;
+        }).join('')
+      : `<div style="color:rgba(245,240,232,0.35);font-size:0.8rem;padding:12px 0;">No proposals yet.</div>`;
+
+    /* ── 8. Past / Ongoing Initiatives (right panel) — active or resolved ── */
+    const ongoing = causeInits.filter(i => i.status === 'active' || i.status === 'resolved');
+
+    document.getElementById('ongoing-initiatives-panel').innerHTML = ongoing.length
+      ? ongoing.map(init => `
+          <div class="init-card" onclick="jumpToRow('${init.id}')">
+            ${init.status === 'active'
+              ? `<div class="init-card__status-badge">● Active Mission</div>`
+              : `<div class="init-card__status-badge" style="background:rgba(60,90,60,0.15);color:var(--clr-moss);">Resolved</div>`}
+            <div class="init-card__title" style="margin-top:6px;">${init.emoji || '🌱'} ${init.title}</div>
+            ${init.winning_org ? `<div class="init-card__org">Org: ${init.winning_org}</div>` : ''}
+            <div class="init-card__meta" style="margin-top:6px;">
+              <span>${EBX.formatEBX ? EBX.formatEBX(init.pool_value || init.ebx_committed || 0) : (init.pool_value || init.ebx_committed || 0) + ' EBX'} pool</span>
+              ${init.rating > 0 ? `<span>★ ${init.rating.toFixed(1)}</span>` : ''}
             </div>
-          </div>`;
+          </div>`).join('')
+      : `<div style="color:rgba(245,240,232,0.35);font-size:0.8rem;padding:12px 0;">No active missions yet.</div>`;
+
+    /* ── 9. Table + search ── */
+    let currentSearch = '';
+    let selectedInitId = null;
+
+    function renderTable(inits) {
+      const tbody = document.getElementById('init-table-body');
+      if (!inits.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="init-table__empty">
+          <div style="font-size:1.8rem;margin-bottom:8px;">${cause.emoji || '🌱'}</div>
+          <div>No initiatives found.</div>
+        </td></tr>`;
+        return;
+      }
+      tbody.innerHTML = inits.map(init => {
+        const stars = init.rating > 0
+          ? '★'.repeat(Math.round(init.rating)) + '☆'.repeat(5 - Math.round(init.rating))
+          : '—';
+        const dateStr = init.election_open
+          ? new Date(init.election_open).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+          : (init.cycle_num !== undefined ? `Cycle ${init.cycle_num + 1}` : '—');
+        const orgName = init.winning_org || init.proposed_by || '—';
+        const statusClass = {
+          active: 'status-active', debate: 'status-debate',
+          org_vote: 'status-debate', resolved: 'status-resolved', suggested: 'status-suggested'
+        }[init.status] || 'status-suggested';
+        const statusLabel = {
+          active: 'Active', debate: 'In Debate', org_vote: 'Org Vote',
+          resolved: 'Resolved', suggested: 'Suggested'
+        }[init.status] || init.status;
+
+        const isSelected = init.id === selectedInitId;
+        return `<tr data-init-id="${init.id}" class="${isSelected ? 'selected' : ''}"
+                    onclick="selectInit('${init.id}')">
+          <td><div class="init-table__name">${init.emoji || '🌱'} ${init.title}</div></td>
+          <td>
+            <div class="init-table__rating">
+              <span class="init-table__stars" style="font-size:0.75rem;">${stars}</span>
+              ${init.rating > 0 ? `<span>(${init.rating.toFixed(1)})</span>` : ''}
+            </div>
+          </td>
+          <td style="font-size:0.82rem;color:var(--clr-ink-muted);">${orgName}</td>
+          <td><div class="init-table__date">${dateStr}</div></td>
+          <td><div class="init-table__ebx">${EBX.formatEBX ? EBX.formatEBX(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' EBX'}</div></td>
+          <td><span class="init-table__status ${statusClass}">${statusLabel}</span></td>
+        </tr>`;
       }).join('');
     }
 
-    renderInitiatives(cause);
-
-    /* ── 6. Populate initiative select in composer ── */
-    const causeInits = initiatives.filter(i => i.cause_index === cause.index);
-    const sel = document.getElementById('opinion-initiative-select');
-    causeInits.forEach(init => {
-      const opt = document.createElement('option');
-      opt.value = init.id;
-      opt.textContent = `${init.emoji || ''} ${init.title}`.trim();
-      sel.appendChild(opt);
-    });
-
-    /* ── 7. History panel ── */
-    // For now: show a placeholder for previous cycles.
-    // When real history data exists, this would iterate past cycleNums.
-    const histContent = document.getElementById('history-content');
-    if (cycleNum === 0) {
-      histContent.innerHTML = `
-        <div class="history-empty">
-          <div class="history-empty__icon">📜</div>
-          <h3 style="margin-bottom:var(--sp-sm);">No history yet</h3>
-          <p class="text-sm">
-            The first ${cause.name} cycle began ${fmtFull(windowStart(cause.index, 0))}.
-            History will appear here after the first org vote completes.
-          </p>
-        </div>`;
-    } else {
-      // Show past cycles
-      let html = '';
-      for (let cn = cycleNum - 1; cn >= Math.max(0, cycleNum - 3); cn--) {
-        const cStart  = windowStart(cause.index, cn);
-        const cEnd    = new Date(cStart.getTime() + CAUSE_DAYS * MS_DAY);
-        html += `
-          <div class="history-cycle">
-            <div class="history-cycle__header">
-              <span class="history-cycle__title">Cycle ${cn + 1}</span>
-              <span class="history-cycle__dates">${fmtFull(cStart)} – ${fmtFull(cEnd)}</span>
-            </div>
-            <div class="history-cycle__body">
-              <div>
-                <div class="text-xs text-muted mb-sm" style="text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-mono);">Initiative</div>
-                <div class="card-flat">
-                  <p class="text-sm text-muted">No initiative record for this cycle.</p>
-                </div>
-              </div>
-              <div>
-                <div class="text-xs text-muted mb-sm" style="text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-mono);">Winning org</div>
-                <div class="card-flat">
-                  <p class="text-sm text-muted">No org record for this cycle.</p>
-                </div>
-              </div>
-            </div>
-          </div>`;
-      }
-      histContent.innerHTML = html;
+    function filteredInits() {
+      if (!currentSearch.trim()) return causeInits;
+      const q = currentSearch.toLowerCase();
+      return causeInits.filter(i =>
+        (i.title || '').toLowerCase().includes(q) ||
+        (i.description || '').toLowerCase().includes(q) ||
+        (i.winning_org || '').toLowerCase().includes(q) ||
+        (i.proposed_by || '').toLowerCase().includes(q)
+      );
     }
 
-    /* ── 8. Load and render feed ── */
-    const allPosts = await EBX.fetchJSON('feed.json') || [];
-    const causePosts = allPosts
-      .filter(p => p.cause_index === cause.index)
-      .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    renderTable(causeInits);
 
-    let currentFilter = 'all';
+    document.getElementById('init-search').addEventListener('input', e => {
+      currentSearch = e.target.value;
+      renderTable(filteredInits());
+    });
+
+    /* ── 11. Selected initiative panel ── */
+    function fmt(d) {
+      return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function showSelectedPanel(init) {
+      const panel = document.getElementById('init-selected-panel');
+      document.getElementById('init-selected-eyebrow').textContent =
+        `${init.emoji || '🌱'} Selected Initiative`;
+      document.getElementById('init-selected-title').textContent = init.title;
+
+      const pct = Math.round(voteShare(init) * 100);
+      const metaParts = [
+        `<span>${(init.status || 'suggested').replace('_', ' ')}</span>`,
+        `<span>★ ${init.rating > 0 ? init.rating.toFixed(1) : '—'}</span>`,
+        `<span>${EBX.formatEBX ? EBX.formatEBX(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' EBX'} committed</span>`,
+        `<span>${pct}% of pool</span>`,
+        init.winning_org ? `<span>Org: ${init.winning_org}</span>` : '',
+      ].filter(Boolean);
+      document.getElementById('init-selected-meta').innerHTML = metaParts.join('');
+
+      document.getElementById('init-selected-desc').textContent =
+        init.description || 'No description provided yet.';
+
+      document.getElementById('init-selected-actions').innerHTML = `
+        <button class="btn btn-forest btn-sm" onclick="commitEbxToInit('${init.id}')">⬆ Commit EBX — cast your vote</button>
+        <a class="btn btn-ghost btn-sm" href="feed.html?initiative=${init.id}" style="text-decoration:none;">
+          Contribute to discussion →
+        </a>
+        ${init.status === 'active' || init.status === 'resolved'
+          ? `<a class="btn btn-ghost btn-sm" href="mission.html?id=${init.id}" style="text-decoration:none;">Mission page →</a>`
+          : ''}
+        <button class="init-selected__deselect" onclick="closeDetail()">✕ Deselect</button>`;
+
+      panel.classList.add('visible');
+    }
+
+    function hideSelectedPanel() {
+      document.getElementById('init-selected-panel').classList.remove('visible');
+    }
+
+    window.selectInit = function(initId) {
+      selectedInitId = selectedInitId === initId ? null : initId;
+      renderTable(filteredInits());
+
+      if (!selectedInitId) {
+        hideSelectedPanel();
+        renderFeed(currentFeedFilter);
+        document.getElementById('init-bridge-feed').classList.remove('initiative-filtered');
+        return;
+      }
+
+      const init = causeInits.find(i => i.id === selectedInitId);
+      if (!init) { hideSelectedPanel(); return; }
+
+      showSelectedPanel(init);
+      document.getElementById('init-bridge-feed').classList.add('initiative-filtered');
+      renderFeed(currentFeedFilter); // re-renders filtered to this initiative
+
+      // Scroll to the bridge section
+      document.getElementById('init-selected-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    window.closeDetail = function() {
+      selectedInitId = null;
+      hideSelectedPanel();
+      renderTable(filteredInits());
+      renderFeed(currentFeedFilter);
+      document.getElementById('init-bridge-feed').classList.remove('initiative-filtered');
+    };
+
+    window.selectInitByAnnulus = function(idx) {
+      const init = causeInits[idx];
+      if (init) window.selectInit(init.id);
+    };
+
+    window.jumpToRow = function(initId) {
+      window.selectInit(initId);
+    };
+
+    /* ── 12. Commit + Vote handlers ── */
+
+    // Helper: persist a choice to localStorage (key scoped to cause index)
+    function saveCauseChoice(type, value, id) {
+      let choices = {};
+      try { choices = JSON.parse(localStorage.getItem('ebx_choices') || '{}'); } catch(e) {}
+      choices[`${type}_${cause.index}`] = value;
+      if (id) choices[`${type}_id_${cause.index}`] = id;
+      localStorage.setItem('ebx_choices', JSON.stringify(choices));
+    }
+
+    window.commitEbxToInit = async function(initId) {
+      if (!EBX.Auth.getToken()) {
+        EBX.Auth.openModal();
+        return;
+      }
+      const init = causeInits.find(i => i.id === initId);
+      const initLabel = init ? `"${init.title}"` : 'this initiative';
+      const totalPool = causeInits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
+      const currentCommit = init ? (init.ebx_committed || 0) : 0;
+      const currentPct = totalPool > 0 ? Math.round((currentCommit / totalPool) * 100) : 0;
+
+      const promptMsg = [
+        `Commit EBX to ${initLabel}`,
+        ``,
+        `Committing EBX is how you vote. Your committed share determines`,
+        `your initiative's position in the race.`,
+        ``,
+        `Current pool: ${totalPool} EBX`,
+        `Current support for this initiative: ${currentPct}%`,
+        ``,
+        `How many EBX to commit?`
+      ].join('\n');
+
+      const amount = prompt(promptMsg, '10');
+      if (!amount || isNaN(parseInt(amount))) return;
+      try {
+        const res = await EBX.Auth.fetchAuthed(`/initiatives/${initId}/commit`, {
+          method: 'POST',
+          body: JSON.stringify({ initiative_id: initId, amount_ebx: parseInt(amount) }),
+        });
+        if (res && res.ok) {
+          // Persist initiative choice so profile page can display it
+          if (init) saveCauseChoice('init', init.title, init.id);
+          alert('EBX committed — your vote is counted! Refreshing…');
+          location.reload();
+        } else {
+          alert('Could not commit EBX. Are you signed in?');
+        }
+      } catch { alert('Server error — is the API running?'); }
+    };
+
+    window.castVoteForInit = async function(initId) {
+      if (!EBX.Auth.getToken()) {
+        EBX.Auth.openModal();
+        return;
+      }
+      // Build a list of orgs associated with this cause for the user to choose from
+      const causeOrgs = (EBX.config.organizations || []).filter(o =>
+        (o.cause_ids || []).includes(cause.id) ||
+        (o.causes || []).some(c => c.id === cause.id)
+      );
+      if (!causeOrgs.length) {
+        alert('No organizations are registered for this cause yet. Check back later!');
+        return;
+      }
+      const orgLines = causeOrgs.map((o, i) => `${i + 1}. ${o.name}`).join('\n');
+      const pick = prompt(`Vote for an organization to run this initiative:\n\n${orgLines}\n\nEnter the number of your choice:`);
+      if (!pick) return;
+      const idx = parseInt(pick) - 1;
+      if (isNaN(idx) || idx < 0 || idx >= causeOrgs.length) {
+        alert('Invalid choice. Please enter one of the listed numbers.');
+        return;
+      }
+      const org = causeOrgs[idx];
+      try {
+        const res = await EBX.Auth.fetchAuthed(`/initiatives/${initId}/vote`, {
+          method: 'POST',
+          body: JSON.stringify({ org_id: org.id }),
+        });
+        if (res && res.ok) {
+          // Persist org vote so profile page can display it
+          saveCauseChoice('org', org.name, org.id);
+          alert(`Vote cast for ${org.name}!`);
+        } else {
+          const body = await res.json().catch(() => ({}));
+          alert(`Could not cast vote: ${body.detail || 'Unknown error'}`);
+        }
+      } catch { alert('Server error — is the API running?'); }
+    };
+
+    /* ── 13. Feed ── */
+    const allPosts = EBX.config.feed || [];
+    const causePosts = allPosts
+      .filter(p => p.cause_id === cause.id || p.cause_index === cause.index)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    let currentFeedFilter = 'all';
 
     function renderFeed(filter) {
-      const filtered = filter === 'all'
-        ? causePosts
-        : causePosts.filter(p => p.author_type === filter);
+      // When an initiative is selected, show only its posts; otherwise filter by type
+      let filtered;
+      if (selectedInitId) {
+        filtered = causePosts.filter(p => p.initiative_id === selectedInitId);
+      } else if (filter === 'all') {
+        filtered = causePosts;
+      } else {
+        filtered = causePosts.filter(p => p.author_type === filter);
+      }
       const list = document.getElementById('feed-list');
       if (!filtered.length) {
         list.innerHTML = `<div style="text-align:center;padding:var(--sp-2xl);color:var(--clr-ink-light);">
@@ -947,22 +1208,23 @@
       }
       list.innerHTML = filtered.map(p => {
         const typeLabel = { earthbux: 'Editorial', org: 'Org Update', benefactor: 'Opinion' }[p.author_type] || '';
-        return `
-          <div class="feed-post">
-            <div class="feed-post__meta">
-              <span class="feed-post__author ${p.author_type}">${p.author}</span>
-              <span class="tag tag-${p.author_type === 'earthbux' ? 'forest' : p.author_type === 'org' ? 'amber' : 'neutral'}">${typeLabel}</span>
-              <span class="feed-post__time">${EBX.timeAgo(p.created_at)}</span>
-            </div>
-            ${p.title ? `<div class="feed-post__title">${p.title}</div>` : ''}
-            <div class="feed-post__body">${p.body}</div>
-            <div class="feed-post__footer">
-              <button class="feed-post__like-btn" onclick="this.querySelector('.like-count').textContent=parseInt(this.querySelector('.like-count').textContent)+1">
-                ♥ <span class="like-count">${p.likes}</span>
-              </button>
-              ${p.initiative_id ? `<span>re: ${initiatives.find(i=>i.id===p.initiative_id)?.title || p.initiative_id}</span>` : ''}
-            </div>
-          </div>`;
+        const relInit = p.initiative_id ? initiatives.find(i => i.id === p.initiative_id) : null;
+        return `<div class="feed-post">
+          <div class="feed-post__meta">
+            <span class="feed-post__author ${p.author_type}">${p.author || p.author_label || 'Anonymous'}</span>
+            ${typeLabel ? `<span class="tag tag-${p.author_type === 'earthbux' ? 'forest' : p.author_type === 'org' ? 'amber' : 'neutral'}">${typeLabel}</span>` : ''}
+            <span class="feed-post__time">${EBX.timeAgo(p.created_at)}</span>
+          </div>
+          ${p.title ? `<div class="feed-post__title">${p.title}</div>` : ''}
+          <div class="feed-post__body">${p.body}</div>
+          <div class="feed-post__footer">
+            <button class="feed-post__like-btn"
+              onclick="this.querySelector('.like-count').textContent=parseInt(this.querySelector('.like-count').textContent)+1">
+              ♥ <span class="like-count">${p.likes || 0}</span>
+            </button>
+            ${relInit ? `<span style="font-size:0.72rem;color:var(--clr-ink-light);">re: ${relInit.emoji || ''} ${relInit.title}</span>` : ''}
+          </div>
+        </div>`;
       }).join('');
     }
 
@@ -972,159 +1234,58 @@
       btn.addEventListener('click', () => {
         document.querySelectorAll('.feed-filter').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        currentFilter = btn.dataset.filter;
-        renderFeed(currentFilter);
+        currentFeedFilter = btn.dataset.filter;
+        renderFeed(currentFeedFilter);
       });
     });
 
-    /* ── 9. Opinions (from feed posts typed "opinion") ── */
-    const opinions = causePosts.filter(p => p.type === 'opinion');
-    const opinionsList = document.getElementById('opinions-list');
+    /* ── 14. Propose modal ── */
+    window.openProposeModal = function() {
+      document.getElementById('propose-modal-bg').classList.add('open');
+    };
+    window.closeProposeModal = function() {
+      document.getElementById('propose-modal-bg').classList.remove('open');
+    };
+    window.closeProposeOnBg = function(e) {
+      if (e.target === document.getElementById('propose-modal-bg')) closeProposeModal();
+    };
+    window.submitProposal = async function() {
+      const title = document.getElementById('propose-title').value.trim();
+      const desc  = document.getElementById('propose-desc').value.trim();
+      const msg   = document.getElementById('propose-msg');
 
-    if (opinions.length) {
-      opinionsList.innerHTML = opinions.map(op => {
-        const relInit = op.initiative_id
-          ? initiatives.find(i => i.id === op.initiative_id)
-          : null;
-        return `
-          <div class="opinion-card">
-            <div class="opinion-card__meta">
-              <span class="opinion-card__author">${op.author}</span>
-              <div style="display:flex;gap:var(--sp-xs);align-items:center;">
-                ${op.opinion_type ? `<span class="tag tag-${op.opinion_type === 'initiative' ? 'amber' : 'forest'}">${op.opinion_type}</span>` : ''}
-                <span class="text-xs text-muted">${EBX.timeAgo(op.created_at)}</span>
-              </div>
-            </div>
-            ${relInit ? `<div class="text-xs text-muted mb-sm">re: ${relInit.emoji || ''} ${relInit.title}</div>` : ''}
-            <div class="opinion-card__body">${op.body}</div>
-            <div class="opinion-card__footer">
-              <span>♥ ${op.likes} feedback</span>
-            </div>
-          </div>`;
-      }).join('');
-    } else {
-      opinionsList.innerHTML = `
-        <div style="text-align:center;padding:var(--sp-2xl) 0;color:var(--clr-ink-light);">
-          <p class="text-sm">No opinions yet. Share yours →</p>
-        </div>`;
-    }
+      if (!title) { msg.textContent = 'Title is required.'; return; }
 
-    /* ── 10. Tab switching ── */
-    document.querySelectorAll('.cause-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.cause-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.cause-panel').forEach(p => p.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
-      });
-    });
+      if (!EBX.Auth.getToken()) {
+        EBX.Auth.openModal();
+        closeProposeModal();
+        return;
+      }
 
-    /* ── 11. Opinion type toggle ── */
-    document.querySelectorAll('.type-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
+      try {
+        const res = await EBX.Auth.fetchAuthed('/initiatives/', {
+          method: 'POST',
+          body: JSON.stringify({
+            id: `init-${Date.now()}`,
+            cause_id: cause.id,
+            title,
+            description: desc,
+            status: 'suggested',
+            proposed_by: 'benefactor',
+          }),
+        });
+        if (res && res.ok) {
+          msg.textContent = '✓ Proposal submitted!';
+          setTimeout(() => { closeProposeModal(); location.reload(); }, 1200);
+        } else {
+          msg.textContent = 'Could not submit — are you signed in?';
+        }
+      } catch { msg.textContent = 'Server error — is the API running?'; }
+    };
+
+    EBX.initFooter && EBX.initFooter();
 
   })();
-
-  // ── Post via FastAPI ───────────────────────────────────────────────────────
-  async function submitPost(payload) {
-    const res = await EBX.Auth.fetchAuthed('/posts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id:            crypto.randomUUID(),
-        cause_index:   payload.cause_index,
-        initiative_id: payload.initiative_id || null,
-        type:          payload.type,
-        body:          payload.body,
-        author:        payload.author || 'anonymous',
-        author_type:   'benefactor',
-        likes:         0,
-      }),
-    });
-    if (res.status === 401) { EBX.Auth.openModal(); throw new Error('auth'); }
-    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
-  }
-
-  // ── Vote (Vote model not yet migrated — stub) ─────────────────────────────
-  async function castVote(initiativeId, direction = 'up') {
-    const me = await EBX.Auth.fetchMe();
-    if (!me) { EBX.Auth.openModal(); return; }
-    // TODO: wire to POST /initiatives/{id}/vote once Vote model is added
-    alert('Voting is coming soon!');
-  }
-
-  // ── Commit via FastAPI ────────────────────────────────────────────────────
-  async function commitEbx(initiativeId, amountEbx) {
-    const res = await EBX.Auth.fetchAuthed(`/initiatives/${initiativeId}/commit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ initiative_id: initiativeId, amount_ebx: amountEbx }),
-    });
-    if (res.status === 401) { EBX.Auth.openModal(); throw new Error('auth'); }
-    if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.detail || `HTTP ${res.status}`); }
-    return res.json();
-  }
-
-  // ── Opinion composer ──────────────────────────────────────────────────────
-  async function submitOpinion() {
-    const body = document.getElementById('opinion-textarea').value.trim();
-    if (!body) return;
-
-    const me = await EBX.Auth.fetchMe();
-    if (!me) { EBX.Auth.openModal(); return; }
-
-    const causeId    = EBX.getParam('id');
-    const cause      = EBX.config.causes.find(c => c.id === causeId);
-    const initSelect = document.getElementById('opinion-initiative-select');
-    const typeBtn    = document.querySelector('.type-btn.active');
-
-    try {
-      await submitPost({
-        body,
-        type:          typeBtn?.dataset.type === 'org' ? 'org_review' : 'opinion',
-        initiative_id: initSelect?.value || null,
-        cause_index:   cause?.index ?? 0,
-        author:        me.handle,
-      });
-      document.getElementById('opinion-textarea').value = '';
-      alert('Posted!');
-    } catch (e) {
-      alert('Could not post: ' + e.message);
-    }
-  }
-
-  // ── Vote buttons (added dynamically by renderInitiatives) ─────────────────
-  document.addEventListener('click', async e => {
-    const voteBtn = e.target.closest('[data-vote-initiative]');
-    if (!voteBtn) return;
-    e.preventDefault();
-    const id  = voteBtn.dataset.voteInitiative;
-    const dir = voteBtn.dataset.voteDir || 'up';
-    voteBtn.disabled = true;
-    await castVote(id, dir);
-    voteBtn.disabled = false;
-  });
-
-  // ── Commit buttons (added dynamically) ───────────────────────────────────
-  document.addEventListener('click', async e => {
-    const commitBtn = e.target.closest('[data-commit-initiative]');
-    if (!commitBtn) return;
-    e.preventDefault();
-    const id  = commitBtn.dataset.commitInitiative;
-    const amt = parseFloat(window.prompt('How many EBX to commit?', '10'));
-    if (!amt || isNaN(amt) || amt <= 0) return;
-    commitBtn.disabled = true;
-    try {
-      await commitEbx(id, amt);
-      commitBtn.textContent = `✓ ${amt} EBX committed`;
-    } catch {
-      commitBtn.disabled = false;
-    }
-  });
   </script>
 </body>
-</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+</html>
