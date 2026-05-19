@@ -4,7 +4,6 @@ Things were getting out of hand so I reverted...
 ## Changelog
 - **2026-05-15** — Fixed main page alignment (see below). Logged notes on wildlife chart, propose-login bug, and cycle model.
 - **2026-05-15 (auto)** — Three bugs fixed (see notes below). Also repaired a silent corruption in `frontend/src/ebx_shared.ts` where duplicate code had been appended after the build sentinel — this was blocking all TS builds.
-- **2026-05-15 (auto, pass 2)** — Added "now" glowing white line to the cause wheel annulus. Removed separate Vote button from initiative detail panel — Commit is now the single action (it IS the vote). Fixed `n===1` label position in the wildlife pie chart (label now shows at 12 o'clock instead of bottom of ring). Rebuilt JS bundle successfully.
 - **2026-05-19 (auto, audit-only)** — No code changes. Diffed README.md structure tree vs BACKLOG.md and current code. See "Notes from 2026-05-19" section below for conflicts, suggested structure-tree edits, and questions for Jax.
 - **2026-05-19 (auto, pass 2 — audit-only)** — No code changes. Re-read the (further-expanded) README after Jax's May 18 edits. Several questions from the morning pass are now resolved by README phrasing; several net-new items appeared. See "Notes from 2026-05-19 (pass 2)" below.
 
@@ -78,28 +77,26 @@ No code changes this run. The README grew between pass 1 and now (mtime jumped M
 
 ### Net-new items in README since pass 1 (not yet in BACKLOG, not yet in code)
 
-1. **`size_factor` in vote-weight formula.** README now says: `Vote weight = 1 + b_contribution/(total_pool_not_including_b * n_total_votes * size_factor)`. `size_factor` is undefined anywhere — new variable. **Needs a Q for Jax** (Q8 below).
-2. **0.1 vote-division floor.** *"Benefactors can not divide votes smaller than 0.1."* Enforce in Commit dialog. Add to backlog → frontend Commit-dialog work + backend `Vote` validation.
-3. **Founding 49-EBX bonus.** First 100 `BenefactorAccount` rows get 49 EBX. README explicitly asks: *"Implement as either (a) startup hook that grants on signup if id <= 100, or (b) a one-time admin script. Decide which."* → Q9.
-4. **`vvv: bool` on `BenefactorAccount`.** "Logo colorization via vote participation" — set after first vote. Today's `BenefactorAccount` (backend/app/models.py lines 110-133) has no such column. → Backend schema change + Alembic migration.
-5. **Donation threshold ($20 default).** Env var or config row. Today: nothing. Used to gate logo-colorization perk and (separately) user voice/visibility on org votes. Two thresholds, one default — README is ambiguous whether the $20 figure is the initiative-side threshold, the org-side threshold, or both. → Q10.
+
 6. **Initiative logos as ½ of credit coin.** Mirrors `Organization.logo_url` on the Initiative side. Today's `Initiative` (models.py 158-209) has no `logo_url`. → Backend schema change.
 7. **Coin generation trigger.** *"Coins and mission are created when org is elected."* Backend needs an `on_org_election_win` hook that mints the `Mission` row + an initial batch of `CreditCoin` rows. Not implemented.
-8. **5/16 EN cut + 1/16 evaluation reward.** README spells these out now. Combined ≈37.5% of pool is non-mission. Worth surfacing in the About → Financial structure copy and somewhere in the donation flow UX so benefactors aren't surprised.
-9. **Mission structure: Budget phase (7-week lock) and Evaluation phase.** *"Once the mission begins, all committed money is locked for 7 weeks… After 7 weeks, 1/16 of the credits are released to the benefactors who provided the best contributions."* This is a real piece of business logic with a calendar and a payout algorithm. Currently nothing in `Mission` enforces a lock window; `CreditCoin.issued_at`/`redeemed` exist but aren't gated by phase.
 10. **Mission Progress annulus = third tier on the cause page.** Backlogged in README until the mission-progress interface is built. Carry forward.
-11. **Coin geometry spec.** *"Coins have same geometry as annulus but their cause segment is the only one highlighted and the relative value to when it was created in the middle."* Frontend spec for `CreditCoin` rendering. Not implemented.
+11. **Coin geometry spec.**
 12. **RGB color-wheel coin/annulus animation.** Super-backlog (red=org, green=ebx, blue=benefactor). Carry forward from pass 1.
-13. **Mission Annulus = 7–12 step linear flow.** *"Deadlines. Budget submission, beneficiary approval/outreach, issue resolution, Earthbux check-ins. Will increase in complexity. 7–12 steps which can just be labeled 1–12 and will all link to the mission page."* New concrete spec; not implemented.
+13. **Mission Annulus = 7–12 step linear flow.** *"Deadlines. Budget submission, beneficiary approval/outreach, issue resolution, Earthbux check-ins. Will increase in complexity. 7–12 steps which can just be labeled 1–12 and will all link to the mission page."* New concrete spec; not implemented. Missions will be divided in this way.
 14. **Now-marker should live on the cause-page initiative annulus, not on index.** README explicitly says: *"Additional marker incorrectly on this page needs to be relocated to the initiative annulus."* Worth checking — the 2026-05-15 pass-2 changelog added the "now" glowing line *to* the cause wheel on index. Confirm that's what was meant, or whether the marker now needs to be moved off `index.html` to `cause.html`. → Q11.
+> There should be markers on both annuli. they each indicate the current date and time for their respective pages.
 
 ### Code-state observations relevant to README
 
 - **HTML files are at project root**, not under `frontend/`: `index.html`, `cause.html`, `mission.html`, `feed.html`, `profile.html`, `about.html`. Frontend TS source still lives at `frontend/src/ebx_shared.ts` and builds to `resources/js/ebx_shared.js`. README doesn't describe the file layout; not a problem, just noting.
 - **`mission_index.html` still does not exist.** README references it in multiple places (Profile → Choices_Table = "Snippet of mission index"; main page side-cards link into it; mission-index is its own top-level section). Net-new page. Pass-1 question Q4 (build mission_index before or after the cause-page reshuffle?) is **still open**.
 - **`Organization` model has no `logo_url`.** Carrying forward from pass 1.
+> Unite logos with color wheel
 - **No `Initiative.logo_url` either.** New consequence of README changes.
+> Unite logos with color wheel
 - **`Vote` model exists** (models.py 370–384) with `benefactor_id`/`initiative_id`/`org_id` unique-keyed per (benefactor, initiative). Good — there is somewhere to hang the 0.1-division and `n_total_votes` logic. But no fractional-vote column; today a Vote row is binary. Multi-initiative vote-share will need a `share: float` column or a separate `VoteShare` table.
+> Great, lets enable fractional voting.
 - **README ends mid-thought.** Last bullet is `- [ ] **1/16 to evaluation**` with no description. Looks truncated. → Q12.
 
 ### Suggested README structure-tree edits (since I can't edit README)
@@ -109,22 +106,30 @@ If you agree, please apply to `README.md`:
 1. **Define `size_factor`** in the vote-weight section. Even a one-line "(constant TBD, used to dampen large pools)" would unblock implementation.
 2. **Finish the trailing `1/16 to evaluation` bullet** — what's the payout mechanism, who decides "Helpful", over what window.
 3. **Clarify donation-threshold scope.** Is `$20` the threshold for initiative-side logo colorization, org-side visibility, or both?
-4. **State the canonical newsfeed filename.** `feed.html` today; README uses "EN Newsfeed" everywhere else. If the rename is structural, say "rename `feed.html` → `en.html`"; if cosmetic-only, say "keep `feed.html`, only relabel UI to EN".
-5. **Resolve the "now" marker question** — should the marker on `index.html`'s cause wheel stay (added 2026-05-15) or be relocated to `cause.html`'s initiative annulus?
+
+
 6. **Add a Mission Index file note** confirming `mission_index.html` is net-new (no Initiatives.html legacy to delete; pass-1 README said "REPLACE Initiatives.html" but that note has since been removed — wanted to confirm it was intentional removal, not editing accident).
 
 ### Open questions for Jax (refreshed)
 
 - **Q1' (EN filename):** Rename `feed.html` → `en.html`, or keep filename and only relabel UI?
+Rename
 - **Q4 (mission_index.html):** Build before or after the cause-page top-card / bottom-banner restructure?
+After
 - **Q6 (Top-card "banner"):** Still pending from pass 1. Which DOM element on `index.html` is the "banner" being relocated below the annulus? Best guess remains the mission-strip band.
+election banner is labeled in index.html. it's the one currently being pointed to by the original (index) glowy white now marker.
 - **Q7 (Initiative logos):** Add `logo_url` to `Initiative` mirroring `Organization.logo_url`, with cause-color placeholder until upload?
+Yes, they each have this identifying information
 - **Q8 (size_factor):** What is `size_factor` in the vote-weight formula? Constant? Function of pool size? Per-cause?
+added
 - **Q9 (49-EBX bonus):** Startup hook on signup (if `id <= 100`) or a one-time admin script after the first 100 register?
+id
 - **Q10 (donation thresholds):** Is `$20` the initiative-side threshold, the org-side threshold, or both? Same number for both, or two configs?
-- **Q11 (now-marker location):** Keep the white "now" line we added on `index.html`'s cause wheel, or move it to `cause.html`'s initiative annulus (and leave the index wheel marker-less)?
+must be the total contributions to pool after active period (org election)
+- **Q11 (now-marker location):** Keep the white "now" line we added on `index.html`'s cause wheel, or move it to `cause.html`'s initiative annulus (and leave the index wheel marker-less)? 
+Index.html already had a line. Now cause.html needs a now marker that will rotate once per 7 weeks and indicate the time difference to the next iteration of the selected cause. 
 - **Q12 (trailing bullet):** What's the rest of the `1/16 to evaluation` bullet — payout mechanism, judging criteria, timing?
-
+That'ss be backlogged for now. good questions.
 ---
 
 ## Cause Page

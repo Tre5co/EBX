@@ -29,11 +29,15 @@
         - [ ] **Cause label Visibility** Make annulus thicker so that cause titles are fully visible. Multi-word entries can take multiple lines.
         - [ ] **Center of Annulus**
         > Eventually, there will be a very cool 3d graphic in the middle. Hold that in the back of your mind because I'm not ready to create it yet. 
+        
         - [ ] **Navigate and zoom**
         On mobile this will be important. There will be a zoom (And rotate) for users to select a particular sector and that will work well with touchscreens.
         - [ ] **`now`** 
         Additional marker incorrectly on this page needs to be relocated to the initiative annulus.
-- [ ] **Mission Index**
+- [ ] **Mission Index page**
+    - [ ] **Initiative Table**
+        - [ ] **Columns** so far
+        Name | Rating | Proposed-by | Credit (cause-color dot placeholder) | Pool share %
    - [ ] **Organization inputs** Organizations fill out mission pages for whatever initiative they want to apply for. Once the election is active everything becomes linked together by election widgets, and when it's over one organization gets to claim the mission. Every stage hass a success metric and a cash reward.
     - [ ] **News rankings**
     - [ ] **A big table** of every mission
@@ -58,6 +62,7 @@
         Glowy white marker (currently incorrectly in index.html) that rotates around each cause annulus indicating how far now is from that causes active period. 
             - [ ] **Align** Match up the same-colored segments on the 2 annuli and use this to position the marker. On the main page, the annulus rotates, but on this page the marker rotates around the annulus.
         - [ ] **Handle when 1 or 0 initiatives have votes**
+        - wildlife is not a special case and should not be treated as such.
         If only 1 or 0  initiatives has received votes, eliminate the pie chart and indicate in the middle of the annulus what case it is.
         - [ ] **Mission Progress annulus** Surrounds 2 inner sections.
         Backlog until mission progress interface is develped.
@@ -77,32 +82,37 @@
         - [ ] **Committing** 
         Before adding money, one click sets a users vote to an initiaitve. Each benefactor has a vote that does not require any money to be committed.
             - [ ] **Selection day** Before selection day, you can move around your vote shares as much as you want. You can add, withdraw, and move around committments. 24 hours before selection is when voting locks for counting. The pool also locks and the mission page is created.
-                - [ ] **Winner** Whichever initiative has the largest vote share gets moved to the organization election slot for the next cycle. A mission page is created for the initiative, and for the next 8 weeks each organization that wants the donation uses this page for debate and outreach.
+                - [ ] **Winner** Winner of soft election enters 8-week hard election
+                - [ ] **Mission page** and updated mission index
             - [ ] **Dialog** sign something convert_to_ebx
             Voting is important, you are in charge of determining and electing the fate of the planet, so don't f around.
+            - [ ] **vote division** Benefactors can commit to multiple initiatives at once With every additional initiative, a benefactor is shown how they are spreading their vote share and decides how much vote to put on each initiative. Benefactors can not divide votes smaller than 0.1.
                 - [ ] **Vote weight Algorithm** b is the benefactor
-                Vote weight = 1 + b_contribution/(total_pool_not_including_b * n_total_votes*size_factor) 
-                - [ ] **Multiple choices** Benefactors can commit to multiple initiatives at once
-                    - [ ] **vote division** With every additional initiative, a benefactor is shown how they are spreading their vote share and decides how much vote to put on each initiative. Benefactors can not divide votes smaller than 0.1.
+                Vote weight = 1 + b_contribution/(total_pool_not_including_b * n_total_votes*size_factor)
+                    - [ ] **Vote division floor** 0.1
+                    *"Benefactors can not divide votes smaller than 0.1."* Enforce in Commit dialog. Add to backlog → frontend Commit-dialog work + backend `Vote` validation.
 
-    - [ ] **Initiative Table**
-        - [ ] **Columns**
-        Name | Rating | Proposed-by | Credit (cause-color dot placeholder) | Pool share %
+
     - [ ] **Feed**
     Content from EN News, if any, is shown with each initiative
         - [ ] **Filters**
         Moved to right sidebar, labeled "Filter". Sticky on desktop, collapses horizontal on mobile.
     - [ ] **Initiative Logos** One half of the credit coin. Contains all the information on the initiative side, like what the initiative is and how it garnered all its support.
 - [ ] **Missions page**
-    When an initiative is decided, the mission page template is created. Each org builds their own.
-    - [ ] **Mission Annulus** Each mission gets its own ring widget which is on the main page.. Deadlines. Budget submission, beneficiary approval/outreach, issue resolution (for example, a response to donor questions), Earthbux check-ins. Flow from homepage to mission page. Will increase in complexity. 7-12 steps which can just be labeled 1-12 and will all link to the mission page. This will beome the 3rd outer annulus on the cause page.
-    - [ ] **Data** Each have a main cycle to `mission_indx`. These are organizaed by the cause and cycle number, and will be populated with the initiative, organization, and contextual information.
+When an initiative is decided, the mission page template is created. Each org builds their own. Like a profile page for them
+    - [ ] **Data** Each mission is a row in `mission_indx`. populated with the initiative, organization, and more information.
+        - [ ] **Progress reports** The missions 7-12 step progress report is prominent on the mission page. This consists of a benefactor-moderated comparison of the organization's progress reporting and Earthbucks parallel report.
     - [ ] **Mission structure**
+        - [ ] **Mission credit** Represented by a coin, value changes.
+        For now, 1/16 total per week is released starting here. The value depends on how much benefactors like the progress and also by how much earthbux verifies their goodness combined with an efficiency metric.
+        *"Once the mission begins, all committed money is locked for 7 weeks… After 7 weeks, 1/16 of the credits are released to the benefactors who provided the best contributions, and over the next 7 weeks, the money is released to a combination of the organizaion and the benefactors."* 
+        *Mission goal is to win as much money as possible from the rules*
         - [ ] **Budget phase**
         Once the mission begins, all committed money is locked for 7 weeks. This is the early mission period, when the organization learns how they can best earn the full pool. 
         - [ ] **Evaluation Phase**
         After 7 weeks, 1/16 of the credits are releast to the benefactors who provided the best contributions (posting to the community or anonymously contacting EN) that helped the mission.
-        - [ ] **Progress reports** The missions 7-12 step progress report is prominent on the mission page. This consists of a benefactor-moderated comparison of the organization's progress reporting and Earthbucks parallel report.
+    - [ ] **Mission Annulus** 4 now just do a multi-sectored annulus.
+    Each mission gets its own ring widget which is on the main page.. Deadlines. Budget submission, beneficiary approval/outreach, issue resolution (for example, a response to donor questions), Earthbux check-ins. Flow from homepage to mission page. Will increase in complexity. 7-12 steps which can just be labeled 1-12 and will all link to the mission page. This will beome the 3rd outer annulus on the cause page.
 - [ ] **Profile page** Focus on humans
     - [ ] **Benefactor**
         - [ ] **Upcoming Decisions** 3 items: 
@@ -127,9 +137,23 @@
     - [ ] **Clarify core goals** Root out wasteful and fraudulent charity organizations/players, reorient peoples media consumption towards meaningful things, focus charity efforts on the cause rather than sponsors, democratize charioty by finding the best idea rather than the most profitable one, rewarding thoughtful ideas, pooling donations to prevent redundant/competing charity missions. Provide unbiased and mission-oriented news coverage of every mission.
     - [ ] **Financial structure** Committing to an initiative: 20% sent if your initiative wins, 10% if not. Committing to an organization: 100% if they win, 20% if not.
     - [ ]  **Information about how I founded the company...** My sstory. Get it working first
+    - [ ] **Financial structure**
+        1. **`size_factor` in vote-weight formula.** 
+        optimized for a donation pool ideal size to be agreed upon later
+        8. **5/16 EN cut:**
+            **1/16 evaluation reward.** README spells these out now. Combined ≈% of pool is non-mission.
 ## MEMBERSHIPS
 - [ ] **BENEFACTOR**
 A human who intends to vote in the election.
+    - [ ] **Verification & perks**
+        - [ ] **Review/rating awards** Benefactors are awarded credit coins from a mission if their posts are highly related and deemed "Helpful"
+        - [ ] **Logo colorization via vote participation.** Below a donation threshold, a benefactor must have participated in the org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
+            - [ ] **Automatic coloring**
+                Current threshold: $20
+            - [ ] **Rewards** 
+                - [ ] **Soft votes** Colorization
+                - [ ] **Hard votes** Post Visibility/voice
+        - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.
 - [ ] **ORGANIZATION**
     A human representative of the weekly mission.
         -   -   -       -   -   -   -   member of organizaiton
@@ -139,24 +163,20 @@ A human who intends to vote in the election.
         - [ ] **Profile page** Organization profile pages are very similar to benefactor profile pages. Organizations do most of their work on the mission page. Once approved as a candidate, they put all important information on a mission page which continues if they win and is frozen and linked from their profile if not.
 - [ ] **HUMAN**
 backlog security questions
-- [ ] **Verification & perks**
-    - [ ] **Logo colorization via vote participation.** Below a donation threshold, a benefactor must have participated in the org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
-            - [ ] **Automatic coloring**
-            Current threshold: $20
-    - [ ] **Donation threshold.** Define and store the threshold amount (env var or config row). Compute on the fly per benefactor. Threshold for initiative donations moderates logo colorization and for org donations it moderates user visibility/voice.
-    - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implement as either (a) a startup hook that grants on signup if `id <= 100`, or (b) a one-time admin script after the first 100 register. Decide which.
     - [ ] **Security** Any user of the app is verified to be a human/agent of Earthbux or an authorized organization.
-## CREDITS
-- [ ] **Coin generation** Coins and mission are created when org is elected. Coins have same geometry as annulus but their cause segment is the only one highlighted and the relative value to when it was created in the middle.
-- [ ] **Coin details** The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission...
-- [ ] **Review/rating awards** Benefactors are awarded credit coins from a mission if their posts are highly related and deemed "Helpful"
+## CREDITS - LINKED TO A MISSION
 - [ ] **Transactional logic** Coins operate similarly to a cryptocurrency, can be exchanged for coins from other missions. All coins are donations, although can be removed which will be complex tax-law-wise.
 
 - [ ] **Credits** a credit is 1 EBX
     - [ ] **Description** A credit is an ebx token minted for all of the money converted to earthbucks 
     - [ ] **Conversion** 
-        - [ ] **EBX maintain a value of $1 pre-mint**
-        Unminted EBX can be exchanged for cash. They are not tax deductable. This initial step is to make the next step easier.    
+        - [ ] **Coin details** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission...
+        - [ ] **Coin generation**  display value in middle (Exactly 1 for the first 7 weeks)
+            - [ ] **EBX maintain a value of $1 7-weeks-post-mint**
+            Unminted EBX can be exchanged for cash. They are not tax deductable.
+
+
+
     - [ ] **Donation**
         - [ ] **Tax deducted**
         All minted credits are tax-redeemable.
@@ -164,3 +184,6 @@ backlog security questions
           - [ ] **EN Thresholds** We only take money if the pool is above $100. 
           - [ ] **5/16 EN Cut** Users are notified that 5/16 % of their money is going to Earthbux News (EN) and they/we go and help the mission in any way we can while reporting and chase them if we have to.
               - [ ] **1/16 to evaluation**  
+              Included in Earthbux 5/16.
+              - [ ] **1/4 to our side of the mission**
+              We will create a budget.
