@@ -6,6 +6,7 @@ Things were getting out of hand so I reverted...
 - **2026-05-15 (auto)** — Three bugs fixed (see notes below). Also repaired a silent corruption in `frontend/src/ebx_shared.ts` where duplicate code had been appended after the build sentinel — this was blocking all TS builds.
 - **2026-05-15 (auto, pass 2)** — Added "now" glowing white line to the cause wheel annulus. Removed separate Vote button from initiative detail panel — Commit is now the single action (it IS the vote). Fixed `n===1` label position in the wildlife pie chart (label now shows at 12 o'clock instead of bottom of ring). Rebuilt JS bundle successfully.
 - **2026-05-19 (auto, audit-only)** — No code changes. Diffed README.md structure tree vs BACKLOG.md and current code. See "Notes from 2026-05-19" section below for conflicts, suggested structure-tree edits, and questions for Jax.
+- **2026-05-19 (auto, pass 2 — audit-only)** — No code changes. Re-read the (further-expanded) README after Jax's May 18 edits. Several questions from the morning pass are now resolved by README phrasing; several net-new items appeared. See "Notes from 2026-05-19 (pass 2)" below.
 
 ## Notes from 2026-05-19 (auto) — README ↔ BACKLOG audit
 
@@ -17,12 +18,9 @@ This run made no code edits. Goal was to compare the (much-expanded) README stru
 
 > This is a bit complex.
 
-2. **Vote-weight formula changed in README.** Two formulas now coexist:
-   - README, Initiative vote → Committing → Vote weight Algorithm: `Vote weight = 1 + b_contribution / (total_pool_not_including_b * n_total_votes)`
-   - BACKLOG, Initiatives → Committing: `1 + your_committment / total_pool_not_including_your_committment` (no `n_total_votes` term)
-   The new denominator (`* n_total_votes`) materially changes dynamics — each additional voter dilutes everyone's bonus weight. **Question:** confirm the README formula is canonical, then I'll update BACKLOG and we can wire it into `crud.get_vote_tally` / a new weighted-tally endpoint.
+2. **Vote-weight formula changed in README.**
 
-3. **Newsfeed inconsistency in README itself.** Under "EN" the rename rule says "Rename everything to 'Earthbux News' or 'EN' if there is a space constraint", but the cause-page Feed section still says *Filters → labeled "Filter Newsfeed"*. **Suggested README edit:** change "Filter Newsfeed" → "Filter EN" (or "Filter feed" if you'd rather keep "feed" as the generic noun and "EN" only as the brand).
+3. **Newsfeed inconsistency in README itself.**
 
 ### New things in README that aren't yet reflected in BACKLOG or code
 
@@ -39,12 +37,13 @@ These are README items that have no corresponding BACKLOG task and aren't implem
 - **Multi-initiative vote division floor.** README adds: *"Benefactors can not divide votes smaller than 0.1."* Enforce this in the upcoming Commit dialog (Initiatives → Committing UX in BACKLOG).
 - **MEMBERSHIPS / HUMAN security layer.** README adds a HUMAN classification: *"Any user of the app is verified to be a human or the authorized AI agent of Earthbux or an authorized organization."* Today the backend has `BenefactorAccount`, `Organization`, `Membership` — but no notion of human-verification or an authorized-AI-agent principal. **Suggested BACKLOG task:** decide whether this is a new column on `BenefactorAccount` (`verified_human: bool`, `principal_type: 'human'|'ebx_agent'|'org_agent'`) or a separate `Principal` table. Probably the simpler column approach for now.
 
-- **Organization logos / Initiative logos as halves of the credit coin.** README is explicit that initiative logo + org logo together = the credit coin (one half each). Today neither is in the schema. BACKLOG already lists "Organization logos" with `logo_url`. **Suggested BACKLOG addition:** `logo_url` on `Initiative` too, mirroring the org field; render colored emoji placeholder until uploaded.
-Yes. use the rgb color wheel with green=ebx_contribution r=org b=benefactors. This will be the animation in the middle. 
+- **Organization logos / Initiative logos as halves of the credit coin.** super backlog
+ use the rgb color wheel with green=ebx_contribution r=org b=benefactors. This will be the animation in the middle of the cause annulus.
+ Each of the other annuli will have a way of combining their colors. 
 I'm really experimenting deep here, but this type of visual interface could be illuminating.
-
-- **Profile page → Logo colorization via vote participation.**
-
+Every vote you contribute a color.
+Color is automated by our means but users can easily change their color choices.
+This idea will change as do most super-backlogged items.
 ### Suggested README structure-tree edits (since I can't edit README directly)
 
 If you agree with the below, please make these edits to `README.md` yourself:
@@ -67,57 +66,72 @@ If you agree with the below, please make these edits to `README.md` yourself:
 - **Q7 (Initiative logos):** Add `logo_url` to `Initiative` mirroring `Organization.logo_url`, with cause-color emoji-initial placeholder until upload — sound right?
 
 
+## Notes from 2026-05-19 (pass 2, auto) — README diff since pass 1
 
-## Structure
-- [ ] **Main page**
-    - [ ] **Cause annulus** is here, Claude was right
-        - [ ] **Glowy white now marker** - Marker from previous edit is on wrong page. This was supposed to be on the initiative annulus, which is on cause.html. Oops!
-        - [ ] **Maximize display space**
-        Keep inner circle at current size, maximize outer circle all the way to the inner edge of the cards. Lock left and right card corners to the bottom corners of active card w light padding.    
-            - [ ] **Size and dimensions of annulus**
-        - [ ] **Navigate and zoom**
-        On mobile this will be important. There will be a zoom (And rotate) for users to select a particular sector and that will work well with touchscreens.
-- [ ] **Cause/Initiative page**
-    - [ ] **Initiative annulus**
-        - [ ] **Glowy white now marker**
-        which circumnavigates the annulus once every 7 weeks.
-    - [ ] **Initiative vote cards**
-        - [ ] **Option to vote without committing anything**
-        Explain the algorithm - (1 + %of_the_pool_from_b) * b_committment_value_ebx
-        - [ ] **Dialog** sign something convert_to_ebx
-        Voting is important, you are in charge of determining and electing the fate of the planet, so don't f around.
-        - ✅ **Vote/Commit unified (2026-05-15 auto):** Removed separate "Vote" button from initiative detail panel. "Commit EBX" is now the single action and its dialog explains the mechanics. Full multi-initiative allocation dialog (see Initiatives → Committing UX) is still pending.
-- [ ] **Credits** a credit is 1 ebx
-    - [ ] **Description** A credit is an ebx token minted for all of the money converted to earthbucks 
-    - [ ] **Conversion** 
-        - [ ] **EBX maintain a value of $1 pre-mint**
-        Unminted EBX can be exchanged for cash. They are not tax deductable. This initial step is to make the next step easier.    
-    - [ ] **Donation**
-        - [ ] **Tax deducted**
-        All minted credits are tax-redeemable.
-        - [ ] **Mission structure**
-            - [ ] **Budget phase**
-            Once the mission begins, all committed money is locked for 7 weeks. This is the early mission period, when the organization learns how they can best earn the full pool. 
-            - [ ] **Evaluation Phase**
-            After 7 weeks, 1/16 of the credits are releast to the benefactors who provided the best contributions (posting to the community or anonymously contacting EN) that helped the mission.
-        - [ ] **The rest is now in your wallet** The number is gonna start off in dollars and , which only happens after it has been committed to a charity and converted.
-          - [ ] **EN cut thresholds** If your donation brings the threshold over $1000, we take 4/16, $800 3/16, $600 2/16, and anything else 1/16.
+No code changes this run. The README grew between pass 1 and now (mtime jumped May 18 21:40); below I record what the new wording resolves, what's net-new, and what should land in BACKLOG so it doesn't disappear.
 
-          - [ ] **5/16 EN Cut** Users are notified that 5/16 % of their money is going to Earthbux News (EN) and they/we go and help the mission in any way we can while reporting and chase them if we have to.
-              - [ ] **1/16 to evaluation**
+### Previous open questions that are now (effectively) answered by README
 
+- **Q5 — HUMAN verification.** README now reads literally `**HUMAN** \n backlog security questions` and the parent `**Security**` task says *"For now all posts, initiatives, org inputs, votes, commits, etc will automatically be valid and public. Protect in future (from both sides)."* → Treat as **deferred**. Don't add `verified_human` / `principal_type` columns yet. Close Q5.
+- **Q3 — EN cut threshold.** README now says *"EN Thresholds: We only take money if the pool is above $100."* → Threshold is on **pool size**, not per-donation. Evaluated at pool-lock (24h before selection). Close Q3 with that interpretation unless you disagree.
+- **Q1 (partial) — EN rename.** README is now self-consistent on **EN / Earthbux News**: feed/sidebar filter is just labeled "Filter", and the section is titled "EN Newsfeed". Only loose end is the **filename** — see Q1' below.
 
-        
-- [ ] **NEWSFEED**
-    - [ ] **Rename** Rename feed everywhere to newsfeed.
+### Net-new items in README since pass 1 (not yet in BACKLOG, not yet in code)
 
-- [ ] **Profile page** Each of the 7 choices on profile page should link to their respective mission index page.
+1. **`size_factor` in vote-weight formula.** README now says: `Vote weight = 1 + b_contribution/(total_pool_not_including_b * n_total_votes * size_factor)`. `size_factor` is undefined anywhere — new variable. **Needs a Q for Jax** (Q8 below).
+2. **0.1 vote-division floor.** *"Benefactors can not divide votes smaller than 0.1."* Enforce in Commit dialog. Add to backlog → frontend Commit-dialog work + backend `Vote` validation.
+3. **Founding 49-EBX bonus.** First 100 `BenefactorAccount` rows get 49 EBX. README explicitly asks: *"Implement as either (a) startup hook that grants on signup if id <= 100, or (b) a one-time admin script. Decide which."* → Q9.
+4. **`vvv: bool` on `BenefactorAccount`.** "Logo colorization via vote participation" — set after first vote. Today's `BenefactorAccount` (backend/app/models.py lines 110-133) has no such column. → Backend schema change + Alembic migration.
+5. **Donation threshold ($20 default).** Env var or config row. Today: nothing. Used to gate logo-colorization perk and (separately) user voice/visibility on org votes. Two thresholds, one default — README is ambiguous whether the $20 figure is the initiative-side threshold, the org-side threshold, or both. → Q10.
+6. **Initiative logos as ½ of credit coin.** Mirrors `Organization.logo_url` on the Initiative side. Today's `Initiative` (models.py 158-209) has no `logo_url`. → Backend schema change.
+7. **Coin generation trigger.** *"Coins and mission are created when org is elected."* Backend needs an `on_org_election_win` hook that mints the `Mission` row + an initial batch of `CreditCoin` rows. Not implemented.
+8. **5/16 EN cut + 1/16 evaluation reward.** README spells these out now. Combined ≈37.5% of pool is non-mission. Worth surfacing in the About → Financial structure copy and somewhere in the donation flow UX so benefactors aren't surprised.
+9. **Mission structure: Budget phase (7-week lock) and Evaluation phase.** *"Once the mission begins, all committed money is locked for 7 weeks… After 7 weeks, 1/16 of the credits are released to the benefactors who provided the best contributions."* This is a real piece of business logic with a calendar and a payout algorithm. Currently nothing in `Mission` enforces a lock window; `CreditCoin.issued_at`/`redeemed` exist but aren't gated by phase.
+10. **Mission Progress annulus = third tier on the cause page.** Backlogged in README until the mission-progress interface is built. Carry forward.
+11. **Coin geometry spec.** *"Coins have same geometry as annulus but their cause segment is the only one highlighted and the relative value to when it was created in the middle."* Frontend spec for `CreditCoin` rendering. Not implemented.
+12. **RGB color-wheel coin/annulus animation.** Super-backlog (red=org, green=ebx, blue=benefactor). Carry forward from pass 1.
+13. **Mission Annulus = 7–12 step linear flow.** *"Deadlines. Budget submission, beneficiary approval/outreach, issue resolution, Earthbux check-ins. Will increase in complexity. 7–12 steps which can just be labeled 1–12 and will all link to the mission page."* New concrete spec; not implemented.
+14. **Now-marker should live on the cause-page initiative annulus, not on index.** README explicitly says: *"Additional marker incorrectly on this page needs to be relocated to the initiative annulus."* Worth checking — the 2026-05-15 pass-2 changelog added the "now" glowing line *to* the cause wheel on index. Confirm that's what was meant, or whether the marker now needs to be moved off `index.html` to `cause.html`. → Q11.
+
+### Code-state observations relevant to README
+
+- **HTML files are at project root**, not under `frontend/`: `index.html`, `cause.html`, `mission.html`, `feed.html`, `profile.html`, `about.html`. Frontend TS source still lives at `frontend/src/ebx_shared.ts` and builds to `resources/js/ebx_shared.js`. README doesn't describe the file layout; not a problem, just noting.
+- **`mission_index.html` still does not exist.** README references it in multiple places (Profile → Choices_Table = "Snippet of mission index"; main page side-cards link into it; mission-index is its own top-level section). Net-new page. Pass-1 question Q4 (build mission_index before or after the cause-page reshuffle?) is **still open**.
+- **`Organization` model has no `logo_url`.** Carrying forward from pass 1.
+- **No `Initiative.logo_url` either.** New consequence of README changes.
+- **`Vote` model exists** (models.py 370–384) with `benefactor_id`/`initiative_id`/`org_id` unique-keyed per (benefactor, initiative). Good — there is somewhere to hang the 0.1-division and `n_total_votes` logic. But no fractional-vote column; today a Vote row is binary. Multi-initiative vote-share will need a `share: float` column or a separate `VoteShare` table.
+- **README ends mid-thought.** Last bullet is `- [ ] **1/16 to evaluation**` with no description. Looks truncated. → Q12.
+
+### Suggested README structure-tree edits (since I can't edit README)
+
+If you agree, please apply to `README.md`:
+
+1. **Define `size_factor`** in the vote-weight section. Even a one-line "(constant TBD, used to dampen large pools)" would unblock implementation.
+2. **Finish the trailing `1/16 to evaluation` bullet** — what's the payout mechanism, who decides "Helpful", over what window.
+3. **Clarify donation-threshold scope.** Is `$20` the threshold for initiative-side logo colorization, org-side visibility, or both?
+4. **State the canonical newsfeed filename.** `feed.html` today; README uses "EN Newsfeed" everywhere else. If the rename is structural, say "rename `feed.html` → `en.html`"; if cosmetic-only, say "keep `feed.html`, only relabel UI to EN".
+5. **Resolve the "now" marker question** — should the marker on `index.html`'s cause wheel stay (added 2026-05-15) or be relocated to `cause.html`'s initiative annulus?
+6. **Add a Mission Index file note** confirming `mission_index.html` is net-new (no Initiatives.html legacy to delete; pass-1 README said "REPLACE Initiatives.html" but that note has since been removed — wanted to confirm it was intentional removal, not editing accident).
+
+### Open questions for Jax (refreshed)
+
+- **Q1' (EN filename):** Rename `feed.html` → `en.html`, or keep filename and only relabel UI?
+- **Q4 (mission_index.html):** Build before or after the cause-page top-card / bottom-banner restructure?
+- **Q6 (Top-card "banner"):** Still pending from pass 1. Which DOM element on `index.html` is the "banner" being relocated below the annulus? Best guess remains the mission-strip band.
+- **Q7 (Initiative logos):** Add `logo_url` to `Initiative` mirroring `Organization.logo_url`, with cause-color placeholder until upload?
+- **Q8 (size_factor):** What is `size_factor` in the vote-weight formula? Constant? Function of pool size? Per-cause?
+- **Q9 (49-EBX bonus):** Startup hook on signup (if `id <= 100`) or a one-time admin script after the first 100 register?
+- **Q10 (donation thresholds):** Is `$20` the initiative-side threshold, the org-side threshold, or both? Same number for both, or two configs?
+- **Q11 (now-marker location):** Keep the white "now" line we added on `index.html`'s cause wheel, or move it to `cause.html`'s initiative annulus (and leave the index wheel marker-less)?
+- **Q12 (trailing bullet):** What's the rest of the `1/16 to evaluation` bullet — payout mechanism, judging criteria, timing?
+
+---
 
 ## Cause Page
 - [ ] **Page design**
 Good for now.
 EBX                                                                        profile
-___Leading initiatives___  [cause] decision - [date] ___Past/Ongoing Initiatives___
+___Leading initiatives___  [cause] decision - [date] ___Past, present, future    ___
 |                        | Select upcoming mission*  |                             |
 |________________________|       Cause               |_____________________________|
                                  Wheel**                                                         **see cause wheel item
