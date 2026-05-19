@@ -1,16 +1,74 @@
 # Earthbucks — Backlog
+Things were getting out of hand so I reverted...
 
 ## Changelog
 - **2026-05-15** — Fixed main page alignment (see below). Logged notes on wildlife chart, propose-login bug, and cycle model.
 - **2026-05-15 (auto)** — Three bugs fixed (see notes below). Also repaired a silent corruption in `frontend/src/ebx_shared.ts` where duplicate code had been appended after the build sentinel — this was blocking all TS builds.
 - **2026-05-15 (auto, pass 2)** — Added "now" glowing white line to the cause wheel annulus. Removed separate Vote button from initiative detail panel — Commit is now the single action (it IS the vote). Fixed `n===1` label position in the wildlife pie chart (label now shows at 12 o'clock instead of bottom of ring). Rebuilt JS bundle successfully.
+- **2026-05-19 (auto, audit-only)** — No code changes. Diffed README.md structure tree vs BACKLOG.md and current code. See "Notes from 2026-05-19" section below for conflicts, suggested structure-tree edits, and questions for Jax.
+
+## Notes from 2026-05-19 (auto) — README ↔ BACKLOG audit
+
+This run made no code edits. Goal was to compare the (much-expanded) README structure tree against BACKLOG and the actual codebase, and surface anything that needs your attention. README is treated as the canonical structure tree, BACKLOG as the live working doc.
+
+### Conflicts between README and BACKLOG that need resolution
+
+1. **"EN" vs "newsfeed" rename.** README says: *EN Newsfeed → Rename everything to EN (Earthbux News)*. BACKLOG (line ~50) says the opposite: *NEWSFEED → Rename feed everywhere to newsfeed*. These can't both be right. README also self-conflicts: the cause-page feed filter is labeled *"Filter Newsfeed"* even though the parent section says rename everything to EN. **Question for Jax:** is the canonical name **EN** (with full name *Earthbux News*) everywhere — including the filter label, the page filename, and the in-app strings? If yes, BACKLOG's "Rename feed everywhere to newsfeed" should be deleted and README's "Filter Newsfeed" should be retitled "Filter EN".
+
+2. **Vote-weight formula changed in README.** Two formulas now coexist:
+   - README, Initiative vote → Committing → Vote weight Algorithm: `Vote weight = 1 + b_contribution / (total_pool_not_including_b * n_total_votes)`
+   - BACKLOG, Initiatives → Committing: `1 + your_committment / total_pool_not_including_your_committment` (no `n_total_votes` term)
+   The new denominator (`* n_total_votes`) materially changes dynamics — each additional voter dilutes everyone's bonus weight. **Question:** confirm the README formula is canonical, then I'll update BACKLOG and we can wire it into `crud.get_vote_tally` / a new weighted-tally endpoint.
+
+3. **Newsfeed inconsistency in README itself.** Under "EN" the rename rule says "Rename everything to 'Earthbux News' or 'EN' if there is a space constraint", but the cause-page Feed section still says *Filters → labeled "Filter Newsfeed"*. **Suggested README edit:** change "Filter Newsfeed" → "Filter EN" (or "Filter feed" if you'd rather keep "feed" as the generic noun and "EN" only as the brand).
+
+### New things in README that aren't yet reflected in BACKLOG or code
+
+These are README items that have no corresponding BACKLOG task and aren't implemented. Listing so they don't fall through the cracks:
+
+- **Main page → Cause Cards → Top card.** Largest card, horizontally between side cards and vertically from now-marker to top. Right pane = newly-elected initiative + org + pool size + election date + current org vote. Left pane = detail metrics for the org election being decided this week (leaders with links to mission-page prototypes, EN-feed link, votes/commitments). Current `index.html` has only generic `hero__left` / `hero__right` panels and a center annulus mount — no "top card" concept. This is a sizable layout restructure.
+- **Main page → Cause Cards → Bottom banner.** Existing banner needs to be relocated to directly below the annulus, between the left and right cause cards, recolored to the cause-after-active-cause, and used to display upcoming-initiative-decision metrics.
+- **Main page → Cause Cards → Side cards.** Two stacked sections per side: *Initiative* (leader · x% · Contribute → links to cause page, total pool) and *Organization for [initiative]* (leader · x% · Contribute → links to org's mission page, total pool). Show "No votes yet" when empty.
+- **Cause page → Right cards** with three slots: Bottom = previous mission + status, Middle = active mission + status, Top = upcoming org election with initiative name and current org pick. Not present in code or BACKLOG.
+- **Cause page → Initiative Table** with explicit columns: Name | Rating | Proposed-by | Credit (cause-color dot placeholder) | Pool share %. BACKLOG has no row-for-row spec.
+- **Cause page → Initiative annulus → Mission Progress annulus.** A *third* tier around the outside that tracks mission metrics, surrounding the inner two sections. Backlogged in README until mission progress interface is built — flagging here so BACKLOG carries it too.
+- **Cause page → Handle when 1 or 0 initiatives have votes.** If only 0 or 1 initiatives received votes, drop the pie chart and indicate the case in the middle of the annulus. (We already special-cased `n===1` for the wildlife chart label position on 2026-05-15 pass 2; this is a broader requirement.)
+- **Mission Index page (`mission_index.html`).** README says: *"REPLACE Initiatives.html with mission_index.html and Initiatives.html can be deleted."* Status check: there is currently no `Initiatives.html` (already gone) and no `mission_index.html`. So this is a net-new page to build. Big table of every mission with row-per-week, color-coded by status; expandable rows (one at a time); separate variants for benefactor / org / admin views; "Indicate user join date" marker. Columns per README: `"cause_name cycle_num" | mission_start_date | my_initiative_choice(s) | amt committed | my_org_choice(s) | amt committed | pool_size`. **Suggested:** add a top-level "Mission Index" section to BACKLOG with these subtasks.
+- **Multi-initiative vote division floor.** README adds: *"Benefactors can not divide votes smaller than 0.1."* Enforce this in the upcoming Commit dialog (Initiatives → Committing UX in BACKLOG).
+- **MEMBERSHIPS / HUMAN security layer.** README adds a HUMAN classification: *"Any user of the app is verified to be a human or the authorized AI agent of Earthbux or an authorized organization."* Today the backend has `BenefactorAccount`, `Organization`, `Membership` — but no notion of human-verification or an authorized-AI-agent principal. **Suggested BACKLOG task:** decide whether this is a new column on `BenefactorAccount` (`verified_human: bool`, `principal_type: 'human'|'ebx_agent'|'org_agent'`) or a separate `Principal` table. Probably the simpler column approach for now.
+- **Organization logos / Initiative logos as halves of the credit coin.** README is explicit that initiative logo + org logo together = the credit coin (one half each). Today neither is in the schema. BACKLOG already lists "Organization logos" with `logo_url`. **Suggested BACKLOG addition:** `logo_url` on `Initiative` too, mirroring the org field; render colored emoji placeholder until uploaded.
+- **EN cut thresholds — wording is ambiguous.** README: *"If your donation brings the threshold over $1000, we take 4/16, $800 3/16, $600 2/16, and anything else 1/16."* **Question:** does "the threshold" mean the **total pool size for that mission** at the moment of donation? I.e., the cut tier is determined by the cumulative pool the donation lands in, not by the donation amount itself? Or is it the individual donation size? This changes the implementation significantly.
+- **Profile page → Logo colorization via vote participation.** README mentions `verified_via_vote: bool` on `BenefactorAccount`, set after first vote. BACKLOG already has this — keep it but note schema work is unstarted in `models.py`.
+
+### Suggested README structure-tree edits (since I can't edit README directly)
+
+If you agree with the below, please make these edits to `README.md` yourself:
+
+1. **Resolve EN/Newsfeed.** Under `Cause/Initiative page → Feed → Filters`, change "labeled 'Filter Newsfeed'" → "labeled 'Filter EN'" (or whatever name you settle on).
+2. **Clarify EN-cut thresholds.** Reword the *"EN cut thresholds"* bullet to say explicitly what "the threshold" refers to (pool size vs donation amount) and at which moment it's evaluated (commit time vs mission start vs mission end).
+3. **Fix "newly elected initiative" phrasing in Top card.** Under Top card → Contents → Right, it currently says "Smaller area titled with the newly elected initiative name and organization, pool size, election date." If this is meant to describe the **just-decided** initiative (i.e. the one that won the previous initiative vote), say so explicitly — "newly elected" reads ambiguously since orgs are also "elected" later.
+4. **Add Mission Progress annulus to a top-level Mission Index section.** Currently the third (outer) annulus is described under Cause/Initiative page, but the data driving it lives in the Mission Index. Cross-link.
+5. **Bottom banner relocation note.** The Top-card bullet says *"Move and repurpose banner as instructed in *bottom banner*"* but the Bottom-banner bullet doesn't reference a specific element being moved (just says *"Relocate this banner..."*). State which element on the current page is the banner being moved — I'm guessing it's the existing `mission-strip` band, but want to confirm before refactoring.
+6. **Naming: "mission x-8" not "cause x-8".** You already corrected me on this in BACKLOG (Cycle / process modeling note). Suggest threading the same naming into README — e.g. "Org decision week (week N+8 for **mission** X)" rather than "cause X".
+
+### Open questions for Jax (consolidated)
+
+- **Q1 (EN rename):** Confirm canonical name is "EN" / "Earthbux News" everywhere. Should `feed.html` be renamed `en.html`? (or keep the route, just relabel UI?)
+- **Q2 (Vote-weight formula):** Confirm the new `1 + b_contribution / (total_pool_not_including_b * n_total_votes)` is canonical. The `n_total_votes` denominator is new — was it intentional?
+- **Q3 (EN cut threshold semantics):** Tiered by total pool or by individual donation amount? Evaluated when?
+- **Q4 (mission_index.html):** Build this as the next major piece, after the cause-page top-card / bottom-banner reshuffle? Or before?
+- **Q5 (HUMAN verification):** Add as columns on `BenefactorAccount` for now (`verified_human: bool`, `principal_type: enum`), or hold off until we know what the AI-agent principal pattern needs?
+- **Q6 (Top-card "banner"):** Which DOM element is the "banner" being relocated? Best guess: the `mission-strip` band on `index.html`. Confirm before I move it.
+- **Q7 (Initiative logos):** Add `logo_url` to `Initiative` mirroring `Organization.logo_url`, with cause-color emoji-initial placeholder until upload — sound right?
+
+
 
 ## Structure
 - [ ] **Main page**
     - [ ] **Cause annulus** is here, Claude was right
         - [ ] **Glowy white now marker** - Marker from previous edit is on wrong page. This was supposed to be on the initiative annulus, which is on cause.html. Oops!
         - [ ] **Maximize display space**
-        Keep inner circle at current size, maximize outer circle all the way to the inner edge of the cards. Lock left and right card corners to the bottom corners of active card w light padding.
+        Keep inner circle at current size, maximize outer circle all the way to the inner edge of the cards. Lock left and right card corners to the bottom corners of active card w light padding.    
             - [ ] **Size and dimensions of annulus**
         - [ ] **Navigate and zoom**
         On mobile this will be important. There will be a zoom (And rotate) for users to select a particular sector and that will work well with touchscreens.
