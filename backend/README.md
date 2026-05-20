@@ -1,3 +1,4 @@
+## backend/README.md
 # Earthbucks API
 
 FastAPI + SQLAlchemy + Alembic backend for Earthbucks.

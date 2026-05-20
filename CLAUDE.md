@@ -1,0 +1,1 @@
+STRUCTURE.md contains a detailed model of the Earthbux platform.

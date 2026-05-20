@@ -6,19 +6,20 @@
   <title>Earthbucks — You donate, we follow.</title>
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
-    /* ── Top bar (3-up: tagline · election banner · user badge) ── */
+    /* ── Top bar (3-up: tagline · top-card-header · user badge) ── */
     .ebx-topbar {
       background: #0f1a14;
       border-bottom: 1px solid rgba(245,240,232,0.07);
       position: relative;
       z-index: 5;
+      overflow: visible; /* let card header extend downward */
     }
     .ebx-topbar__inner {
       display: grid;
-      grid-template-columns: 1fr 420px 1fr;
-      align-items: center;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: stretch;
       gap: var(--sp-lg);
-      padding: 14px 0;
+      padding: 14px 0 0; /* no bottom padding — card header sits flush at bottom */
     }
     .ebx-topbar__tagline {
       color: rgba(245,240,232,0.92);
@@ -27,17 +28,25 @@
       font-weight: 700;
       line-height: 1.1;
       letter-spacing: -0.005em;
+      padding-bottom: 14px; /* restore vertical rhythm */
     }
     .ebx-topbar__tagline em { color: var(--clr-honey); font-style: normal; }
     .ebx-topbar__tagline a { text-decoration: none; color: inherit; }
-    .ebx-topbar__center { display: flex; justify-content: center; }
-    .ebx-topbar__right  { display: flex; justify-content: flex-end; }
+    .ebx-topbar__right  { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 14px; }
+    .ebx-topbar__center {
+      width: 460px;
+      display: flex;
+      align-items: stretch;
+      position: relative;
+      z-index: 2;
+    }
+    .ebx-topbar__center > * { width: 100%; }
 
     /* ── Hero shell ── */
     .hero {
       background: #0f1a14;
       color: var(--clr-parchment);
-      padding: var(--sp-xl) 0 var(--sp-xl);
+      padding: 0 0 var(--sp-xl); /* no top padding — top card body connects flush from topbar */
       position: relative;
       overflow: visible;
     }
@@ -51,45 +60,45 @@
     }
     .hero .container { position: relative; }
 
-    /* ── Tether line: connects election banner to top of wheel ── */
-    .ebx-tether {
-      position: absolute;
-      left: 50%;
-      top: -22px;
-      transform: translateX(-50%);
-      width: 1.5px;
-      height: 64px;
-      background: linear-gradient(to bottom,
-                  rgba(255,255,255,0) 0%,
-                  rgba(255,255,255,0.85) 25%,
-                  rgba(255,255,255,0.85) 75%,
-                  rgba(255,255,255,0) 100%);
-      box-shadow: 0 0 8px rgba(255,255,255,0.45);
-      pointer-events: none;
-      z-index: 4;
-    }
-
-    /* ── 3-col hero: cards | wheel | cards ── */
+    /* ── 3-col hero: cards | center-col | cards ── */
     .hero__layout {
       display: grid;
       grid-template-columns: 1fr auto 1fr;
       gap: var(--sp-lg);
-      align-items: center;
+      align-items: stretch; /* side cards set the height; center column stretches to match */
     }
     .hero__side {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      padding-top: 10px;
     }
     .hero__left  { align-items: flex-start; }
     .hero__right { align-items: flex-end; }
     .race-card:hover { background: rgba(15,26,20,0.92) !important; }
 
-    .hero__center { display: flex; justify-content: center; }
+    /* ── Center column: top-card body + annulus + bottom banner ── */
+    .hero__center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    /* Top card body fills all space between topbar and annulus */
+    .hero__top-card {
+      width: 460px;
+      flex: 1;
+      min-height: 80px;
+    }
     .hero__annulus-wrap {
       position: relative;
-      width: 420px;
-      height: 420px;
+      width: 460px;
+      height: 460px;
+      flex-shrink: 0;
+    }
+    .hero__bottom-banner {
+      width: 460px;
+      flex-shrink: 0;
     }
     .ebx-center {
       position: absolute;
@@ -158,7 +167,7 @@
     .mission-link { scroll-snap-align: start; }
     .mission-link:hover { background: rgba(15,26,20,0.85) !important; transform: translateY(-1px); }
 
-    /* ── Feed strip ── */
+    /* ── EN strip (3 most recent posts from Earthbux News) ── */
     .feed-strip {
       margin-top: var(--sp-2xl);
       padding-top: var(--sp-xl);
@@ -194,13 +203,25 @@
     .cta-band h2 { color:var(--clr-earth); }
     .cta-band p  { color:rgba(26,26,18,0.7); }
 
-    @media (max-width: 1100px) {
-      .ebx-topbar__inner { grid-template-columns: 1fr; row-gap: 8px; }
-      .ebx-topbar__center, .ebx-topbar__right { justify-content: flex-start; }
+    @media (max-width: 1160px) {
+      .ebx-topbar__center { width: 420px; }
+      .hero__top-card,
+      .hero__annulus-wrap,
+      .hero__bottom-banner { width: 420px; }
+      .hero__annulus-wrap { height: 420px; }
+    }
+    @media (max-width: 980px) {
+      .ebx-topbar__inner { grid-template-columns: 1fr; row-gap: 8px; padding-bottom: 14px; }
+      .ebx-topbar__center { display: none; } /* card header hidden on mobile; body shows alone */
+      .ebx-topbar__right { justify-content: flex-start; padding-bottom: 0; }
+      .ebx-topbar__tagline { padding-bottom: 0; }
+      .hero { padding-top: 10px; } /* restore a little breathing room without the card header */
       .hero__side { display: none; }
       .hero__layout { grid-template-columns: 1fr; justify-items: center; }
-      .hero__annulus-wrap { width: 320px; height: 320px; }
-      .ebx-tether { display: none; }
+      .hero__top-card,
+      .hero__annulus-wrap,
+      .hero__bottom-banner { width: 360px; }
+      .hero__annulus-wrap { height: 360px; }
     }
     @media (max-width: 600px) {
       .feed-strip__grid { grid-template-columns: 1fr; }
@@ -210,28 +231,30 @@
 </head>
 <body>
 
-  <!-- ── Top bar: tagline · electionBanner · userBadge ── -->
+  <!-- ── Top bar: tagline · userBadge ── -->
   <div class="ebx-topbar">
     <div class="container ebx-topbar__inner">
       <div class="ebx-topbar__tagline">
         <a href="index.html">You donate. <em>We follow.</em></a>
       </div>
-      <div class="ebx-topbar__center" id="ebx-election-banner-mount"></div>
-      <div class="ebx-topbar__right"  id="ebx-user-badge-mount"></div>
+      <!-- Top card header: cause name + election label — body continues in hero below -->
+      <div class="ebx-topbar__center" id="ebx-topcard-header-mount"></div>
+      <div class="ebx-topbar__right" id="ebx-user-badge-mount"></div>
     </div>
   </div>
 
-  <!-- ── Hero: 3 race cards | wheel | 3 race cards ── -->
+  <!-- ── Hero: 3 side cards | center (top card + wheel + bottom banner) | 3 side cards ── -->
   <section class="hero">
     <div class="container">
-
-      <!-- Tether line: connects banner above to top of wheel below -->
-      <div class="ebx-tether"></div>
 
       <div class="hero__layout">
         <div class="hero__side hero__left"  id="left-panel"></div>
 
         <div class="hero__center">
+          <!-- Top card: dual org-election panel -->
+          <div class="hero__top-card" id="ebx-top-card-mount"></div>
+
+          <!-- Cause annulus -->
           <div class="hero__annulus-wrap" id="ebx-annulus-mount">
             <div class="ebx-center">
               <div class="ebx-center__today" id="ebx-center-today">—</div>
@@ -240,6 +263,9 @@
               <div class="ebx-center__cause" id="ebx-center-cause">—</div>
             </div>
           </div>
+
+          <!-- Bottom banner: upcoming initiative decision (next cause) -->
+          <div class="hero__bottom-banner" id="ebx-bottom-banner-mount"></div>
         </div>
 
         <div class="hero__side hero__right" id="right-panel"></div>
@@ -251,11 +277,11 @@
         <div class="mission-strip__grid" id="mission-strip-grid"></div>
       </div>
 
-      <!-- ── Feed strip: 3 most recent posts ── -->
+      <!-- ── EN strip: 3 most recent posts ── -->
       <div class="feed-strip">
         <div class="feed-strip__header">
-          <span class="feed-strip__eyebrow">From the feed</span>
-          <a href="feed.html" class="feed-strip__more">All posts →</a>
+          <span class="feed-strip__eyebrow">From Earthbux News</span>
+          <a href="en.html" class="feed-strip__more">All EN posts →</a>
         </div>
         <div class="feed-strip__grid" id="feed-strip-grid"></div>
       </div>
@@ -296,7 +322,7 @@
           <div class="how-step__num">04</div>
           <div class="how-step__body">
             <h3>Follow the mission</h3>
-            <p>Track progress and spending in real time. When Earthbux judges the issue resolved, a buyback begins. Active missions live in the feed.</p>
+            <p>Track progress and spending in real time. When Earthbux judges the issue resolved, a buyback begins. Active missions live in the EN feed.</p>
           </div>
         </div>
       </div>
@@ -331,14 +357,20 @@
         new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
       document.getElementById("ebx-center-cause").textContent = activeCause ? activeCause.name : "—";
 
-      document.getElementById("ebx-election-banner-mount").innerHTML = EBX.electionBanner(active);
+      // Top card header in topbar + body in hero center column
+      document.getElementById("ebx-topcard-header-mount").innerHTML = EBX.topCardHeader(active);
+      document.getElementById("ebx-top-card-mount").innerHTML = EBX.topCard(active);
 
-      // 3 left, 3 right race cards (the 6 non-active causes)
-      // Left column: nearest-to-active at top → [-1, -2, -3] so card 6 is above 5 above 4
+      // Bottom banner: next cause's upcoming initiative decision
+      document.getElementById("ebx-bottom-banner-mount").innerHTML = EBX.upcomingCauseBanner(active);
+
+      // 3 left, 3 right side cards (the 6 non-active causes)
+      // Left: causes just before active (recent) — [-1, -2, -3]
+      // Right: causes just after active (upcoming) — [+1, +2, +3]
       const left  = [-1, -2, -3].map(off => ((active + off) % n + n) % n);
       const right = [1, 2, 3].map(off => ((active + off) % n + n) % n);
-      document.getElementById("left-panel").innerHTML  = left.map(i => EBX.raceCard(i)).join("");
-      document.getElementById("right-panel").innerHTML = right.map(i => EBX.raceCard(i)).join("");
+      document.getElementById("left-panel").innerHTML  = left.map(i => EBX.sideCard(i)).join("");
+      document.getElementById("right-panel").innerHTML = right.map(i => EBX.sideCard(i)).join("");
 
       document.getElementById("mission-strip-grid").innerHTML = EBX.missionStrip();
 

@@ -49,6 +49,7 @@ class OrganizationRead(OrganizationBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
     score: float = 0.0
+    logo_url: Optional[str] = None
     date_approved: Optional[datetime] = None
     causes: list[CauseRead] = []
 
@@ -78,6 +79,7 @@ class InitiativeRead(InitiativeBase):
     index: Optional[int] = None
     cause_id: str
     rating: float = 0.0
+    logo_url: Optional[str] = None
     ebx_committed: int = 0
     pool_value: int = 0
     election_open: Optional[datetime] = None
@@ -182,7 +184,10 @@ class ReviewRead(ReviewBase):
 # Votes (org election — one per benefactor per initiative)
 # ---------------------------------------------------------------------------
 class VoteCreate(BaseModel):
-    org_id: str
+    # org_id is only set during the org-election phase; omit for initiative-only (soft) votes.
+    org_id: Optional[str] = None
+    # Fractional vote share across multiple initiatives. Minimum 0.1.
+    share: float = Field(default=1.0, ge=0.1, le=1.0)
 
 
 class VoteRead(BaseModel):
@@ -190,7 +195,8 @@ class VoteRead(BaseModel):
     id: int
     benefactor_id: int
     initiative_id: str
-    org_id: str
+    org_id: Optional[str] = None
+    share: float = 1.0
     created_at: datetime
 
 
@@ -209,6 +215,7 @@ class BenefactorRead(BaseModel):
     email: EmailStr
     handle: str
     is_active: bool
+    vvv: bool = False
     created_at: datetime
 
 

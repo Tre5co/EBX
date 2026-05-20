@@ -83,6 +83,7 @@ class Organization(Base):
     founded_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     date_approved: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     score: Mapped[float] = mapped_column(Float, default=0.0)
+    logo_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     causes: Mapped[list["Cause"]] = relationship(
         secondary=organization_causes,
@@ -116,6 +117,8 @@ class BenefactorAccount(Base):
     pass_hash: Mapped[str] = mapped_column(String, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    # vvv: True after first org vote cast. Unlocks cause-color perk on profile logo.
+    vvv: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     credit_coins: Mapped[list["CreditCoin"]] = relationship(
         back_populates="owner",
@@ -175,6 +178,7 @@ class Initiative(Base):
     )
 
     rating: Mapped[float] = mapped_column(Float, default=0.0)
+    logo_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     ebx_committed: Mapped[int] = mapped_column(Integer, default=0)
     pool_value: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -376,9 +380,12 @@ class Vote(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     benefactor_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
     initiative_id: Mapped[str] = mapped_column(ForeignKey("initiatives.id"), nullable=False)
-    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    # org_id is NULL for initiative-only (soft) votes; set during the org-election phase.
+    org_id: Mapped[Optional[str]] = mapped_column(ForeignKey("organizations.id"), nullable=True)
+    # Fractional vote share. Min 0.1. Defaults to 1.0 (full vote on one initiative).
+    share: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     benefactor: Mapped["BenefactorAccount"] = relationship()
     initiative: Mapped["Initiative"] = relationship()
-    org: Mapped["Organization"] = relationship()
+    org: Mapped[Optional["Organization"]] = relationship()

@@ -14,8 +14,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./earthbucks.db"
     secret_key: str = "dev-only-change-me"
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 10080  # 7 days; set lower via .env in production
+    access_token_expire_minutes: int = 10080
     cors_origins: str = "http://localhost:5173,http://localhost:8000,http://127.0.0.1:5500"
+
+    # vote_weight = 1 + b_contribution / (pool_excluding_b * size_factor)
+    # size_factor targets an ideal pool size. Override via SIZE_FACTOR env var.
+    size_factor: float = 1.0
 
     @property
     def cors_origins_list(self) -> list[str]:

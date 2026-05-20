@@ -453,7 +453,7 @@
           <div class="ebx-footer__col">
             <h4>Platform</h4>
             <ul>
-              <li><a href="feed.html">Feed</a></li>
+              <li><a href="en.html">EN</a></li>
               <li><a href="mission.html">Missions</a></li>
               <li><a href="initiative.html">Initiatives</a></li>
               <li><a href="about.html">About</a></li>
@@ -644,7 +644,7 @@
     };
     const label = typeLabel[post.type] ?? post.type;
     return `
-    <a href="feed.html?id=${post.id}" class="ebx-feed-card"
+    <a href="en.html?id=${post.id}" class="ebx-feed-card"
        style="text-decoration:none;color:inherit;display:flex;flex-direction:column;
               gap:8px;padding:16px;border-radius:10px;
               background:rgba(15,26,20,0.5);border:1px solid rgba(255,255,255,0.07);
@@ -1146,7 +1146,7 @@
           background:var(--epc);color:#0f1a14;">
           Engage \u2192
         </a>
-        <a href="feed.html?cause=${cause.id}" style="
+        <a href="en.html?cause=${cause.id}" style="
           flex:1;text-align:center;text-decoration:none;
           font-family:var(--font-mono);font-size:0.68rem;
           padding:7px 10px;border-radius:6px;
@@ -1267,6 +1267,141 @@
     </a>
   `;
   }
+  function sideCard(causeIndex) {
+    const cause = config.causes.find((c) => c.index === causeIndex);
+    if (!cause) return "";
+    const cycleNum = Cycle.currentCycleNum();
+    const orgs = Votes.orgsForCause(causeIndex);
+    const orgShares = Votes.forCause(causeIndex, cycleNum, orgs);
+    const orgLeader = orgShares[0];
+    const decision = Cycle.nextDecisionDate(causeIndex);
+    const initiatives = config.initiatives.filter((i) => i.cause_index === causeIndex).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
+    const initLeader = initiatives[0];
+    const totalPool = initiatives.reduce((s, i) => s + (i.committed_ebx || 0), 0);
+    const voteStart = new Date(decision.getTime() - 6 * MS_PER_DAY);
+    const sameMonth = voteStart.getMonth() === decision.getMonth();
+    const dateRange = sameMonth ? voteStart.toLocaleDateString("en-US", { month: "short" }) + " " + voteStart.getDate() + "-" + decision.getDate() : formatShortDate(voteStart) + " - " + formatShortDate(decision);
+    const section = (label, title, sub, href, pool, empty) => {
+      if (empty) {
+        return '<div style="padding:10px 12px;"><div style="font-family:var(--font-mono);font-size:0.5rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.42);margin-bottom:4px;">' + label + '</div><div style="font-size:0.7rem;color:rgba(245,240,232,0.35);font-style:italic;">No votes yet</div></div>';
+      }
+      return '<div style="padding:10px 12px;"><div style="font-family:var(--font-mono);font-size:0.5rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.42);margin-bottom:3px;">' + label + '</div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;flex-wrap:wrap;"><div style="font-size:0.74rem;color:rgba(245,240,232,0.9);font-weight:600;line-height:1.25;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + title + '</div><a href="' + href + '" style="font-family:var(--font-mono);font-size:0.55rem;font-weight:700;white-space:nowrap;color:' + cause.color + ";text-decoration:none;padding:2px 7px;border-radius:4px;border:1px solid " + cause.color + ';opacity:0.85;">Contribute</a></div><div style="font-family:var(--font-mono);font-size:0.6rem;color:rgba(245,240,232,0.55);margin-top:2px;">' + sub + '</div><div style="font-family:var(--font-mono);font-size:0.55rem;color:rgba(245,240,232,0.38);margin-top:3px;">Total pool: ' + (pool > 0 ? "$" + formatNumber(pool) : "--") + "</div></div>";
+    };
+    const orgLabel = initLeader ? 'Organization for "' + (initLeader.title.length > 20 ? initLeader.title.slice(0, 20) + "..." : initLeader.title) + '"' : "Organization election";
+    const initSub = initLeader ? (initLeader.committed_ebx || 0) > 0 ? formatEBX(initLeader.committed_ebx || 0) + " EBX" : "No commitments yet" : "";
+    return '<div class="race-card" style="--rc-color:' + cause.color + ';display:block;text-decoration:none;width:100%;box-sizing:border-box;background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);border-radius:10px;overflow:hidden;transition:background 0.2s;"><div style="padding:8px 12px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--rc-color);display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><a href="cause.html?id=' + cause.id + '" style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;">' + cause.name + '</a><span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.55);white-space:nowrap;">Vote ' + dateRange + "</span></div>" + section(
+      "Initiative",
+      initLeader ? initLeader.title : "",
+      initSub,
+      "cause.html?id=" + cause.id,
+      totalPool,
+      !initLeader
+    ) + '<div style="height:1px;background:rgba(255,255,255,0.06);margin:0 12px;"></div>' + section(
+      orgLabel,
+      orgLeader ? orgLeader.org_name : "",
+      orgLeader ? orgLeader.pct.toFixed(0) + "% of votes" : "",
+      orgLeader ? "mission.html?cause=" + cause.id : "cause.html?id=" + cause.id,
+      totalPool,
+      !orgLeader
+    ) + "</div>";
+  }
+  function upcomingCauseBanner(activeIndex) {
+    const n = 7;
+    const nextIndex = (activeIndex + 1) % n;
+    const cause = config.causes.find((c) => c.index === nextIndex);
+    if (!cause) return "";
+    const inits = config.initiatives.filter((i) => i.cause_index === nextIndex).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
+    const topInit = inits[0] || null;
+    const pool = inits.reduce((s, i) => s + (i.committed_ebx || 0), 0);
+    const decision = Cycle.nextDecisionDate(nextIndex);
+    const daysUntil = Math.ceil((decision.getTime() - Date.now()) / MS_PER_DAY);
+    const cycleNum = Cycle.currentCycleNum();
+    const orgs = Votes.orgsForCause(nextIndex);
+    const shares = Votes.forCause(nextIndex, cycleNum, orgs);
+    const orgLeader = shares[0];
+    const dot = `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${cause.color};flex-shrink:0;box-shadow:0 0 5px ${cause.color};"></span>`;
+    const label = `<span style="font-family:var(--font-mono);font-size:0.52rem;letter-spacing:0.14em;text-transform:uppercase;color:${cause.color};font-weight:700;white-space:nowrap;flex-shrink:0;">Up next: ${cause.name}</span>`;
+    const title = `<span style="font-size:0.8rem;color:rgba(245,240,232,0.88);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${topInit ? (topInit.emoji ? topInit.emoji + " " : "") + topInit.title : "No initiative yet"}</span>`;
+    const orgStr = orgLeader ? `<span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.42);white-space:nowrap;flex-shrink:0;">${orgLeader.org_name} ${orgLeader.pct.toFixed(0)}%</span>` : "";
+    const poolStr = pool > 0 ? `<span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.38);white-space:nowrap;flex-shrink:0;">$${formatNumber(pool)}</span>` : "";
+    const btn = `<span style="font-family:var(--font-mono);font-size:0.56rem;font-weight:700;padding:3px 9px;border-radius:4px;background:${cause.color};color:#0f1a14;white-space:nowrap;flex-shrink:0;">${formatShortDate(decision)} \xB7 ${daysUntil}d</span>`;
+    return `<a href="cause.html?id=${cause.id}" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;background:rgba(15,26,20,0.78);border:1.5px solid ${cause.color};text-decoration:none;color:rgba(245,240,232,0.95);width:100%;box-sizing:border-box;overflow:hidden;">` + dot + label + title + orgStr + poolStr + btn + "</a>";
+  }
+  function topCardHeader(activeIndex) {
+    const cause = config.causes.find((c) => c.index === activeIndex);
+    if (!cause) return "";
+    return `<div style="display:flex;align-items:center;gap:8px;padding:0 16px;height:100%;border-top:2px solid ${cause.color};border-left:1px solid rgba(255,255,255,0.09);border-right:1px solid rgba(255,255,255,0.09);border-bottom:none;border-radius:8px 8px 0 0;background:rgba(15,26,20,0.82);box-sizing:border-box;position:relative;z-index:2;">
+    <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${cause.color};box-shadow:0 0 5px ${cause.color};"></span>
+    <span style="font-family:var(--font-mono);font-size:0.58rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:${cause.color};">${cause.name}</span>
+    <span style="font-family:var(--font-mono);font-size:0.5rem;color:rgba(245,240,232,0.28);margin-left:auto;white-space:nowrap;">Organization Election</span>
+  </div>`;
+  }
+  function topCard(activeIndex) {
+    const cause = config.causes.find((c) => c.index === activeIndex);
+    if (!cause) return "";
+    const cycleNum = Cycle.currentCycleNum();
+    const orgs = Votes.orgsForCause(activeIndex);
+    const thisShares = Votes.forCause(activeIndex, cycleNum, orgs);
+    const thisLeader = thisShares[0];
+    const thisDecision = Cycle.nextDecisionDate(activeIndex);
+    const daysToThis = Math.ceil((thisDecision.getTime() - Date.now()) / MS_PER_DAY);
+    const thisInits = config.initiatives.filter((i) => i.cause_index === activeIndex);
+    const thisPool = thisInits.reduce((s, i) => s + (i.committed_ebx || 0), 0);
+    const thisInit = [...thisInits].sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+    let myOrgVote = null;
+    try {
+      const ch = JSON.parse(localStorage.getItem("ebx_choices") || "{}");
+      myOrgVote = ch[`org_${activeIndex}`] || null;
+    } catch (_e) {
+    }
+    const thisVoteBars = thisShares.slice(0, 4).map((s) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;"></span>
+      <span style="font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.72);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.org_name}</span>
+      <span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.45);flex-shrink:0;">${s.pct.toFixed(0)}%</span>
+    </div>`).join("");
+    const leftPane = `
+    <div style="padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:0;">
+      <div style="font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:${cause.color};font-weight:700;margin-bottom:5px;">This week \xB7 ${daysToThis}d</div>
+      <div style="font-size:0.8rem;font-weight:700;color:rgba(245,240,232,0.95);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px;">${thisInit ? (thisInit.emoji ? thisInit.emoji + " " : "") + thisInit.title : '<span style="opacity:0.4;font-style:italic;">No initiative yet</span>'}</div>
+      ${thisVoteBars}
+      <div style="margin-top:6px;font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.38);">Pool: ${thisPool > 0 ? "$" + formatNumber(thisPool) : "\u2014"} \xB7 ${formatShortDate(thisDecision)}</div>
+      ${myOrgVote ? `<div style="margin-top:5px;font-family:var(--font-mono);font-size:0.52rem;color:${cause.color};opacity:0.85;">\u2713 Your vote: ${myOrgVote}</div>` : ""}
+      <a href="m_indx.html" style="display:inline-block;margin-top:9px;font-family:var(--font-mono);font-size:0.54rem;font-weight:700;padding:3px 9px;border-radius:4px;background:${cause.color};color:#0f1a14;text-decoration:none;">Vote \u2192</a>
+    </div>`;
+    const nextCycle = cycleNum + 1;
+    const nextShares = Votes.forCause(activeIndex, nextCycle, orgs);
+    const nextLeader = nextShares[0];
+    const nextDecision = new Date(thisDecision.getTime() + config.causeLengthDays * MS_PER_DAY);
+    const daysToNext = Math.ceil((nextDecision.getTime() - Date.now()) / MS_PER_DAY);
+    const nextInits = config.initiatives.filter((i) => i.cause_index === activeIndex);
+    const nextInit = [...nextInits].sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+    const nextVoteBars = nextShares.slice(0, 3).map((s) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;opacity:0.75;"></span>
+      <span style="font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.55);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.org_name}</span>
+      <span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.35);flex-shrink:0;">${s.pct.toFixed(0)}%</span>
+    </div>`).join("");
+    const rightPane = `
+    <div style="padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:0;">
+      <div style="font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(245,240,232,0.35);margin-bottom:5px;">Newest \xB7 ${daysToNext}d</div>
+      <div style="font-size:0.8rem;font-weight:700;color:rgba(245,240,232,0.68);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px;">${nextInit ? (nextInit.emoji ? nextInit.emoji + " " : "") + nextInit.title : '<span style="opacity:0.4;font-style:italic;">No initiative yet</span>'}</div>
+      ${nextVoteBars}
+      <div style="margin-top:6px;font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.28);">${formatShortDate(nextDecision)}</div>
+      ${nextLeader ? `<div style="margin-top:5px;font-family:var(--font-mono);font-size:0.52rem;color:rgba(245,240,232,0.42);">Leading: ${nextLeader.org_name} ${nextLeader.pct.toFixed(0)}%</div>` : ""}
+      <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
+        <a href="m_indx.html" style="font-family:var(--font-mono);font-size:0.52rem;padding:2px 8px;border-radius:4px;border:1px solid rgba(245,240,232,0.16);color:rgba(245,240,232,0.45);text-decoration:none;">m_indx \u2192</a>
+        <a href="en.html?cause=${cause.id}" style="font-family:var(--font-mono);font-size:0.52rem;padding:2px 8px;border-radius:4px;border:1px solid rgba(245,240,232,0.1);color:rgba(245,240,232,0.32);text-decoration:none;">EN feed</a>
+      </div>
+    </div>`;
+    return `<div style="background:rgba(15,26,20,0.82);border-left:1px solid rgba(255,255,255,0.09);border-right:1px solid rgba(255,255,255,0.09);border-bottom:1px solid rgba(255,255,255,0.09);border-top:1px solid rgba(255,255,255,0.07);overflow:hidden;width:100%;box-sizing:border-box;height:100%;border-radius:0 0 8px 8px;">
+    <div style="display:grid;grid-template-columns:1fr 1px 1fr;height:100%;">
+      ${leftPane}
+      <div style="background:rgba(255,255,255,0.07);"></div>
+      ${rightPane}
+    </div>
+  </div>`;
+  }
   function missionStrip() {
     return config.causes.map((cause) => {
       return `
@@ -1326,6 +1461,10 @@
     userBadge,
     feedCard,
     raceCard,
+    sideCard,
+    topCard,
+    topCardHeader,
+    upcomingCauseBanner,
     filterBySearch,
     filterByField,
     sortBy,

@@ -192,6 +192,55 @@
       font-style: italic;
     }
 
+    /* ── Mission cards (right panel) ── */
+    .mission-card {
+      background: rgba(15,26,20,0.72);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      width: 220px;
+      min-width: 180px;
+      max-width: 240px;
+      margin-bottom: 8px;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .mission-card--top    { border-left: 3px solid var(--cause-color, var(--clr-moss)); }
+    .mission-card--middle { border-left: 3px solid rgba(49,163,84,0.6); }
+    .mission-card--bottom { border-left: 3px solid rgba(255,255,255,0.15); }
+    .mission-card:hover   { background: rgba(15,26,20,0.92); }
+    .mission-card__eyebrow {
+      font-family: var(--font-mono); font-size: 0.52rem;
+      letter-spacing: 0.13em; text-transform: uppercase;
+      color: rgba(245,240,232,0.38); margin-bottom: 4px;
+    }
+    .mission-card__title {
+      font-size: 0.8rem; font-weight: 600;
+      color: var(--clr-parchment); line-height: 1.3;
+      margin-bottom: 5px;
+    }
+    .mission-card__sub {
+      font-family: var(--font-mono); font-size: 0.6rem;
+      color: rgba(245,240,232,0.45);
+    }
+    .mission-card__badge {
+      display: inline-block; margin-top: 4px;
+      font-family: var(--font-mono); font-size: 0.52rem;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 3px;
+    }
+    .mission-card__badge--upcoming { background:rgba(49,163,84,0.12); color:#5abd6c; }
+    .mission-card__badge--active   { background:rgba(49,163,84,0.18); color:#5abd6c; }
+    .mission-card__badge--resolved { background:rgba(60,90,60,0.12);  color:#8ab88a; }
+
+    /* ── Now marker overlay on annulus ── */
+    .cause-now-marker {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
     /* ── Phase progress bar ── */
     .cause-phase-bar {
       height: 3px;
@@ -605,18 +654,18 @@
           </div>
         </div>
 
-        <!-- CENTER: Cause Annulus + steps strip -->
+        <!-- CENTER: Initiative Annulus + now-marker overlay -->
         <div class="cause-hero__col cause-hero__col--center">
-          <div class="cause-annulus-wrap" id="cause-annulus-mount">
+          <div class="cause-annulus-wrap" id="cause-annulus-mount" style="position:relative;">
             <!-- SVG pie chart injected by JS -->
+            <!-- Now-marker SVG overlaid by JS -->
           </div>
         </div>
 
-        <!-- RIGHT: Past / Ongoing Initiatives -->
+        <!-- RIGHT: Mission cards (top=upcoming org election, middle=active, bottom=previous) -->
         <div class="cause-hero__col cause-hero__col--right">
-          <div class="col-eyebrow">Past &amp; Ongoing</div>
-          <div id="ongoing-initiatives-panel">
-            <!-- Populated by JS -->
+          <div id="right-mission-panel">
+            <!-- Populated by JS: 3 stacked cards -->
           </div>
         </div>
 
@@ -784,119 +833,147 @@
       return (init.ebx_committed || 0) / totalEBX;
     }
 
-    /* ── 6. Cause Annulus (SVG pie chart) ── */
+    /* ── 6. Initiative Annulus (SVG pie chart) + now-marker ── */
     function buildAnnulusSVG(inits, color) {
       const size = 340, cx = size / 2, cy = size / 2;
       const outerR = 148, innerR = 72;
       const TAU = Math.PI * 2;
 
+      const n = inits.length;
+      const hasVotes = inits.some(i => (i.ebx_committed || 0) > 0);
+
       let paths = '';
       let labels = '';
-      let startAngle = -Math.PI / 2; // 12 o'clock
+      let centerContent = '';
 
-      const total = inits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
-      const n = inits.length;
-
-      inits.forEach((init, idx) => {
-        const share = n === 0 ? 0 : (total > 0 ? (init.ebx_committed || 0) / total : 1 / n);
-        const angle = share * TAU;
-        const endAngle = startAngle + angle;
-        // For a single-slice ring, mid-arc points to the bottom (π/2), which looks odd.
-        // Override to 12 o'clock (-π/2) so the label sits at the top of the ring.
-        const mid = n === 1 ? -Math.PI / 2 : (startAngle + endAngle) / 2;
-
-        // Opacity: #1 brightest, descends
-        const baseOpacity = Math.max(0.25, 0.75 - idx * 0.06);
-        // Label in the middle of the arc
-        const labelR = (outerR + innerR) / 2;
-        const lx = cx + labelR * Math.cos(mid);
-        const ly = cy + labelR * Math.sin(mid);
-        const labelVisible = angle > 0.18; // only show label if slice is big enough
-
-        // SVG arcs can't draw a full circle (start == end point), so
-        // when one slice fills the whole ring we split it into two semicircles.
-        let d;
-        if (n === 1) {
-          const midAngle = startAngle + Math.PI;
-          // Top semicircle
-          const ax1 = cx + outerR * Math.cos(startAngle), ay1 = cy + outerR * Math.sin(startAngle);
-          const ax2 = cx + outerR * Math.cos(midAngle),   ay2 = cy + outerR * Math.sin(midAngle);
-          const aix1 = cx + innerR * Math.cos(midAngle),  aiy1 = cy + innerR * Math.sin(midAngle);
-          const aix2 = cx + innerR * Math.cos(startAngle),aiy2 = cy + innerR * Math.sin(startAngle);
-          // Bottom semicircle
-          const bx1 = cx + outerR * Math.cos(midAngle),   by1 = cy + outerR * Math.sin(midAngle);
-          const bx2 = cx + outerR * Math.cos(endAngle - 0.0001), by2 = cy + outerR * Math.sin(endAngle - 0.0001);
-          const bix1 = cx + innerR * Math.cos(endAngle - 0.0001), biy1 = cy + innerR * Math.sin(endAngle - 0.0001);
-          const bix2 = cx + innerR * Math.cos(midAngle), biy2 = cy + innerR * Math.sin(midAngle);
-          d = `M${ax1},${ay1} A${outerR},${outerR} 0 1,1 ${ax2},${ay2} L${aix1},${aiy1} A${innerR},${innerR} 0 1,0 ${aix2},${aiy2} Z` +
-              ` M${bx1},${by1} A${outerR},${outerR} 0 1,1 ${bx2},${by2} L${bix1},${biy1} A${innerR},${innerR} 0 1,0 ${bix2},${biy2} Z`;
-        } else {
-          const x1 = cx + outerR * Math.cos(startAngle);
-          const y1 = cy + outerR * Math.sin(startAngle);
-          const x2 = cx + outerR * Math.cos(endAngle);
-          const y2 = cy + outerR * Math.sin(endAngle);
-          const ix1 = cx + innerR * Math.cos(endAngle);
-          const iy1 = cy + innerR * Math.sin(endAngle);
-          const ix2 = cx + innerR * Math.cos(startAngle);
-          const iy2 = cy + innerR * Math.sin(startAngle);
-          const largeArc = angle > Math.PI ? 1 : 0;
-          d = `M${x1},${y1} A${outerR},${outerR} 0 ${largeArc},1 ${x2},${y2} L${ix1},${iy1} A${innerR},${innerR} 0 ${largeArc},0 ${ix2},${iy2} Z`;
-        }
-
-        paths += `<path d="${d}" fill="${color}" fill-opacity="${baseOpacity}"
-                    stroke="rgba(15,26,20,0.8)" stroke-width="1.5"
-                    class="cause-slice" data-init-idx="${idx}"
-                    onclick="selectInitByAnnulus(${idx})" />`;
-
-        if (labelVisible) {
-          labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-                       font-family="DM Mono,monospace" font-size="11" font-weight="700"
-                       fill="rgba(245,240,232,0.9)" pointer-events="none">${idx + 1}</text>`;
-        }
-
-        startAngle = endAngle;
-      });
-
-      // If no initiatives, draw a placeholder ring
+      // ── 0 or 1 initiatives: skip pie, show text in center ──
       if (n === 0) {
-        paths = `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="${color}" fill-opacity="0.12"
-                   stroke="${color}" stroke-opacity="0.25" stroke-width="1" />
-                 <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="rgba(15,26,20,0.92)" />`;
+        paths = `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="${color}" fill-opacity="0.10"
+                   stroke="${color}" stroke-opacity="0.28" stroke-width="1.5" />`;
+        centerContent = `
+          <text x="${cx}" y="${cy - 8}" text-anchor="middle" dominant-baseline="middle"
+                font-family="DM Mono,monospace" font-size="12" fill="rgba(245,240,232,0.4)">No proposals</text>
+          <text x="${cx}" y="${cy + 10}" text-anchor="middle" dominant-baseline="middle"
+                font-family="DM Mono,monospace" font-size="9" fill="rgba(245,240,232,0.25)">yet.</text>`;
+      } else if (n === 1) {
+        // Single initiative — full ring, no pie slices needed
+        const title = inits[0].title || '';
+        const short = title.length > 22 ? title.slice(0,20)+'…' : title;
+        paths = `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="${color}" fill-opacity="0.55"
+                   stroke="${color}" stroke-opacity="0.55" stroke-width="2" />`;
+        centerContent = `
+          <text x="${cx}" y="${cy - 10}" text-anchor="middle" dominant-baseline="middle"
+                font-family="DM Mono,monospace" font-size="9" fill="rgba(245,240,232,0.5)">Only candidate</text>
+          <text x="${cx}" y="${cy + 6}" text-anchor="middle" dominant-baseline="middle"
+                font-family="DM Mono,monospace" font-size="11" font-weight="700"
+                fill="rgba(245,240,232,0.9)">${inits[0].emoji || '🌱'}</text>
+          <text x="${cx}" y="${cy + 22}" text-anchor="middle" dominant-baseline="middle"
+                font-family="DM Mono,monospace" font-size="9" fill="rgba(245,240,232,0.7)">${short}</text>`;
+      } else {
+        // Normal pie for 2+ initiatives
+        const total = inits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
+        let startAngle = -Math.PI / 2;
+
+        inits.forEach((init, idx) => {
+          const share = total > 0 ? (init.ebx_committed || 0) / total : 1 / n;
+          const angle = share * TAU;
+          const endAngle = startAngle + angle;
+          const mid = (startAngle + endAngle) / 2;
+          const baseOpacity = Math.max(0.28, 0.75 - idx * 0.06);
+          const labelR = (outerR + innerR) / 2;
+          const lx = cx + labelR * Math.cos(mid);
+          const ly = cy + labelR * Math.sin(mid);
+          const labelVisible = angle > 0.18;
+
+          const x1 = cx + outerR * Math.cos(startAngle), y1 = cy + outerR * Math.sin(startAngle);
+          const x2 = cx + outerR * Math.cos(endAngle),   y2 = cy + outerR * Math.sin(endAngle);
+          const ix1 = cx + innerR * Math.cos(endAngle),  iy1 = cy + innerR * Math.sin(endAngle);
+          const ix2 = cx + innerR * Math.cos(startAngle),iy2 = cy + innerR * Math.sin(startAngle);
+          const largeArc = angle > Math.PI ? 1 : 0;
+          const d = `M${x1},${y1} A${outerR},${outerR} 0 ${largeArc},1 ${x2},${y2} L${ix1},${iy1} A${innerR},${innerR} 0 ${largeArc},0 ${ix2},${iy2} Z`;
+
+          paths += `<path d="${d}" fill="${color}" fill-opacity="${baseOpacity}"
+                      stroke="rgba(15,26,20,0.8)" stroke-width="1.5"
+                      class="cause-slice" data-init-idx="${idx}"
+                      onclick="selectInitByAnnulus(${idx})" />`;
+          if (labelVisible) {
+            labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
+                         font-family="DM Mono,monospace" font-size="11" font-weight="700"
+                         fill="rgba(245,240,232,0.9)" pointer-events="none">${idx + 1}</text>`;
+          }
+          startAngle = endAngle;
+        });
       }
 
-      // ── Outer annulus ring: 7-sector EBX wheel, only this cause colored ──
+      // ── Outer ring: 7-sector EBX wheel, this cause highlighted ──
       const ringOuter = outerR + 26;
       const ringInner = outerR + 10;
-      const TAU2 = Math.PI * 2;
       const nSectors = 7;
-      const sectorAngle = TAU2 / nSectors;
+      const sectorAngle = TAU / nSectors;
       let outerRingSvg = '';
       for (let s = 0; s < nSectors; s++) {
         const a0 = -Math.PI / 2 + s * sectorAngle;
-        const a1 = a0 + sectorAngle - 0.025; // small gap between sectors
-        const x1r = cx + ringOuter * Math.cos(a0);
-        const y1r = cy + ringOuter * Math.sin(a0);
-        const x2r = cx + ringOuter * Math.cos(a1);
-        const y2r = cy + ringOuter * Math.sin(a1);
-        const ix1r = cx + ringInner * Math.cos(a1);
-        const iy1r = cy + ringInner * Math.sin(a1);
-        const ix2r = cx + ringInner * Math.cos(a0);
-        const iy2r = cy + ringInner * Math.sin(a0);
+        const a1 = a0 + sectorAngle - 0.025;
+        const x1r = cx + ringOuter * Math.cos(a0), y1r = cy + ringOuter * Math.sin(a0);
+        const x2r = cx + ringOuter * Math.cos(a1), y2r = cy + ringOuter * Math.sin(a1);
+        const ix1r = cx + ringInner * Math.cos(a1), iy1r = cy + ringInner * Math.sin(a1);
+        const ix2r = cx + ringInner * Math.cos(a0), iy2r = cy + ringInner * Math.sin(a0);
         const largeR = (a1 - a0) > Math.PI ? 1 : 0;
         const dr = `M${x1r},${y1r} A${ringOuter},${ringOuter} 0 ${largeR},1 ${x2r},${y2r} L${ix1r},${iy1r} A${ringInner},${ringInner} 0 ${largeR},0 ${ix2r},${iy2r} Z`;
         const isActive = s === cause.index;
-        const sectorColor = isActive ? (color || '#4e7a4e') : 'rgba(245,240,232,0.08)';
-        const sectorOpacity = isActive ? 0.85 : 1;
-        outerRingSvg += `<path d="${dr}" fill="${sectorColor}" fill-opacity="${sectorOpacity}"
-          stroke="rgba(15,26,20,0.6)" stroke-width="0.75" />`;
+        outerRingSvg += `<path d="${dr}" fill="${isActive ? color : 'rgba(245,240,232,0.07)'}"
+          fill-opacity="${isActive ? 0.85 : 1}" stroke="rgba(15,26,20,0.6)" stroke-width="0.75" />`;
       }
 
+      // ── Now-marker: global position in the 49-day rotation cycle ──
+      // Uses global elapsed time so the marker is identical regardless of which cause is selected.
+      // cycleFraction = 0 → 12 o'clock (start of cycle), advances clockwise to 1 (full rotation).
+      const cycleWindowMs = (EBX.config.causeLengthDays || 49) * 86400000;
+      const cycleStartMs  = EBX.config.cycleStart ? EBX.config.cycleStart.getTime() : new Date('2026-01-01').getTime();
+      const cycleFraction = ((Date.now() - cycleStartMs) % cycleWindowMs) / cycleWindowMs;
+      const markerAngle = -Math.PI / 2 + cycleFraction * Math.PI * 2;
+      const markerR = ringOuter + 6;
+      const mx = cx + markerR * Math.cos(markerAngle);
+      const my = cy + markerR * Math.sin(markerAngle);
+      // Clean V-shape arrowhead pointing clockwise along the ring
+      const arrowAngle = markerAngle + 0.25; // ~14° ahead clockwise
+      const arrowR = markerR + 5;
+      const ax = cx + arrowR * Math.cos(arrowAngle);
+      const ay = cy + arrowR * Math.sin(arrowAngle);
+      // Tangent direction (clockwise): perpendicular to radius
+      const tx = -Math.sin(arrowAngle);
+      const ty =  Math.cos(arrowAngle);
+      const wingLen = 5.5;
+      const halfWing = 3;
+      const w1x = ax - tx*wingLen + ty*halfWing;
+      const w1y = ay - ty*wingLen - tx*halfWing;
+      const w2x = ax - tx*wingLen - ty*halfWing;
+      const w2y = ay - ty*wingLen + tx*halfWing;
+      const arrowHead = `M${w1x},${w1y} L${ax},${ay} L${w2x},${w2y}`;
+
+      const nowMarker = `
+        <circle cx="${mx}" cy="${my}" r="5.5" fill="white" fill-opacity="0.95"
+                filter="url(#glow)"/>
+        <circle cx="${mx}" cy="${my}" r="3" fill="white"/>
+        <path d="${arrowHead}" stroke="rgba(255,255,255,0.75)" stroke-width="1.2"
+              stroke-linecap="round" stroke-linejoin="round" fill="none"
+              filter="url(#glow)"/>
+        <text x="${mx}" y="${my + 16}" text-anchor="middle"
+              font-family="DM Mono,monospace" font-size="7" fill="rgba(245,240,232,0.6)">now ↻</text>`;
+
       return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
         ${outerRingSvg}
+        ${nowMarker}
         ${paths}
         ${labels}
-        <!-- Center hole — clean, no text -->
         <circle cx="${cx}" cy="${cy}" r="${innerR - 2}" fill="rgba(15,26,20,0.95)" />
+        ${centerContent}
       </svg>`;
     }
 
@@ -927,23 +1004,53 @@
         }).join('')
       : `<div style="color:rgba(245,240,232,0.35);font-size:0.8rem;padding:12px 0;">No proposals yet.</div>`;
 
-    /* ── 8. Past / Ongoing Initiatives (right panel) — active or resolved ── */
-    const ongoing = causeInits.filter(i => i.status === 'active' || i.status === 'resolved');
+    /* ── 8. Right panel — 3 stacked mission cards ──
+       Top:    Upcoming org election (status debate/org_vote/suggested with most EBX)
+       Middle: Active mission (status active)
+       Bottom: Previous/resolved mission (status resolved)
+    ── */
+    function buildMissionCard(cls, eyebrow, init, extraBadge) {
+      if (!init) {
+        return `<div class="mission-card mission-card--${cls}">
+          <div class="mission-card__eyebrow">${eyebrow}</div>
+          <div class="mission-card__sub" style="font-style:italic;color:rgba(245,240,232,0.28);">None yet</div>
+        </div>`;
+      }
+      const pool = EBX.formatEBX
+        ? EBX.formatEBX(init.pool_value || init.ebx_committed || 0)
+        : (init.pool_value || init.ebx_committed || 0) + ' EBX';
+      return `<a class="mission-card mission-card--${cls}"
+                 href="${init.status === 'active' || init.status === 'resolved' ? 'mission.html?id=' + init.id : 'cause.html?id=' + cause.id}"
+                 style="text-decoration:none;">
+        <div class="mission-card__eyebrow">${eyebrow}</div>
+        <div class="mission-card__title">${init.emoji || '🌱'} ${init.title}</div>
+        ${init.winning_org ? `<div class="mission-card__sub">Org: ${init.winning_org}</div>` : ''}
+        <div class="mission-card__sub" style="margin-top:3px;">${pool} pool${init.rating > 0 ? ' · ★' + init.rating.toFixed(1) : ''}</div>
+        ${extraBadge || ''}
+      </a>`;
+    }
 
-    document.getElementById('ongoing-initiatives-panel').innerHTML = ongoing.length
-      ? ongoing.map(init => `
-          <div class="init-card" onclick="jumpToRow('${init.id}')">
-            ${init.status === 'active'
-              ? `<div class="init-card__status-badge">● Active Mission</div>`
-              : `<div class="init-card__status-badge" style="background:rgba(60,90,60,0.15);color:var(--clr-moss);">Resolved</div>`}
-            <div class="init-card__title" style="margin-top:6px;">${init.emoji || '🌱'} ${init.title}</div>
-            ${init.winning_org ? `<div class="init-card__org">Org: ${init.winning_org}</div>` : ''}
-            <div class="init-card__meta" style="margin-top:6px;">
-              <span>${EBX.formatEBX ? EBX.formatEBX(init.pool_value || init.ebx_committed || 0) : (init.pool_value || init.ebx_committed || 0) + ' EBX'} pool</span>
-              ${init.rating > 0 ? `<span>★ ${init.rating.toFixed(1)}</span>` : ''}
-            </div>
-          </div>`).join('')
-      : `<div style="color:rgba(245,240,232,0.35);font-size:0.8rem;padding:12px 0;">No active missions yet.</div>`;
+    const upcomingInit  = causeInits.find(i => ['suggested','debate','org_vote'].includes(i.status)) || causeInits[0] || null;
+    const activeInit    = causeInits.find(i => i.status === 'active') || null;
+    const resolvedInits = causeInits.filter(i => i.status === 'resolved');
+    const prevInit      = resolvedInits[resolvedInits.length - 1] || null;
+
+    // Determine org election leader for the upcoming card
+    let orgBadge = '';
+    if (upcomingInit) {
+      const cycleOrgs = (EBX.config.organizations || []).filter(o =>
+        (o.cause_ids || []).includes(cause.id) ||
+        (o.causes || []).some(c => c.id === cause.id)
+      );
+      if (cycleOrgs.length) {
+        orgBadge = `<div class="mission-card__badge mission-card__badge--upcoming">${cycleOrgs[0].name} leading</div>`;
+      }
+    }
+
+    document.getElementById('right-mission-panel').innerHTML =
+      buildMissionCard('top',    'Upcoming org election', upcomingInit, orgBadge)
+      + buildMissionCard('middle', 'Active mission',        activeInit,   `<div class="mission-card__badge mission-card__badge--active">● Live</div>`)
+      + buildMissionCard('bottom', 'Previous mission',      prevInit,     `<div class="mission-card__badge mission-card__badge--resolved">Resolved</div>`);
 
     /* ── 9. Table + search ── */
     let currentSearch = '';
@@ -1037,7 +1144,7 @@
 
       document.getElementById('init-selected-actions').innerHTML = `
         <button class="btn btn-forest btn-sm" onclick="commitEbxToInit('${init.id}')">⬆ Commit EBX — cast your vote</button>
-        <a class="btn btn-ghost btn-sm" href="feed.html?initiative=${init.id}" style="text-decoration:none;">
+        <a class="btn btn-ghost btn-sm" href="en.html?initiative=${init.id}" style="text-decoration:none;">
           Contribute to discussion →
         </a>
         ${init.status === 'active' || init.status === 'resolved'

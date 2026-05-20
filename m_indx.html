@@ -1,13 +1,654 @@
-<!--
-Here you go. build from scratch.
-EBX__________________________________________________________________profile
-| Atmosphere 1                                                    |       |
-| Oceans 1                                                        |   o   |
-| Land 1                                                          |_______|
-|__...____________________________________________________________________|
-|Selected: Land 1_
-| Land expand (1)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earthbux — Mission Index</title>
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
+  <style>
+    /* ── Top bar ── */
+    .ebx-topbar {
+      background: #0f1a14;
+      border-bottom: 1px solid rgba(245,240,232,0.07);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .ebx-topbar__inner {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: var(--sp-md);
+      padding: 12px 0;
+    }
 
+    /* ── Page shell: 2-col (main table | mini ring) ── */
+    .mindx-shell {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: var(--sp-xl);
+      align-items: start;
+      padding-top: var(--sp-xl);
+      padding-bottom: var(--sp-3xl);
+    }
+    @media (max-width: 900px) {
+      .mindx-shell { grid-template-columns: 1fr; }
+      .mindx-sidebar { display: none; }
+    }
 
+    /* ── Section eyebrow ── */
+    .mindx-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.45);
+      margin-bottom: var(--sp-sm);
+    }
 
--->
+    /* ── Table ── */
+    .mindx-table-wrap {
+      border: 1px solid rgba(212,206,194,0.18);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: rgba(15,26,20,0.55);
+    }
+    .mindx-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+    .mindx-table th {
+      background: rgba(15,26,20,0.85);
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.45);
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(245,240,232,0.08);
+      white-space: nowrap;
+    }
+    .mindx-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(245,240,232,0.05);
+      color: rgba(245,240,232,0.85);
+      vertical-align: middle;
+    }
+    .mindx-table tbody tr {
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .mindx-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+    .mindx-table tbody tr.expanded { background: rgba(255,255,255,0.05); }
+    .mindx-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Row phase coloring */
+    .row-upcoming { background: rgba(15,26,20,0.4); }
+    .row-active   { background: rgba(49,163,84,0.06); }
+    .row-resolved { background: rgba(60,90,60,0.06); }
+    .row-join-marker td { border-top: 2px solid var(--clr-honey) !important; }
+
+    /* Cause color dot */
+    .cause-dot {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-right: 5px;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .mindx-cause-cell {
+      display: flex; align-items: center; gap: 5px;
+      font-family: var(--font-mono); font-size: 0.72rem;
+      color: rgba(245,240,232,0.75);
+    }
+    .mindx-date-cell {
+      font-family: var(--font-mono); font-size: 0.72rem;
+      color: rgba(245,240,232,0.55); white-space: nowrap;
+    }
+    .mindx-choice {
+      font-size: 0.78rem;
+      color: var(--clr-parchment);
+      font-weight: 500;
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .mindx-choice--win  { color: #5abd6c; }
+    .mindx-choice--loss { color: rgba(245,240,232,0.38); text-decoration: line-through; }
+    .mindx-choice--none { color: rgba(245,240,232,0.28); font-style: italic; }
+    .mindx-ebx {
+      font-family: var(--font-mono); font-size: 0.76rem;
+      color: var(--clr-honey); font-weight: 600;
+    }
+    .mindx-pool {
+      font-family: var(--font-mono); font-size: 0.72rem;
+      color: rgba(245,240,232,0.55);
+    }
+
+    /* ── Expand panel ── */
+    .mindx-expand-row { display: none; }
+    .mindx-expand-row.open { display: table-row; }
+    .mindx-expand-row td {
+      background: rgba(15,26,20,0.9);
+      border-bottom: 2px solid rgba(245,240,232,0.1);
+      padding: 0;
+    }
+    .mindx-expand-inner {
+      padding: var(--sp-lg);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--sp-lg);
+    }
+    @media (max-width: 700px) { .mindx-expand-inner { grid-template-columns: 1fr; } }
+    .mindx-expand-section { display: flex; flex-direction: column; gap: var(--sp-sm); }
+    .mindx-expand-label {
+      font-family: var(--font-mono); font-size: 0.56rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(245,240,232,0.38); margin-bottom: 2px;
+    }
+    .mindx-expand-value {
+      font-size: 0.84rem; color: rgba(245,240,232,0.85);
+    }
+    .mindx-expand-actions {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: var(--sp-sm);
+    }
+
+    /* ── Sidebar: mini ring ── */
+    .mindx-sidebar {
+      position: sticky;
+      top: 80px;
+    }
+    .mindx-ring-wrap {
+      background: rgba(15,26,20,0.72);
+      border: 1px solid rgba(245,240,232,0.08);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+      display: flex; flex-direction: column; align-items: center; gap: var(--sp-md);
+    }
+    .mindx-ring-label {
+      font-family: var(--font-mono); font-size: 0.6rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(245,240,232,0.4);
+    }
+    .mindx-ring-svg-wrap {
+      width: 200px; height: 200px;
+    }
+    .mindx-ring-info {
+      text-align: center;
+    }
+    .mindx-ring-info__title {
+      font-size: 0.88rem; font-weight: 600;
+      color: rgba(245,240,232,0.9); margin-bottom: 4px;
+    }
+    .mindx-ring-info__sub {
+      font-family: var(--font-mono); font-size: 0.65rem;
+      color: rgba(245,240,232,0.45);
+    }
+
+    /* Rating stars */
+    .mindx-rating { color: var(--clr-amber); font-size: 0.72rem; letter-spacing: -1px; }
+
+    /* Status badge */
+    .mindx-badge {
+      font-family: var(--font-mono); font-size: 0.55rem;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 3px;
+    }
+    .badge-upcoming  { background:rgba(122,122,98,.12); color:rgba(245,240,232,0.45); }
+    .badge-active    { background:rgba(49,163,84,.12);  color:#5abd6c; }
+    .badge-resolved  { background:rgba(60,90,60,.12);   color:#8ab88a; }
+
+    /* Pool share mini-bar */
+    .mindx-pool-bar {
+      width: 60px; height: 4px; background: rgba(255,255,255,0.07);
+      border-radius: 2px; overflow: hidden; margin-top: 3px;
+    }
+    .mindx-pool-bar__fill { height: 100%; border-radius: 2px; }
+
+    /* No-data state */
+    .mindx-empty {
+      text-align: center; padding: var(--sp-2xl);
+      color: rgba(245,240,232,0.35); font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="ebx-home-mark">EBX</a>
+
+  <!-- ── Top bar ── -->
+  <div class="ebx-topbar">
+    <div class="container ebx-topbar__inner">
+      <div style="font-family:var(--font-mono);font-size:0.72rem;font-weight:700;
+                  letter-spacing:0.08em;text-transform:uppercase;color:rgba(245,240,232,0.7);">
+        Mission Index
+      </div>
+      <div id="ebx-user-badge-mount"></div>
+    </div>
+  </div>
+
+  <!-- ── Main content ── -->
+  <div class="container">
+    <div class="mindx-shell">
+
+      <!-- LEFT: big table -->
+      <main>
+        <div class="mindx-eyebrow">All cycles — one row per week</div>
+
+        <div class="mindx-table-wrap">
+          <table class="mindx-table" id="mindx-table">
+            <thead>
+              <tr>
+                <th>Cause / Cycle</th>
+                <th>Week of</th>
+                <th>My Initiative</th>
+                <th>EBX</th>
+                <th>My Org</th>
+                <th>EBX</th>
+                <th>Pool</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="mindx-tbody">
+              <tr><td colspan="8" class="mindx-empty">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- RIGHT: mini ring sidebar -->
+      <aside class="mindx-sidebar">
+        <div class="mindx-ring-wrap">
+          <div class="mindx-ring-label" id="mindx-ring-label">Cause wheel</div>
+          <div class="mindx-ring-svg-wrap" id="mindx-ring-mount">
+            <!-- SVG injected by JS -->
+          </div>
+          <div class="mindx-ring-info">
+            <div class="mindx-ring-info__title" id="mindx-ring-title">—</div>
+            <div class="mindx-ring-info__sub"   id="mindx-ring-sub">Select a row to zoom in</div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <div id="ebx-footer-mount"></div>
+
+  <script src="resources/js/ebx_shared.js"></script>
+  <script>
+  (async function () {
+    await EBX.loadAll();
+    EBX.initPage();
+
+    const causes      = EBX.config.causes || [];
+    const initiatives = EBX.config.initiatives || [];
+    const state       = EBX.Cycle.now();
+    const cycleNum    = EBX.Cycle.currentCycleNum();
+    const N_CAUSES    = 7;
+
+    // ── Retrieve stored user choices (from localStorage, set on cause.html) ──
+    let choices = {};
+    try { choices = JSON.parse(localStorage.getItem('ebx_choices') || '{}'); } catch(e) {}
+
+    // ── Build the row data: one week per cause per cycle (past 2 + upcoming 7 weeks) ──
+    // Show 4 past cycles + current + 2 upcoming cycles per cause (keeps table manageable)
+    const rows = [];
+
+    // Go from (cycleNum - 2) to (cycleNum + 2), for all 7 causes
+    const startCycle = Math.max(0, cycleNum - 2);
+    const endCycle   = cycleNum + 2;
+
+    for (let cycle = startCycle; cycle <= endCycle; cycle++) {
+      for (let ci = 0; ci < N_CAUSES; ci++) {
+        const cause = causes.find(c => c.index === ci);
+        if (!cause) continue;
+
+        // The decision date for cause ci in `cycle`
+        const decisionDate = new Date(
+          EBX.config.cycleStart.getTime()
+          + (cycle * N_CAUSES + ci + 1) * EBX.config.decisionIntervalDays * EBX.Cycle.MS_PER_DAY
+        );
+        const weekStart = new Date(decisionDate.getTime() - 6 * EBX.Cycle.MS_PER_DAY);
+
+        // Find the initiative for this cause+cycle
+        const causeInits = initiatives.filter(i =>
+          (i.cause_index === ci || i.cause_id === cause.id) && i.cycle_num === cycle
+        );
+        const topInit = causeInits.sort((a,b) =>
+          (b.ebx_committed || b.committed_ebx || 0) - (a.ebx_committed || a.committed_ebx || 0)
+        )[0] || null;
+
+        // Phase
+        const now = Date.now();
+        let phase;
+        if (decisionDate.getTime() > now) phase = 'upcoming';
+        else if (cycle === cycleNum && ci === state.causeIndex) phase = 'active';
+        else phase = 'resolved';
+
+        // Pool
+        const pool = causeInits.reduce((s,i) => s + (i.ebx_committed || i.committed_ebx || 0), 0);
+
+        // My choices stored in localStorage (keyed by cause index)
+        const myInit = choices[`init_${ci}`] || null;
+        const myOrg  = choices[`org_${ci}`]  || null;
+        const myInitEBX = choices[`init_ebx_${ci}`] || 0;
+        const myOrgEBX  = choices[`org_ebx_${ci}`]  || 0;
+
+        rows.push({ cause, cycle, ci, decisionDate, weekStart, topInit, phase, pool, myInit, myOrg, myInitEBX, myOrgEBX, causeInits });
+      }
+    }
+
+    // Sort rows chronologically
+    rows.sort((a, b) => a.decisionDate - b.decisionDate);
+
+    // ── Render rows ──
+    const tbody = document.getElementById('mindx-tbody');
+    let expandedRowId = null;
+
+    function fmtDate(d) {
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function fmtEBX(n) {
+      if (!n) return '—';
+      return EBX.formatEBX ? EBX.formatEBX(n) : n + ' EBX';
+    }
+    function poolShare(row) {
+      const total = rows
+        .filter(r => r.cycle === row.cycle)
+        .reduce((s,r) => s + r.pool, 0);
+      return total > 0 ? (row.pool / total * 100) : 0;
+    }
+
+    function renderRows() {
+      tbody.innerHTML = '';
+
+      // Track if we've passed the user's join cycle (show marker at cycleNum)
+      let joinMarked = false;
+
+      rows.forEach((row, idx) => {
+        const rowId = `row-${row.cycle}-${row.ci}`;
+        const isExpanded = expandedRowId === rowId;
+
+        const phaseClass = `row-${row.phase}`;
+        const isJoinRow  = !joinMarked && row.phase !== 'resolved' && row.cycle >= cycleNum;
+        if (isJoinRow) joinMarked = true;
+
+        const causeName = `${row.cause.emoji || '◆'} ${row.cause.name}`;
+        const cycleLabel = `Cycle ${row.cycle + 1}`;
+
+        const phaseBadge = {
+          upcoming: '<span class="mindx-badge badge-upcoming">Upcoming</span>',
+          active:   '<span class="mindx-badge badge-active">Active</span>',
+          resolved: '<span class="mindx-badge badge-resolved">Done</span>',
+        }[row.phase];
+
+        const initTitle = row.topInit ? row.topInit.title : '—';
+        const share = poolShare(row).toFixed(0);
+        const barColor = row.cause.color || '#4e7a4e';
+
+        const myInitCell = row.myInit
+          ? `<div class="mindx-choice mindx-choice--${row.phase === 'resolved' ? 'win' : ''}">${row.myInit}</div>`
+          : `<div class="mindx-choice mindx-choice--none">—</div>`;
+        const myOrgCell = row.myOrg
+          ? `<div class="mindx-choice">${row.myOrg}</div>`
+          : `<div class="mindx-choice mindx-choice--none">—</div>`;
+
+        // Main row
+        const tr = document.createElement('tr');
+        tr.id = rowId;
+        tr.className = `${phaseClass}${isJoinRow ? ' row-join-marker' : ''}${isExpanded ? ' expanded' : ''}`;
+        tr.innerHTML = `
+          <td>
+            <div class="mindx-cause-cell">
+              <span class="cause-dot" style="background:${row.cause.color || '#4e7a4e'};"></span>
+              <span>${causeName}</span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.35);margin-top:2px;">${cycleLabel}</div>
+          </td>
+          <td class="mindx-date-cell">${fmtDate(row.weekStart)}</td>
+          <td>${myInitCell}</td>
+          <td><span class="mindx-ebx">${fmtEBX(row.myInitEBX)}</span></td>
+          <td>${myOrgCell}</td>
+          <td><span class="mindx-ebx">${fmtEBX(row.myOrgEBX)}</span></td>
+          <td>
+            <div class="mindx-pool">${row.pool > 0 ? '$' + row.pool.toLocaleString() : '—'}</div>
+            <div class="mindx-pool-bar">
+              <div class="mindx-pool-bar__fill" style="width:${Math.min(100,share)}%;background:${barColor};opacity:0.7;"></div>
+            </div>
+          </td>
+          <td>${phaseBadge}</td>
+        `;
+        tr.addEventListener('click', () => toggleExpand(rowId, row));
+        tbody.appendChild(tr);
+
+        // Expand row
+        const expandTr = document.createElement('tr');
+        expandTr.className = `mindx-expand-row${isExpanded ? ' open' : ''}`;
+        expandTr.id = `expand-${rowId}`;
+        expandTr.innerHTML = buildExpandPanel(row);
+        tbody.appendChild(expandTr);
+      });
+
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="mindx-empty">No mission data yet.</td></tr>';
+      }
+    }
+
+    function buildExpandPanel(row) {
+      const causeInits = row.causeInits || [];
+      const initList = causeInits.length
+        ? causeInits.slice(0,5).map(i => {
+            const pct = row.pool > 0
+              ? ((i.ebx_committed || i.committed_ebx || 0) / row.pool * 100).toFixed(0) + '%'
+              : '—';
+            const stars = i.rating > 0
+              ? '★'.repeat(Math.round(i.rating)) + '☆'.repeat(5-Math.round(i.rating)) : '—';
+            return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;
+                                border-bottom:1px solid rgba(245,240,232,0.05);">
+              <span style="font-size:0.8rem;font-weight:600;color:rgba(245,240,232,0.85);flex:1;
+                           overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                ${i.emoji || '🌱'} ${i.title}
+              </span>
+              <span class="mindx-rating" style="font-size:0.65rem;">${stars}</span>
+              <span style="font-family:var(--font-mono);font-size:0.65rem;color:rgba(245,240,232,0.5);">${pct}</span>
+              <a href="cause.html?id=${row.cause.id}" style="font-family:var(--font-mono);font-size:0.58rem;
+                 color:${row.cause.color};text-decoration:none;padding:2px 6px;
+                 border:1px solid ${row.cause.color};border-radius:3px;opacity:0.8;">
+                Vote
+              </a>
+            </div>`;
+          }).join('')
+        : '<div style="color:rgba(245,240,232,0.35);font-size:0.78rem;">No initiatives proposed.</div>';
+
+      return `<td colspan="8">
+        <div class="mindx-expand-inner">
+          <div class="mindx-expand-section">
+            <div class="mindx-expand-label">Initiative candidates</div>
+            ${initList}
+          </div>
+          <div class="mindx-expand-section">
+            <div class="mindx-expand-label">Decision</div>
+            <div class="mindx-expand-value">${row.decisionDate.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</div>
+            ${row.topInit ? `
+            <div class="mindx-expand-label" style="margin-top:var(--sp-sm);">Leading initiative</div>
+            <div class="mindx-expand-value">${row.topInit.emoji||'🌱'} ${row.topInit.title}</div>
+            <div style="font-size:0.78rem;color:rgba(245,240,232,0.5);margin-top:2px;">${row.topInit.description||''}</div>` : ''}
+            <div class="mindx-expand-actions">
+              <a href="cause.html?id=${row.cause.id}" class="btn btn-forest btn-sm"
+                 style="text-decoration:none;">Go to cause →</a>
+              <a href="en.html?cause=${row.cause.id}" class="btn btn-ghost btn-sm"
+                 style="text-decoration:none;">EN feed</a>
+            </div>
+          </div>
+        </div>
+      </td>`;
+    }
+
+    function toggleExpand(rowId, row) {
+      const wasOpen = expandedRowId === rowId;
+      expandedRowId = wasOpen ? null : rowId;
+      renderRows();
+      // Update mini ring
+      if (!wasOpen) showRing(row);
+      else showRing(null);
+    }
+
+    // ── Mini ring ──
+    function showRing(row) {
+      const mount  = document.getElementById('mindx-ring-mount');
+      const label  = document.getElementById('mindx-ring-label');
+      const title  = document.getElementById('mindx-ring-title');
+      const sub    = document.getElementById('mindx-ring-sub');
+
+      if (!row) {
+        // Default: cause annulus using the global EBX annulus
+        label.textContent = 'Cause wheel';
+        title.textContent = 'This week';
+        sub.textContent   = 'Select a row to zoom in';
+        mount.innerHTML   = buildCauseRingSVG(null);
+        return;
+      }
+
+      const daysLeft = Math.max(0, Math.ceil(
+        (row.decisionDate.getTime() - Date.now()) / EBX.Cycle.MS_PER_DAY
+      ));
+
+      if (daysLeft <= 2 && row.phase === 'upcoming') {
+        // Initiative annulus for upcoming cause
+        label.textContent = 'Initiative vote — ' + row.cause.name;
+        title.textContent = daysLeft + 'd left';
+        sub.textContent   = 'Decision imminent';
+        mount.innerHTML   = buildInitRingSVG(row);
+      } else if (row.phase === 'resolved') {
+        // Mission phase annulus (simple steps ring)
+        label.textContent = 'Mission: ' + row.cause.name;
+        title.textContent = row.topInit ? row.topInit.title.slice(0,24) + (row.topInit.title.length > 24 ? '…' : '') : 'Complete';
+        sub.textContent   = 'Cycle ' + (row.cycle + 1);
+        mount.innerHTML   = buildMissionRingSVG(row);
+      } else {
+        // Cause annulus, highlight this cause
+        label.textContent = 'Cause wheel';
+        title.textContent = row.cause.name;
+        sub.textContent   = row.phase === 'active' ? 'Active this week' : 'Cycle ' + (row.cycle + 1);
+        mount.innerHTML   = buildCauseRingSVG(row.cause);
+      }
+    }
+
+    function buildCauseRingSVG(highlightCause) {
+      const size = 200, cx = 100, cy = 100;
+      const outerR = 90, innerR = 52;
+      const n = causes.length || 7;
+      const anglePerSeg = (Math.PI * 2) / n;
+      let paths = '';
+      causes.forEach((c, i) => {
+        const a0 = i * anglePerSeg - Math.PI / 2;
+        const a1 = a0 + anglePerSeg - 0.03;
+        const isActive = highlightCause && c.id === highlightCause.id;
+        paths += arcPath(cx, cy, outerR, innerR, a0, a1,
+          c.color, isActive ? 0.85 : (highlightCause ? 0.2 : 0.45));
+        // Cause label
+        const mid = (a0 + a1) / 2;
+        const lr = (outerR + innerR) / 2;
+        const lx = cx + lr * Math.cos(mid);
+        const ly = cy + lr * Math.sin(mid);
+        paths += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
+                    font-size="8" font-family="DM Mono,monospace" fill="rgba(245,240,232,${isActive?'0.95':'0.5'})"
+                    font-weight="${isActive?'700':'400'}">${c.emoji||'◆'}</text>`;
+      });
+      return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        ${paths}
+        <circle cx="${cx}" cy="${cy}" r="${innerR-2}" fill="rgba(15,26,20,0.92)"/>
+        ${highlightCause ? `<text x="${cx}" y="${cy+3}" text-anchor="middle" dominant-baseline="middle"
+          font-size="10" font-weight="700" fill="${highlightCause.color}" font-family="DM Mono,monospace">
+          ${highlightCause.emoji||'◆'}</text>` : ''}
+      </svg>`;
+    }
+
+    function buildInitRingSVG(row) {
+      const size = 200, cx = 100, cy = 100;
+      const outerR = 90, innerR = 52;
+      const inits = row.causeInits || [];
+      const total = inits.reduce((s,i) => s + (i.ebx_committed||i.committed_ebx||0), 0);
+      const TAU = Math.PI * 2;
+      let paths = '';
+      let angle = -Math.PI / 2;
+      inits.forEach((init, idx) => {
+        const share = total > 0 ? (init.ebx_committed||init.committed_ebx||0)/total : 1/Math.max(1,inits.length);
+        const sweep = share * TAU;
+        const end = angle + sweep;
+        const opacity = Math.max(0.25, 0.8 - idx * 0.08);
+        paths += arcPath(cx, cy, outerR, innerR, angle, end - 0.02, row.cause.color, opacity);
+        angle = end;
+      });
+      if (!inits.length) {
+        paths = `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="${row.cause.color}" fill-opacity="0.1"
+                   stroke="${row.cause.color}" stroke-opacity="0.3" stroke-width="1"/>
+                 <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="rgba(15,26,20,0.92)"/>`;
+      }
+      return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        ${paths}
+        <circle cx="${cx}" cy="${cy}" r="${innerR-2}" fill="rgba(15,26,20,0.92)"/>
+        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle"
+          font-size="11" font-weight="700" fill="${row.cause.color}" font-family="DM Mono,monospace">
+          ${row.cause.emoji||'◆'}</text>
+        <text x="${cx}" y="${cy+13}" text-anchor="middle" dominant-baseline="middle"
+          font-size="7" fill="rgba(245,240,232,0.5)" font-family="DM Mono,monospace">
+          ${inits.length} candidates</text>
+      </svg>`;
+    }
+
+    function buildMissionRingSVG(row) {
+      // 7-12 mission steps as sectors
+      const size = 200, cx = 100, cy = 100;
+      const outerR = 90, innerR = 52;
+      const steps = 7;
+      const TAU = Math.PI * 2;
+      const anglePerStep = TAU / steps;
+      let paths = '';
+      for (let s = 0; s < steps; s++) {
+        const a0 = s * anglePerStep - Math.PI / 2;
+        const a1 = a0 + anglePerStep - 0.04;
+        const done = s < 3; // placeholder: first 3 steps done
+        paths += arcPath(cx, cy, outerR, innerR, a0, a1,
+          row.cause.color, done ? 0.75 : 0.18);
+        const mid = (a0 + a1) / 2;
+        const lr = (outerR + innerR) / 2;
+        paths += `<text x="${cx + lr*Math.cos(mid)}" y="${cy + lr*Math.sin(mid)}"
+                    text-anchor="middle" dominant-baseline="middle"
+                    font-size="9" font-family="DM Mono,monospace"
+                    fill="rgba(245,240,232,${done?'0.9':'0.35'})" font-weight="${done?'700':'400'}">${s+1}</text>`;
+      }
+      return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+        ${paths}
+        <circle cx="${cx}" cy="${cy}" r="${innerR-2}" fill="rgba(15,26,20,0.92)"/>
+        <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle"
+          font-size="11" font-weight="700" fill="${row.cause.color}" font-family="DM Mono,monospace">
+          Mission</text>
+      </svg>`;
+    }
+
+    // Helper: arc path segment
+    function arcPath(cx, cy, outerR, innerR, a0, a1, color, opacity) {
+      const largeArc = (a1 - a0) > Math.PI ? 1 : 0;
+      const x1 = cx + outerR*Math.cos(a0), y1 = cy + outerR*Math.sin(a0);
+      const x2 = cx + outerR*Math.cos(a1), y2 = cy + outerR*Math.sin(a1);
+      const ix1 = cx + innerR*Math.cos(a1), iy1 = cy + innerR*Math.sin(a1);
+      const ix2 = cx + innerR*Math.cos(a0), iy2 = cy + innerR*Math.sin(a0);
+      return `<path d="M${x1},${y1} A${outerR},${outerR} 0 ${largeArc},1 ${x2},${y2}
+                       L${ix1},${iy1} A${innerR},${innerR} 0 ${largeArc},0 ${ix2},${iy2} Z"
+               fill="${color}" fill-opacity="${opacity}"
+               stroke="rgba(15,26,20,0.6)" stroke-width="0.8"/>`;
+    }
+
+    // Initial render
+    renderRows();
+    showRing(null);
+
+    EBX.initFooter && EBX.initFooter();
+  })();
+  </script>
+</body>
+</html>

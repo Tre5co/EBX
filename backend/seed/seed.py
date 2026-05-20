@@ -126,6 +126,51 @@ def _cause_id_from_index(db, idx) -> str | None:
     return cause.id if cause else None
 
 
+
+def seed_founding_bonus(db) -> None:
+    # Ensure the founding-bonus sentinel mission row exists.
+    # CreditCoin rows are issued against this mission id for the first 100
+    # benefactors (see crud.create_benefactor). A real Mission row is needed
+    # to satisfy the FK constraint.
+
+    sentinel_org_id = "ebx-internal"
+    if not db.get(models.Organization, sentinel_org_id):
+        db.add(models.Organization(
+            id=sentinel_org_id,
+            name="Earthbucks Internal",
+            verified=True,
+        ))
+        db.flush()
+
+    sentinel_init_id = "founding-bonus-init"
+    if not db.get(models.Initiative, sentinel_init_id):
+        first_cause = db.scalar(select(models.Cause).order_by(models.Cause.index))
+        if first_cause:
+            db.add(models.Initiative(
+                id=sentinel_init_id,
+                cause_id=first_cause.id,
+                cycle_num=0,
+                title="Founding Bonus",
+                description="Sentinel for founding-bonus credit issuance.",
+                status="resolved",
+            ))
+            db.flush()
+
+    if not db.get(models.Mission, "founding-bonus"):
+        init = db.get(models.Initiative, sentinel_init_id)
+        if init:
+            db.add(models.Mission(
+                id="founding-bonus",
+                initiative_id=sentinel_init_id,
+                org_id=sentinel_org_id,
+                title="Founding 49 EBX Bonus",
+                description="First 100 benefactors receive 49 EBX credits worth $1 each.",
+                credit_value=1.0,
+                status="active",
+            ))
+            db.flush()
+
+
 def main() -> None:
     Base.metadata.create_all(bind=engine)
     with SessionLocal() as db:
@@ -133,6 +178,7 @@ def main() -> None:
         orgs = seed_organizations(db, causes)
         seed_initiatives(db, orgs)
         seed_posts(db)
+        seed_founding_bonus(db)
         db.commit()
     print("Seeded successfully.")
 

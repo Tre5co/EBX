@@ -252,4 +252,27 @@ def create_benefactor(db: Session, data: schemas.BenefactorCreate) -> models.Ben
     db.add(user)
     db.commit()
     db.refresh(user)
+
+    # Founding bonus: first 100 signups receive 49 EBX automatically.
+    # These are credited as unminted (no mission yet) generic credit coins.
+    if user.id <= 100:
+        from .models import CreditCoin
+        # Use a sentinel mission id "founding-bonus" — real missions will use real ids.
+        # The frontend will show these as "Founding 49 EBX" in the wallet.
+        # Only add if a founding-bonus mission-like entry exists; otherwise skip silently.
+        # For now we create 49 individual 1-EBX coins against mission id "founding-bonus"
+        # so they show up in the credit portfolio. A seed mission entry is expected.
+        founding_mission = db.execute(
+            __import__('sqlalchemy').text("SELECT id FROM missions WHERE id = 'founding-bonus' LIMIT 1")
+        ).fetchone()
+        if founding_mission:
+            for _ in range(49):
+                coin = CreditCoin(
+                    owner_id=user.id,
+                    mission_id='founding-bonus',
+                    amount_ebx=1,
+                )
+                db.add(coin)
+            db.commit()
+
     return user
