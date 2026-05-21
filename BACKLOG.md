@@ -30,6 +30,7 @@
 - **2026-05-20 (auto, pass 6 -- BUILD)** -- Q18/Q21/Q22 + now-marker arrow + founding-bonus seed. See "What shipped in pass 6" below.
 - **2026-05-20 (auto, pass 7 -- BUILD)** -- Q20/Q21 corrected + now-marker arrowhead fixed. See "What shipped in pass 7" below.
 - **2026-05-20 (auto, pass 8 -- BUILD)** -- Q1 top-card-into-topbar + content fix + global now-marker. See "What shipped in pass 8" below.
+- **2026-05-21 (auto, pass 9 -- BUILD + audit)** -- Build-seq #1 top-card duplicate-initiative fix (staged in TS), #1 bottom-banner alignment (live), #3 vote-share annulus cases (live). Now-marker #2 verified already-correct (no change). **Diagnosed a Windows-mount truncation fault that very likely answers Jax's "why do updates take a long time to ship" question.** JS rebuild deliberately deferred -- see "What shipped/staged in pass 9" below.
 
 ## What shipped in pass 6
 1. **Pre-commit hook (Q18)** -- `.git/hooks/pre-commit` now blocks commits when `ebx_shared.ts` has more than one `EBX_TAIL_SENTINEL`. Tested against clean file (passes) and a doubled file (fails with clear message).
@@ -54,13 +55,52 @@
 6. **JS rebuilt** -- `resources/js/ebx_shared.js` rebuilt clean at 67.9 kb.
 7. **Mobile fallback** -- At ≤980px, `ebx-topbar__center` is hidden and hero gets `padding-top: 10px` restored. Top card body renders standalone with its own border styling.
 
+## What shipped/staged in pass 9
+
+### LIVE NOW (edits to directly-served files — no build needed)
+1. **Bottom-banner alignment (build-seq #1, "Align bottom card").** `index.html` CSS. The top card no longer grows to fill space (`.hero__top-card` changed `flex:1` → `flex:0 0 auto`). The flexible space now sits *above* the banner (`.hero__bottom-banner { margin-top:auto }`), so the banner drops to the bottom of the center column (height-matched to the side cards via `align-items:stretch`) while the annulus + top card are pushed up toward the topbar — exactly the inversion Jax asked for ("push the top card upwards"). NOTE: the banner only visibly lines up with the side-card bottoms when the side cards are at least as tall as top-card + annulus + banner. With the current 460px annulus the center column is the taller element, so true bottom-alignment depends on the "side cards at max size" work (Q22). Flagged below.
+2. **Vote-share annulus 0%/100% cases (build-seq #3).** `cause.html` `buildAnnulusSVG()`. Previously branched on *proposal count* and ignored the (computed-but-unused) `hasVotes` flag, so a cause with 2+ proposals but no votes drew a misleading even pie. Now branches on the number of initiatives **with votes** (`ebx_committed > 0`): 0 proposals → "No proposals"; proposals but 0 votes → "No votes yet · N proposals"; exactly 1 voted → drop pie, show "100% · sole front-runner" + leader; 2+ voted → normal pie divided by vote share (unvoted proposals get a 0-width slice). This is inline JS in cause.html, so it is already live.
+
+### STAGED IN SOURCE (needs a JS rebuild to go live — see mount issue below)
+3. **Top-card duplicate-initiative fix (build-seq #1, "Answer top card question").** `frontend/src/ebx_shared.ts`. Added `Votes.initiativesForCause(causeIndex, cycleNum, inits)` and used it in `topCard()` with `cycleNum` for the "This week" pane and `cycleNum+1` for the "Newest" pane. Verified type-clean (`tsc --noEmit` exit 0) and build-clean (esbuild, 68.8kb, 1 sentinel) against a host-equivalent reconstruction. **Not yet built into `resources/js/ebx_shared.js`** — see "Mount truncation" below.
+
+   **Answer to your top-card question (you asked me to "let you know"):** it is *both* sample data and code.
+   (a) Every initiative in `data/causes/initiatives.json` has `committed_ebx: 0` (checked: 26/26). So sorting "leader by EBX committed" is a tie for every cause and just returns the first array element.
+   (b) Both panes filtered the *identical* set (`config.initiatives.filter(cause_index === activeIndex)`) and sorted it the same way, with no per-cycle dimension — so they always collapsed onto that same first initiative.
+   My fix breaks the tie deterministically per-cycle (so "This week" and "Newest" surface different leaders) **while still letting real `committed_ebx` win the moment it is non-zero.** The proper long-term fix is real per-cycle data: record which initiative actually won each cycle's initiative vote, and key each org-election pane off that. The per-cycle tie-breaker is a clearly-labelled placeholder until then.
+
+### VERIFIED, NO CHANGE
+4. **Now-marker (build-seq #2).** You said "better, but still wrong — the correct marker will be in the same location around the circle no matter which cause is selected." I checked pass-8's formula and it already satisfies that literal property: `cycleFraction = ((Date.now() - cycleStart) % (49d)) / 49d` contains **no `cause.index` term**, so the marker's angle is identical for every selected cause. I also confirmed it points at the *active* cause: for today (2026-05-21) elapsed=140.5d → weekNum 20 → active cause index 6, and the marker lands at sector 6.07. Both correct. I did **not** change it, because a speculative edit would risk regressing a now-correct behavior. If something still looks off, it's probably one of these — please pick one (see question below).
+
+### ASSESSED ONLY (sequenced/blocked — no change this pass)
+5. **m_indx.html (build-seq #3, second item).** Already substantially built (table, expandable rows, ring-minis). Explicitly sequenced *after* the cause.html reshuffle, so left as-is.
+6. **Voting separation (build-seq #4).** Schema already supports it: `Vote.initiative_id` (required), `Vote.org_id` (nullable — NULL for soft initiative-only votes), `Vote.share` (default 1.0, min 0.1). `POST /initiatives/{id}/vote` + tally exist. What's still missing is the dedicated org-election-phase vote flow/UI (the m_indx side). Larger feature — recommend its own pass.
+7. **Founding 49-EBX credits (build-seq #5).** Already fully coded: `crud.py` mints 49×1-EBX for `benefactor.id <= 100` when the `founding-bonus` mission row exists; `seed/seed.py:seed_founding_bonus()` creates that sentinel. Still only blocked on *running* the seed (Q1 below).
+
+## ⚠️ Mount truncation — likely answer to "why updates take a long time to ship"
+While building this pass I hit concrete evidence of an intermittent **file-sync truncation** between the Windows files and the Linux build sandbox:
+- After editing `frontend/src/ebx_shared.ts`, the Windows/host copy was complete and correct (1850 lines, exactly 1 `EBX_TAIL_SENTINEL`, all edits present).
+- The sandbox/mount copy had my edits **but was truncated mid-`missionStrip()`** — missing the final ~33 lines (the whole `EBX` export object *and* the sentinel), with its mtime frozen at the previous day. A second host edit did not dislodge it; the mount stayed stale.
+- The sandbox `.git/index.lock` was also un-removable ("Operation not permitted").
+
+This matches your symptom exactly: a file that is briefly broken right after an update (a half-written/truncated artifact is being served) and then "fine in the morning" once the sync finishes. It's also consistent with this project's past "silent corruption" / "null-byte padding from the Windows mount" notes. **Because of this I deliberately did NOT rebuild `resources/js/ebx_shared.js` this pass** — esbuild reads the (truncated) mount source and, worse, writes the bundle *back* through the same flaky mount, so a rebuild right now could land a truncated JS bundle on the live site and break it. The current served `resources/js/ebx_shared.js` is the intact pass-8 build (69,533 bytes, ends cleanly), so the site is healthy; the top-card fix simply isn't live yet.
+
+**To ship the top-card fix:** run `npm run build` in `frontend/` **on the Windows side directly** (no Linux mount in the loop), or trigger a build once the mount is confirmed consistent. The source is ready and verified.
+
+**Suggested mitigations (your call):**
+- Add a post-build integrity check to the `build` script: after esbuild, fail if `resources/js/ebx_shared.js` doesn't end with the expected IIFE close / is under an expected byte size. Pairs well with the existing pre-commit single-sentinel hook.
+- Treat "edit on Windows, build on Windows" as the rule; use the Linux sandbox only for read-only checks (tsc/lint), never for writing the shipped bundle, until the sync fault is fixed.
+
 ## Open questions for Jax
 - **Q1 -- founding-bonus seed.** Run `python -m seed.seed` from `backend/` to create the sentinel mission. Cannot run from sandbox (SQLite on Windows mount is read-only from Linux).
+- **Q2 -- now-marker, what specifically is wrong?** Pass-8's marker is already cause-independent and points at the active cause (verified above). If it still looks wrong, which is it: (a) you want it consistent with `index.html`, where "now" is always pinned at 12 o'clock and the *wheel* rotates the active cause to the top (cause.html currently keeps the wheel static and moves the marker instead); (b) the rotation **direction** is wrong (it currently advances clockwise, matching index.html's apparent motion); or (c) something else? Tell me which and I'll implement it precisely.
+- **Q3 -- top-card per-cycle placeholder OK?** My tie-breaker invents a deterministic "different leader per cycle" only while `committed_ebx` is all-zero. Fine as a stopgap, or do you want the panes to stay identical until there's real per-cycle winning-initiative data?
+- **Q4 -- top-card JS not live yet.** The top-card fix is staged in `ebx_shared.ts` but needs a Windows-side `npm run build` to reach `resources/js/ebx_shared.js` (see mount note). Want me to attempt the rebuild next pass if the mount looks healthy?
 
 ## Build & dev tooling
 - [ ] **Tests.** No test suite yet. Pick pytest for backend, vitest or playwright for frontend smoke.
     - [ ] **Current strat** Me and my cofounders will each create a few accounts with simulated money. We will use real initiatives (probably the ones already in use) and simulate organizations (also probably the ones already in use). We will start with the first 7 initiative votes, and hopefully after those first 7 weeks we'll have the mission page locked in and be ready for the first organization votes.
-- **Note on tsc/typecheck:** `tsc --noEmit` is not available in the sandbox (tsc not on PATH). Use `npm run build` as the type+syntax check instead.
+- **Note on tsc/typecheck:** `tsc` is not on PATH, but the local binary works: `node node_modules/typescript/bin/tsc --noEmit` from `frontend/` (used for verification in pass 9, exit 0). `npm run build` also serves as a type+syntax check. Caveat: both read through the Linux mount, so run them on Windows (or after confirming the mount is in sync) to avoid checking a truncated copy — see the mount-truncation note above.
 
 ## Infra
 - [ ] **Postgres path.** Stay on SQLite for dev; pick Postgres for prod and document the env-var swap.

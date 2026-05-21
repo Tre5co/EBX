@@ -84,10 +84,13 @@
       align-items: center;
       gap: 10px;
     }
-    /* Top card body fills all space between topbar and annulus */
+    /* Top card body sits compact at the top, flush under the topbar — it does
+       NOT grow. The flexible space lives ABOVE the bottom banner (see
+       margin-top:auto below) so the annulus + top card are pushed up and the
+       banner drops to align with the bottom of the side cards. */
     .hero__top-card {
       width: 460px;
-      flex: 1;
+      flex: 0 0 auto;
       min-height: 80px;
     }
     .hero__annulus-wrap {
@@ -96,9 +99,13 @@
       height: 460px;
       flex-shrink: 0;
     }
+    /* margin-top:auto absorbs any extra column height between the annulus and
+       the banner, pinning the banner to the bottom of the center column (which
+       is height-matched to the side cards via .hero__layout align-items:stretch). */
     .hero__bottom-banner {
       width: 460px;
       flex-shrink: 0;
+      margin-top: auto;
     }
     .ebx-center {
       position: absolute;

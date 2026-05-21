@@ -2,10 +2,14 @@
 
 ## UPDATE TASKS
 @CLAUDE Stop process now if there are any lines in between this one and the most recent pass
+## 8:30 5/21/26 (pass 4)
+**Q1** Pending application. I've already donte this but it won't be relevant until users accounts don't have unlimited ebx and need to deposit money, which is super-backlogged for now.
+**Q2** Nothing was wrong. My bad, I forgot to remove that.
+**Q3** I see, the same initiative won 2 cycles in a row because they both used the same sample data. Everything is fine as it is because it will work when actual voting begins. 
+**Q4** Top card is ok for now.
 ## 4:50 5/20/26 (pass 3)
 **Q1** I was hoping it could actually go up into the topbar. Is that possible? Maybe it would need to be a seperate thing in the topbar that connects to the rest of the page? I want the bottom next-initiative banner to be aligned with the bottom of the side cards, and push the top card upwards.
 **Q2** Should be all set. Is there something missing?
-
 ## 3:45 5/20/26 (pass 2)
 **Q20** Top card: In pass 1, my instructions for the bottom card were incorrectly interpreted as top card instructions, and now the structure does not reflect the design. Please revert back to the structure described in structure tree. (A slight change from what it was before)
 **Q21** Bottom card: Implement 1 row ticker here.
@@ -22,43 +26,50 @@ Probably same issue as q17, pre-commit hook that fails on a second `EBX_TAIL_SEN
 
 **Q22** No, side cards should be designed at the maximum size and be compressed for smaller displays in the future. Expand annulus wherever possible. 
 
-## BUILD SEQUENCE
+## CONVERSATION (For backlog management)
+I think the truncation issues are happening when I scroll within the claude app as you are executing tasks. I'll refrain from doing that.
+You say that it's already substantially built, and I can see that, but the link is not working. Do I need to do some building commands?
+
+Yes, building out the mission experience is complex and will need a precisely planned design.
+I want to make sure we do these mission pages right. I'll propose steps.
+0. Discuss details and solidify concepts and plan, cut off loose ends.
+1. Create organization registration.
+- I suggest we 
+2. Mission page creation by org members.
+3. Link mission pages to mission index
+ - *Active organization election*
+3. simulate vote
+4. Design mission annulus
+
+## BUILD SEQUENCE (For build)
 0. Resolve Errors
-1. **Answer top card question** Top card has the same initiative in both left and right. Should be different, but might be happening because we're using sample data. Let me know.
-**Align bottom card** bottom of bottom card aligns with bottom of side cards, pushes annulus and top cards up.
-2. **cause.html Now-marker** Better, but still wrong. I know how to do it. The correct marker will be in the same location around the circle no matter which cause is selected.
-3. **100% or 0% vote share**
-- Handle 0 or 1 initiative votes
-    - Annulus needs to be divided by vote-share
-    - We're actually handling an empty or 100% 1-way pool since partial-vote logic is not there yet.
-3. **m_indx.html build-out** -- After cause.html reshuffle
+1. **Dont jump on click** Minor problem in cause.html
+2. **Side card update** on index.html per updated structure
+3. **m_indx.html build-out** See conversation
  - Columns and rows
  - color code, expand
-4. **Implement Voting** Seperate org vote from initiative vote.
-5. **Credits** if id <= 100, mint 49 generic EBX credits into wallet.
+4. **Mission page buildout**
+mission.html - the org-side mission page for them to work on their mission. Information: mission.html -> m_indx.html
+5. **Implement Voting** 
+6. **Credits** if id <= 100, mint 49 generic EBX credits into wallet.
     - Pretend each credit is worth $1
     - This will actually allow the process to begin.
 ## ERRORS
 None, Good!
 
-## JAX QUESTIONS
-- I'm wondering why it sometimes takes a long time for updates to fully ship. Yesterday, I looked at the site 15 minutes after updating it and got a bunch of errors, but when I looked at it this morning it was fine. What's going on? I think it's multiple things at once.
-
-
 ## STRUCTURE
 - [ ] **Main page** (index.html)
     - [ ] **Cause Cards**
-        - [!] **Top card**
-        2 current organization elections for the active cause.
-        This week upcoming upcoming on left
-        7-8 weeks away (newest) on right
-            - [ ] **Contents** Backlog finalization
-            Both sections should be titled with the initiative title.
+        - [ ] **Top card**
+            - [ ] **Contents** 
+            2 current organization elections for the active cause.
+            This week upcoming upcoming on left
+            7-8 weeks away (newest) on rightBacklog finalization
                 - [ ] **Location**
                 Horizontal: In between the side cards
                 Vertical: From the now marker all the way to the top of the display.
-                - [ ] **Right** This week 
-                Pool size (by people and vote), election date. Current org vote if applicable.
+                - [ ] **Right** This week - newest initiative
+                Pool size, election date...
                 - [ ] **Left** Newest mission
                 Larger area with detailed metrics for upcoming hard election. Leaders with links to their mission page prorotypes, link to EN feed for discussion, display current votes and committments from `mission_indx`.
             - [ ] **Expansion** - backlog interface
@@ -91,26 +102,37 @@ None, Good!
         - [ ] **Navigate and zoom**
         On mobile this will be important. There will be a zoom (And rotate) for users to select a particular sector and that will work well with touchscreens.
         - [ ] **`now`** Glowy
+    - [ ] **Active missions bar**
+    Links to the 7 active missions (1 cycle ahead of the organization elections)
+        - [ ] **Add start dates**
+    - [ ] **Feed snippet**
+    - [ ] **About snippet**
+        - [ ] **Update** Make up to date with current readme
+        - [ ] **Combine** Combine "Put your profile to work" section into the same snippet
+    - [ ] **Need orgs!!**
+    Replace "Put your profile to work" section with a call for charity organizations or for people to suggest charitys. We need people to be the recipients of the donations!
 - [ ] **Mission Index page** (m_indx.html)
-    - [ ] **Initiative Table** Each box will link somewhere different
-        - [ ] **Columns** Different boxes populated for different scenarios.
+    - [ ] **Initiative Table** Each box will link somewhere different   
+        - [ ] **Rows** Dates moving forward, one week at a time.
+        Each mission is a row in `mission_indx`. populated with the initiative, organization, and more information.     
+        The background color of upcoming mission rows (down on table) is different from ongoing missions (scroll to the top to find the first one.) The color of the missions with an initiative but no organization is the color of that cause (Middle, and middle of page when it opens)
+            - [ ] **Expandable** Rows are expandable 1 at a time.
+            - [ ] **Indicate user join date**
+                - [ ] **Active organization elections**
+                For the 8 active elections at any given time, the row expands into a whole table with all the organizations who are trying to win the pool.
+        - [ ] **Columns** Different boxes populated for different scenarios. Time flows from left to right
             - [ ] **Pre Initiative Election** Leftmost columns populate
             Cause_name cycle_num | decision date | your vote | your vote ratings | ebx committed | pool size | Leading initiative | second | third | ...
             - [ ] **Post Initiative Election**
             Ring-mini | Cause_name| Initiative | Your pool contribution so far | org-election date | your vote | Reviews | ebx committed | pool size | Leaders
             - [ ] **Post organization election** Still working on this.
             Ring-mini | Initiative | Organization | Your earthbucks | release date | credit | your intentions 
-            - [ ] **org side** Orgs have a slightly different table
-            - [ ] **Admin side** Admins also have a different table. 
-        - [ ] **Rows** Dates moving forward, one week at a time.
-        The background color of upcoming mission rows (down on table) is different from ongoing missions (scroll to the top to find the first one.) The color of the missions with an initiative but no organization is the color of that cause (Middle, and middle of page when it opens)
-            - [ ] **Expandable** Rows are expandable 1 at a time. - useful for pulling this table from elsewhere.
-            - [ ] **Indicate user join date**
-        - [ ] **Ring Mini** Mini annulus for one of 3 cases. Always links to a mission page.
-            - [ ] **Mission selected** The mission annulus from the cause page, but with its stats expanded through the page so represented by small circle in corner.
-            - [ ] **Mission not selected** 
-                - [ ] **days left> 2** The cause annulus
-                - [ ] **2 > days left** The initiative annulus for the upcoming cause
+            - [ ] **Ring Mini** Mini annulus. Links to a mission page. Display in corner of m_indx toggled by current selection.
+                - [ ] **Mission selected** The mission annulus from the cause page, but with its stats expanded through the page so represented by small circle in corner.
+                - [ ] **Mission not selected** 
+                    - [ ] **days left> 2** The cause annulus
+                    - [ ] **2 > days left** The initiative annulus for the upcoming cause
+        - [ ] **Admin side** Admins have a different table. 
 - [ ] **Cause/Initiative page** (cause.html)
     - [ ] **Initiative annulus**
     Center: Date, time until cause
@@ -136,31 +158,20 @@ None, Good!
         Upcoming organization election for selected cause with Initiative name and the benefactors current organization selection.
         Links to m_indx because no mission page yet.
         Also links to organization page on feed.
-    - [ ] **Admin** 
-    Admin can remove initiatives, other tasks.
-    Works from mission index page
+    - [ ] **Initiative cards**
+    Expand when their initiative is selected in table
+        - [!] **Don't jump on click** Small bug - the initiative cards and the cards left of the annulus on cause.html are jumping/scrolling to the feed on click. Remove this.
+        - [ ] **Table** Shows all initiatives for that cause
+        Name | proposal_link | conception date | ebx committed |
     - [ ] **Feed**
     Content from EN News, if any, is shown with each initiative
         - [ ] **Filters**
         Moved to right sidebar, labeled "Filter". Sticky on desktop, collapses horizontal on mobile.
     - [ ] **Initiative Logos** 
     One half of the credit coin. Contains all the information on the initiative side, like what the initiative is and how it garnered all its support.
-- [ ] **Missions page**
-When an initiative is decided, the mission page template is created. Each org builds their own. Like a profile page for them
-    - [ ] **Data** Each mission is a row in `mission_indx`. populated with the initiative, organization, and more information.
-        - [ ] **Progress reports** The missions 7-12 step progress report is prominent on the mission page. This consists of a benefactor-moderated comparison of the organization's progress reporting and Earthbucks parallel report.
-    - [ ] **Mission structure**
-        - [ ] **Mission credit** Represented by a coin, value changes.
-        For now, 1/16 total per week is released starting here. The value depends on how much benefactors like the progress and also by how much earthbux verifies their goodness combined with an efficiency metric.
-        *"Once the mission begins, all committed money is locked for 7 weeks… After 7 weeks, 1/16 of the credits are released to the benefactors who provided the best contributions, and over the next 7 weeks, the money is released to a combination of the organizaion and the benefactors."* 
-        *Accomplish mission goals to win as much money as possible*
-        - [ ] **Budget phase**
-        Once the mission begins, all committed money is locked for 7 weeks. This is the early mission period, when the organization learns how they can best earn the full pool. 
-        - [ ] **Evaluation Phase**
-        After 7 weeks, 1/16 of the credits are releast to the benefactors who provided the best contributions (posting to the community or anonymously contacting EN) that helped the mission.
-    - [ ] **Organization inputs** Organizations fill out mission pages for whatever initiative they want to apply for. Once the election is active everything becomes linked together by election widgets, and when it's over one organization gets to claim the mission. Every stage hass a success metric and a cash reward.
-    - [ ] **Mission Annulus** 4 now just do a multi-sectored annulus.
-    Each mission gets its own ring widget which is on the cause page. Deadlines. Budget submission, beneficiary approval/outreach, issue resolution (for example, a response to donor questions), Earthbux check-ins. Flow from ring minis on homepage or mission index to mission page. Will increase in complexity. 7-12 steps which can just be labeled 1-12 and will all link to the mission page. This will beome the 3rd outer annulus on the cause page.
+    - [ ] **Admin** 
+    Admin can remove initiatives, other tasks.
+    Works from mission index page
 - [ ] **EN** Newsfeed
     - [ ] **Post** Post your own content.
             - [ ] **Types of post** Benefactor posts: Initiative ratings, organization reviews, mission ideas (idea i.e. a thoughtful suggestion for how the org should proceed). Org posts: `mission proposals` (When competing for an org election), `mission_ideas`, `mission updates`, `feedback`. EBX posts: `status-updates` on the mission metrics.
@@ -182,6 +193,14 @@ When an initiative is decided, the mission page template is created. Each org bu
         Bottom: Initiative and org for most recent mission. - links to mission page.
         - [ ] **Dropdown dialog** Credit badge has dropdown hover where users can (log in/register or) log out, view wallet, or switch to an organization account.
         - [ ] **Choices_Table** Snippet of mission index
+    - [ ] **Cash flow**
+    Users exchange cash for earthbucks. They can buy generic 1-cause earthbucks (can freely convert between causes), preminted ebx for a particular initiative (slight discount, less exchang freedom), or minted ebx for a determined mission in the 7-week initial period (usually a larger discount, much less mobility).
+        - [ ] **Discounts** Earthbux fees are voided or discounted in certain cases
+        - Benefactor committed to the winning initiative early
+        - Benefactor committed to the winning organization early
+        - Benefactor has achieved "Helpful" status on mission
+        - Benefactor is willing to commit to a higher percentage being sent to the pool (maybe I should use "commit" here and replace previous usages of commit with "pledge"... thoughts?)
+        - [ ] **Postmint** After 7-week period This will be complicated and is super backlog
     - [ ] **Verification & perks**
         - [ ] **Review/rating awards** Benefactors are awarded credit coins from a mission if their posts are highly related and deemed "Helpful"
         - [ ] **Credit badge colorization** Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
@@ -190,24 +209,47 @@ When an initiative is decided, the mission page template is created. Each org bu
         Larger donations can unlock more visibility for your posts.
         - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.
 - [ ] **ORGANIZATION** Organizations are mostly public, and work maximally on mission pages.
-    - [ ] **Org-account flow.** 
-    Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org employee. Once approved as a candidate, they put all important information on a mission page which continues if they win and is frozen and linked from their profile if not.
+Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org employee. Once approved as a candidate, they put all important information on a mission page which continues if they win and is frozen and linked from their profile if not.
     - [ ] **Profile page** 
     Organization profile pages are very similar to benefactor profile pages. 
-    - logo
-    - missions
-    - posts
-    - [ ] **Member**
-    A human representative of the weekly mission - Every org account is a member...
-        - [ ] **Contributor**
-        Benefactor who voted for org/possesses credits for mission
-        - [ ] **Reporter**
-        Person who can edit mission page for org
-        - [ ] **Representative**
-        Person responsible for submitting particular forms
-        - [ ] **Beneficiary**
-        Representative for the recipient of the charity effort (if applicable)
-    - [ ] **Organization logos.** 1/2 of credit coin.
+        - logo
+        - missions
+        - posts
+        - [ ] **Memberships**
+        Human representative of the weekly mission - Every org account is a member...
+            - [ ] **Contributor**
+            Benefactor who voted for org/possesses credits for mission
+            credits=membership
+            - [ ] **Representative**
+            Person with permissions to edit mission page
+            - [ ] **Executive**
+            Highest level of member permission
+            - [ ] **Beneficiary**
+            Representative for the recipient of the charity effort
+    - [ ] **Missions page**
+    Home page for organizations.
+        - [ ] **Mission registration**
+        If an initiative is open (won one of the 7 causes) organizations can compete for that pool if they have a sufficiently developed page for that initiative. If they already have one, it becomes unfrozen when the initiative is elected.
+        Organizations fill out mission pages for whatever initiative they want to apply for. Once the election is active everything becomes linked together by election widgets, and when it's over one organization gets to claim the mission. Every stage hass a success metric and a cash reward.
+        - [ ] **Mission structure**
+        Organizations accomplish mission goals to earn as much money as possible
+            - [ ] **Budget phase**
+            Once the mission begins, all committed money is locked for 7 weeks. This is the early mission period, when the organization learns how they can best earn the full pool. 
+            - [ ] **Evaluation Phase**
+            After 7 weeks, 1/16 of the credits are released to the benefactors who provided the best contributions, and for the weeks after that, the money is released to a combination of the organizaion and the benefactors. 
+            - [ ] **Mission credit** Represented by a coin, value changes.
+                - [ ] **Parameters**
+                - Benefactor satisfaction
+                - Earthbux satisfaction
+                - Mission metric completeness
+                - Budget adherance - efficiency
+                - Transparency
+                - Misc. accomplishments/failures
+        - [ ] **Progress reports** The missions 7-12 step progress report is prominent on the mission page. This consists of a benefactor-moderated comparison of the organization's progress reporting and Earthbucks parallel report.
+        - [ ] **Mission Annulus** Backlog - 4 now just do a multi-sectored annulus.
+        Each mission gets its own ring widget which is on the cause page. Deadlines. Budget submission, beneficiary approval/outreach, issue resolution (for example, a response to donor questions), Earthbux check-ins. Flow from ring minis on homepage or mission index to mission page. Will increase in complexity. 7-12 steps which can just be labeled 1-12 and will all link to the mission page. This will beome the 3rd outer annulus on the cause page.
+        - [ ] **Organization logos.** 1/2 of credit coin.
+        Color wheel idea --backlog
 
 - [ ] **HUMAN**
 backlog security questions
@@ -244,6 +286,7 @@ optimized for a donation pool ideal size to be agreed upon later
     **1/16 evaluation reward.** README spells these out now. Combined ≈% of pool is non-mission.
 ## CREDITS
 - [ ] **Credits** a credit is 1 EBX
+Life cycle: Generic -> cause-tagged -> mission-tagged -> organization-tagged -> Live
     - [ ] **Conversion** $1 = 1 credit
         - [ ] **Coin value** Exactly 1 for the first 7 weeks
             EBX maintain a value of $1 7-weeks-post-mint
@@ -264,4 +307,4 @@ optimized for a donation pool ideal size to be agreed upon later
               We will create a budget.
     - [ ] **Badge**
     Users possessing the credit have it displayed on their profile. It is the ring-mini for that mission annulus.
-        - [ ] **Coin details** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission from m_indx
+        - [ ] **Coin visual** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission from m_indx

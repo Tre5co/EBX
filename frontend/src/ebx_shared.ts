@@ -327,6 +327,26 @@ const Votes = {
     const tagged = all.filter(o => (o.causes || []).includes(causeIndex));
     return tagged.length ? tagged : all;
   },
+
+  /**
+   * Rank a cause's initiatives for a SPECIFIC cycle.
+   * Real EBX commitments always win; ties (e.g. all-zero seed data) are broken
+   * deterministically per-cycle so consecutive cycles surface different leaders.
+   * This is why the top card's "This week" (cycleNum) and "Newest" (cycleNum+1)
+   * panes no longer collapse onto the same initiative when commit data is empty.
+   * Replace the tie-breaker with a real per-cycle winning-initiative tally once
+   * the backend records which initiative won each cycle.
+   */
+  initiativesForCause(causeIndex: number, cycleNum: number, inits: Initiative[]): Initiative[] {
+    return [...inits].sort((a, b) => {
+      const ca = a.committed_ebx || 0;
+      const cb = b.committed_ebx || 0;
+      if (cb !== ca) return cb - ca;
+      const sa = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(a.id));
+      const sb = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(b.id));
+      return sb - sa;
+    });
+  },
 };
 
 function hashString(s: string): number {
@@ -1713,7 +1733,7 @@ function topCard(activeIndex: number): string {
 
   const thisInits = config.initiatives.filter(i => i.cause_index === activeIndex);
   const thisPool  = thisInits.reduce((s, i) => s + (i.committed_ebx || 0), 0);
-  const thisInit  = [...thisInits].sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+  const thisInit  = Votes.initiativesForCause(activeIndex, cycleNum, thisInits)[0];
 
   let myOrgVote: string | null = null;
   try {
@@ -1745,7 +1765,7 @@ function topCard(activeIndex: number): string {
   const nextDecision = new Date(thisDecision.getTime() + config.causeLengthDays * MS_PER_DAY);
   const daysToNext   = Math.ceil((nextDecision.getTime() - Date.now()) / MS_PER_DAY);
   const nextInits    = config.initiatives.filter(i => i.cause_index === activeIndex);
-  const nextInit     = [...nextInits].sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+  const nextInit     = Votes.initiativesForCause(activeIndex, nextCycle, nextInits)[0];
 
   const nextVoteBars = nextShares.slice(0, 3).map(s => `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
@@ -1826,5 +1846,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 export default EBX;
+// pass-9 (2026-05-21): topCard per-cycle initiative ranker; see BACKLOG.
 // EBX_TAIL_SENTINEL
 
