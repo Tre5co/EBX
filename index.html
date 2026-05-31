@@ -98,14 +98,7 @@
       width: 460px;
       height: 460px;
       flex-shrink: 0;
-    }
-    /* margin-top:auto absorbs any extra column height between the annulus and
-       the banner, pinning the banner to the bottom of the center column (which
-       is height-matched to the side cards via .hero__layout align-items:stretch). */
-    .hero__bottom-banner {
-      width: 460px;
-      flex-shrink: 0;
-      margin-top: auto;
+      margin-top: auto; /* push wheel toward column bottom; top card stays flush at the top */
     }
     .ebx-center {
       position: absolute;
@@ -146,6 +139,13 @@
       color: var(--clr-honey);
       margin-top: 2px;
     }
+    .ebx-center__sub {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: rgba(245,240,232,0.6);
+      margin-top: 4px;
+      line-height: 1.3;
+    }
 
     /* ── Mission strip (7-up squares below the wheel) ── */
     .mission-strip {
@@ -174,47 +174,10 @@
     .mission-link { scroll-snap-align: start; }
     .mission-link:hover { background: rgba(15,26,20,0.85) !important; transform: translateY(-1px); }
 
-    /* ── EN strip (3 most recent posts from Earthbux News) ── */
-    .feed-strip {
-      margin-top: var(--sp-2xl);
-      padding-top: var(--sp-xl);
-      border-top: 1px solid rgba(245,240,232,0.07);
-    }
-    .feed-strip__header {
-      display: flex; align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: var(--sp-md);
-    }
-    .feed-strip__eyebrow {
-      font-family: var(--font-mono); font-size: 0.62rem;
-      letter-spacing: 0.18em; text-transform: uppercase;
-      color: rgba(245,240,232,0.45);
-    }
-    .feed-strip__more {
-      font-family: var(--font-mono); font-size: 0.7rem;
-      color: var(--clr-honey); text-decoration: none;
-    }
-    .feed-strip__grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: var(--sp-md);
-    }
-    .ebx-feed-card:hover { background: rgba(15,26,20,0.85) !important; }
-
-    /* ── How it works ── */
-    .how-step { display:flex; gap:var(--sp-lg); align-items:flex-start; }
-    .how-step__num { font-family:var(--font-display); font-size:3rem; font-weight:900; color:var(--clr-border); line-height:1; flex-shrink:0; width:56px; text-align:right; }
-    .how-step__body h3 { margin-bottom:var(--sp-xs); }
-    .how-step__body p  { color:var(--clr-ink-muted); font-size:0.95rem; }
-
-    .cta-band { background:var(--clr-amber); padding:var(--sp-2xl) 0; }
-    .cta-band h2 { color:var(--clr-earth); }
-    .cta-band p  { color:rgba(26,26,18,0.7); }
-
     @media (max-width: 1160px) {
       .ebx-topbar__center { width: 420px; }
       .hero__top-card,
-      .hero__annulus-wrap,
-      .hero__bottom-banner { width: 420px; }
+      .hero__annulus-wrap { width: 420px; }
       .hero__annulus-wrap { height: 420px; }
     }
     @media (max-width: 980px) {
@@ -226,14 +189,196 @@
       .hero__side { display: none; }
       .hero__layout { grid-template-columns: 1fr; justify-items: center; }
       .hero__top-card,
-      .hero__annulus-wrap,
-      .hero__bottom-banner { width: 360px; }
+      .hero__annulus-wrap { width: 360px; }
       .hero__annulus-wrap { height: 360px; }
     }
     @media (max-width: 600px) {
-      .feed-strip__grid { grid-template-columns: 1fr; }
       .ebx-topbar__tagline { font-size: 0.95rem; }
     }
+
+    /* ── Initiative table section (dark hero-matched background) ── */
+    /* No border-top — hero + table flow as one continuous dark page. */
+    .tiv-table-section {
+      background: #0f1a14;
+      padding: var(--sp-xl) 0 var(--sp-2xl);
+    }
+    .init-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-md);
+      margin-bottom: var(--sp-lg);
+      flex-wrap: wrap;
+    }
+    .init-search-wrap { position: relative; flex: 1; max-width: 420px; }
+    .init-search-input {
+      width: 100%;
+      padding: 9px 12px 9px 28px;
+      border: 1.5px solid rgba(245,240,232,0.15);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      color: var(--clr-parchment);
+      background: rgba(255,255,255,0.06);
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .init-search-input:focus { border-color: var(--clr-moss); }
+    .init-search-input::placeholder { color: rgba(245,240,232,0.35); }
+    /* Filters: centered between searchbar and "Propose an Initiative" button */
+    .init-filters {
+      display: flex;
+      gap: var(--sp-sm);
+      flex: 1;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .init-filter {
+      padding: 8px 28px 8px 12px;
+      border: 1.5px solid rgba(245,240,232,0.15);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.06);
+      color: var(--clr-parchment);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color var(--transition);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23f5f0e8' d='M0 0l5 6 5-6z' opacity='0.55'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    .init-filter:focus { border-color: var(--clr-moss); }
+    .init-filter option { background: #0f1a14; color: var(--clr-parchment); }
+    .init-table-wrap {
+      border: 1px solid rgba(245,240,232,0.1);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    /* Scroll container: caps the visible body at ~12 rows, header stays sticky. */
+    .init-table-scroll {
+      max-height: calc(36px + (12 * 45px)); /* header row + 12 body rows */
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.18) transparent;
+    }
+    .init-table-scroll::-webkit-scrollbar { width: 8px; }
+    .init-table-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.18); border-radius: 4px;
+    }
+    .init-table thead th { position: sticky; top: 0; z-index: 1; }
+    .init-table .col-watch { width: 34px; padding-right: 0; }
+    .init-watch-btn {
+      background: none; border: none; cursor: pointer;
+      color: rgba(245,240,232,0.3); font-size: 1rem;
+      padding: 0; line-height: 1;
+      transition: color 0.15s, transform 0.15s;
+    }
+    .init-watch-btn:hover { color: var(--clr-honey); }
+    .init-watch-btn.watched { color: var(--clr-honey); }
+    .init-table__nextvote {
+      font-family: var(--font-mono); font-size: 0.72rem;
+      color: rgba(245,240,232,0.55); white-space: nowrap;
+    }
+    .init-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .init-table th {
+      background: rgba(0,0,0,0.3);
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.45);
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 1px solid rgba(245,240,232,0.1);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+    .init-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(245,240,232,0.07);
+      color: var(--clr-parchment);
+      vertical-align: middle;
+    }
+    .init-table tbody tr { cursor: pointer; transition: background 0.1s; }
+    .init-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+    .init-table tbody tr.row-selected { background: rgba(78,122,78,0.15); }
+    .init-table tbody tr:last-child td { border-bottom: none; }
+    .init-table__name { font-weight: 600; color: var(--clr-honey); display:flex; align-items:center; gap:6px; }
+    .init-table__cause { font-family:var(--font-mono); font-size:0.72rem; color:rgba(245,240,232,0.55); }
+    .init-table__ebx { font-family:var(--font-mono); font-size:0.8rem; color:var(--clr-moss); font-weight:600; }
+    .init-table__date { font-family:var(--font-mono); font-size:0.75rem; color:rgba(245,240,232,0.45); white-space:nowrap; }
+    .init-table__status { font-family:var(--font-mono); font-size:0.6rem; letter-spacing:0.07em; text-transform:uppercase; padding:2px 7px; border-radius:3px; }
+    .status-active    { background:rgba(49,163,84,.15);  color:#5abd6c; }
+    .status-debate    { background:rgba(201,124,42,.12); color:#c9842a; }
+    .status-suggested { background:rgba(245,240,232,.07); color:rgba(245,240,232,0.4); }
+    .status-resolved  { background:rgba(60,90,60,.15);   color:#74c476; }
+    .init-table__empty { text-align:center; padding:var(--sp-3xl) var(--sp-lg); color:rgba(245,240,232,0.3); font-size:0.85rem; }
+    /* ── News / Initiative toggle ── */
+    .idx-toggle-section {
+      background: var(--clr-surface);
+      padding: var(--sp-2xl) 0;
+      border-top: 1px solid var(--clr-border);
+    }
+    .idx-toggle-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: var(--sp-lg);
+      border-bottom: 1px solid var(--clr-border);
+      padding-bottom: var(--sp-sm);
+    }
+    .idx-toggle-tab {
+      padding: 7px 18px;
+      border: none;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      background: none;
+      color: var(--clr-ink-muted);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      transition: color 0.15s;
+      margin-bottom: -1px;
+      border-bottom: 2px solid transparent;
+    }
+    .idx-toggle-tab:hover { color: var(--clr-ink); }
+    .idx-toggle-tab.active { color: var(--clr-moss); border-bottom-color: var(--clr-moss); font-weight: 600; }
+    .feed-list { display:grid; gap:var(--sp-md); }
+    .init-selected-panel {
+      background: var(--clr-bg);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-xl);
+    }
+    .init-selected__eyebrow { font-family:var(--font-mono); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--clr-ink-muted); margin-bottom:var(--sp-sm); }
+    .init-selected__title { font-size:1.4rem; font-weight:700; color:var(--clr-earth); margin-bottom:var(--sp-sm); }
+    .init-selected__meta { font-family:var(--font-mono); font-size:0.78rem; color:var(--clr-ink-muted); margin-bottom:var(--sp-md); }
+    .init-selected__desc { font-size:0.92rem; line-height:1.7; color:var(--clr-ink); margin-bottom:var(--sp-lg); max-width:680px; }
+    .init-selected__actions { display:flex; gap:var(--sp-sm); flex-wrap:wrap; }
+    /* ── Org registration ── */
+    .org-register-section { background:var(--clr-bg); padding:var(--sp-2xl) 0; border-top:1px solid var(--clr-border); }
+    .org-register-section h2 { font-size:1.3rem; font-weight:700; color:var(--clr-earth); margin-bottom:var(--sp-md); }
+    .org-register-section p { font-size:0.9rem; color:var(--clr-ink-muted); line-height:1.7; max-width:640px; margin-bottom:var(--sp-lg); }
+    .org-register__steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:var(--sp-lg); margin-bottom:var(--sp-xl); }
+    .org-register__step { background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:var(--radius-md); padding:var(--sp-lg); }
+    .org-register__step-num { font-family:var(--font-display); font-size:2rem; font-weight:900; color:var(--clr-border); line-height:1; margin-bottom:var(--sp-xs); }
+    .org-register__step-title { font-weight:600; color:var(--clr-ink); margin-bottom:4px; font-size:0.9rem; }
+    .org-register__step-desc { font-size:0.82rem; color:var(--clr-ink-muted); line-height:1.5; }
+    /* ── Propose modal ── */
+    .propose-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; align-items:center; justify-content:center; }
+    .propose-modal-bg.open { display:flex; }
+    .propose-modal { background:var(--clr-surface); border:1px solid var(--clr-border); border-radius:var(--radius-lg); padding:var(--sp-2xl); width:min(540px,90vw); display:flex; flex-direction:column; gap:var(--sp-md); }
+    .propose-modal__title { font-weight:700; font-size:1.1rem; color:var(--clr-earth); margin-bottom:var(--sp-xs); }
+    .propose-modal label { font-family:var(--font-mono); font-size:0.72rem; letter-spacing:0.06em; text-transform:uppercase; color:var(--clr-ink-muted); }
+    .propose-modal input, .propose-modal textarea { width:100%; padding:8px 12px; border:1.5px solid var(--clr-border); border-radius:var(--radius-sm); font-family:var(--font-body); font-size:0.9rem; color:var(--clr-ink); background:var(--clr-bg); resize:vertical; box-sizing:border-box; }
+    .propose-modal textarea { min-height:90px; }
+    .propose-modal__actions { display:flex; gap:var(--sp-sm); justify-content:flex-end; }
+    @media (max-width:640px) { .init-table th:nth-child(3), .init-table td:nth-child(3) { display:none; } }
   </style>
 </head>
 <body>
@@ -266,84 +411,126 @@
             <div class="ebx-center">
               <div class="ebx-center__today" id="ebx-center-today">—</div>
               <div class="ebx-center__divider"></div>
-              <div class="ebx-center__label">Decision this week</div>
+              <div class="ebx-center__label">Upcoming initiative vote</div>
               <div class="ebx-center__cause" id="ebx-center-cause">—</div>
+              <div class="ebx-center__sub" id="ebx-center-leader">—</div>
             </div>
           </div>
-
-          <!-- Bottom banner: upcoming initiative decision (next cause) -->
-          <div class="hero__bottom-banner" id="ebx-bottom-banner-mount"></div>
         </div>
 
         <div class="hero__side hero__right" id="right-panel"></div>
       </div>
 
-      <!-- ── Mission strip: 7 squares ── -->
-      <div class="mission-strip">
-        <div class="mission-strip__eyebrow">Active missions</div>
-        <div class="mission-strip__grid" id="mission-strip-grid"></div>
-      </div>
-
-      <!-- ── EN strip: 3 most recent posts ── -->
-      <div class="feed-strip">
-        <div class="feed-strip__header">
-          <span class="feed-strip__eyebrow">From Earthbux News</span>
-          <a href="en.html" class="feed-strip__more">All EN posts →</a>
-        </div>
-        <div class="feed-strip__grid" id="feed-strip-grid"></div>
-      </div>
-
     </div>
   </section>
 
-  <!-- HOW IT WORKS -->
-  <section class="section" style="background:var(--clr-surface);">
+  <!-- ── INITIATIVE TABLE: all causes — search · filters · propose ── -->
+  <section class="tiv-table-section">
     <div class="container">
-      <div class="section-header">
-        <div class="section-header__eyebrow">Mechanics</div>
-        <h2 class="section-header__title">How Earthbux works</h2>
+      <div class="init-toolbar">
+        <div class="init-search-wrap">
+          <input type="search" class="init-search-input" id="init-search"
+            placeholder="Search initiatives…" oninput="filterInitiatives()" />
+        </div>
+        <div class="init-filters" role="group" aria-label="Initiative filters">
+          <select class="init-filter" id="filter-cause" onchange="filterInitiatives()" aria-label="Filter by cause">
+            <option value="">All causes</option>
+          </select>
+          <select class="init-filter" id="filter-stage" onchange="filterInitiatives()" aria-label="Filter by stage">
+            <option value="">All stages</option>
+            <option value="suggested">Suggested</option>
+            <option value="debate">Debate</option>
+            <option value="active">Active</option>
+            <option value="resolved">Resolved</option>
+          </select>
+          <select class="init-filter" id="filter-rating" onchange="filterInitiatives()" aria-label="Filter by rating">
+            <option value="">All ratings</option>
+            <option value="4">4+ stars</option>
+            <option value="3">3+ stars</option>
+            <option value="2">2+ stars</option>
+            <option value="1">1+ stars</option>
+          </select>
+        </div>
+        <button class="btn btn-forest" onclick="openProposeModal()">+ Propose an Initiative</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:var(--sp-xl);">
-        <div class="how-step">
-          <div class="how-step__num">01</div>
-          <div class="how-step__body">
-            <h3>Donate &amp; receive EBX</h3>
-            <p>Each cause runs a 7-week debate. Donate to receive earthbucks with a living credit that modulates your token\'s value as the mission progresses.</p>
-          </div>
-        </div>
-        <div class="how-step">
-          <div class="how-step__num">02</div>
-          <div class="how-step__body">
-            <h3>Debate &amp; commit</h3>
-            <p>Benefactors and orgs propose initiatives; benefactors commit EBX to the ones they support. The leader is decided at the end of the window.</p>
-          </div>
-        </div>
-        <div class="how-step">
-          <div class="how-step__num">03</div>
-          <div class="how-step__body">
-            <h3>Elect an organization</h3>
-            <p>The org race runs alongside the debate. One person, one vote. The winning org gets 1/16 of the pool immediately; the rest unlocks over time.</p>
-          </div>
-        </div>
-        <div class="how-step">
-          <div class="how-step__num">04</div>
-          <div class="how-step__body">
-            <h3>Follow the mission</h3>
-            <p>Track progress and spending in real time. When Earthbux judges the issue resolved, a buyback begins. Active missions live in the EN feed.</p>
-          </div>
+      <div class="init-table-wrap">
+        <div class="init-table-scroll">
+          <table class="init-table">
+            <thead>
+              <tr>
+                <th class="col-watch" aria-label="Watch"></th>
+                <th>Name</th>
+                <th>Cause</th>
+                <th>My EBX</th>
+                <th>Total EBX</th>
+                <th>Status</th>
+                <th>Next vote</th>
+              </tr>
+            </thead>
+            <tbody id="init-table-body">
+              <tr><td colspan="7" class="init-table__empty">Loading…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="cta-band">
-    <div class="container text-center">
-      <h2 style="margin-bottom:var(--sp-md);">Put your earthbucks to work.</h2>
-      <p style="margin-bottom:var(--sp-xl);font-size:1rem;">Claim your wallet, build your credit portfolio, and back the missions that matter.</p>
-      <div style="display:flex;gap:var(--sp-md);justify-content:center;flex-wrap:wrap;">
-        <a href="profile.html" class="btn btn-forest btn-lg">Create your profile</a>
-        <a href="about.html"   class="btn btn-ghost  btn-lg">Learn more</a>
+  <!-- ── NEWS / INITIATIVE TOGGLE ── -->
+  <section class="idx-toggle-section">
+    <div class="container">
+      <div class="idx-toggle-tabs">
+        <button class="idx-toggle-tab active" id="idx-tab-news" onclick="idxShowTab('news')">↳ News</button>
+        <button class="idx-toggle-tab" id="idx-tab-initiative" onclick="idxShowTab('initiative')">Selected Initiative</button>
       </div>
+      <div id="idx-panel-news">
+        <!-- Feed has no in-section filters; the table-level Cause/Stage/Rating
+             selectors above already scope these posts. -->
+        <div class="feed-list" id="idx-feed-list"></div>
+      </div>
+      <div id="idx-panel-initiative" style="display:none;">
+        <div class="init-selected-panel">
+          <div class="init-selected__eyebrow">Selected Initiative</div>
+          <div class="init-selected__title" id="idx-init-title"></div>
+          <div class="init-selected__meta"  id="idx-init-meta"></div>
+          <div class="init-selected__desc"  id="idx-init-desc"></div>
+          <div class="init-selected__actions" id="idx-init-actions"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ORG REGISTRATION ── -->
+  <section class="org-register-section">
+    <div class="container">
+      <h2>Register an organization for a mission</h2>
+      <p>
+        We need recipients for our donations! If you represent a charity organization — or want to suggest one —
+        register here. Once an initiative wins its vote, registered orgs can submit a mission page and compete in the org election.
+      </p>
+      <div class="org-register__steps">
+        <div class="org-register__step">
+          <div class="org-register__step-num">01</div>
+          <div class="org-register__step-title">Create an org account</div>
+          <div class="org-register__step-desc">Register on your profile page with a name, brief description, and a point of contact.</div>
+        </div>
+        <div class="org-register__step">
+          <div class="org-register__step-num">02</div>
+          <div class="org-register__step-title">Build your mission page</div>
+          <div class="org-register__step-desc">Submit a mission page detailing your plan, budget, and measurable goals for the initiative you want to run.</div>
+        </div>
+        <div class="org-register__step">
+          <div class="org-register__step-num">03</div>
+          <div class="org-register__step-title">Win the org election</div>
+          <div class="org-register__step-desc">Benefactors vote on which org runs the mission. One person, one vote.</div>
+        </div>
+        <div class="org-register__step">
+          <div class="org-register__step-num">04</div>
+          <div class="org-register__step-title">Execute &amp; report</div>
+          <div class="org-register__step-desc">Funds release in stages tied to milestones. Earthbux News tracks and publishes your progress.</div>
+        </div>
+      </div>
+      <a href="profile.html" class="btn btn-forest">Register your organization →</a>
     </div>
   </section>
 
@@ -368,8 +555,21 @@
       document.getElementById("ebx-topcard-header-mount").innerHTML = EBX.topCardHeader(active);
       document.getElementById("ebx-top-card-mount").innerHTML = EBX.topCard(active);
 
-      // Bottom banner: next cause's upcoming initiative decision
-      document.getElementById("ebx-bottom-banner-mount").innerHTML = EBX.upcomingCauseBanner(active);
+      // Annulus-center leader summary: leading initiative for the active cause
+      const leaderEl = document.getElementById("ebx-center-leader");
+      if (leaderEl) {
+        const inits = (EBX.config.initiatives || [])
+          .filter(i => i.cause_index === active || (activeCause && i.cause_id === activeCause.id));
+        if (inits.length) {
+          const leader = inits
+            .slice()
+            .sort((a, b) => (b.committed_ebx || b.ebx_committed || 0) - (a.committed_ebx || a.ebx_committed || 0))[0];
+          const ebx = leader.committed_ebx || leader.ebx_committed || 0;
+          leaderEl.textContent = `${leader.title} · ${ebx ? ebx.toLocaleString() + ' EBX' : 'no commits yet'}`;
+        } else {
+          leaderEl.textContent = 'No proposals yet';
+        }
+      }
 
       // 3 left, 3 right side cards (the 6 non-active causes)
       // Left: causes just before active (recent) — [-1, -2, -3]
@@ -379,25 +579,228 @@
       document.getElementById("left-panel").innerHTML  = left.map(i => EBX.sideCard(i)).join("");
       document.getElementById("right-panel").innerHTML = right.map(i => EBX.sideCard(i)).join("");
 
-      document.getElementById("mission-strip-grid").innerHTML = EBX.missionStrip();
-
-      const feedGrid = document.getElementById("feed-strip-grid");
-      if (feedGrid) {
-        const feed = (EBX.config.feed || [])
-          .slice()
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, 3);
-        feedGrid.innerHTML = feed.length
-          ? feed.map(p => EBX.feedCard(p)).join("")
-          : `<div style="grid-column:1/-1;text-align:center;padding:32px;color:rgba(245,240,232,0.4);font-size:0.85rem;">No posts yet.</div>`;
-      }
     }
 
     EBX.Annulus.mount("#ebx-annulus-mount");
+      // Populate initiative table (all causes)
+      _allInits = (EBX.config.initiatives || []).sort((a,b) =>
+        ((b.committed_ebx||b.ebx_committed||0) - (a.committed_ebx||a.ebx_committed||0))
+      );
+      populateCauseFilter();
+      renderInitTable(_allInits);
+      idxRenderFeed();
     render();
     setInterval(render, 60000);
     await EBX.initPage();
   })();
+  </script>
+
+  <!-- ── Propose initiative modal ── -->
+  <div class="propose-modal-bg" id="propose-modal-bg" onclick="closeProposeOnBg(event)">
+    <div class="propose-modal">
+      <div class="propose-modal__title">Propose an Initiative</div>
+      <label>Title *</label>
+      <input type="text" id="propose-title" placeholder="e.g. Restore kelp forests in the Pacific" />
+      <label>Description *</label>
+      <textarea id="propose-desc" placeholder="What should happen, why it matters, and how you'd measure success…"></textarea>
+      <label>Your handle</label>
+      <input type="text" id="propose-handle" placeholder="@yourhandle" />
+      <div class="propose-modal__actions">
+        <button class="btn btn-ghost" onclick="closeProposeModal()">Cancel</button>
+        <button class="btn btn-forest" onclick="submitProposal()">Submit proposal</button>
+      </div>
+      <p id="propose-msg" class="text-xs text-muted mt-md" style="line-height:1.5;"></p>
+    </div>
+  </div>
+  <script>
+  // ── Initiative table + toggle helpers ──
+  let _allInits = [];
+  let _selectedInit = null;
+
+  // Watched initiative ids — persisted in localStorage so the bookmark survives reloads.
+  const WATCH_KEY = 'ebx_watched_initiatives';
+  function getWatched() {
+    try { return JSON.parse(localStorage.getItem(WATCH_KEY) || '[]'); } catch(e) { return []; }
+  }
+  function setWatched(ids) { localStorage.setItem(WATCH_KEY, JSON.stringify(ids)); }
+  function toggleWatch(id, ev) {
+    if (ev) ev.stopPropagation();
+    const ids = getWatched();
+    const i = ids.indexOf(id);
+    if (i >= 0) ids.splice(i, 1); else ids.push(id);
+    setWatched(ids);
+    filterInitiatives();
+  }
+  window.toggleWatch = toggleWatch;
+
+  function nextVoteLabel(init, cause) {
+    // Phase-1 initiatives have a per-cycle decision day; phase-2+ are in flight.
+    // If the cause provides a next-vote date, use it; otherwise compute from cycleStart.
+    try {
+      const causeIdx = (cause && (cause.index ?? cause.cause_index));
+      if (causeIdx == null || !EBX.Cycle) return '—';
+      const state = EBX.Cycle.now();
+      const cycleNum = state.cycleNum || 0;
+      const decision = EBX.Cycle.windowStart
+        ? new Date(EBX.Cycle.windowStart(causeIdx, cycleNum + 1).getTime())
+        : null;
+      if (!decision) return '—';
+      const days = Math.max(0, Math.round((decision - Date.now()) / 86400000));
+      return days === 0 ? 'today' : `in ${days}d`;
+    } catch(e) { return '—'; }
+  }
+
+  function populateCauseFilter() {
+    const sel = document.getElementById('filter-cause');
+    if (!sel) return;
+    const causes = (EBX.config && EBX.config.causes) || [];
+    const existing = new Set([''].concat(Array.from(sel.options).map(o => o.value)));
+    causes.forEach(c => {
+      if (!existing.has(c.id)) {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.name;
+        sel.appendChild(opt);
+      }
+    });
+  }
+
+  function renderInitTable(inits) {
+    const causes = (EBX.config && EBX.config.causes) || [];
+    const causeMap = {};
+    causes.forEach(c => { causeMap[c.id] = c; causeMap[c.index] = c; });
+    const watched = new Set(getWatched());
+    const tbody = document.getElementById('init-table-body');
+    if (!tbody) return;
+    if (!inits.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="init-table__empty">No initiatives found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = inits.map(init => {
+      const cause = causeMap[init.cause_id] || causeMap[init.cause_index] || {};
+      const causeName = cause.name || init.cause_id || '—';
+      const causeColor = cause.color || 'var(--clr-moss)';
+      const totalEbx = init.committed_ebx || init.ebx_committed || 0;
+      const myEbx = init.my_committed_ebx || init.my_ebx || 0;
+      const status = init.status || 'suggested';
+      const emoji = init.emoji || '';
+      const isWatched = watched.has(init.id);
+      const star = isWatched ? '★' : '☆';
+      return `<tr onclick="idxSelectInit(${JSON.stringify(JSON.stringify(init)).slice(1,-1)})" data-id="${init.id}">
+        <td class="col-watch"><button class="init-watch-btn ${isWatched ? 'watched' : ''}" onclick="toggleWatch(${JSON.stringify(init.id)}, event)" aria-label="${isWatched ? 'Unwatch' : 'Watch'} initiative" title="${isWatched ? 'Unwatch' : 'Watch'}">${star}</button></td>
+        <td><div class="init-table__name">${emoji ? emoji + ' ' : ''}<span>${init.title || 'Untitled'}</span></div></td>
+        <td><span class="init-table__cause" style="color:${causeColor}">${causeName}</span></td>
+        <td class="init-table__ebx">${myEbx > 0 ? myEbx.toLocaleString() : '—'}</td>
+        <td class="init-table__ebx">${totalEbx > 0 ? totalEbx.toLocaleString() : '—'}</td>
+        <td><span class="init-table__status status-${status}">${status}</span></td>
+        <td class="init-table__nextvote">${nextVoteLabel(init, cause)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterInitiatives() {
+    const q = (document.getElementById('init-search').value || '').toLowerCase();
+    const causeF  = document.getElementById('filter-cause')?.value  || '';
+    const stageF  = document.getElementById('filter-stage')?.value  || '';
+    const ratingF = parseFloat(document.getElementById('filter-rating')?.value || '0');
+    const filtered = _allInits.filter(i => {
+      if (q && !(
+        (i.title||'').toLowerCase().includes(q) ||
+        (i.description||'').toLowerCase().includes(q) ||
+        (i.cause_id||'').toLowerCase().includes(q)
+      )) return false;
+      if (causeF && i.cause_id !== causeF) return false;
+      if (stageF && (i.status || 'suggested') !== stageF) return false;
+      if (ratingF && (i.rating || 0) < ratingF) return false;
+      return true;
+    });
+    renderInitTable(filtered);
+    // re-highlight selected
+    if (_selectedInit) {
+      const row = document.querySelector(`#init-table-body tr[data-id="${_selectedInit.id}"]`);
+      if (row) row.classList.add('row-selected');
+    }
+    // Feed posts share the same cause/stage tag vocabulary — re-render it too.
+    idxRenderFeed();
+  }
+
+  function idxSelectInit(initJson) {
+    let init;
+    try { init = JSON.parse(initJson); } catch(e) { return; }
+    _selectedInit = init;
+    document.querySelectorAll('#init-table-body tr').forEach(r => r.classList.remove('row-selected'));
+    const row = document.querySelector(`#init-table-body tr[data-id="${init.id}"]`);
+    if (row) row.classList.add('row-selected');
+    // Populate detail panel
+    document.getElementById('idx-init-title').textContent = (init.emoji ? init.emoji + ' ' : '') + (init.title || '');
+    const causes = (EBX.config && EBX.config.causes) || [];
+    const cause = causes.find(c => c.id === init.cause_id || c.index === init.cause_index) || {};
+    const ebx = init.committed_ebx || init.ebx_committed || 0;
+    document.getElementById('idx-init-meta').textContent =
+      [cause.name, init.status, ebx > 0 ? ebx.toLocaleString() + ' EBX committed' : null].filter(Boolean).join(' · ');
+    document.getElementById('idx-init-desc').textContent = init.description || '';
+    document.getElementById('idx-init-actions').innerHTML =
+      `<a href="cause.html?id=${cause.id || init.cause_id || ''}" class="btn btn-forest btn-sm">View on cause page →</a>`;
+    idxShowTab('initiative');
+    document.querySelector('.idx-toggle-section').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function idxShowTab(tab) {
+    document.getElementById('idx-panel-news').style.display = tab === 'news' ? '' : 'none';
+    document.getElementById('idx-panel-initiative').style.display = tab === 'initiative' ? '' : 'none';
+    document.getElementById('idx-tab-news').classList.toggle('active', tab === 'news');
+    document.getElementById('idx-tab-initiative').classList.toggle('active', tab === 'initiative');
+  }
+
+  function idxRenderFeed() {
+    const el = document.getElementById('idx-feed-list');
+    if (!el) return;
+    // Tags applied to feed posts use the same filter values as the initiative table.
+    // Cause filter scopes posts via cause_index/cause_id; stage and rating may be
+    // ignored by older posts that don't carry them, so we treat missing values as a pass.
+    const causeF  = document.getElementById('filter-cause')?.value  || '';
+    const stageF  = document.getElementById('filter-stage')?.value  || '';
+    const causes  = (EBX.config && EBX.config.causes) || [];
+    const causeById = {};
+    causes.forEach(c => { causeById[c.id] = c; });
+    const wantedCauseIdx = causeF && causeById[causeF] ? causeById[causeF].index : null;
+
+    const feed = ((EBX.config && EBX.config.feed) || [])
+      .filter(p => {
+        if (causeF) {
+          // Match either explicit cause_id tag or cause_index numeric tag.
+          if (p.cause_id && p.cause_id !== causeF) return false;
+          if (p.cause_id == null && wantedCauseIdx != null && p.cause_index !== wantedCauseIdx) return false;
+        }
+        if (stageF && p.stage && p.stage !== stageF) return false;
+        return true;
+      })
+      .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+    el.innerHTML = feed.length
+      ? feed.map(p => EBX.feedCard(p)).join('')
+      : '<div style="padding:32px;text-align:center;color:var(--clr-ink-muted);font-size:0.85rem;">No posts matching current filters.</div>';
+  }
+
+  function openProposeModal() {
+    document.getElementById('propose-modal-bg').classList.add('open');
+  }
+  function closeProposeModal() {
+    document.getElementById('propose-modal-bg').classList.remove('open');
+    document.getElementById('propose-msg').textContent = '';
+  }
+  function closeProposeOnBg(e) {
+    if (e.target === document.getElementById('propose-modal-bg')) closeProposeModal();
+  }
+  function submitProposal() {
+    const title = (document.getElementById('propose-title').value||'').trim();
+    const desc  = (document.getElementById('propose-desc').value||'').trim();
+    if (!title || !desc) {
+      document.getElementById('propose-msg').textContent = 'Title and description are required.';
+      return;
+    }
+    document.getElementById('propose-msg').textContent = 'Proposal submitted! It will appear after review.';
+    setTimeout(closeProposeModal, 1800);
+  }
   </script>
 </body>
 </html>

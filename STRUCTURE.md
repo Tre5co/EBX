@@ -1,177 +1,288 @@
-## README.md
-
 ## UPDATE TASKS
-@CLAUDE Stop process now if there are any lines in between this one and the most recent pass
-## 8:30 5/21/26 (pass 4)
-**Q1** Pending application. I've already donte this but it won't be relevant until users accounts don't have unlimited ebx and need to deposit money, which is super-backlogged for now.
-**Q2** Nothing was wrong. My bad, I forgot to remove that.
-**Q3** I see, the same initiative won 2 cycles in a row because they both used the same sample data. Everything is fine as it is because it will work when actual voting begins. 
-**Q4** Top card is ok for now.
-## 4:50 5/20/26 (pass 3)
-**Q1** I was hoping it could actually go up into the topbar. Is that possible? Maybe it would need to be a seperate thing in the topbar that connects to the rest of the page? I want the bottom next-initiative banner to be aligned with the bottom of the side cards, and push the top card upwards.
-**Q2** Should be all set. Is there something missing?
-## 3:45 5/20/26 (pass 2)
-**Q20** Top card: In pass 1, my instructions for the bottom card were incorrectly interpreted as top card instructions, and now the structure does not reflect the design. Please revert back to the structure described in structure tree. (A slight change from what it was before)
-**Q21** Bottom card: Implement 1 row ticker here.
-**Q22** Satisfactory
-**Q23** Done, seeded successfully.
-## 10:45 5/20/26 (pass 1)
-**Q17**
-I think there was some damage caused by me stopping processes while partially complete.
-**Q18**
-Probably same issue as q17, pre-commit hook that fails on a second `EBX_TAIL_SENTINEL` occurrence is a good idea. Let's make it happen.
-**Q20** See structure tree
+@CLAUDE Stop process now if there are any lines in between here and ##SYSTEM
+## SYSTEM
+**Cause rotation - 7 weeks**
+Atmosphere - Oceans - Land - Forests - Wildlife - Rights - Progress
+**Weekly missions - 4 phases**
+1. Pre-Initiative-Election: weeks < 1
+The rankings are always visible in the 
+2. New-Initiative: weeks 1 - 8
+3. New-Mission: weeks 9 - 16
+4. Credit-Release: weeks 17 - 32
+5. Resolution: weeks 33+
+**Voting**
+1. Initiative voting
+Can plit votes
+2. Organization voting
+Can only vote for 1 organization.
+**Development**
+`backlog management` Update structure and content of readme
+`build` Is for making changes.
+**index.html**
+This page shows every past, present and future mission 
+__________________________________________________________________________________________________
+|You donate.          |                 Top card                            |             profile |
+| We follow.          |                                                     |                     |
+| ____________________|                                                     | ____________________| 
+|| Side card 1       ||                                                     || Side card 6
+||                   ||                                                     ||...
+||                   ||                                                     ||...
+||                   ||_____________________________________________________||...
+||___________________|                          |                           ||____________________|
+| ____________________                    `           '                     ||____________________
+||  Side card 2      |             /                        \               ||
+||                   |            |         Date             |              ||
+||                   |              Upcoming initiative vote  ...
+||                   |               Leader, ebx committed...
+||___________________|...
+| ____________________            |                          |...
+||  Side card 3      |             \                        /...
+||                   |                   .             ,...
+||                   |             ...
+||                   |      ________  ____  _________________...
+||___________________|      |Filters| |for| |feed/initiatives|
+|  Search initiatives _|cause dropdown|_|stage dropdown|_|rating dropdown|_____ + Propose an Initiative
+| Name | Cause | EBX Committed | Status | Next vote date
+| 12 rows_
+|...;
+|____________________________________________________________________________________________________
+| News  | [selected_initiative] |
+| Fill a set amount of space
+|...;
+|____________________________________________________________________________________________________
+| ORGANIZE
+| Do you and your company have the means to accomplish a mission?
+| 1 - 2 - 3 - 4
+| Register your organization ->
+|_____________________________________________________________________________________________________
+Earthbux                               Platform     Community
+Collective action, measured by impact
+Weekly pooled donations, insured by EN.
 
-**Q21** Yes, 
+**Cause.html**
+This page isolates a particular mission and cause
+Whichever tab is selected persists color and information to the screen.
+_____________________________________________________________________________________________________________________
+ebx |              |              |              |              |              |              |              |profile|
+    |              |              |              |              |              |              |              |
+    |              |              |              |              |              |              |              |
+    |              |              |              |              |              |              |              |
+    |Atmosphere____|Oceans________|Land__________|Forests_______|Wildlife______|Rights________|Progress______|
+        |Left - next initiative                                                     Right - 3 missions
+        ||       leading     |             /                        \               ||mission currently in phase 2 |
+        ||                   |            |      annulus 2           |              ||                             |
+        ||                   |                ...                                   ||onclick changes page         |
+        ||                   |              ...                                     ||_____________________________|
+        ||___________________|...                                                   | _____________________________
+        | ____________________            |                          |...           ||                             |
+        ||       second      |                   .             ,...                 ||mission currently in stage 3 |
+        ||                   |             ...                                      ||_____________________________|
+        ||                   |  _____________  ____  ____________________ _________ | _____________________________
+        ||___________________| |   Mission overview                               | ||Most recent stage 4 mission   |
+                 third         |   Current phase                                  | ||______________________________|
+        __________________     |__________________________________________________|  page through past missions<> - 147 days/page
+|       Mission phase 1 recap or election card                                                                        |
+|                                                                                                                     |
+|_____________________________________________________________________________________________________________________
+|       Mission phase 2 recap or election card                                                                        |
+|                                                                                                                     |
+|_____________________________________________________________________________________________________________________
+|       Mission phase 3 recap or budget discussion                                                                    |
+|                                                                                                                     |
+|_____________________________________________________________________________________________________________________
+|       Mission phase 4 plan                                                                                          |
+|                                                                                                                     |
+|                                                                                                                     |
+|                                                                                                                     |
+|                                                                                                                     |
+|                                                                                                                     |
+phase 5 will diverge between complete and incomplete
 
-**Q22** No, side cards should be designed at the maximum size and be compressed for smaller displays in the future. Expand annulus wherever possible. 
+## BUILD SEQUENCE
+0. Resolve Errors (if any)
+1. _index.html_
+- (a) **Propose-Initiative cause picker.** Proposed initiatives need to be linked to a cause. Users should select cause, title initiative, and describe it.
+- (b) **MAIN TOGGLE → "View Initiative Elections" | "View Organization Elections"** See *Page toggle*  and revised *table*  section in structure. Do not replace Feed/Info toggle, but adapt it as described in structure.
+- (c) **2-sided side cards and top card.** See *election cards*. Each card has a front and a back that is flippable from the page toggle.
+- (d) **Center-of-annulus = NEXT cause cue.** If users vote for nothing else, they should vote for the next initiative. that is why it will be in the center. 
+- (e) **Row click directs Feed/Info** The Feed/info section isolates a particular organization or initiative
+2. _cause.html_
+- (a) **Phase-1 card = initiative election.** see README
+- (b) **Fix the initiative-election date.** see README.
+- (c) **3 right cards and page flips** These cards allow the user to page through all historic missions in the selected cause. The left cards are already correctly phase 1, and the right cards show the previous 3 missions. Users can page back through all historic missions.
+- (d) **Remove "now" and mini rotation arrow** This is redundant since the now marker has a working arrow.
+- (e) **Connect mission-overview to the phase recaps.** See README
 
-## CONVERSATION (For backlog management)
-I think the truncation issues are happening when I scroll within the claude app as you are executing tasks. I'll refrain from doing that.
-You say that it's already substantially built, and I can see that, but the link is not working. Do I need to do some building commands?
+## QUESTIONS & CONCEPTUAL BACKLOG
+1. Seeded successfully. What exactly does this do? Ran from backend this time, in the past I was instructed to run it from frontend.
+2. The now marker is correct. Now we can remove "now c>" because the arrow does the job nicely
+3. The top card is 2 sided. At the moment, both sides should be empty because no initiative elections have happened yet, therefore no organization elections are active yet. The front side of all election cards is actually blank. Pending functional voting system.
+4. See answer below
+5. Center should be an extension of the top-right side card.
+6. Ratings described below.
+7. Benefactor accounts store watched initiatives.
 
-Yes, building out the mission experience is complex and will need a precisely planned design.
-I want to make sure we do these mission pages right. I'll propose steps.
-0. Discuss details and solidify concepts and plan, cut off loose ends.
-1. Create organization registration.
-- I suggest we 
-2. Mission page creation by org members.
-3. Link mission pages to mission index
- - *Active organization election*
-3. simulate vote
-4. Design mission annulus
+**Center redesign**
+**Cause page now marker** We will be able to add more labels, for example at the start and end of the causes active area we can write "Initiative election" and "Organization election"
+**Vote share** Users automatically use their entire vote share and when selecting more initiatives to vote for, they choose how to divide it.
+**Initiative ratings** Each initiative carries a rating that defaults to 0/5 and every benefactor can simply rate each initiative. By rating, initiative is added to a users watchlist. They can remove it from the watchlist however without nullifying thier rating.
+**Watched initiatives** Displayed on profile page. Affects a users EN feed.
+**`cyclestart` config endpoint** I want to run simulations and this will be necessary to understand. I will need to read the code.
+**Build-integrity check** It seems like we have this under control. What's IIFE?
+**`tempfile + os.replace` write helper.** Another tool to get the build integrity under control
+**Stage 2 toggle** Toggle "View Initiative Elections" and "View Organization Elections"
+**Test fixtures** Will others be able to remotely access the site when I have the server running on my computer? Or do I need to get fly.io or some other server running? Otherwise, I can simply build the test accounts on my computer.
 
-## BUILD SEQUENCE (For build)
-0. Resolve Errors
-1. **Dont jump on click** Minor problem in cause.html
-2. **Side card update** on index.html per updated structure
-3. **m_indx.html build-out** See conversation
- - Columns and rows
- - color code, expand
-4. **Mission page buildout**
-mission.html - the org-side mission page for them to work on their mission. Information: mission.html -> m_indx.html
-5. **Implement Voting** 
-6. **Credits** if id <= 100, mint 49 generic EBX credits into wallet.
-    - Pretend each credit is worth $1
-    - This will actually allow the process to begin.
+## LONG TERM
+prune dead code
+BYE-BYE M_INDX.html
+BYE-BYE EN.html
+
+0. Demo-ready core (now). The three public pages (index.html, cause.html, m_indx.html) look right and behave correctly, and the shareable link works for a static demo. Cleanup-level work, no new data model.
+
+1. Initiative-vote pilot. Run the first 7 weekly initiative votes with cofounder accounts + simulated money on the existing sample initiatives/orgs (the test strategy already in this backlog). Requires the soft-vote flow to be solid end to end.
+
+2. Mission / organization layer. The mission-page experience, in the order Jax sketched in STRUCTURE.md's CONVERSATION: (0) solidify concepts → (1) organization registration → (2) org-member mission-page creation → (3) link mission pages into m_indx + active organization election → simulate an org vote → (4) design the mission annulus.
+
+3. Credits & cash economy. Replace "unlimited EBX" accounts with real deposits and the credit lifecycle (generic → cause → mission → org → live), the EN 5/16 cut, and tax/redemption logic. This is the gate that finally makes the founding-49-EBX bonus relevant (per Jax's Q1).
+
+4. Hardening & reach. Tests (pytest / playwright), Postgres prod path, pagination, cycleStart from a config endpoint, build-integrity check, static offline mode, Swift mobile app.
+
 ## ERRORS
-None, Good!
-
-## STRUCTURE
+## STRUCTURE (not updated)
 - [ ] **Main page** (index.html)
-    - [ ] **Cause Cards**
-        - [ ] **Top card**
-            - [ ] **Contents** 
-            2 current organization elections for the active cause.
-            This week upcoming upcoming on left
-            7-8 weeks away (newest) on rightBacklog finalization
-                - [ ] **Location**
+    - [ ] **annulus 1** - recolor - roygbiv
+        - [ ] **Maximize annulus size for screen**
+        - [ ] **Center of Annulus**
+        Todays date, leading initiative for upcoming vote (next cause) - Once this is done, we'll figure out how to differentiate it from the top-right card. It will have details about the election and previous initiative... i dont know yet.
+            - [ ] **glowy circle** Inner circle of "cause annulus* glows to represent the NEXT cause
+            - [ ] **3D visual** backlog -
+        - [ ] **Manipulate annulus & zoom** backlog -touchscreen
+        - [ ] **`now` indicator** - UX aid for time-telling
+            - ✅ **glowy marker** Glowy white vertical marker on top side of annulus. 
+    - [ ] **Page toggle** Toggles whole page between upcoming org/tiv elections
+        - [ ] **Location** Located below the annulus, in between the side cards, above the table.
+        - [ ] **What it changes**
+        - Flips all 7 cards between front (org mode) and back (tiv mode)
+            - note that the top card will be the only thing on the page referencing an org while toggled to tiv mode.
+        - Flips table between initiative table and organization table
+            - flips between "propose an initiative" and "register an organization"
+    - [ ] **Election Cards** switching to 2-sided
+        - [ ] **Side cards**
+            - ✅ **Location**
+            - [ ] **front** upcoming *new-Mission*
+            Predetermined initiative title
+            leader - leader vote % - leader ring-mini
+            choice - choice vote % - choice ring-mini
+            Total pool so far              |discuss|
+            My committment                  |Vote  |
+            - [ ] **back** - upcoming *new-initiative*
+            Cause name - date of mission (up to 7 weeks in future)
+            choice - choice vote %
+            leader - leader vote %
+            second - second %
+            third - third %          
+            Total pool so far              |discuss|
+            My committment                    |Vote|
+        - [ ] **Top card** only card with 2 org-elections
+            - [ ] **Glowy** top card glows white like now marker
+            - ✅ **Location**
                 Horizontal: In between the side cards
                 Vertical: From the now marker all the way to the top of the display.
-                - [ ] **Right** This week - newest initiative
-                Pool size, election date...
-                - [ ] **Left** Newest mission
-                Larger area with detailed metrics for upcoming hard election. Leaders with links to their mission page prorotypes, link to EN feed for discussion, display current votes and committments from `mission_indx`.
-            - [ ] **Expansion** - backlog interface
-            Scroll-triggered expand upward/outward.
-            The upcoming organization election is the most important moment at any given time so a lot of information here. 
-        - [ ] **Bottom banner**
-        Directly below the annulus, in between the left and right cause cards
-        Ideally we can make it a 1-row display that can be immediately digested as quickly as possible -
-        benefactor experience: see initiative I committed for with it's standing among other initiatives, may toggle to the leading initiative somehow. Those should be the only words on the page, everything else should be widgets/diagramatic/visual - quickly digestible.
-            - [ ] **Upcoming Initiative Decision**
-            That's what this banner is for. Change it to the color of the cause after the active cause and display the leader/metrics.
-        - [!] **Side  Cards** Pass 1 edit
-        Top section: Your Initiative -- Your Initiatives current vote share (spill to multiline just for this top row)
-                        leading initiative - leading %  |Vote  |
-                        second - second %               |  or  |
-                        third - third %                 |Commit|
-                        Total pool so far: x            
-        Bottom section: [initiative] - ring-mini
-                        your organization -- your organization vote share
-                        leader - leader % - leader ring-mini
-                        Total pool so far: x
-        If there is no initiative/organization slotted in for a particular date, show "No votes yet"
-    - [ ] **Cause annulus**
-        - [ ] **Maximize display space**
-        Keep inner circle at current size, maximize outer circle all the way to the inner edge of the cards. Lock left and right card edges to the edges of active card w light padding. Slide down on top of `now` mark
-        - [ ] **Cause label Visibility** Make annulus thicker so that cause titles are fully visible. Multi-word entries can take multiple lines.
-        - [ ] **Center of Annulus**
-        > Eventually, there will be a very cool 3d graphic in the middle. Hold that in the back of your mind because I'm not ready to create it yet. 
-    
-        - [ ] **Navigate and zoom**
-        On mobile this will be important. There will be a zoom (And rotate) for users to select a particular sector and that will work well with touchscreens.
-        - [ ] **`now`** Glowy
+            - [ ] **front** Newest mission
+            initiative title
+            leader - leader vote % - leader ring-mini
+            choice - choice vote % - choice ring-mini
+            Total pool so far              |discuss|
+            My committment                  |Vote  |
+            Detailed election metrics
+            - [ ] **back** This week - newest initiative
+            next vote 7-8 weeks away
+            various organization suggestions
+            initiative info
+    - [ ] **Table** - 2 states
+        - [ ] **Filters** For now, keep same filters for both states
+        - [ ] **State 1 - Initiative Table** leading proposed initiatives
+        search   -   filters      -       Propose an initiative
+        Watch | Name | cause | my ebx committed | total ebx committed | status | next vote day
+            - [ ] **columns**
+                - [ ] **status**
+                show the phase of the initiative. If no ebx has been committed, status  is "suggested"
+                - [ ] **watch** 
+                users can bookmark ("watch") initiatives
+        - [ ] **State 2 - Organization Table** leading organizations
+        search   -   filters      -       Nominate an Organization
+        Watch | Name | website_link | status | my ebx committed | total ebx committed | ring-mini
+            - [ ] **Org registration** move "compete for this mission" here
+                - [ ] **instructions**
+                Call for charity organizations or for people to suggest charitys. We need recipients for our donations!
+        - [ ] **Feed/info toggle** Does not depend on page toggle
+    - [ ] **Feed/Info** - Either feed or info on selected tiv/org based on toggle at bottom of table
+        - [ ] **State 1 - Initiative area** Fill area below table
+        Users select a row in the table and this area expands
+        - [ ] **State 2 - Feed** 
+        Content from EN News
+- [ ] **Cause page** (cause.html)
     - [ ] **Active missions bar**
-    Links to the 7 active missions (1 cycle ahead of the organization elections)
+    7 squares across the top of the screen that toggle between causes
         - [ ] **Add start dates**
-    - [ ] **Feed snippet**
-    - [ ] **About snippet**
-        - [ ] **Update** Make up to date with current readme
-        - [ ] **Combine** Combine "Put your profile to work" section into the same snippet
-    - [ ] **Need orgs!!**
-    Replace "Put your profile to work" section with a call for charity organizations or for people to suggest charitys. We need people to be the recipients of the donations!
-- [ ] **Mission Index page** (m_indx.html)
-    - [ ] **Initiative Table** Each box will link somewhere different   
-        - [ ] **Rows** Dates moving forward, one week at a time.
-        Each mission is a row in `mission_indx`. populated with the initiative, organization, and more information.     
-        The background color of upcoming mission rows (down on table) is different from ongoing missions (scroll to the top to find the first one.) The color of the missions with an initiative but no organization is the color of that cause (Middle, and middle of page when it opens)
-            - [ ] **Expandable** Rows are expandable 1 at a time.
-            - [ ] **Indicate user join date**
-                - [ ] **Active organization elections**
-                For the 8 active elections at any given time, the row expands into a whole table with all the organizations who are trying to win the pool.
-        - [ ] **Columns** Different boxes populated for different scenarios. Time flows from left to right
-            - [ ] **Pre Initiative Election** Leftmost columns populate
-            Cause_name cycle_num | decision date | your vote | your vote ratings | ebx committed | pool size | Leading initiative | second | third | ...
-            - [ ] **Post Initiative Election**
-            Ring-mini | Cause_name| Initiative | Your pool contribution so far | org-election date | your vote | Reviews | ebx committed | pool size | Leaders
-            - [ ] **Post organization election** Still working on this.
-            Ring-mini | Initiative | Organization | Your earthbucks | release date | credit | your intentions 
-            - [ ] **Ring Mini** Mini annulus. Links to a mission page. Display in corner of m_indx toggled by current selection.
-                - [ ] **Mission selected** The mission annulus from the cause page, but with its stats expanded through the page so represented by small circle in corner.
-                - [ ] **Mission not selected** 
-                    - [ ] **days left> 2** The cause annulus
-                    - [ ] **2 > days left** The initiative annulus for the upcoming cause
-        - [ ] **Admin side** Admins have a different table. 
-- [ ] **Cause/Initiative page** (cause.html)
-    - [ ] **Initiative annulus**
+    - [ ] **annulus 2**
     Center: Date, time until cause
     Tier 1 (center ring): Pie chart
     Tier 2: Highlight selected cause
     Tier 3 (Outside ring): Mission metrics
-        - [!] **Now marker**
-        Marker is currently rotating in the wrong direction.
-            - [ ] **Indicate motion direction**
-            with a little arrow
-        - [ ] **Handle when vote is 100% or no votes yet**
-        If only 1 or 0  initiatives has received votes, Drop pie chart and add text to center.
+        - [ ] **Now marker**
+            - [ ] **Arrow**
+            good arrow, now remove circular "now" arrow
         - [ ] **Mission Progress annulus** Surrounds 2 inner sections.
         See mission section.
     - [ ] **Left Cards**
     Display options for the next initiative vote for the selected cause
     - [ ] **Right cards**
         - [ ] **Bottom** 
-        Previous mission in selected cause, 0-7 weeks into funds release
+        Previous mission (in phase 3 or 4) of selected cause
         - [ ] **Middle** 
-        Most recent mission (initiative and organization) for selected cause, approaching funds release
+        Whatever mission is currently in phase 3 of selected cause
         - [ ] **Top** 
-        Upcoming organization election for selected cause with Initiative name and the benefactors current organization selection.
-        Links to m_indx because no mission page yet.
-        Also links to organization page on feed.
-    - [ ] **Initiative cards**
-    Expand when their initiative is selected in table
-        - [!] **Don't jump on click** Small bug - the initiative cards and the cards left of the annulus on cause.html are jumping/scrolling to the feed on click. Remove this.
-        - [ ] **Table** Shows all initiatives for that cause
-        Name | proposal_link | conception date | ebx committed |
-    - [ ] **Feed**
-    Content from EN News, if any, is shown with each initiative
-        - [ ] **Filters**
-        Moved to right sidebar, labeled "Filter". Sticky on desktop, collapses horizontal on mobile.
-    - [ ] **Initiative Logos** 
-    One half of the credit coin. Contains all the information on the initiative side, like what the initiative is and how it garnered all its support.
-    - [ ] **Admin** 
-    Admin can remove initiatives, other tasks.
-    Works from mission index page
+        Whatever mission is currently in phase 2 of selected cause
+    - [ ] **mission story RENOVATED** there will actually be 4 different tables.
+        - [ ] **New annulus** If a mission is selected, the annulus changes - backlog
+        - [ ] **Top** Just below the annulus
+            - [ ] **phase 1 recap**
+            The vote shares and relevant posts that got the initiative elected
+        - [ ] **slot below top**    
+            - [ ] **if active**
+            show election card
+            - [ ] **else**
+            Show how the people decided on the org, and mention the runners up.
+        - [ ] **slot 2 below top**
+            - [ ] **if active**
+            benefactors and organization build an action plan
+            
+            phase 3 recap
+            Here is where the organization (with the help of earthbux) is responsible for creating an impact
+            - [ ] **phase 4 recap**
+            this is where the community discusses the organizations impact
+            - [ ] **phase 5** financial complexities - backlog
+        - [ ] **rows** 
+            - [ ] **Expandable** Rows are expandable 1 at a time.
+            - [ ] **content** depends on phase
+                - [ ] **mission** Each mission gets a row
+                    - [ ] **phase 1** Bottom rows. White.
+                    Leftmost columns populate. The bottom is 7 weeks out, which is under 6 weeks out, etc.
+                    Cause_name cycle_num | decision date | your vote | your vote ratings | ebx committed | pool size | Leading initiative | second | third | ...
+                    - [ ] **phase 2** Row in middle
+                    Ring-mini | Cause_name| Initiative | Your pool contribution so far | org-election date | your vote | Reviews | ebx committed | pool size | Leaders
+                    - [ ] **phase 3** Row above phase 2
+                Ring-mini | Initiative | Organization | Your earthbucks | release date | credit | your intentions 
+                    - [ ] **phase 4** Top rows. Green or red
+                - [ ] **dates** join date, other dates
+                backlog
+                - [ ] **posts** may also be in table
+                backlog
+        - [ ] **columns**
+            - [ ] **Ring Mini** A mini *cause annulus* is displayed next to each mission (if phase 1, it's empty). This will resemble the missions credit coin.
+        - [ ] **Admin side** Admins have the full table. 
 - [ ] **EN** Newsfeed
     - [ ] **Post** Post your own content.
             - [ ] **Types of post** Benefactor posts: Initiative ratings, organization reviews, mission ideas (idea i.e. a thoughtful suggestion for how the org should proceed). Org posts: `mission proposals` (When competing for an org election), `mission_ideas`, `mission updates`, `feedback`. EBX posts: `status-updates` on the mission metrics.

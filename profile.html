@@ -541,6 +541,22 @@
       letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--clr-ink-light); margin-bottom: var(--sp-md);
     }
+    /* ── EN strip on profile (moved from index.html, pass 12) ── */
+    .profile-en-strip { margin-bottom: var(--sp-2xl); }
+    .profile-en-strip__header {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: var(--sp-md);
+    }
+    .profile-en-strip__more {
+      font-family: var(--font-mono); font-size: 0.7rem;
+      color: var(--clr-moss); text-decoration: none;
+    }
+    .profile-en-strip__grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-md);
+    }
+    @media (max-width: 700px) {
+      .profile-en-strip__grid { grid-template-columns: 1fr; }
+    }
 
     /* Main content area */
     .profile-main {}
@@ -1191,6 +1207,21 @@
 
       // ── (e) Feed history — posts by this user ──
       const allPosts = EBX.config.feed || [];
+      const recentENPosts = allPosts
+        .slice()
+        .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 3);
+      const enStripHTML = recentENPosts.length
+        ? `<div class="profile-en-strip">
+             <div class="profile-en-strip__header">
+               <span class="profile-feed-eyebrow">From Earthbux News</span>
+               <a href="en.html" class="profile-en-strip__more">All EN posts →</a>
+             </div>
+             <div class="profile-en-strip__grid">
+               ${recentENPosts.map(post => EBX.feedCard(post)).join('')}
+             </div>
+           </div>`
+        : '';
       const userPosts = allPosts
         .filter(post => post.author === p.handle || post.author === `@${p.handle}`)
         .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -1243,6 +1274,8 @@
               <main class="profile-main">
 
                 ${upcomingBannerHTML}
+
+                ${enStripHTML}
 
                 <div class="profile-feed-history">
                   <div class="profile-feed-eyebrow">Your posts</div>
@@ -1348,4 +1381,3 @@
   </script>
 </body>
 </html>
-    

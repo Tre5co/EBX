@@ -1083,6 +1083,9 @@ const Auth = {
   },
 
   async fetchMe(): Promise<{ id: number; email: string; handle: string; is_active: boolean; created_at: string } | null> {
+    // Skip the network request entirely when there's no token — otherwise
+    // every page load by a signed-out visitor logs a noisy 401 to the console.
+    if (!Auth.getToken()) return null;
     const res = await Auth.fetchAuthed('/auth/me');
     // Only clear the stored token on an explicit 401 — not on network errors or
     // temporary server unavailability (which would log the user out unexpectedly).

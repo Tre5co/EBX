@@ -10,6 +10,10 @@
     /* ── Cause color injection ── */
     /* --cause-color set on <body> by JS after data loads */
 
+    /* ── Persist black background (build-seq 2c) ── */
+    html, body { background: #0a1410; color: var(--clr-parchment); }
+    .ebx-footer, footer { background: #0a1410; color: rgba(245,240,232,0.55); }
+
     /* ── Topbar ── */
     .ebx-topbar {
       background: #0f1a14;
@@ -18,45 +22,56 @@
       top: 0;
       z-index: 100;
     }
+    /* EBX | 7 cause tabs (fill) | profile  — tabs sit flush at the bottom
+       of the topbar with an underline like the STRUCTURE.md sketch. */
     .ebx-topbar__inner {
       display: grid;
-      grid-template-columns: minmax(120px,1fr) auto minmax(120px,1fr);
-      align-items: center;
+      grid-template-columns: minmax(64px,auto) 1fr minmax(64px,auto);
+      align-items: stretch;
       gap: var(--sp-md);
-      padding: 12px 0;
+      padding: 10px 0 0;
     }
-    .ebx-topbar__left {
-      display: flex; align-items: center; gap: var(--sp-md);
+    .ebx-topbar__left  { display: flex; align-items: center; gap: var(--sp-md); padding-bottom: 10px; }
+    .ebx-topbar__right { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 10px; }
+    .ebx-topbar__center { display: flex; align-items: stretch; }
+    /* ── 7-cause mission tabs (replaces the old dropdown) ── */
+    .cause-tabs {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      width: 100%;
+      align-items: stretch;
     }
-    .ebx-topbar__right {
-      display: flex; justify-content: flex-end; align-items: center;
-    }
-    .ebx-topbar__center {
-      display: flex; justify-content: center; align-items: center;
-    }
-    .cause-selector-wrap {
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
-    }
-    .cause-selector-label {
+    .cause-tab {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 6px 8px;
+      background: transparent;
+      border: 0;
+      border-bottom: 3px solid rgba(245,240,232,0.10);
+      color: rgba(245,240,232,0.55);
       font-family: var(--font-mono);
-      font-size: 0.58rem;
-      letter-spacing: 0.14em;
+      font-size: 0.66rem;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: rgba(245,240,232,0.4);
-    }
-    .cause-selector-select {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: var(--radius-sm);
-      color: var(--clr-honey);
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      padding: 4px 10px;
       cursor: pointer;
-      outline: none;
-      text-align: center;
+      text-decoration: none;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+      min-width: 0;
     }
-    .cause-selector-select:focus { border-color: var(--cause-color, var(--clr-honey)); }
+    .cause-tab:hover { color: var(--clr-parchment); background: rgba(255,255,255,0.03); }
+    .cause-tab.selected {
+      color: var(--tab-color, var(--clr-honey));
+      border-bottom-color: var(--tab-color, var(--clr-honey));
+      background: color-mix(in srgb, var(--tab-color, var(--clr-honey)) 10%, transparent);
+    }
+    .cause-tab__emoji { font-size: 0.95rem; line-height: 1; }
+    .cause-tab__name {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 100%;
+    }
 
     /* ── Hero: dark band matching index.html ── */
     .cause-hero {
@@ -602,12 +617,231 @@
       display: flex; gap: var(--sp-sm); justify-content: flex-end; flex-wrap: wrap;
     }
 
+    /* ── Mission overview block (below annulus, build-seq 2d) ── */
+    .mission-overview {
+      width: 340px;
+      margin-top: var(--sp-md);
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-left: 3px solid var(--cause-color, var(--clr-moss));
+      border-radius: var(--radius-md);
+      color: var(--clr-parchment);
+      box-sizing: border-box;
+    }
+    .mission-overview__eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: rgba(245,240,232,0.42);
+      margin-bottom: 4px;
+    }
+    .mission-overview__title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--clr-parchment);
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+    .mission-overview__phase {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cause-color, var(--clr-honey));
+      margin-bottom: 4px;
+    }
+    .mission-overview__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: rgba(245,240,232,0.55);
+    }
+    .mission-overview__meta b { color: var(--clr-parchment); font-weight: 600; }
+
+    /* ── Toggleable right mission cards ── */
+    .mission-card { cursor: pointer; }
+    .mission-card__detail {
+      display: none;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: rgba(245,240,232,0.45);
+      line-height: 1.5;
+    }
+    .mission-card.expanded .mission-card__detail { display: block; }
+    .mission-card__expand-hint {
+      font-family: var(--font-mono);
+      font-size: 0.5rem;
+      letter-spacing: 0.08em;
+      color: rgba(245,240,232,0.25);
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    /* ── Initiative table — dark background ── */
+    .init-table-section {
+      background: #0f1a14;
+      padding: var(--sp-xl) 0;
+      border-top: 3px solid var(--cause-color, var(--clr-moss));
+    }
+    .init-table-section .init-table-wrap {
+      border-color: rgba(245,240,232,0.1);
+    }
+    .init-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-md);
+      margin-top: var(--sp-lg);
+      flex-wrap: wrap;
+    }
+
+    /* ── News / Initiative toggle section ── */
+    .cause-toggle-section {
+      background: var(--clr-surface);
+      padding: var(--sp-2xl) 0;
+      border-top: 1px solid var(--clr-border);
+    }
+    .cause-toggle-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: var(--sp-lg);
+      border-bottom: 1px solid var(--clr-border);
+      padding-bottom: var(--sp-sm);
+    }
+    .cause-toggle-tab {
+      padding: 7px 18px;
+      border: none;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      background: none;
+      color: var(--clr-ink-muted);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      transition: color 0.15s, background 0.15s;
+      margin-bottom: -1px;
+      border-bottom: 2px solid transparent;
+    }
+    .cause-toggle-tab:hover { color: var(--clr-ink); }
+    .cause-toggle-tab.active {
+      color: var(--cause-color, var(--clr-moss));
+      border-bottom-color: var(--cause-color, var(--clr-moss));
+      font-weight: 600;
+    }
+
+    /* ── Org registration section ── */
+    .org-register-section {
+      background: var(--clr-bg);
+      padding: var(--sp-2xl) 0;
+      border-top: 1px solid var(--clr-border);
+    }
+    .org-register-section h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--clr-earth);
+      margin-bottom: var(--sp-md);
+    }
+    .org-register-section p {
+      font-size: 0.9rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.7;
+      max-width: 640px;
+      margin-bottom: var(--sp-lg);
+    }
+    .org-register__steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--sp-lg);
+      margin-bottom: var(--sp-xl);
+    }
+    .org-register__step {
+      background: var(--clr-surface);
+      border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg);
+    }
+    .org-register__step-num {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--clr-border);
+      line-height: 1;
+      margin-bottom: var(--sp-xs);
+    }
+    .org-register__step-title {
+      font-weight: 600;
+      color: var(--clr-ink);
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+    }
+    .org-register__step-desc {
+      font-size: 0.82rem;
+      color: var(--clr-ink-muted);
+      line-height: 1.5;
+    }
+
     /* ── Responsive ── */
+
+    /* ══ Mission phase recaps (build-seq 2b): 4 stacked horizontal blocks ══ */
+    .phase-recaps {
+      background: #0a1410;
+      padding: var(--sp-2xl) 0 var(--sp-3xl);
+    }
+    .phase-recap {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-left: 4px solid var(--cause-color, var(--clr-moss));
+      border-radius: var(--radius-md);
+      padding: var(--sp-lg) var(--sp-xl);
+      margin-bottom: var(--sp-md);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-xl);
+      color: var(--clr-parchment);
+      min-height: 110px;
+    }
+    .phase-recap:last-child { margin-bottom: 0; }
+    .phase-recap__num {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--cause-color, var(--clr-honey));
+      flex: 0 0 110px;
+      font-weight: 700;
+      padding-top: 4px;
+    }
+    .phase-recap__body { flex: 1; min-width: 0; }
+    .phase-recap__title {
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--clr-parchment);
+      margin-bottom: 6px;
+    }
+    .phase-recap__sub {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: rgba(245,240,232,0.55);
+      line-height: 1.55;
+    }
+    @media (max-width: 700px) {
+      .phase-recap { flex-direction: column; gap: 8px; padding: var(--sp-md) var(--sp-lg); }
+      .phase-recap__num { flex: 0 0 auto; }
+    }
     @media (max-width: 1000px) {
       .cause-hero__col--left,
       .cause-hero__col--right { display: none; }
       .cause-hero__layout { grid-template-columns: 1fr; justify-items: center; }
       .cause-annulus-wrap { width: 280px; height: 280px; }
+      .mission-overview { width: 280px; }
       .ebx-topbar__inner { grid-template-columns: 1fr 1fr; row-gap: 6px; }
       .ebx-topbar__center { grid-column: 1/-1; }
     }
@@ -622,19 +856,14 @@
 <body>
   <a href="index.html" class="ebx-home-mark">EBX</a>
 
-  <!-- ══ TOP BAR ══ -->
+  <!-- ══ TOP BAR — 7 cause tabs span between EBX and profile ══ -->
   <div class="ebx-topbar">
     <div class="container ebx-topbar__inner">
       <div class="ebx-topbar__left">
         <!-- cause nav hint appears here via JS -->
       </div>
       <div class="ebx-topbar__center">
-        <div class="cause-selector-wrap">
-          <div class="cause-selector-label">upcoming decisions</div>
-          <select class="cause-selector-select" id="cause-topbar-selector">
-            <!-- Populated by JS -->
-          </select>
-        </div>
+        <nav class="cause-tabs" id="cause-tabs" aria-label="Cause selector"></nav>
       </div>
       <div class="ebx-topbar__right" id="ebx-user-badge-mount"></div>
     </div>
@@ -654,12 +883,14 @@
           </div>
         </div>
 
-        <!-- CENTER: Initiative Annulus + now-marker overlay -->
+        <!-- CENTER: Initiative Annulus + now-marker overlay + mission overview -->
         <div class="cause-hero__col cause-hero__col--center">
           <div class="cause-annulus-wrap" id="cause-annulus-mount" style="position:relative;">
             <!-- SVG pie chart injected by JS -->
             <!-- Now-marker SVG overlaid by JS -->
           </div>
+          <!-- Mission overview block (build-seq 2d) -->
+          <div class="mission-overview" id="mission-overview"></div>
         </div>
 
         <!-- RIGHT: Mission cards (top=upcoming org election, middle=active, bottom=previous) -->
@@ -679,69 +910,40 @@
     </div>
   </section>
 
-  <!-- ══ SELECTED INITIATIVE + FEED BRIDGE ══ -->
-  <section class="init-bridge-section">
+  <!-- ══ MISSION PHASE RECAPS (build-seq 2b): 4 stacked blocks per STRUCTURE.md ══ -->
+  <section class="phase-recaps">
     <div class="container">
-
-      <!-- Selected initiative panel — shown when a row / annulus slice is clicked -->
-      <div class="init-selected-panel" id="init-selected-panel">
-        <div class="init-selected__eyebrow" id="init-selected-eyebrow">Selected Initiative</div>
-        <div class="init-selected__title" id="init-selected-title"></div>
-        <div class="init-selected__meta" id="init-selected-meta"></div>
-        <div class="init-selected__desc" id="init-selected-desc"></div>
-        <div class="init-selected__actions" id="init-selected-actions"></div>
-      </div>
-
-      <!-- Feed — seamless continuation; filtered to initiative when one is selected -->
-      <div class="init-bridge-feed" id="init-bridge-feed">
-        <div class="feed-filter-bar" id="feed-filter-bar">
-          <button class="btn btn-ghost btn-sm feed-filter active" data-filter="all">All</button>
-          <button class="btn btn-ghost btn-sm feed-filter" data-filter="earthbux">Earthbux</button>
-          <button class="btn btn-ghost btn-sm feed-filter" data-filter="org">Orgs</button>
-          <button class="btn btn-ghost btn-sm feed-filter" data-filter="benefactor">Benefactors</button>
+      <div class="phase-recap" id="phase-recap-1" data-phase="1">
+        <div class="phase-recap__num">Phase 1</div>
+        <div class="phase-recap__body">
+          <div class="phase-recap__title">Pre-Initiative · election card</div>
+          <div class="phase-recap__sub" id="phase-recap-1-sub">—</div>
         </div>
-        <div class="feed-list" id="feed-list"></div>
       </div>
-
+      <div class="phase-recap" id="phase-recap-2" data-phase="2">
+        <div class="phase-recap__num">Phase 2</div>
+        <div class="phase-recap__body">
+          <div class="phase-recap__title">New-Initiative · org election card</div>
+          <div class="phase-recap__sub" id="phase-recap-2-sub">—</div>
+        </div>
+      </div>
+      <div class="phase-recap" id="phase-recap-3" data-phase="3">
+        <div class="phase-recap__num">Phase 3</div>
+        <div class="phase-recap__body">
+          <div class="phase-recap__title">New-Mission · budget discussion</div>
+          <div class="phase-recap__sub" id="phase-recap-3-sub">—</div>
+        </div>
+      </div>
+      <div class="phase-recap" id="phase-recap-4" data-phase="4">
+        <div class="phase-recap__num">Phase 4</div>
+        <div class="phase-recap__body">
+          <div class="phase-recap__title">Credit-Release · mission plan</div>
+          <div class="phase-recap__sub" id="phase-recap-4-sub">—</div>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- ══ INITIATIVE TABLE ══ -->
-  <section class="init-table-section">
-    <div class="container">
-
-      <!-- Toolbar: search + propose -->
-      <div class="init-toolbar">
-        <div class="init-search-wrap">
-          <input type="search" class="init-search-input" id="init-search"
-            placeholder="Search initiatives by name, org, or keyword…" />
-        </div>
-        <button class="btn btn-forest" onclick="openProposeModal()">
-          + Propose an Initiative
-        </button>
-      </div>
-
-      <!-- Table -->
-      <div class="init-table-wrap">
-        <table class="init-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Rating</th>
-              <th>Organization</th>
-              <th>Date conceived</th>
-              <th>EBX committed</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="init-table-body">
-            <tr><td colspan="6" class="init-table__empty">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-    </div>
-  </section>
 
   <div id="ebx-footer-mount"></div>
 
@@ -777,6 +979,39 @@
     await EBX.loadAll();
     EBX.initPage();
 
+    // ══ Phase recaps (build-seq 2b): 4 stacked horizontal blocks ══
+    function fmtDate(d) { return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+
+    function renderPhaseRecaps(cause) {
+      if (!cause) return;
+      const MS_DAY = EBX.Cycle.MS_PER_DAY || 86400000;
+      const WEEK_MS = 7 * MS_DAY;
+      const cycleStart = EBX.config.cycleStart
+        ? new Date(EBX.config.cycleStart)
+        : new Date('2026-01-01T00:00:00');
+      const curCycle = EBX.Cycle.currentCycleNum ? EBX.Cycle.currentCycleNum() : 0;
+      const decisionMs = cycleStart.getTime() + (curCycle * 7 + cause.index + 1) * WEEK_MS;
+      const decisionDate = new Date(decisionMs);
+      const causeInitsLocal = (EBX.config.initiatives || []).filter(i =>
+        i.cause_id === cause.id || i.cause_index === cause.index);
+      const leader = [...causeInitsLocal]
+        .sort((a,b) => (b.ebx_committed||0) - (a.ebx_committed||0))[0] || null;
+
+      const set = (id, html) => {
+        const el = document.getElementById(id); if (el) el.innerHTML = html;
+      };
+      set('phase-recap-1-sub',
+        leader
+          ? `Leading: <b style="color:var(--clr-honey)">${leader.title}</b> · decision <b>${fmtDate(decisionDate)}</b>`
+          : `No initiative proposals yet for ${cause.name}.`);
+      set('phase-recap-2-sub',
+        `Org election ${fmtDate(new Date(decisionDate.getTime() + 7*WEEK_MS))} — organizations compete to run the elected initiative.`);
+      set('phase-recap-3-sub',
+        `Budget locked, mission underway. Release window opens ${fmtDate(new Date(decisionDate.getTime() + 14*WEEK_MS))}.`);
+      set('phase-recap-4-sub',
+        `Credits release in stages; benefactors evaluate the mission's impact and post resolutions.`);
+    }
+
     const causes      = EBX.config.causes || [];
     const initiatives = EBX.config.initiatives || [];
     const cause       = causes.find(c => c.id === causeId);
@@ -788,29 +1023,30 @@
       document.title = `Earthbux — ${cause.name}`;
     }
 
-    /* ── 3. Topbar cause selector: "[Decision date] — [Cause]" for all 7 ── */
-    const topSel = document.getElementById('cause-topbar-selector');
+    /* ── 3. Topbar cause tabs: 7 mission-blocks across the bar ── */
+    const tabsEl = document.getElementById('cause-tabs');
     const MS_DAY = EBX.Cycle.MS_PER_DAY;
     const CAUSE_DAYS = EBX.config.causeLengthDays || 14;
     const cycleNum = EBX.Cycle.currentCycleNum();
     const state    = EBX.Cycle.now();
 
-    causes.forEach(c => {
-      const wStart = EBX.Cycle.windowStart(c.index, cycleNum);
-      const decisionDate = new Date(wStart.getTime() + CAUSE_DAYS * MS_DAY);
-      const fmt = d => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      const opt = document.createElement('option');
-      opt.value = c.id;
-      opt.textContent = `${fmt(decisionDate)} — ${c.emoji || ''} ${c.name}`;
-      if (c.id === causeId) opt.selected = true;
-      topSel.appendChild(opt);
-    });
-
-    topSel.addEventListener('change', () => {
-      window.location.href = `cause.html?id=${topSel.value}`;
-    });
+    if (tabsEl) {
+      tabsEl.innerHTML = causes.map(c => {
+        const wStart = EBX.Cycle.windowStart(c.index, cycleNum);
+        const decisionDate = new Date(wStart.getTime() + CAUSE_DAYS * MS_DAY);
+        const isSel = (c.id === causeId);
+        return `<a href="cause.html?id=${c.id}"
+                   class="cause-tab${isSel ? ' selected' : ''}"
+                   style="--tab-color:${c.color || '#4e7a4e'}"
+                   title="${c.name} — decision ${decisionDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})}">
+          <span class="cause-tab__emoji">${c.emoji || '🌱'}</span>
+          <span class="cause-tab__name">${c.name}</span>
+        </a>`;
+      }).join('');
+    }
 
     if (!cause) return;
+    renderPhaseRecaps(cause);
 
     /* ── 4. Phase progress bar ── */
     const winStart  = EBX.Cycle.windowStart(cause.index, cycleNum);
@@ -999,6 +1235,50 @@
     document.getElementById('cause-annulus-mount').innerHTML =
       buildAnnulusSVG(causeInits, CAUSE_COLOR);
 
+    /* ── 6b. Mission overview block (build-seq 2d) — sits below annulus ── */
+    function renderMissionOverview() {
+      const el = document.getElementById('mission-overview');
+      if (!el || !cause) return;
+      // Pick the currently-most-relevant initiative for this cause.
+      const active = causeInits.find(i => i.status === 'active');
+      const upcoming = causeInits.find(i => ['debate','org_vote','suggested'].includes(i.status));
+      const init = active || upcoming || causeInits[0] || null;
+      // Phase from cycle position within this cause's 49-day window
+      const wStart = EBX.Cycle.windowStart(cause.index, cycleNum);
+      const weeksIn = Math.max(0, Math.floor((Date.now() - wStart.getTime()) / (7 * MS_DAY)));
+      const phaseLabels = ['Pre-Initiative', 'New-Initiative', 'New-Mission', 'Credit-Release', 'Resolution'];
+      let phaseIdx = 0;
+      if (weeksIn >= 33) phaseIdx = 4;
+      else if (weeksIn >= 17) phaseIdx = 3;
+      else if (weeksIn >= 9)  phaseIdx = 2;
+      else if (weeksIn >= 1)  phaseIdx = 1;
+      const phaseLabel = phaseLabels[phaseIdx];
+      const totalEbxFmt = EBX.formatEBX
+        ? EBX.formatEBX(totalEBX || 0)
+        : (totalEBX || 0).toLocaleString() + ' EBX';
+      el.innerHTML = `
+        <div class="mission-overview__eyebrow">Mission overview · ${cause.name}</div>
+        <div class="mission-overview__title">${init ? (init.emoji || '🌱') + ' ' + init.title : 'No mission selected'}</div>
+        <div class="mission-overview__phase">Phase ${phaseIdx + 1} — ${phaseLabel}</div>
+        <div class="mission-overview__meta">
+          <span><b>${causeInits.length}</b> initiative${causeInits.length === 1 ? '' : 's'}</span>
+          <span><b>${totalEbxFmt}</b> pool</span>
+          <span>week <b>${weeksIn + 1}</b> / 49</span>
+        </div>`;
+    }
+
+    function bindMissionCardToggles() {
+      document.querySelectorAll('.mission-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+          // Don't toggle if clicking a link inside
+          if (e.target.closest('a')) return;
+          this.classList.toggle('expanded');
+        });
+      });
+    }
+
+    renderMissionOverview();
+
     /* ── 7. Leading Initiatives (left panel) — top 3 by EBX committed ── */
     const leading = causeInits.slice(0, 3);
     const topShare = leading.length ? voteShare(leading[0]) : 1;
@@ -1038,15 +1318,21 @@
       const pool = EBX.formatEBX
         ? EBX.formatEBX(init.pool_value || init.ebx_committed || 0)
         : (init.pool_value || init.ebx_committed || 0) + ' EBX';
-      return `<a class="mission-card mission-card--${cls}"
-                 href="${init.status === 'active' || init.status === 'resolved' ? 'mission.html?id=' + init.id : 'cause.html?id=' + cause.id}"
-                 style="text-decoration:none;">
+      const linkHref = (init.status === 'active' || init.status === 'resolved')
+        ? `mission.html?id=${init.id}` : `cause.html?id=${cause.id}`;
+      const detailLines = [
+        init.description ? `<div>${(init.description || '').slice(0, 120)}${init.description.length > 120 ? '…' : ''}</div>` : '',
+        `<div style="margin-top:4px;"><a href="${linkHref}" style="color:var(--clr-honey);text-decoration:none;" onclick="event.stopPropagation()">View page →</a></div>`,
+      ].filter(Boolean).join('');
+      return `<div class="mission-card mission-card--${cls}">
         <div class="mission-card__eyebrow">${eyebrow}</div>
         <div class="mission-card__title">${init.emoji || '🌱'} ${init.title}</div>
         ${init.winning_org ? `<div class="mission-card__sub">Org: ${init.winning_org}</div>` : ''}
         <div class="mission-card__sub" style="margin-top:3px;">${pool} pool${init.rating > 0 ? ' · ★' + init.rating.toFixed(1) : ''}</div>
         ${extraBadge || ''}
-      </a>`;
+        <div class="mission-card__expand-hint">tap to expand</div>
+        <div class="mission-card__detail">${detailLines}</div>
+      </div>`;
     }
 
     const upcomingInit  = causeInits.find(i => ['suggested','debate','org_vote'].includes(i.status)) || causeInits[0] || null;
@@ -1070,6 +1356,7 @@
       buildMissionCard('top',    'Upcoming org election', upcomingInit, orgBadge)
       + buildMissionCard('middle', 'Active mission',        activeInit,   `<div class="mission-card__badge mission-card__badge--active">● Live</div>`)
       + buildMissionCard('bottom', 'Previous mission',      prevInit,     `<div class="mission-card__badge mission-card__badge--resolved">Resolved</div>`);
+    bindMissionCardToggles();
 
     /* ── 9. Table + search ── */
     let currentSearch = '';
@@ -1173,244 +1460,6 @@
 
       panel.classList.add('visible');
     }
-
-    function hideSelectedPanel() {
-      document.getElementById('init-selected-panel').classList.remove('visible');
-    }
-
-    window.selectInit = function(initId) {
-      selectedInitId = selectedInitId === initId ? null : initId;
-      renderTable(filteredInits());
-
-      if (!selectedInitId) {
-        hideSelectedPanel();
-        renderFeed(currentFeedFilter);
-        document.getElementById('init-bridge-feed').classList.remove('initiative-filtered');
-        return;
-      }
-
-      const init = causeInits.find(i => i.id === selectedInitId);
-      if (!init) { hideSelectedPanel(); return; }
-
-      showSelectedPanel(init);
-      document.getElementById('init-bridge-feed').classList.add('initiative-filtered');
-      renderFeed(currentFeedFilter); // re-renders filtered to this initiative
-
-      // Scroll to the bridge section
-      document.getElementById('init-selected-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    };
-
-    window.closeDetail = function() {
-      selectedInitId = null;
-      hideSelectedPanel();
-      renderTable(filteredInits());
-      renderFeed(currentFeedFilter);
-      document.getElementById('init-bridge-feed').classList.remove('initiative-filtered');
-    };
-
-    window.selectInitByAnnulus = function(idx) {
-      const init = causeInits[idx];
-      if (init) window.selectInit(init.id);
-    };
-
-    window.jumpToRow = function(initId) {
-      window.selectInit(initId);
-    };
-
-    /* ── 12. Commit + Vote handlers ── */
-
-    // Helper: persist a choice to localStorage (key scoped to cause index)
-    function saveCauseChoice(type, value, id) {
-      let choices = {};
-      try { choices = JSON.parse(localStorage.getItem('ebx_choices') || '{}'); } catch(e) {}
-      choices[`${type}_${cause.index}`] = value;
-      if (id) choices[`${type}_id_${cause.index}`] = id;
-      localStorage.setItem('ebx_choices', JSON.stringify(choices));
-    }
-
-    window.commitEbxToInit = async function(initId) {
-      if (!EBX.Auth.getToken()) {
-        EBX.Auth.openModal();
-        return;
-      }
-      const init = causeInits.find(i => i.id === initId);
-      const initLabel = init ? `"${init.title}"` : 'this initiative';
-      const totalPool = causeInits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
-      const currentCommit = init ? (init.ebx_committed || 0) : 0;
-      const currentPct = totalPool > 0 ? Math.round((currentCommit / totalPool) * 100) : 0;
-
-      const promptMsg = [
-        `Commit EBX to ${initLabel}`,
-        ``,
-        `Committing EBX is how you vote. Your committed share determines`,
-        `your initiative's position in the race.`,
-        ``,
-        `Current pool: ${totalPool} EBX`,
-        `Current support for this initiative: ${currentPct}%`,
-        ``,
-        `How many EBX to commit?`
-      ].join('\n');
-
-      const amount = prompt(promptMsg, '10');
-      if (!amount || isNaN(parseInt(amount))) return;
-      try {
-        const res = await EBX.Auth.fetchAuthed(`/initiatives/${initId}/commit`, {
-          method: 'POST',
-          body: JSON.stringify({ initiative_id: initId, amount_ebx: parseInt(amount) }),
-        });
-        if (res && res.ok) {
-          // Persist initiative choice so profile page can display it
-          if (init) saveCauseChoice('init', init.title, init.id);
-          alert('EBX committed — your vote is counted! Refreshing…');
-          location.reload();
-        } else {
-          alert('Could not commit EBX. Are you signed in?');
-        }
-      } catch { alert('Server error — is the API running?'); }
-    };
-
-    window.castVoteForInit = async function(initId) {
-      if (!EBX.Auth.getToken()) {
-        EBX.Auth.openModal();
-        return;
-      }
-      // Build a list of orgs associated with this cause for the user to choose from
-      const causeOrgs = (EBX.config.organizations || []).filter(o =>
-        (o.cause_ids || []).includes(cause.id) ||
-        (o.causes || []).some(c => c.id === cause.id)
-      );
-      if (!causeOrgs.length) {
-        alert('No organizations are registered for this cause yet. Check back later!');
-        return;
-      }
-      const orgLines = causeOrgs.map((o, i) => `${i + 1}. ${o.name}`).join('\n');
-      const pick = prompt(`Vote for an organization to run this initiative:\n\n${orgLines}\n\nEnter the number of your choice:`);
-      if (!pick) return;
-      const idx = parseInt(pick) - 1;
-      if (isNaN(idx) || idx < 0 || idx >= causeOrgs.length) {
-        alert('Invalid choice. Please enter one of the listed numbers.');
-        return;
-      }
-      const org = causeOrgs[idx];
-      try {
-        const res = await EBX.Auth.fetchAuthed(`/initiatives/${initId}/vote`, {
-          method: 'POST',
-          body: JSON.stringify({ org_id: org.id }),
-        });
-        if (res && res.ok) {
-          // Persist org vote so profile page can display it
-          saveCauseChoice('org', org.name, org.id);
-          alert(`Vote cast for ${org.name}!`);
-        } else {
-          const body = await res.json().catch(() => ({}));
-          alert(`Could not cast vote: ${body.detail || 'Unknown error'}`);
-        }
-      } catch { alert('Server error — is the API running?'); }
-    };
-
-    /* ── 13. Feed ── */
-    const allPosts = EBX.config.feed || [];
-    const causePosts = allPosts
-      .filter(p => p.cause_id === cause.id || p.cause_index === cause.index)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-    let currentFeedFilter = 'all';
-
-    function renderFeed(filter) {
-      // When an initiative is selected, show only its posts; otherwise filter by type
-      let filtered;
-      if (selectedInitId) {
-        filtered = causePosts.filter(p => p.initiative_id === selectedInitId);
-      } else if (filter === 'all') {
-        filtered = causePosts;
-      } else {
-        filtered = causePosts.filter(p => p.author_type === filter);
-      }
-      const list = document.getElementById('feed-list');
-      if (!filtered.length) {
-        list.innerHTML = `<div style="text-align:center;padding:var(--sp-2xl);color:var(--clr-ink-light);">
-          <p class="text-sm">No posts in this category yet.</p></div>`;
-        return;
-      }
-      list.innerHTML = filtered.map(p => {
-        const typeLabel = { earthbux: 'Editorial', org: 'Org Update', benefactor: 'Opinion' }[p.author_type] || '';
-        const relInit = p.initiative_id ? initiatives.find(i => i.id === p.initiative_id) : null;
-        return `<div class="feed-post">
-          <div class="feed-post__meta">
-            <span class="feed-post__author ${p.author_type}">${p.author || p.author_label || 'Anonymous'}</span>
-            ${typeLabel ? `<span class="tag tag-${p.author_type === 'earthbux' ? 'forest' : p.author_type === 'org' ? 'amber' : 'neutral'}">${typeLabel}</span>` : ''}
-            <span class="feed-post__time">${EBX.timeAgo(p.created_at)}</span>
-          </div>
-          ${p.title ? `<div class="feed-post__title">${p.title}</div>` : ''}
-          <div class="feed-post__body">${p.body}</div>
-          <div class="feed-post__footer">
-            <button class="feed-post__like-btn"
-              onclick="this.querySelector('.like-count').textContent=parseInt(this.querySelector('.like-count').textContent)+1">
-              ♥ <span class="like-count">${p.likes || 0}</span>
-            </button>
-            ${relInit ? `<span style="font-size:0.72rem;color:var(--clr-ink-light);">re: ${relInit.emoji || ''} ${relInit.title}</span>` : ''}
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    renderFeed('all');
-
-    document.querySelectorAll('.feed-filter').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.feed-filter').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFeedFilter = btn.dataset.filter;
-        renderFeed(currentFeedFilter);
-      });
-    });
-
-    /* ── 14. Propose modal ── */
-    window.openProposeModal = function() {
-      document.getElementById('propose-modal-bg').classList.add('open');
-    };
-    window.closeProposeModal = function() {
-      document.getElementById('propose-modal-bg').classList.remove('open');
-    };
-    window.closeProposeOnBg = function(e) {
-      if (e.target === document.getElementById('propose-modal-bg')) closeProposeModal();
-    };
-    window.submitProposal = async function() {
-      const title = document.getElementById('propose-title').value.trim();
-      const desc  = document.getElementById('propose-desc').value.trim();
-      const msg   = document.getElementById('propose-msg');
-
-      if (!title) { msg.textContent = 'Title is required.'; return; }
-
-      if (!EBX.Auth.getToken()) {
-        EBX.Auth.openModal();
-        closeProposeModal();
-        return;
-      }
-
-      try {
-        const res = await EBX.Auth.fetchAuthed('/initiatives/', {
-          method: 'POST',
-          body: JSON.stringify({
-            id: `init-${Date.now()}`,
-            cause_id: cause.id,
-            title,
-            description: desc,
-            status: 'suggested',
-            proposed_by: 'benefactor',
-          }),
-        });
-        if (res && res.ok) {
-          msg.textContent = '✓ Proposal submitted!';
-          setTimeout(() => { closeProposeModal(); location.reload(); }, 1200);
-        } else {
-          msg.textContent = 'Could not submit — are you signed in?';
-        }
-      } catch { msg.textContent = 'Server error — is the API running?'; }
-    };
-
-    EBX.initFooter && EBX.initFooter();
-
   })();
   </script>
 </body>

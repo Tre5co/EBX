@@ -812,6 +812,9 @@
       return fetch(config.apiBase + path, { ...init, headers });
     },
     async fetchMe() {
+      // Skip the network request entirely when there's no token — otherwise
+      // every page load by a signed-out visitor logs a noisy 401 to the console.
+      if (!Auth.getToken()) return null;
       const res = await Auth.fetchAuthed("/auth/me");
       if (res.status === 401) {
         Auth.clear();
