@@ -4,7 +4,9 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+import json as _json
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +81,9 @@ class InitiativeRead(InitiativeBase):
     index: Optional[int] = None
     cause_id: str
     rating: float = 0.0
+    # build-seq 4 — denormalised rating rollup served to the table.
+    rating_avg: float = 0.0
+    rating_count: int = 0
     logo_url: Optional[str] = None
     ebx_committed: int = 0
     pool_value: int = 0
@@ -216,6 +221,74 @@ class BenefactorRead(BaseModel):
     handle: str
     is_active: bool
     vvv: bool = False
+    created_at: datetime
+    # build-seq 4 — surface the watchlist so the profile page can render
+    # without a second round-trip. JSON-encoded string at rest; we serialise
+    # to a list on the way out (see crud.serialize_watchlist).
+    watched_initiative_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("watched_initiative_ids", mode="before")
+    @classmethod
+    def _parse_watched(cls, v: object) -> list[str]:
+        """Coerce DB Text (None or JSON string) → list[str]."""
+        if v is None:
+            return []
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        try:
+            parsed = _json.loads(v)
+            if isinstance(parsed, list):
+                return [str(x) for x in parsed]
+        except (TypeError, ValueError):
+            pass
+        return []
+
+
+# ---------------------------------------------------------------------------
+# Cause-scoped votes (build-seq 3)
+# ---------------------------------------------------------------------------
+class CauseVoteShares(BaseModel):
+    """Full shares map a benefactor PUTs for a cause.
+
+    Map of initiative_id -> share (>= 0.1). Sum must be <= 1.0. The server
+    deletes any prior soft-vote rows not represented in the map; committed
+    rows (vote.committed=True) are immutable and rejected here.
+    """
+    cause_id: str
+    shares: dict[str, float]
+
+
+class CauseVoteTallyEntry(BaseModel):
+    initiative_id: str
+    raw_share: float        # sum of share values across all benefactors
+    weighted_share: float   # vote-weight formula applied server-side
+    voter_count: int
+
+
+class CauseVoteTally(BaseModel):
+    cause_id: str
+    size_factor: float
+    pool_total_ebx: int
+    entries: list[CauseVoteTallyEntry] = Field(default_factory=list)
+
+
+class CauseVoteCommit(BaseModel):
+    cause_id: str
+
+
+# ---------------------------------------------------------------------------
+# Initiative ratings (build-seq 4)
+# ---------------------------------------------------------------------------
+class InitiativeRatingCreate(BaseModel):
+    stars: int = Field(ge=0, le=5)
+
+
+class InitiativeRatingRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    benefactor_id: int
+    initiative_id: str
+    stars: int
     created_at: datetime
 
 

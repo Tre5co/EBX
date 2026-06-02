@@ -119,6 +119,9 @@ class BenefactorAccount(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     # vvv: True after first org vote cast. Unlocks cause-color perk on profile logo.
     vvv: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # Watchlist — JSON-encoded list of initiative ids. Nullable until the user
+    # rates or explicitly watches an initiative. Set by Pass 16 (build-seq 4).
+    watched_initiative_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     credit_coins: Mapped[list["CreditCoin"]] = relationship(
         back_populates="owner",
@@ -178,6 +181,10 @@ class Initiative(Base):
     )
 
     rating: Mapped[float] = mapped_column(Float, default=0.0)
+    # build-seq 4 — denormalised rating rollup (server-side single source of
+    # truth so list_initiatives doesn't recompute per call).
+    rating_avg: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    rating_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     logo_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     ebx_committed: Mapped[int] = mapped_column(Integer, default=0)
     pool_value: Mapped[int] = mapped_column(Integer, default=0)
@@ -380,12 +387,41 @@ class Vote(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     benefactor_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
     initiative_id: Mapped[str] = mapped_column(ForeignKey("initiatives.id"), nullable=False)
+    # build-seq 3 — denormalised cause_id so /causes/{id}/votes can aggregate
+    # without joining through initiatives. Backfilled by the migration.
+    cause_id: Mapped[Optional[str]] = mapped_column(ForeignKey("causes.id"), nullable=True)
     # org_id is NULL for initiative-only (soft) votes; set during the org-election phase.
     org_id: Mapped[Optional[str]] = mapped_column(ForeignKey("organizations.id"), nullable=True)
     # Fractional vote share. Min 0.1. Defaults to 1.0 (full vote on one initiative).
     share: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)
+    # build-seq 3 — locked-in commitment flag. False = pre-commit soft share;
+    # True = the benefactor pressed Commit and the vote weights are sealed for
+    # this cycle. POST /votes/commit flips it; the share allocator UI on
+    # cause.html can still rewrite shares while False.
+    committed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     benefactor: Mapped["BenefactorAccount"] = relationship()
     initiative: Mapped["Initiative"] = relationship()
-    org: Mapped[Optional["Organization"]] = relationship()
+    cause: Mapped[Optional["Cause"]] = relationship(foreign_keys="Vote.cause_id")
+    org: Mapped[Optional["Organization"]] = relationship(foreign_keys="Vote.org_id")
+
+
+# ---------------------------------------------------------------------------
+# InitiativeRating (per-benefactor stars on an initiative; build-seq 4)
+# ---------------------------------------------------------------------------
+class InitiativeRating(Base):
+    __tablename__ = "initiative_ratings"
+    __table_args__ = (
+        UniqueConstraint("benefactor_id", "initiative_id", name="uq_initiative_rating_benefactor"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    benefactor_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
+    initiative_id: Mapped[str] = mapped_column(ForeignKey("initiatives.id"), nullable=False)
+    # 0..5 stars. 0 means "rated but withdrawn"; UI surfaces stars >= 1.
+    stars: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    benefactor: Mapped["BenefactorAccount"] = relationship()
+    initiative: Mapped["Initiative"] = relationship()

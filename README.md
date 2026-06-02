@@ -1,148 +1,157 @@
 # Earthbucks — Backlog
 
-Working memory for Claude. Jax keeps a one-line state summary at the very top; everything below is fair game for rework each pass.
+Working memory for Claude. Top line = current state. Everything below is fair game for rework each pass.
 
-> **State (2026-05-31):** Reverted to the pre-rotation main branch. No rotating display. Pass 13 (BUILD) shipped index.html feed/border cleanup and the cause.html 7-tab topbar, mission overview, and phase recaps. Next vote is the bottleneck — see "Roadblocks" below.
+> **State (2026-06-02, pass 18 — backlog management):** Jax's annotations on STRUCTURE.md disagree with the pass-17 changelog in two important places. (i) STRUCTURE.md `ERRORS`: "**Only 1 of the causes has the new phase 1 voting applied**" — the build-pass-15 voting-dialog rebuild is per-cause buggy, not the universal win we recorded. (ii) STRUCTURE.md `ERRORS`: "**Entity area table link — table items are not doing anything onclick. Putting in errors because Claude said this was complete (roadblocks 4)**" — the pass-16 Entity Card row-click claim was a false ship. Both block the cofounder pilot. STRUCTURE.md also adds a **new build-seq step 1 (scratch/seed dummy data, 21 missions, GameMaster solo voter)** that didn't exist before, and confirms **roadblock 10 — drawings are complete**, unblocking the top + side card build. Backend is otherwise solid: `/auth/me` 500 was fixed (pass-17 `field_validator` on `BenefactorRead`), initiative-vote API + ratings + watch endpoints exist (alembic `c7f2a4e8d0b1`), but the frontend swap to those endpoints is still pending and the seed for the pilot does not exist yet.
 
-> **Noon 5/31** The cause and index pages look good, we need to implement a functional voting system, but first, ensure that all systems, dates, and ux is correct. MAIN BRANCH ONWARD!
 ---
 
 ## 1. Current state — what's live
 
-**index.html** (home / mission cross-section)
-- Hero: top-card header strip is flush with the topbar; annulus + side cards (front-only `sideCard`) stretch the center column; bottom banner removed.
-- Initiative table: 7-column scrollable (Watch · Name · Cause · My EBX · Total EBX · Status · Next vote), search + Cause/Stage/Rating filters + Propose button. Watch persists in `localStorage`.
-- Below table: News / Selected-Initiative tab toggle. Row click switches to the detail tab and scrolls.
-- Org-register section (4-step guide → profile.html).
-- "From Earthbux News" strip moved off this page (now on profile.html).
-- Continuous dark background (`#0f1a14` hero, `#0f1a14` table band — no green seam).
+**index.html** (1518 lines, host-side)
+- Hero, annulus, page-mode toggle (initiative ↔ organization), 2-sided side cards (front/back placeholders), initiative ↔ org table swap, Entity Card panel below the table, Propose / Register modals, info-tab default. Pass-15 dialog rebuild and Org-register modal lift are in place; pass-16 Entity Card with state-aware Vote buttons was wired.
+- **Jax (this pass): row-click is doing nothing.** Pass-16/17 marked this resolved; it is not. Most likely the click handlers we added are running but the panel isn't reachable from the rendered DOM (or the handler is bound to a stale row reference after the table rerenders). Untested.
+- Top card / topbar still pixel-misaligned. Top + side card front/back content is still placeholder — **Jax (this pass): drawings are complete**, unblocking build-seq 1a.
+- Org-register section: removed from the page body, lives in `#org-register-modal-bg` (pass 15).
 
-**cause.html** (one cause, one missions feed)
-- 7 mission-block tabs across the topbar (replaced the dropdown). Tabs carry the cause color and link to `cause.html?id=...`.
-- Center: annulus + cause-colored Mission overview block (phase 1–5 mapped against the 49-day window).
-- Below: 4 stacked phase-recap blocks (1 Pre-election · 2 New-Initiative · 3 New-Mission · 4 Credit-Release), each auto-populated with leader / dates / windows from sample data.
-- All-dark theme (`#0a1410` page, `#0f1a14` hero/topbar).
-- 401 console error from `Auth.fetchMe()` for signed-out visitors: silenced.
+**cause.html** (2131 lines, host-side)
+- 7 cause tabs, annulus + now-marker, phase-1 election widget with sliders / floor / commit, propose modal, paged right cards.
+- **Jax (this pass): only 1 of the 7 causes shows the new phase-1 voting.** The rebuilt election widget probably renders against the active-cause cycle only and the other six causes fall through to the legacy `renderPhaseRecaps` static path. Needs a trace through `_rerenderElectionCard` to confirm.
+- `_causeDecisionMs` off-by-one-week fixed pass-17 (delegates to `EBX.Cycle.nextDecisionDate`).
+- Best-effort `PUT /benefactors/me/votes` + `syncCauseTally` wired pass-16; localStorage still primary.
 
-**profile.html** — now hosts the EN 3-card strip below the upcoming-decision banner.
+**profile.html** — 3-card decision strip below upcoming-decision banner. Loads now that `/auth/me` is fixed.
 
 **Backend** (FastAPI · SQLite dev)
-- Schema additions live since pass 5: `logo_url` on Organization & Initiative, `vvv` on BenefactorAccount, nullable `Vote.org_id`, `Vote.share ≥ 0.1`, `size_factor` in config.
-- Migration `b1c3e2f4a9d7_may19_schema_additions.py` applied.
-- Founding-49-EBX bonus is coded; sentinel mission seeder (`seed_founding_bonus()`) exists but has not been run.
+- Schema (alembic `c7f2a4e8d0b1`): `Vote.cause_id`, `Vote.committed`, `Initiative.rating_avg/rating_count`, `BenefactorAccount.watched_initiative_ids` (JSON-encoded text), `initiative_ratings` table.
+- Routers shipped: `votes.py` (`PUT /benefactors/me/votes`, `GET /causes/{id}/votes`, `POST /votes/commit`), `benefactors.py` (`GET/POST/DELETE /benefactors/me/watch[/id]`), `initiatives.py` adds `POST /initiatives/{id}/rate`.
+- Server-side vote-weight formula `1 + b_contribution / (pool_excl_b * n_votes * size_factor)` is the single source of truth.
+- `/auth/me` 500 fixed via `BenefactorRead.watched_initiative_ids` coercer (pass 17).
+- Founding-49-EBX seed has run from `backend/`; sentinel mission row exists.
 
 ---
 
 ## 2. Imminent roadblocks
 
-Listed in order of how badly they block the first real vote.
+Ordered by Jax's stated priorities in STRUCTURE.md ROADBLOCKS + ERRORS. **Bold P0** items block the cofounder pilot.
 
-1. **No initiative-voting UI on cause.html.** STRUCTURE.md flags this as the single highest priority: "There's no initiative voting right now. Main priority is getting that active before the next vote is over." Phase-1 recap block needs to host the election card (vote options, share allocation down to 0.1, current tally) while the cause is in phase 1. Today the phase-1 block is text-only.
-2. **Propose-Initiative has no cause picker.** STRUCTURE.md: "Users should select cause, title initiative, and describe it." The propose modal on both `index.html` and `cause.html` only collects title + description + handle. The submission stub also doesn't POST anywhere real yet.
-3. **Initiative-election date on cause.html is one week late.** STRUCTURE.md: "The initiative election for a particular cause happens as the cause enters the active window. Currently we have it as happening at the end of the active window." Affects `renderPhaseRecaps()` decision-date math and the now-marker labeling.
-
-4. **Right side cards on cause.html no longer exist.** STRUCTURE.md wants three right-column cards (one each for the mission currently in phase 2 / 3 / 4 of the selected cause). Pass 10 added them; pass 13 removed them in favor of the single mission-overview block. Need to re-introduce per the latest sketch — and on click, they should **swap the 4 phase-recap blocks below to that mission's data**, not expand in place.
-
-5. **Mount truncation between Windows host and Linux sandbox.** Documented in passes 9 and 12. Symptoms: files arrive truncated or padded with NULs; `.git/index.lock` un-removable. Mitigation that has held up: write via `tempfile + os.replace` in Python; never let esbuild write the shipped JS bundle through the Linux mount.
-6. **Founding-bonus sentinel mission not seeded.** Blocks the 49-EBX gift to ids ≤ 100. One command on the Windows side: `python -m seed.seed` from `backend/`.
-7. **Table → feed wiring still feels off.** STRUCTURE.md still flags "Selections within the table still are not affecting the feed/description area like they should." Pass 11/12 wired filter dropdowns through `idxRenderFeed()`, but a **row click** should narrow the feed to that initiative — verify and tighten.
-8. **Center-of-annulus needs to indicate the NEXT cause + a glowing inner border of that color.** Currently center text reads the active cause's leader, not the upcoming-cause cue. 
----
-
-## 3. Build sequence — commentary for the next build
-
-The build sequence in STRUCTURE.md is short. Here is the order I recommend, with the gotchas to watch for.
-
-**0 · Errors.** Always start by tailing both files for `</html>`, counting `EBX_TAIL_SENTINEL` in `ebx_shared.ts` (must = 1), and checking the console on a signed-out load of cause.html. Pass 13 ended clean; verify before editing.
-
-**1 · index.html**
-- (a) **Propose-Initiative cause picker.** Add a `<select>` populated from `EBX.config.causes` above the title field in the propose modal (both pages share an identical modal — change once, copy). Make it required. Update `submitProposal()` to include `cause_id`.
-- (b) **MAIN TOGGLE → Initiatives | Organizations.** Today the toggle below the annulus is News / Selected-Initiative. STRUCTURE.md wants Initiatives ↔ Organizations: flipping the toggle should swap the table contents (initiatives list ↔ orgs-applying list) and also swap the "Propose" button between "Propose initiative" and "Register organization." This subsumes the standalone org-register section.
-- (c) **2-sided side cards.** Side cards are currently front-only. Per the STRUCTURE.md sketch, side cards 2–6 carry **back faces** showing the matching new-initiative (cause name, leader/choice/second/third by %, pool, my commitment). Treat as a single CSS-flip component in `ebx_shared.ts`.
-- (d) **Center-of-annulus = NEXT cause cue.** Re-purpose `.ebx-center__sub` to read the upcoming cause (today's active + 1 mod 7) and add a 1–2px glowing inner ring in `--cause-color` for that next cause.
-- (e) **Row-click filters the feed**, not just the row-detail tab. Plumb the selected initiative's id/cause into `idxRenderFeed()`.
-
-**2 · cause.html (priority)**
-- (a) **Phase-1 card = initiative election.** While the selected cause is in phase 1, render the actual voting widget in the Phase 1 block: list of initiatives with share-allocation sliders (floor 0.1), running tally, "Commit / Withdraw" button, and the existing vote-weight algorithm (`1 + b_contribution/(total_pool_not_b * n_total_votes * size_factor)`). Backend already supports this end-to-end.
-- (b) **Fix the initiative-election date.** The decision should land **at the start** of the cause's active week, not the end. In `renderPhaseRecaps()` and the now-marker label, change `(curCycle * 7 + cause.index + 1)` to `(curCycle * 7 + cause.index)` and re-validate against the cycle math.
-- (c) **Restore the 3 right-column cards.** Phase-2 / phase-3 / phase-4 cards for the active cause. Click does **not** expand them; it re-targets the 4 phase-recap blocks below to that mission's data. Wire via a `renderPhaseRecaps(cause, missionRef)` overload.
-- (d) **Connect mission-overview to the phase recaps.** STRUCTURE.md: "Remove horizontal line below annulus, and mission overview should be connected directly to the 4 phases below." Drop the bottom border on the overview block; collapse the gap to 0.
-
-**3 · After the first vote ships:** prune dead CSS in cause.html (`.init-table-section`, `.cause-toggle-section`, `.org-register-section`, `.init-bridge-section`, `.cause-feed-section`, `.init-detail*`, `.feed-post*`, `.mission-table*`, `.mrow-*`, `.phase-badge-*`). Listed in pass-13 notes; safe to delete.
-
-**4 · Long-term sequencing (from STRUCTURE.md):**
-0. Demo-ready core (now) — index.html, cause.html, m_indx.html look right; static demo link works.
-1. Initiative-vote pilot — first 7 weekly votes with cofounder accounts + simulated money, real initiatives, simulated orgs.
-2. Mission / organization layer — org registration → org-built mission pages → m_indx + org election → simulated org vote → mission annulus.
-3. Credits & cash economy — real deposits, credit lifecycle, EN 5/16 cut, tax/redemption. This is the gate that finally makes the founding-49-EBX bonus relevant.
-4. Hardening & reach — pytest / playwright, Postgres prod path, pagination, cycleStart from API, build-integrity check, static offline mode, Swift app.
-
-`bye-bye` candidates per STRUCTURE.md: `m_indx.html`, `en.html`. Don't invest further here.
+1. **P0 — Cause-page phase-1 voting only applies to 1/7 causes.** STRUCTURE.md `ERRORS`. Most likely cause: `renderElectionCard` is only invoked when `cause.index === state.causeIndex`; the other six routes through the old recap path. Verify by opening cause.html?id=oceans and watching whether the election widget mounts. Fix path: make `renderPhaseRecaps` always call the election widget for the cause's NEXT-decision cycle (the `_causeDecisionMs` helper already returns the correct date for non-active causes).
+2. **P0 — index.html row-click does nothing.** STRUCTURE.md `ERRORS`. Pass-16 changelog claimed this shipped, Jax says it doesn't fire. Likely diagnosis: the Entity Card panel exists, but the row handler was bound on initial table render and is gone after `filterInitiatives()` rerenders the `<tbody>`. Switch to delegated `#init-table-body` listener (one `addEventListener` on the body, dispatch by `data-init-id`).
+3. **P0 — No scratch/pilot seed.** New STRUCTURE.md build-seq 1: dummy missions Atm-Hpr 1001-1003 (21 total) with past "win" dates, GameMaster as the only voter on each, dummy orgs 1-21 assigned to phase-2+ tivs, sample tivs relabeled `suggested`. Needs a new entrypoint — `python -m seed.seed --pilot` against `backend/`. Without this the index/cause demos can't show realistic feed/recap state.
+4. **P0 — Build top + side cards.** STRUCTURE.md ROADBLOCKS 10: **drawings complete**. Build-seq 1a unblocked. 4 drawings → top-card front (next org election), top-card back (this-week newest initiative), side-card front (org election), side-card back (initiative election). Layouts spelled out in STRUCTURE.md §STRUCTURE "Election Cards" and "Top card". `--entity-color` accent + glow on top card.
+5. **P1 — Main-page table redesign per ROADBLOCKS 4.** Jax: "Make table collapsible but still default to open" + "TOGGLE REDESIGNED". Read STRUCTURE.md before building — Jax has changed the toggle pattern.
+6. **P1 — Frontend swap to backend for votes / ratings / watch.** All three endpoints are live; index.html + cause.html still primarily read localStorage. Need `getWatched`/`setWatched` swap, a real Rating ★ dropdown wired to `POST /initiatives/{id}/rate`, and the cause-page tally to switch from "best-effort PUT + localStorage fallback" to API-as-source-of-truth.
+7. **P2 — Top-card / topbar alignment.** ROADBLOCKS 7: backlogged ("doesn't cause operational problems"). Still in QUESTIONS list under (c). Defer until pilot.
+8. **P2 — Right-card paging on cause.html.** Won't feel right until a real mission has cycled past phase 1. Defer.
+9. **P2 — Dead CSS / JS in cause.html.** Pruning candidates section. Hold and bulk-purge when long.
+10. **P3 — Mount-truncation footgun.** Linux `wc -l` reported 1518/776 lines for cause/index this pass; host-side files are 2131/1518. Re-confirmed. **Rule: validate file tails via Read tool, never via bash wc/tail.** `scripts/safe_write.py` exists as the safe-write helper but Edit-tool writes from the host side remain the primary path.
 
 ---
 
-## 4. New concepts / tools we'll need before the next build
+## 3. Build sequence — commentary on STRUCTURE.md
 
-These are things that have shown up in the backlog but haven't been chosen, named, or installed yet. Worth a decision before the next pass touches voting.
+STRUCTURE.md BUILD SEQUENCE has **two `1`s** (scratch data and index.html) and skips from 4 → 6. Renumber to 0–5 + 7 below for clarity. Jax should pick whether the renumbering goes back into STRUCTURE.md.
 
-- **Soft-vote share allocator (frontend component).** Reusable widget that lets a benefactor distribute 1.0 vote across N initiatives in 0.1 steps, with a running "remaining share" pill. Used in cause.html phase-1 card and later in m_indx for the org-election. Build once in `ebx_shared.ts`, export on the `EBX` object, render twice.
-- **`Initiative.rating` aggregation.** Pass-12 Q6: the rating filter dropdown is a no-op until either (a) Initiative carries a numeric `rating` field, or (b) we aggregate from rating-tagged posts on the fly. Pick one. (a) is faster to ship; (b) is more honest. Recommend aggregation with a daily cron once the post model lands; placeholder field for now.
-- **`watched_initiative_ids` on BenefactorAccount.** Pass-12 Q7. Move the Watch star out of `localStorage` and into a `Set[int]` column on `BenefactorAccount`, with `POST /benefactors/me/watch/{init_id}`. Migration + endpoint pair next pass.
-- **`cycleStart` config endpoint.** Currently hardcoded in `ebx_shared.ts`. Lift to `GET /config/cycle` so it can change without a rebuild — also lets us simulate accelerated cycles for the pilot vote.
-- **Build-integrity check.** Post-build script that fails if `resources/js/ebx_shared.js` doesn't end with the expected IIFE close or is under an expected byte size. Pairs with the existing pre-commit single-sentinel hook. Cheap insurance against the mount-truncation fault.
-- **`tempfile + os.replace` write helper.** Codify the pass-12 mitigation as a tiny Python helper (`scripts/safe_write.py`) so any sandbox-side write to a tracked HTML file goes through it. Avoids reintroducing the truncation by hand.
-- **Stage-2 toggle vocabulary.** Once the index.html main toggle becomes Initiatives ↔ Organizations, pick the verb pair now. Recommend "Initiatives" / "Organizations" as nouns (matches the table headers) over verbs ("Propose" / "Register") — keeps the toggle independent of the action button.
-- **Test fixtures for the cofounder pilot.** Three benefactor accounts × seven causes × a small initiative set. Bake into `seed/seed.py` behind a `--pilot` flag so we can reset between dry runs.
+**0 · Errors first.** Resolve the two STRUCTURE.md `ERRORS` items before any other build work — both are pilot-blocking. Confirm `EBX_TAIL_SENTINEL` count = 1 via Read (not bash). Verify cause.html ends with `</html>` at line 2131 and index.html at 1518.
+
+**1 · Scratch data (new).** Add `seed/pilot.py` (or `seed.py --pilot`): 21 missions Atm-Hpr 1001-1003 with backdated election dates, GameMaster as solo voter on each, orgs 1-21 mapped to phase-2+ initiatives. Relabel every sample initiative `status='suggested'`. **This unlocks meaningful right-card paging on cause.html** and gives the entity-card a non-empty default-info state. Idempotent under re-runs.
+
+**2 · index.html top + side cards.** Drawings are in. 4 layouts: side-front (org election), side-back (initiative election), top-front (next org election), top-back (this-week newest initiative). Use `--entity-color` + box-shadow halo on top card (matches the annulus center treatment). Stay 2-sided.
+
+**3 · index.html table + entity-card.** Roadblocks 4 expansion:
+- Collapsible table, default open.
+- Row click → entity-card opens with state-aware Vote (delegated listener, fix P0 #2).
+- Toggle redesigned per STRUCTURE.md (verify the noun-vs-verb decision: Q4 still open).
+
+**4 · cause.html voting parity.** Fix P0 #1 — voting widget on all 7 causes' next-decision cycle, not just the active one. Also add the start/end annulus markers ("Initiative election" / "Organization election", listed in §4).
+
+**5 · Frontend swap to backend** (votes / ratings / watch). Drop localStorage as primary read. Wire a real Rating ★ dropdown. `getWatched`/`setWatched` → `/benefactors/me/watch`.
+
+**6 · Pruning** (carry-over). Dead CSS in cause.html: `.init-table-section`, `.cause-toggle-section`, `.org-register-section`, `.init-bridge-section`, `.cause-feed-section`, `.init-detail*`, `.feed-post*`, `.mission-table*`, `.mrow-*`, `.phase-badge-*`. Dead JS: `renderTable`, `filteredInits`, `showSelectedPanel`, `fmt`. Currently guarded; safe to bulk-delete when list grows.
+
+**7 · Long-term (unchanged from STRUCTURE.md):** demo-ready core → initiative-vote pilot → mission/org layer → credits & cash → hardening & reach. `bye-bye` candidates: `m_indx.html`, `en.html`.
+
+### Criticism of the current build sequence
+
+- **Sequence numbering is broken.** Two `1`s and no `5` in STRUCTURE.md. Easy to miss in a hurry.
+- **The pilot dataset (new step 1) is a prerequisite for steps 2–5 looking right** — paging, leader-card defaults, and the entity card all degrade with empty data. Build it first.
+- **Steps 3 (backend) and 4 (ratings + watch backend) have already shipped** at the backend layer (alembic `c7f2a4e8d0b1`). STRUCTURE.md still lists them as upcoming work. The remaining work on both is purely **frontend swap**. Rephrase them to make that explicit so the next build pass doesn't redo the migration.
+- **STRUCTURE.md §STRUCTURE is explicitly stale** ("not updated" in the header). It's still the source of truth for layouts (e.g., the card mockups in step 1a), but its checkboxes don't reflect ship state. Either re-mark or move the layout mocks to a `/design` doc.
+- **README and STRUCTURE.md are diverging.** Both list build sequence, roadblocks, questions. Pick one as primary. Suggest: STRUCTURE.md owns intent + design (the "model of the platform"), README owns state + next-step backlog.
+- **ERRORS belong in STRUCTURE.md only when they're new bugs Jax discovered.** Pass-by-pass changelog of fixed errors belongs in this README. Today the same content is in both.
+- **Build-pass-17 marked pass-16 features "shipped" without testing them.** Both P0 errors are pass-16 work that the next reviewer (Jax) immediately found broken. Add a "smoke test before claiming ship" step to the verification protocol: open the page, click the row, watch the panel. Do this for every build pass.
+
+---
+
+## 4. Concepts & tools that need attention before the next build
+
+- **`GameMaster` account / pilot seed.** New. STRUCTURE.md build-seq 1 introduces a single solo-voter persona used for backdated election results. Decide: is GameMaster a real `BenefactorAccount` (id=1?) or a flag on `Vote.voter_id` that bypasses the auth check? Recommend a regular account with `is_test=True`, so the founding-49-EBX path still works.
+- **Cause-page annulus election markers.** Listed in STRUCTURE.md QUESTIONS. Add "Initiative election" / "Organization election" labels at the start and end of the cause's active arc. Lives in the existing now-marker render path; quick win.
+- **Single-vote-default dialog.** Already shipped in cause.html pass-15. STRUCTURE.md ERRORS suggests it isn't running for 6/7 causes — re-verify before reusing it for the m_indx-style org election.
+- **`cycleStart` config endpoint** (`GET /config/cycle`). Required for Jax's simulations and explicitly called out in STRUCTURE.md QUESTIONS. Still hardcoded in `ebx_shared.ts`. Add a one-route response shape `{cycle_start: int, cycle_weeks: 7, size_factor: float}` reading from `Settings`; have `ebx_shared.ts` hydrate it at boot.
+- **Collapsible table.** ROADBLOCKS 4. Default open. CSS `details/summary` is enough; no JS state needed.
+- **Entity Card row click — delegated listener.** P0 fix. One `addEventListener` on `#init-table-body`, route by `data-init-id`. Survives table rerenders, which the per-row bind does not.
+- **`Initiative.status='suggested'`.** STRUCTURE.md build-seq 1 expects all sample initiatives without committed EBX to read `suggested`. Today the seed sets various statuses; the pilot seed needs to normalize.
+- **`scripts/safe_write.py`** (carried). Exists; only useful for sandbox-side bulk writes. Edit-tool writes from the host don't need it.
+- **Build-integrity check** (carried). Post-build script: fail if `resources/js/ebx_shared.js` doesn't end with the IIFE close or is below an expected size. Pairs with the existing pre-commit single-sentinel hook.
+- **IIFE** = Immediately-Invoked Function Expression — `(function(){…})()`. `ebx_shared.ts` wraps in one so the inner names don't leak globally and the build has a known closing-paren shape we can sanity-check.
+- **Remote-access for the pilot.** Open: LAN-only off Jax's localhost, or stand up fly.io now? Drives whether hardening (step 7.4) is pulled forward.
 
 ---
 
 ## 5. Open questions for Jax
 
-Carried over; some may be answerable next pass.
-
-- **Q1 — Founding-bonus seed.** Run `python -m seed.seed` from `backend/` on Windows. Cannot run from Linux sandbox (SQLite on Windows mount is read-only).
-- **Q2 — Now-marker.** Pass-8's marker is cause-independent and points at the active cause (verified pass 9). If still wrong: (a) prefer index.html style where "now" is pinned at 12 o'clock and the wheel rotates the cause to the top; or (b) rotation direction inverted; or (c) something else?
-- **Q3 — Top-card per-cycle placeholder.** Deterministic tie-breaker keeps the panes distinct while `committed_ebx` is all-zero. OK as a stopgap, or hold identical until real per-cycle data lands?
-- **Q4 — Stage-2 toggle nouns vs verbs.** See "New concepts" above.
-- **Q5 — Annulus-center "leader" sub-line.** With the bottom banner gone, the annulus center shows date · "Upcoming initiative vote" · cause · leading initiative + EBX. Happy, or promote leader info back to a side card?
-- **Q6 — Rating filter source.** Persisted field vs. on-the-fly aggregation? (see "New concepts")
-- **Q7 — Watch persistence target.** `localStorage` or `BenefactorAccount.watched_initiative_ids`? (see "New concepts")
+- **Q4 — Stage-2 toggle nouns vs verbs.** "Initiatives / Organizations" on the toggle, with "Propose / Register" on the action button — recommend. Pick before §3 step 3.
+- **Q8 — Pilot access model.** LAN-only or fly.io? Drives §7.4 ordering.
+- **Q10 — Vote-weight preview client-side?** Recommend server-only (single source of truth). Confirm before any cause-page tally redesign.
+- **Q11 (new) — GameMaster account model.** Real `BenefactorAccount` row with `is_test=True`, or a magic value? Affects pilot-seed shape.
+- **Q12 (new) — Where does STRUCTURE.md §STRUCTURE belong?** Move the long-form layout mocks to a `/design` doc, or keep them in STRUCTURE.md and re-mark the checkboxes? Either is fine; pick.
 
 ---
 
 ## 6. Build & dev tooling
 
-- **Tests.** No suite yet. Pick **pytest** (backend) + **playwright** (frontend smoke). Pilot strategy from Jax: cofounder accounts + simulated money on the first 7 initiative votes; mission page locked in by week 7, ready for first org votes.
-- **Type-check.** `tsc` not on PATH; use `node node_modules/typescript/bin/tsc --noEmit` from `frontend/`. `npm run build` also serves as a type+syntax check. Run on Windows (or with the mount confirmed in sync) to avoid checking a truncated copy.
+- **Tests.** No suite. Pick pytest (backend) + playwright (frontend smoke). Pilot strategy: cofounder accounts + simulated money on first 7 weekly votes; mission page locks in by week 7, ready for first org vote.
+- **Type-check.** `tsc` not on PATH; `node node_modules/typescript/bin/tsc --noEmit` from `frontend/`. Run on Windows (or with the mount confirmed in sync).
 - **Pre-commit hook.** `.git/hooks/pre-commit` blocks commits when `ebx_shared.ts` has more than one `EBX_TAIL_SENTINEL` (pass 6).
+- **Smoke test (new — recommended).** Before claiming any UI change "shipped": open the page in a real browser, click the affected element, watch the panel / network tab. Pass-17's two P0 errors would have been caught by 30 seconds of clicking.
+
+---
 
 ## 7. Infra
 
-- **Postgres.** Stay on SQLite for dev; pick Postgres for prod; document the env-var swap.
-- **Pagination on `/posts` and `/initiatives`.** Only `limit` today.
-- **`cycleStart` from API.** Listed in "New concepts."
+- **Postgres** for prod; env-var swap documented.
+- **Pagination** on `/posts` and `/initiatives` — only `limit` today.
+- **`cycleStart` from API** — see §4.
+
+---
 
 ## 8. Phone / offline
 
-- **Static offline mode.** Snapshot the current state of the project as a hard-drive demo (no server needed).
-- **Swift.** Mobile version.
+- **Static offline mode** — hard-drive demo snapshot.
+- **Swift** — mobile version, after pilot.
 
 ---
 
 ## 9. Recent changelog (current to oldest)
 
-- **2026-05-31 (auto, backlog-management)** — README reorganized: roadblocks promoted, build-seq commentary added, new-concepts section introduced, verbose pass histories collapsed below.
-- **2026-05-30 (auto, pass 13 — BUILD)** — STRUCTURE.md BUILD SEQUENCE items 0–2d: index.html feed/border cleanup; cause.html 7-tab topbar, mission overview, phase recaps, persistent black background.
-- **2026-05-30 (auto, pass 12 — BUILD)** — Resolved 401 console error on cause.html; index.html build-seq 0–3.
-- **2026-05-29 (auto, pass 11 — BUILD)** — Build-seq 1–4 on correct pages.
-- **2026-05-28 (auto, pass 10 — BUILD)** — Build-seq 1–4 on cause.html and index.html (mission bar moved, toggle added, org register added).
-- **2026-05-21 (auto, pass 9 — BUILD + audit)** — Top-card duplicate-initiative fix staged in TS; bottom-banner alignment live; vote-share annulus 0%/100% cases live. **Diagnosed Windows-mount truncation fault.** JS rebuild deliberately deferred.
-- **2026-05-20 (passes 6–8 — BUILD)** — Q1/Q18/Q20/Q21/Q22 + now-marker + founding-bonus seed + topbar/top-card restyle.
-- **2026-05-19 (passes 4–5 — audit + first BUILD)** — Restored corrupted files; fixed `ebx_shared.ts` regression; renamed feed.html → en.html; new index.html layout; backend schema additions.
+- **2026-06-02 (auto, pass 18 — BACKLOG)** — README reorganized around the STRUCTURE.md annotations Jax added overnight. Two P0 errors surfaced from STRUCTURE.md `ERRORS` (cause-page phase-1 voting only on 1/7 causes; index.html row-click no-op — both pass-16 claims that didn't hold). New build-seq 1 (scratch/pilot seed) added to the front of the build sequence — GameMaster solo voter, 21 dummy missions, sample tivs → "suggested". Drawings confirmed complete, unblocking top + side cards. Sequence renumbered to remove STRUCTURE.md's duplicate `1` and missing `5`. Backend ratings/watch and initiative-vote endpoints reframed as "frontend swap pending" rather than "shipped" so the next pass focuses on UI wiring, not migrations. Critique of structure + build sequence added: numbering broken, README/STRUCTURE.md diverging, ERRORS straddling both docs, pass-17 shipped without smoke tests.
+- **2026-06-01 (auto, pass 17 — ERRORS)** — `/auth/me` 500 fixed via `BenefactorRead.watched_initiative_ids` coercer (`None → []`, JSON string → list). cause.html `_causeDecisionMs` off-by-one-week fixed (delegates to `EBX.Cycle.nextDecisionDate`). Mount-truncation reminder logged.
+- **2026-06-01 (auto, pass 16 — BUILD)** — Shipped STRUCTURE.md build seq 0, 1a, 2a, 3, 4. **(Pass-18 note: 1a and 2a were claimed shipped but Jax reports both broken — see §2 P0s.)** Backend votes router, ratings + watch router, alembic `c7f2a4e8d0b1`.
+- **2026-06-01 (auto, pass 15 — BUILD)** — Org-register modal lift, annulus-center circle, single-vote-default dialog, `submitProposal` wired, `scripts/safe_write.py`.
+- **2026-05-31 (auto, backlog-management)** — README reorganized around pass-14 walkthrough.
+- **2026-05-31 (auto, pass 14 — BUILD)** — STRUCTURE.md build-seq 1a–1e and 2a–2e end-to-end.
+- **2026-05-30 (auto, pass 13 — BUILD)** — index.html feed/border cleanup; cause.html topbar, mission overview, phase recaps, black background.
+- **2026-05-30 (auto, pass 12 — BUILD)** — cause.html 401 fix; index.html build-seq 0–3.
+- **2026-05-29 (auto, pass 11)** — build-seq 1–4 on correct pages.
+- **2026-05-28 (auto, pass 10)** — build-seq 1–4 on cause.html and index.html.
+- **2026-05-21 (auto, pass 9)** — Top-card duplicate-initiative fix staged; bottom-banner alignment live; vote-share annulus edge cases. **Diagnosed Windows-mount truncation.**
+- **2026-05-20 (passes 6–8)** — Q1/Q18/Q20–22 + now-marker + founding-bonus seed + topbar/top-card restyle.
+- **2026-05-19 (passes 4–5)** — File-corruption recovery; `ebx_shared.ts` regression fix; feed.html → en.html; new index.html layout; backend schema additions.
 - **2026-05-15** — Main page alignment; bug notes (wildlife chart, propose-login, cycle model).
 
 ---
 
 ## Archived pass details
 
-The long-form per-pass shipping notes (passes 5–13) used to live at the top of this file. They are preserved in git history (`git log -p README.md`) and trimmed here to keep the working memory scannable. Pull them back inline if a pass needs to cross-reference one explicitly.
+Long-form per-pass shipping notes (passes 5–14) live in git history (`git log -p README.md`). Pull inline if a pass needs to cross-reference.

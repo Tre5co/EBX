@@ -17,7 +17,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings
-from .routers import auth, causes, initiatives, missions, organizations, posts
+from .routers import (
+    auth,
+    benefactors,
+    causes,
+    initiatives,
+    missions,
+    organizations,
+    posts,
+    votes,
+)
 
 settings = get_settings()
 
@@ -56,6 +65,9 @@ app.include_router(organizations.router)
 app.include_router(initiatives.router)
 app.include_router(missions.router)
 app.include_router(posts.router)
+# build-seq 3 & 4 (Pass 16) — cause-scoped votes + watchlist endpoints.
+app.include_router(votes.router)
+app.include_router(benefactors.router)
 
 
 # Static hosting from the project root.

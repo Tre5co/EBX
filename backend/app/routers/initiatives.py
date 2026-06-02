@@ -84,3 +84,27 @@ def vote_tally(initiative_id: str, db: Session = Depends(get_db)):
     """Return org_id -> vote count for an initiative (public)."""
     return crud.get_vote_tally(db, initiative_id)
 
+
+@router.post(
+    "/{initiative_id}/rate",
+    response_model=schemas.InitiativeRatingRead,
+    status_code=201,
+)
+def rate_initiative_endpoint(
+    initiative_id: str,
+    data: schemas.InitiativeRatingCreate,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """build-seq 4 — upsert a benefactor rating and side-effect into the watchlist.
+
+    Body: `{stars: 0..5}`. The rating rollup (`rating_avg`, `rating_count`) is
+    recomputed server-side so the table stays single-sourced. Side-effect
+    per Jax: the initiative is auto-added to the benefactor's watchlist if
+    not already present.
+    """
+    try:
+        return crud.rate_initiative(db, user.id, initiative_id, data.stars)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

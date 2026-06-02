@@ -662,26 +662,49 @@
     }
     .mission-overview__meta b { color: var(--clr-parchment); font-weight: 600; }
 
-    /* ── Toggleable right mission cards ── */
-    .mission-card { cursor: pointer; }
-    .mission-card__detail {
-      display: none;
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255,255,255,0.08);
-      font-family: var(--font-mono);
-      font-size: 0.6rem;
-      color: rgba(245,240,232,0.45);
-      line-height: 1.5;
+    /* ── Right mission cards (build-seq 2c) ──
+       Each card represents a mission in phase 2, 3, or 4 of the selected cause.
+       Click does NOT expand the card; instead it RE-TARGETS the 4 phase-recap
+       blocks below to that mission's data. Page flips advance the cards
+       backward through historic missions. */
+    .mission-card { cursor: pointer; position: relative; }
+    .mission-card.targeted {
+      box-shadow: 0 0 0 2px var(--cause-color, var(--clr-honey));
+      background: rgba(15,26,20,0.92);
     }
-    .mission-card.expanded .mission-card__detail { display: block; }
-    .mission-card__expand-hint {
+    .mission-card__hint {
       font-family: var(--font-mono);
       font-size: 0.5rem;
       letter-spacing: 0.08em;
-      color: rgba(245,240,232,0.25);
+      color: rgba(245,240,232,0.32);
       margin-top: 4px;
       text-transform: uppercase;
+    }
+    .mission-card.targeted .mission-card__hint {
+      color: var(--cause-color, var(--clr-honey));
+    }
+    .mission-pager {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 6px; margin-top: 8px; width: 220px;
+    }
+    .mission-pager__btn {
+      flex: 1; padding: 6px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: var(--radius-sm);
+      color: rgba(245,240,232,0.7);
+      font-family: var(--font-mono); font-size: 0.62rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .mission-pager__btn:hover:not(:disabled) {
+      background: rgba(255,255,255,0.08); color: var(--clr-parchment);
+    }
+    .mission-pager__btn:disabled { opacity: 0.35; cursor: default; }
+    .mission-pager__label {
+      font-family: var(--font-mono); font-size: 0.58rem;
+      color: rgba(245,240,232,0.5);
+      white-space: nowrap;
     }
 
     /* ── Initiative table — dark background ── */
@@ -832,9 +855,103 @@
       color: rgba(245,240,232,0.55);
       line-height: 1.55;
     }
+    /* ── Phase-1 election widget (build-seq 2a) ──
+       The phase-1 recap block transforms into the live initiative-election
+       UI: per-initiative share-allocation sliders, a running remaining-share
+       pill, and a Commit button. Floor on each slider is 0.1 per
+       STRUCTURE.md (vote-division floor). */
+    .election-card {
+      width: 100%;
+      display: flex; flex-direction: column; gap: var(--sp-sm);
+    }
+    .election-card__header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: var(--sp-md); flex-wrap: wrap;
+    }
+    .election-card__remaining {
+      font-family: var(--font-mono); font-size: 0.7rem;
+      padding: 4px 10px; border-radius: 999px;
+      background: rgba(232,168,76,0.12);
+      border: 1px solid rgba(232,168,76,0.45);
+      color: var(--clr-honey);
+      white-space: nowrap;
+    }
+    .election-card__remaining.over {
+      background: rgba(248,113,113,0.15);
+      border-color: rgba(248,113,113,0.55);
+      color: #f87171;
+    }
+    .election-card__row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr auto;
+      gap: var(--sp-md);
+      align-items: center;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-sm);
+    }
+    .election-card__row-title {
+      font-size: 0.85rem; font-weight: 600;
+      color: var(--clr-parchment);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .election-card__row-sub {
+      font-family: var(--font-mono); font-size: 0.62rem;
+      color: rgba(245,240,232,0.5);
+      margin-top: 2px;
+    }
+    .election-card__slider {
+      width: 100%;
+      accent-color: var(--cause-color, var(--clr-moss));
+    }
+    .election-card__share {
+      font-family: var(--font-mono); font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--cause-color, var(--clr-honey));
+      min-width: 38px; text-align: right;
+    }
+    .election-card__share.zero { color: rgba(245,240,232,0.3); font-weight: 400; }
+    .election-card__actions {
+      display: flex; gap: var(--sp-sm); flex-wrap: wrap; margin-top: 4px;
+    }
+    .election-card__commit-btn {
+      padding: 8px 18px;
+      background: var(--cause-color, var(--clr-moss));
+      color: #0f1a14; border: none; border-radius: var(--radius-sm);
+      font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.05em; cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .election-card__commit-btn:hover { opacity: 0.88; }
+    .election-card__commit-btn:disabled { opacity: 0.4; cursor: default; }
+    .election-card__withdraw-btn {
+      padding: 8px 14px;
+      background: transparent;
+      color: rgba(245,240,232,0.7);
+      border: 1px solid rgba(245,240,232,0.18);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono); font-size: 0.72rem;
+      cursor: pointer;
+    }
+    .election-card__status {
+      font-family: var(--font-mono); font-size: 0.72rem;
+      color: rgba(245,240,232,0.55);
+    }
+    .election-card__status.committed { color: #5abd6c; }
+
+    /* ── Mission-overview ↔ phase-recaps connection (build-seq 2e) ──
+       Drop the bottom border on mission-overview and collapse the gap so the
+       overview block feeds directly into the 4 phase-recap blocks below. */
+    .mission-overview { border-bottom: none; margin-bottom: 0; }
+    .cause-hero { padding-bottom: 0; border-bottom: none; }
+    .cause-phase-bar { display: none; } /* redundant — phase-recap-1 itself carries the live election state */
+    .phase-recaps { padding-top: var(--sp-md); }
+
     @media (max-width: 700px) {
       .phase-recap { flex-direction: column; gap: 8px; padding: var(--sp-md) var(--sp-lg); }
       .phase-recap__num { flex: 0 0 auto; }
+      .election-card__row { grid-template-columns: 1fr; }
     }
     @media (max-width: 1000px) {
       .cause-hero__col--left,
@@ -982,35 +1099,527 @@
     // ══ Phase recaps (build-seq 2b): 4 stacked horizontal blocks ══
     function fmtDate(d) { return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
 
-    function renderPhaseRecaps(cause) {
+    // Mission-targeting state: which mission (initiative ref) drives the recap blocks.
+    // null = use the cause's own leading initiative (default).
+    let _missionRefId = null;
+
+    // build-seq 2a — Pass-17: delegate to EBX.Cycle.nextDecisionDate which
+    // already handles all 7 causes correctly (returns end-of-week, not
+    // start-of-week, and wraps modularly into the next cycle when needed).
+    // The previous hand-rolled formula returned the START of the cause's
+    // active week, so the currently-active cause always showed a date 7 days
+    // in the past. (Jax: "Only 1 of the causes is updating.")
+    function _causeDecisionMs(cause) {
+      return EBX.Cycle.nextDecisionDate(cause.index).getTime();
+    }
+
+    function renderPhaseRecaps(cause, opts) {
       if (!cause) return;
+      opts = opts || {};
       const MS_DAY = EBX.Cycle.MS_PER_DAY || 86400000;
       const WEEK_MS = 7 * MS_DAY;
-      const cycleStart = EBX.config.cycleStart
-        ? new Date(EBX.config.cycleStart)
-        : new Date('2026-01-01T00:00:00');
-      const curCycle = EBX.Cycle.currentCycleNum ? EBX.Cycle.currentCycleNum() : 0;
-      const decisionMs = cycleStart.getTime() + (curCycle * 7 + cause.index + 1) * WEEK_MS;
+      const decisionMs = _causeDecisionMs(cause);
       const decisionDate = new Date(decisionMs);
       const causeInitsLocal = (EBX.config.initiatives || []).filter(i =>
         i.cause_id === cause.id || i.cause_index === cause.index);
-      const leader = [...causeInitsLocal]
-        .sort((a,b) => (b.ebx_committed||0) - (a.ebx_committed||0))[0] || null;
+      // Allow the right-mission cards to retarget the recaps to a specific mission.
+      let leader = null;
+      if (opts.missionRef && opts.missionRef.id) {
+        leader = causeInitsLocal.find(i => i.id === opts.missionRef.id) || opts.missionRef;
+      } else {
+        leader = [...causeInitsLocal]
+          .sort((a,b) => (b.ebx_committed||0) - (a.ebx_committed||0))[0] || null;
+      }
+
+      // Render the live election widget into phase-recap-1.
+      renderElectionCard(cause, causeInitsLocal, decisionDate);
 
       const set = (id, html) => {
         const el = document.getElementById(id); if (el) el.innerHTML = html;
       };
-      set('phase-recap-1-sub',
-        leader
-          ? `Leading: <b style="color:var(--clr-honey)">${leader.title}</b> · decision <b>${fmtDate(decisionDate)}</b>`
-          : `No initiative proposals yet for ${cause.name}.`);
+      const orgVoteDate = new Date(decisionDate.getTime() + 7*WEEK_MS);
       set('phase-recap-2-sub',
-        `Org election ${fmtDate(new Date(decisionDate.getTime() + 7*WEEK_MS))} — organizations compete to run the elected initiative.`);
+        `Org election <b>${fmtDate(orgVoteDate)}</b> — organizations compete to run
+         <b style="color:var(--cause-color)">${leader ? leader.title : 'the elected initiative'}</b>.`);
       set('phase-recap-3-sub',
-        `Budget locked, mission underway. Release window opens ${fmtDate(new Date(decisionDate.getTime() + 14*WEEK_MS))}.`);
+        `Budget locked, mission underway. Release window opens <b>${fmtDate(new Date(decisionDate.getTime() + 14*WEEK_MS))}</b>.`);
       set('phase-recap-4-sub',
-        `Credits release in stages; benefactors evaluate the mission's impact and post resolutions.`);
+        leader && leader.status === 'resolved'
+          ? `Resolved. Credits released in stages; benefactors posted evaluations of mission impact.`
+          : `Credits release in stages; benefactors evaluate the mission's impact and post resolutions.`);
     }
+
+    // ── Phase-1 election widget (build-seq 2a) ──
+    // Builds a soft-vote share allocator inside the phase-recap-1 block.
+    // Shares are stored per-cause in localStorage so they survive reloads.
+    // Floor per share: 0.1 (STRUCTURE.md vote-division floor).
+    const VOTE_KEY = 'ebx_vote_shares';
+    const VOTE_COMMIT_KEY = 'ebx_vote_committed';
+
+    // build-seq 3 (Pass 16) — these helpers now read/write the backend when a
+    // benefactor is signed in and fall back to localStorage when they aren't.
+    // The localStorage shape is unchanged so existing votes survive the swap,
+    // and the homepage entity-card vote helpers (index.html, build-seq 1a)
+    // continue to read the same key. The fetch-side helpers below
+    // (`syncCauseTally`, `syncMyShares`, `commitCauseVote`) drive the
+    // live tally + Commit button against the API.
+    function loadShares(causeId) {
+      try { return (JSON.parse(localStorage.getItem(VOTE_KEY) || '{}'))[causeId] || {}; }
+      catch(e) { return {}; }
+    }
+    function saveShares(causeId, shares) {
+      let all = {};
+      try { all = JSON.parse(localStorage.getItem(VOTE_KEY) || '{}'); } catch(e) { all = {}; }
+      all[causeId] = shares;
+      localStorage.setItem(VOTE_KEY, JSON.stringify(all));
+      // Best-effort: push to backend when signed in. We don't await here so
+      // the slider UI stays snappy; failures fall back to local-only state.
+      try { syncMyShares(causeId, shares); } catch(e) {}
+    }
+    function loadCommitted(causeId) {
+      try { return (JSON.parse(localStorage.getItem(VOTE_COMMIT_KEY) || '{}'))[causeId] || null; }
+      catch(e) { return null; }
+    }
+    function saveCommitted(causeId, payload) {
+      let all = {};
+      try { all = JSON.parse(localStorage.getItem(VOTE_COMMIT_KEY) || '{}'); } catch(e) { all = {}; }
+      all[causeId] = payload;
+      localStorage.setItem(VOTE_COMMIT_KEY, JSON.stringify(all));
+    }
+
+    // Push the current shares map to the backend. Best-effort; ignored when
+    // not signed in or when the API is unreachable.
+    async function syncMyShares(causeId, shares) {
+      if (!window.EBX || !EBX.Auth || !EBX.Auth.isLoggedIn || !EBX.Auth.isLoggedIn()) return;
+      try {
+        await EBX.Auth.fetchAuthed('/benefactors/me/votes', {
+          method: 'PUT',
+          body: JSON.stringify({ cause_id: causeId, shares }),
+        });
+      } catch (e) { /* swallow — UI stays in local-only mode */ }
+    }
+
+    // Pull the cause-wide tally (vote-weighted by the server) and annotate
+    // each rendered row with `EBX in pool` so benefactors can see the
+    // running standings without leaving the phase-1 widget.
+    async function syncCauseTally(causeId) {
+      try {
+        const res = await fetch('/causes/' + encodeURIComponent(causeId) + '/votes');
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data && Array.isArray(data.entries)) {
+          data.entries.forEach(e => {
+            const el = document.querySelector('.election-card__row[data-tally-id="' + e.initiative_id + '"] .election-card__tally');
+            if (el) {
+              el.textContent = `${e.voter_count} voter${e.voter_count === 1 ? '' : 's'} · ` +
+                               `weighted ${(e.weighted_share * 100).toFixed(0)}%`;
+            }
+          });
+        }
+        return data;
+      } catch (e) { return null; }
+    }
+
+    // Lock the slate against the server. Falls back to local-only when not
+    // signed in (we still record the commit in localStorage so the UI shows
+    // ✓ Committed; the user can replay against the API on next login).
+    async function commitCauseVote(causeId) {
+      if (!window.EBX || !EBX.Auth || !EBX.Auth.isLoggedIn || !EBX.Auth.isLoggedIn()) return false;
+      try {
+        const res = await EBX.Auth.fetchAuthed('/votes/commit', {
+          method: 'POST',
+          body: JSON.stringify({ cause_id: causeId }),
+        });
+        return res.ok;
+      } catch (e) { return false; }
+    }
+
+    // ── Phase-1 voting dialog rebuild (build-seq 2a, 2b) ──
+    // UX model Jax wants: a benefactor's FIRST vote on a row sets share=1.0 on
+    // that initiative (single-vote mode). Clicking "Vote" on a second row
+    // collapses both into the share-allocator (default 0.5/0.5; 0.1 floor).
+    // Adding more rows redistributes evenly across the active set; withdrawing
+    // collapses back to the single-vote (or empty) state. Per-cause shares
+    // still persist to localStorage — backend wiring is build-seq step 4.
+
+    function _voteCount(shares) {
+      return Object.keys(shares || {}).filter(k => (Number(shares[k]) || 0) > 0).length;
+    }
+
+    // Re-render the phase-1 widget without recomputing decision math (caller-supplied).
+    function _rerenderElectionCard(cause) {
+      const initsLocal = (EBX.config.initiatives || []).filter(i =>
+        i.cause_id === cause.id || i.cause_index === cause.index);
+      // build-seq 2a — share the past-cycle-aware decisionMs helper so the
+      // re-render path doesn't reintroduce the stale-date bug.
+      renderElectionCard(cause, initsLocal, new Date(_causeDecisionMs(cause)));
+    }
+
+    function renderElectionCard(cause, inits, decisionDate) {
+      const block = document.getElementById('phase-recap-1');
+      if (!block) return;
+      const state = EBX.Cycle.now();
+      const inPhase1 = state.causeIndex === cause.index;
+      const dayDiff = Math.max(0, Math.ceil((decisionDate.getTime() - Date.now()) / 86400000));
+      const dayWord = dayDiff === 0 ? 'today' : (dayDiff + 'd to decision');
+
+      if (!inits.length) {
+        block.innerHTML = `
+          <div class="phase-recap__num">Phase 1</div>
+          <div class="phase-recap__body">
+            <div class="phase-recap__title">Pre-Initiative · Initiative Election</div>
+            <div class="phase-recap__sub">No initiative proposals yet for ${cause.name}. Decision <b>${fmtDate(decisionDate)}</b>.</div>
+            <div class="election-card__actions" style="margin-top:10px;">
+              <button class="election-card__commit-btn" onclick="openProposeModal()">+ Propose an initiative</button>
+            </div>
+          </div>`;
+        return;
+      }
+      // Outside phase 1 — render a recap of the leading initiative (unchanged).
+      if (!inPhase1) {
+        const leader = [...inits].sort((a,b) => (b.ebx_committed||0) - (a.ebx_committed||0))[0];
+        block.innerHTML = `
+          <div class="phase-recap__num">Phase 1</div>
+          <div class="phase-recap__body">
+            <div class="phase-recap__title">Pre-Initiative · Initiative Election</div>
+            <div class="phase-recap__sub">
+              Elected: <b style="color:var(--clr-honey)">${leader.emoji||''} ${leader.title}</b>
+              · decision <b>${fmtDate(decisionDate)}</b>
+            </div>
+          </div>`;
+        return;
+      }
+
+      // PHASE 1 — live election widget. Branches on vote count:
+      //   0 votes  → "Vote" button per row (single-vote default)
+      //   1 vote   → chosen row pinned at 1.0; other rows offer "Add another"
+      //   2+ votes → share allocator (sliders, 0.1 floor)
+      const shares     = loadShares(cause.id);
+      const committed  = loadCommitted(cause.id);
+      const sumShares  = Object.values(shares).reduce((s,v) => s + (Number(v)||0), 0);
+      const voteCount  = _voteCount(shares);
+      const sliderMode = voteCount >= 2;
+      const over       = sumShares > 1.0001;
+
+      const rowFor = (init) => {
+        const ebx        = init.ebx_committed || 0;
+        const share      = Number(shares[init.id] || 0);
+        const hasShare   = share > 0;
+        const shareLabel = hasShare ? share.toFixed(1) : '0.0';
+        // build-seq 3 — extra `tally` line gets back-filled by syncCauseTally
+        // with the server-computed weighted share + voter count.
+        const ratingDisp = init.rating_avg || init.rating || 0;
+        const subline    = `${ebx > 0 ? ebx.toLocaleString() + ' EBX in pool' : 'no commits yet'}` +
+                           `${ratingDisp ? ' · ★ ' + Number(ratingDisp).toFixed(1) : ''}` +
+                           ` · <span class="election-card__tally" style="opacity:0.55;">…</span>`;
+
+        if (sliderMode) {
+          // Multi-vote mode: every row in the active set is a slider; rows
+          // outside the set keep an "Add another initiative" button to grow it.
+          if (hasShare) {
+            return `<div class="election-card__row" data-tally-id="${init.id}">
+              <div>
+                <div class="election-card__row-title">${init.emoji||'🌱'} ${init.title}</div>
+                <div class="election-card__row-sub">${subline}</div>
+              </div>
+              <input type="range" min="0" max="1" step="0.1" value="${share}"
+                     class="election-card__slider"
+                     data-init-id="${init.id}"
+                     oninput="onVoteShareChange('${cause.id}', '${init.id}', this.value)"
+                     aria-label="Vote share for ${init.title}" />
+              <div class="election-card__share" id="share-label-${init.id}">${shareLabel}</div>
+            </div>`;
+          }
+          return `<div class="election-card__row" data-tally-id="${init.id}" style="grid-template-columns:1fr auto;">
+            <div>
+              <div class="election-card__row-title" style="opacity:0.78;">${init.emoji||'🌱'} ${init.title}</div>
+              <div class="election-card__row-sub">${subline}</div>
+            </div>
+            <button class="election-card__withdraw-btn"
+                    onclick="addVoteFor('${cause.id}', '${init.id}')">+ Add</button>
+          </div>`;
+        }
+
+        // 0 or 1 vote: render a "Vote" button per row in single-vote mode.
+        if (voteCount === 1 && hasShare) {
+          // The single chosen row — show as committed with options to add or withdraw.
+          return `<div class="election-card__row" data-tally-id="${init.id}" style="grid-template-columns:1fr auto auto;
+                       background:rgba(var(--cause-color-rgb,78,122,78),0.06);
+                       border-color:var(--cause-color,rgba(255,255,255,0.18));">
+            <div>
+              <div class="election-card__row-title" style="color:var(--cause-color);">
+                ✓ ${init.emoji||'🌱'} ${init.title}
+              </div>
+              <div class="election-card__row-sub">${subline} · full vote</div>
+            </div>
+            <button class="election-card__withdraw-btn"
+                    onclick="withdrawSingleVote('${cause.id}', '${init.id}')">Withdraw</button>
+          </div>`;
+        }
+        // 0 votes (or 1 vote on a DIFFERENT row) — plain "Vote" button.
+        return `<div class="election-card__row" data-tally-id="${init.id}" style="grid-template-columns:1fr auto;">
+          <div>
+            <div class="election-card__row-title">${init.emoji||'🌱'} ${init.title}</div>
+            <div class="election-card__row-sub">${subline}</div>
+          </div>
+          <button class="election-card__commit-btn"
+                  style="padding:6px 14px;font-size:0.7rem;"
+                  onclick="addVoteFor('${cause.id}', '${init.id}')">
+            ${voteCount === 1 ? '+ Split vote' : 'Vote'}
+          </button>
+        </div>`;
+      };
+
+      const rows = inits.map(rowFor).join('');
+
+      // Header pill — only meaningful in slider mode.
+      const remainText = sliderMode
+        ? (over
+            ? `OVER by ${((sumShares - 1) * 100).toFixed(0)}%`
+            : `${(Math.max(0, 1 - sumShares) * 100).toFixed(0)}% share remaining`)
+        : (voteCount === 1 ? 'Vote cast — full share' : 'No vote yet');
+
+      const headerSub = sliderMode
+        ? `Drag to redistribute your vote. Per-share floor 0.1. Decision <b>${fmtDate(decisionDate)}</b>.`
+        : (voteCount === 1
+            ? `Add another initiative to split your share. Decision <b>${fmtDate(decisionDate)}</b>.`
+            : `Pick one initiative to cast your full vote. Decision <b>${fmtDate(decisionDate)}</b>.`);
+
+      // After paint, hydrate the tally line from the backend (build-seq 3).
+      // Fire-and-forget — the row already shows local-state share + EBX pool.
+      try { setTimeout(() => syncCauseTally(cause.id), 0); } catch (e) {}
+
+      block.innerHTML = `
+        <div class="phase-recap__num">Phase 1</div>
+        <div class="phase-recap__body election-card">
+          <div class="election-card__header">
+            <div>
+              <div class="phase-recap__title">Initiative Election · ${dayWord}</div>
+              <div class="phase-recap__sub" style="font-size:0.7rem;">${headerSub}</div>
+            </div>
+            <div class="election-card__remaining ${over ? 'over' : ''}" id="vote-remaining">${remainText}</div>
+          </div>
+          ${rows}
+          <div class="election-card__actions">
+            <button class="election-card__commit-btn"
+                    id="vote-commit-btn"
+                    onclick="commitVote('${cause.id}')"
+                    ${over || sumShares <= 0 ? 'disabled' : ''}>
+              ${committed ? 'Update commitment' : 'Commit vote'}
+            </button>
+            <button class="election-card__withdraw-btn"
+                    onclick="withdrawVote('${cause.id}')"
+                    ${sumShares <= 0 ? 'disabled' : ''}>
+              Withdraw all
+            </button>
+            <button class="election-card__withdraw-btn"
+                    onclick="openProposeModal()">+ Propose an initiative</button>
+            <div class="election-card__status ${committed ? 'committed' : ''}" id="vote-status">
+              ${committed
+                ? '✓ Committed ' + new Date(committed.at).toLocaleDateString('en-US',{month:'short',day:'numeric'})
+                : 'Not yet committed'}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // Slider change in multi-vote mode — keeps the existing 0.1 floor logic.
+    function onVoteShareChange(causeId, initId, val) {
+      let v = Math.round(Number(val) * 10) / 10;
+      if (v > 0 && v < 0.1) v = 0.1;
+      const shares = loadShares(causeId);
+      if (v <= 0) {
+        delete shares[initId];
+      } else {
+        shares[initId] = v;
+      }
+      saveShares(causeId, shares);
+      // If the user drags a row to 0, the active set shrinks; if it shrinks to 1
+      // we should collapse back to single-vote mode (no slider). Re-render then.
+      if (_voteCount(shares) < 2) {
+        const cause = (EBX.config.causes||[]).find(c => c.id === causeId);
+        if (cause) _rerenderElectionCard(cause);
+        return;
+      }
+      const label = document.getElementById('share-label-' + initId);
+      if (label) label.textContent = v.toFixed(1);
+      const sum = Object.values(shares).reduce((s,vv) => s + (Number(vv)||0), 0);
+      const over = sum > 1.0001;
+      const remEl = document.getElementById('vote-remaining');
+      if (remEl) {
+        remEl.classList.toggle('over', over);
+        remEl.textContent = over
+          ? 'OVER by ' + ((sum - 1) * 100).toFixed(0) + '%'
+          : ((Math.max(0, 1 - sum)) * 100).toFixed(0) + '% share remaining';
+      }
+      const commitBtn = document.getElementById('vote-commit-btn');
+      if (commitBtn) commitBtn.disabled = over || sum <= 0;
+    }
+    window.onVoteShareChange = onVoteShareChange;
+
+    // Single-click vote: first click sets share=1.0; subsequent clicks add another
+    // initiative and auto-redistribute evenly with the 0.1 floor enforced.
+    function addVoteFor(causeId, initId) {
+      const shares = loadShares(causeId);
+      const activeIds = Object.keys(shares).filter(k => (Number(shares[k]) || 0) > 0);
+      if (activeIds.includes(initId)) {
+        // Already voted on — no-op.
+        return;
+      }
+      activeIds.push(initId);
+      const n = activeIds.length;
+      if (n === 1) {
+        // Single vote — full share.
+        const next = {}; next[initId] = 1.0;
+        saveShares(causeId, next);
+      } else {
+        // Multi-vote — evenly redistribute, then snap each to a 0.1 step and clamp
+        // to the 0.1 floor. The remainder lands on the most recent vote so the
+        // total stays at 1.0 within rounding (over/under handled in the UI).
+        const even = Math.floor((1 / n) * 10) / 10; // 0.5, 0.3, 0.2, 0.1, 0.1, …
+        const floor = Math.max(0.1, even);
+        const next = {};
+        activeIds.forEach(id => { next[id] = floor; });
+        const total = floor * n;
+        const remainder = Math.round((1 - total) * 10) / 10;
+        if (remainder !== 0) next[initId] = Math.max(0.1, Math.round((floor + remainder) * 10) / 10);
+        saveShares(causeId, next);
+      }
+      const cause = (EBX.config.causes||[]).find(c => c.id === causeId);
+      if (cause) _rerenderElectionCard(cause);
+    }
+    window.addVoteFor = addVoteFor;
+
+    // Withdraw a specific initiative — collapses to single-vote mode if 2 left,
+    // or to empty mode if 1 left. Distinct from withdrawVote which clears all.
+    function withdrawSingleVote(causeId, initId) {
+      const shares = loadShares(causeId);
+      delete shares[initId];
+      saveShares(causeId, shares);
+      const cause = (EBX.config.causes||[]).find(c => c.id === causeId);
+      if (cause) _rerenderElectionCard(cause);
+    }
+    window.withdrawSingleVote = withdrawSingleVote;
+
+    async function commitVote(causeId) {
+      const shares = loadShares(causeId);
+      const sum = Object.values(shares).reduce((s,vv) => s + (Number(vv)||0), 0);
+      if (sum <= 0 || sum > 1.0001) return;
+      saveCommitted(causeId, { shares: { ...shares }, at: Date.now() });
+      // build-seq 3 — lock against the server too. Best-effort; UI updates
+      // either way so a sign-out user still sees ✓ Committed locally.
+      try { await commitCauseVote(causeId); } catch (e) {}
+      const status = document.getElementById('vote-status');
+      const btn = document.getElementById('vote-commit-btn');
+      if (status) {
+        status.classList.add('committed');
+        status.textContent = '✓ Committed just now';
+      }
+      if (btn) btn.textContent = 'Update commitment';
+      // Refresh the running tally so the widget reflects the new commitment.
+      try { syncCauseTally(causeId); } catch (e) {}
+    }
+    window.commitVote = commitVote;
+
+    function withdrawVote(causeId) {
+      saveShares(causeId, {});
+      const cause = (EBX.config.causes||[]).find(c => c.id === causeId);
+      if (cause) _rerenderElectionCard(cause);
+    }
+    window.withdrawVote = withdrawVote;
+
+    // ── Propose-initiative dialog (build-seq 2a) ──────────────────────────
+    // The modal markup at #propose-modal-bg was already in place; this pass
+    // wires up its open/close handlers and submitProposal → POST /initiatives
+    // (mirroring the index.html implementation). Both pages now use the same
+    // payload shape so a single backend handler covers both flows.
+    function _slugForInitiative(title) {
+      const base = (title || '')
+        .toLowerCase()
+        .normalize('NFKD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 48) || 'initiative';
+      const tail = Math.random().toString(36).slice(2, 7);
+      return `${base}-${tail}`;
+    }
+
+    function openProposeModal() {
+      const bg = document.getElementById('propose-modal-bg');
+      if (bg) bg.classList.add('open');
+    }
+    function closeProposeModal() {
+      const bg = document.getElementById('propose-modal-bg');
+      if (bg) bg.classList.remove('open');
+      const msg = document.getElementById('propose-msg');
+      if (msg) { msg.textContent = ''; msg.style.color = ''; }
+    }
+    function closeProposeOnBg(e) {
+      if (e.target === document.getElementById('propose-modal-bg')) closeProposeModal();
+    }
+    window.openProposeModal  = openProposeModal;
+    window.closeProposeModal = closeProposeModal;
+    window.closeProposeOnBg  = closeProposeOnBg;
+
+    async function submitProposal() {
+      const title  = (document.getElementById('propose-title').value || '').trim();
+      const desc   = (document.getElementById('propose-desc').value || '').trim();
+      const msg = document.getElementById('propose-msg');
+      if (!title || !desc) { msg.textContent = 'Title and description are required.'; return; }
+
+      const submitBtn = document.querySelector('#propose-modal-bg .btn-forest');
+      if (submitBtn) submitBtn.setAttribute('disabled', 'true');
+      msg.style.color = '';
+      msg.textContent = 'Submitting…';
+
+      const payload = {
+        id: _slugForInitiative(title),
+        title,
+        description: desc,
+        cause_id: causeId,
+        proposed_by: 'benefactor',
+        status: 'suggested',
+      };
+
+      try {
+        if (!window.EBX || !EBX.Auth || !EBX.Auth.isLoggedIn || !EBX.Auth.isLoggedIn()) {
+          msg.style.color = 'var(--clr-honey)';
+          msg.textContent = 'Please log in to propose an initiative.';
+          if (EBX && EBX.Auth && EBX.Auth.openModal) EBX.Auth.openModal('login');
+          return;
+        }
+        const res = await EBX.Auth.fetchAuthed('/initiatives', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          let detail = '';
+          try { const body = await res.json(); detail = body.detail || ''; } catch(e) {}
+          msg.style.color = '#e07b6b';
+          msg.textContent = detail
+            ? `Couldn't submit: ${detail}`
+            : `Couldn't submit (HTTP ${res.status}). Try again in a moment.`;
+          return;
+        }
+        const created = await res.json();
+        // Optimistically inject the new initiative into the in-memory list and
+        // re-render the phase-1 widget so it appears immediately.
+        if (EBX.config.initiatives) EBX.config.initiatives.push(created);
+        const cause = (EBX.config.causes || []).find(c => c.id === causeId);
+        if (cause) _rerenderElectionCard(cause);
+        msg.style.color = 'var(--cause-color)';
+        msg.textContent = `Proposal "${title}" submitted.`;
+        document.getElementById('propose-title').value = '';
+        document.getElementById('propose-desc').value  = '';
+        setTimeout(closeProposeModal, 1600);
+      } catch (e) {
+        msg.style.color = '#e07b6b';
+        msg.textContent = 'Cannot reach the server. Is the API running?';
+      } finally {
+        if (submitBtn) submitBtn.removeAttribute('disabled');
+      }
+    }
+    window.submitProposal = submitProposal;
 
     const causes      = EBX.config.causes || [];
     const initiatives = EBX.config.initiatives || [];
@@ -1206,15 +1815,15 @@
       const w2y = ay - ty*wingLen + tx*halfWing;
       const arrowHead = `M${w1x},${w1y} L${ax},${ay} L${w2x},${w2y}`;
 
+      // build-seq 2d: the working arrow head (clockwise V) is the now indicator;
+      // the previous "now ↻" text label is redundant and has been removed.
       const nowMarker = `
         <circle cx="${mx}" cy="${my}" r="5.5" fill="white" fill-opacity="0.95"
                 filter="url(#glow)"/>
         <circle cx="${mx}" cy="${my}" r="3" fill="white"/>
         <path d="${arrowHead}" stroke="rgba(255,255,255,0.75)" stroke-width="1.2"
               stroke-linecap="round" stroke-linejoin="round" fill="none"
-              filter="url(#glow)"/>
-        <text x="${mx}" y="${my + 16}" text-anchor="middle"
-              font-family="DM Mono,monospace" font-size="7" fill="rgba(245,240,232,0.6)">now ↻</text>`;
+              filter="url(#glow)"/>`;
 
       return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
         <defs>
@@ -1318,45 +1927,99 @@
       const pool = EBX.formatEBX
         ? EBX.formatEBX(init.pool_value || init.ebx_committed || 0)
         : (init.pool_value || init.ebx_committed || 0) + ' EBX';
-      const linkHref = (init.status === 'active' || init.status === 'resolved')
-        ? `mission.html?id=${init.id}` : `cause.html?id=${cause.id}`;
-      const detailLines = [
-        init.description ? `<div>${(init.description || '').slice(0, 120)}${init.description.length > 120 ? '…' : ''}</div>` : '',
-        `<div style="margin-top:4px;"><a href="${linkHref}" style="color:var(--clr-honey);text-decoration:none;" onclick="event.stopPropagation()">View page →</a></div>`,
-      ].filter(Boolean).join('');
-      return `<div class="mission-card mission-card--${cls}">
+      return `<div class="mission-card mission-card--${cls}" data-mission-id="${init.id}"
+                   onclick="selectMission('${init.id}')">
         <div class="mission-card__eyebrow">${eyebrow}</div>
         <div class="mission-card__title">${init.emoji || '🌱'} ${init.title}</div>
         ${init.winning_org ? `<div class="mission-card__sub">Org: ${init.winning_org}</div>` : ''}
         <div class="mission-card__sub" style="margin-top:3px;">${pool} pool${init.rating > 0 ? ' · ★' + init.rating.toFixed(1) : ''}</div>
         ${extraBadge || ''}
-        <div class="mission-card__expand-hint">tap to expand</div>
-        <div class="mission-card__detail">${detailLines}</div>
+        <div class="mission-card__hint">tap to spotlight in recaps below</div>
       </div>`;
     }
 
-    const upcomingInit  = causeInits.find(i => ['suggested','debate','org_vote'].includes(i.status)) || causeInits[0] || null;
-    const activeInit    = causeInits.find(i => i.status === 'active') || null;
-    const resolvedInits = causeInits.filter(i => i.status === 'resolved');
-    const prevInit      = resolvedInits[resolvedInits.length - 1] || null;
-
-    // Determine org election leader for the upcoming card
-    let orgBadge = '';
-    if (upcomingInit) {
-      const cycleOrgs = (EBX.config.organizations || []).filter(o =>
-        (o.cause_ids || []).includes(cause.id) ||
-        (o.causes || []).some(c => c.id === cause.id)
-      );
-      if (cycleOrgs.length) {
-        orgBadge = `<div class="mission-card__badge mission-card__badge--upcoming">${cycleOrgs[0].name} leading</div>`;
-      }
+    // Page-flip state: each "page" shows 3 missions in phase 2/3/4 for this cause.
+    // Page 0 = the most recent set; higher pages walk backward through history.
+    let _missionPage = 0;
+    // For now the data layer doesn't carry per-cycle mission history; we
+    // partition causeInits into rough phase buckets and let each page hold one
+    // mission per phase. As real mission history lands this becomes a real
+    // cursor over a paginated /missions?cause=<id>&before=<date> endpoint.
+    function missionTripleForPage(page) {
+      const upcomingPool  = causeInits.filter(i => ['suggested','debate','org_vote'].includes(i.status));
+      const activePool    = causeInits.filter(i => i.status === 'active');
+      const resolvedPool  = [...causeInits.filter(i => i.status === 'resolved')]
+        .sort((a,b) => new Date(b.election_open||0) - new Date(a.election_open||0));
+      return {
+        top:    upcomingPool[page]   || null,    // phase 2 candidate
+        middle: activePool[page]     || null,    // phase 3 candidate
+        bottom: resolvedPool[page]   || null,    // phase 4 candidate
+        canPrev: page > 0,
+        canNext: (upcomingPool[page+1] || activePool[page+1] || resolvedPool[page+1]) != null,
+        totalPages: Math.max(upcomingPool.length, activePool.length, resolvedPool.length),
+      };
     }
 
-    document.getElementById('right-mission-panel').innerHTML =
-      buildMissionCard('top',    'Upcoming org election', upcomingInit, orgBadge)
-      + buildMissionCard('middle', 'Active mission',        activeInit,   `<div class="mission-card__badge mission-card__badge--active">● Live</div>`)
-      + buildMissionCard('bottom', 'Previous mission',      prevInit,     `<div class="mission-card__badge mission-card__badge--resolved">Resolved</div>`);
-    bindMissionCardToggles();
+    function renderRightPanel() {
+      const trio = missionTripleForPage(_missionPage);
+      let orgBadge = '';
+      if (trio.top) {
+        const cycleOrgs = (EBX.config.organizations || []).filter(o =>
+          (o.cause_ids || []).includes(cause.id) ||
+          (o.causes || []).some(c => c.id === cause.id)
+        );
+        if (cycleOrgs.length) {
+          orgBadge = `<div class="mission-card__badge mission-card__badge--upcoming">${cycleOrgs[0].name} leading</div>`;
+        }
+      }
+      const pager = `<div class="mission-pager">
+        <button class="mission-pager__btn" ${trio.canPrev?'':'disabled'} onclick="missionPage(-1)">‹ newer</button>
+        <span class="mission-pager__label">page ${_missionPage+1}${trio.totalPages?' / '+trio.totalPages:''}</span>
+        <button class="mission-pager__btn" ${trio.canNext?'':'disabled'} onclick="missionPage(1)">older ›</button>
+      </div>`;
+      document.getElementById('right-mission-panel').innerHTML =
+        buildMissionCard('top',    'Phase 2 · org election', trio.top,    orgBadge)
+        + buildMissionCard('middle', 'Phase 3 · active mission', trio.middle,
+            `<div class="mission-card__badge mission-card__badge--active">● Live</div>`)
+        + buildMissionCard('bottom', 'Phase 4 · credit release',  trio.bottom,
+            `<div class="mission-card__badge mission-card__badge--resolved">Recent</div>`)
+        + pager;
+      // Re-highlight the targeted card if any
+      highlightTargetedCard();
+    }
+
+    function missionPage(delta) {
+      _missionPage = Math.max(0, _missionPage + delta);
+      renderRightPanel();
+    }
+    window.missionPage = missionPage;
+
+    function selectMission(initId) {
+      const target = causeInits.find(i => i.id === initId);
+      if (!target) return;
+      _missionRefId = initId;
+      renderPhaseRecaps(cause, { missionRef: target });
+      highlightTargetedCard();
+      document.getElementById('phase-recap-2')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    window.selectMission = selectMission;
+
+    function highlightTargetedCard() {
+      document.querySelectorAll('.mission-card').forEach(c => {
+        c.classList.toggle('targeted', c.dataset.missionId && c.dataset.missionId === _missionRefId);
+      });
+    }
+
+    renderRightPanel();
+
+    // Dangling onclick handlers from pre-pass-13 templates that still render
+    // (annulus slice clicks, leading-initiative card clicks). Wire them to the
+    // new selectMission flow so clicks behave instead of throwing.
+    window.selectInitByAnnulus = function(idx) {
+      const init = causeInits[idx];
+      if (init) selectMission(init.id);
+    };
+    window.jumpToRow = function(initId) { selectMission(initId); };
 
     /* ── 9. Table + search ── */
     let currentSearch = '';
@@ -1364,6 +2027,7 @@
 
     function renderTable(inits) {
       const tbody = document.getElementById('init-table-body');
+      if (!tbody) return; // table removed in pass 13 (build-seq commentary §3 prune)
       if (!inits.length) {
         tbody.innerHTML = `<tr><td colspan="6" class="init-table__empty">
           <div style="font-size:1.8rem;margin-bottom:8px;">${cause.emoji || '🌱'}</div>
@@ -1419,7 +2083,8 @@
 
     renderTable(causeInits);
 
-    document.getElementById('init-search').addEventListener('input', e => {
+    // Pass 13 pruned the cause.html init-table + search box; guard against missing nodes.
+    document.getElementById('init-search')?.addEventListener('input', e => {
       currentSearch = e.target.value;
       renderTable(filteredInits());
     });
