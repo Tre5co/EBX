@@ -1,14 +1,14 @@
-## UPDATE TASKS
-@CLAUDE Stop process now if there are any lines in between here and ##SYSTEM
 ## SYSTEM
 **Our goals** Root out wasteful and fraudulent charity organizations/players, reorient peoples media consumption towards meaningful things, focus charity efforts on the cause rather than sponsors, democratize charioty by finding the best idea rather than the most profitable one, rewarding thoughtful ideas, pooling donations to prevent redundant/competing charity missions. Provide unbiased and mission-oriented news coverage of every mission.
 **Cause rotation - 7 weeks**
 Atmosphere - Oceans - Land - Forests - Wildlife - Rights - Progress
 **Voting**
 1. Initiative voting - soft
+Vote tallied on the first day of its causes active period.
 Vote-split-economy - .1 division floor.
 First vote from vote-entity on main page (or cause page), subsequently managed from cause page.
 2. Organization voting - hard
+Vote occurs on the final day of its causes active period
 1 vote 1 organization.
 Vote from main page, cause page or mission page.
 Benefactors can publicly buy votes & By doing so buy publicity.
@@ -46,63 +46,7 @@ Benefactors and organizations can both create ratings. When they do, they have t
 `backlog management` Update structure and content of readme
 `build` Is for making changes.
 
-## BUILD SEQUENCE
-0. **Errors** Resolve if any
-1. **Scratch data before launch** create dummy missions Atm-Hpr 1001-1003 (21 total) that fill these slots and are hardcoded with dates in the past when they "won" elections. Simulate that my account (GameMaster) was the only participant in the votes and create dummy organizations (orgs 1-21) and assign (those past phase 2) to dummy initiatives (tivs 1-21). Do not use sample information. Change all sample tivs to "suggested".
-1. **index.html**
-- (a) Build **top and side cards**
-    see 4 drawings in structure. Edit top card and side cards.
-
-2. **cause.html.**
-
-3. **Initiative-election backend + frontend wiring.**
-
-4. **Ratings + Watch onto the backend.**
-
-**6 · Pruning candidates (carry-over).** Dead CSS in cause.html — `.init-table-section`, `.cause-toggle-section`, `.org-register-section`, `.init-bridge-section`, `.cause-feed-section`, `.init-detail*`, `.feed-post*`, `.mission-table*`, `.mrow-*`, `.phase-badge-*`. Dead JS — `renderTable`, `filteredInits`, `showSelectedPanel`, `fmt`. All currently guarded; safe to delete.
-    GOOD SYSTEM! KEEP CANDIDATES LIST UPDATED! Purge all at once when list is very long.
-    
-
-**7 · Long-term sequencing (carried over from STRUCTURE.md):**
-0. Demo-ready core (now) — index.html, cause.html, m_indx.html look right; static demo link works.
-1. Initiative-vote pilot — first 7 weekly votes with cofounder accounts + simulated money, real initiatives, simulated orgs.
-2. Mission / organization layer — org registration → org-built mission pages → m_indx + org election → simulated org vote → mission annulus.
-3. Credits & cash economy — real deposits, credit lifecycle, EN 5/16 cut, tax/redemption. Gate that makes the founding-49-EBX bonus relevant.
-4. Hardening & reach — pytest / playwright, Postgres prod path, pagination, `cycleStart` from API, build-integrity check, static offline mode, Swift app.
-
-## ROADBLOCKS
-1. Seems to be set, but I can't tell behind the bugs.
-
-2. Good progress.
-
-3. Good.
-
-4. Make table collapsable but still default to open.
-The important thing here is that benefactors can vote on their chosen initiative from the main page. 
-
-TOGGLE REDESIGNED.
-5. good.
-6. good.
-7. This doesn't cause any operational problems so can be backlogged. 
-8. Still open, priority is behind voting
-9. Still open, priority is behind voting
-10. Drawings are complete
-11. See roadblocks 1.
-12. Good.
-
-## QUESTIONS & CONCEPTUAL BACKLOG
-- (c) Fix the top-card / topbar alignment.
-**Center contents**
-**Top card expansion**
-**Cause annulus markers** e.g. at the start and end of the active area mark "Initiative election" and "Organization election"
-**Initiative ratings** Each initiative carries a rating that defaults to 0/5 and every benefactor can simply rate each initiative. By rating, initiative is added to a users watchlist. They can remove it from the watchlist however without nullifying thier rating.
-**Watched initiatives** Displayed on profile page. Affects a users EN feed.
-**`cyclestart` config endpoint** I want to run simulations and this will be necessary to understand. I will need to read the code.
-
-## ERRORS
-**Cause page bug** Only 1 of the causes has the new phase 1 voting applied.
-**Entity area table link** The table items are not doing anything onclick. Putting in errors because Claude said this was complete (roadblocks 4).
-## STRUCTURE (not updated)
+## STRUCTURE
 - [ ] **Main page** (index.html) c
     - ✅ **annulus 1** - recolor - roygbiv
         - [ ] **Maximize annulus size for screen**
@@ -229,8 +173,14 @@ TOGGLE REDESIGNED.
         - [ ] **Top** Just below the annulus
             - [ ] **phase 1 recap**
                 - [ ] **if active**
-                show election card and cause info
-                Cause_name cycle_num | decision date | your vote | your vote ratings | ebx committed | pool size | Leading initiative | second | third | ...
+                ____________________________________________________________________________________
+                |              |Leave this area empyth for now, it will contain discussion |cause cyclenum|
+                | Top 3 tivs   |and news                                                   |decision date|
+                |______________|                                                           |yourcommittment|
+                | My selections|                                                           |Totalpool|
+                | (top 3)      |____________________________________________________________________|
+                |______________|____Review____Discuss____Propose_____________other options__________|
+                - When a benefactor is modifying their vote distribution, the slider dialog expands the phase 1 area downward, and benefactors can collapse it back when they are satisfied.
                 - [ ] **else**
                 Show how the people decided on the tiv, and mention the runners up.
         - [ ] **slot below top**

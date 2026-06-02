@@ -1258,8 +1258,6 @@
     function renderElectionCard(cause, inits, decisionDate) {
       const block = document.getElementById('phase-recap-1');
       if (!block) return;
-      const state = EBX.Cycle.now();
-      const inPhase1 = state.causeIndex === cause.index;
       const dayDiff = Math.max(0, Math.ceil((decisionDate.getTime() - Date.now()) / 86400000));
       const dayWord = dayDiff === 0 ? 'today' : (dayDiff + 'd to decision');
 
@@ -1275,20 +1273,13 @@
           </div>`;
         return;
       }
-      // Outside phase 1 — render a recap of the leading initiative (unchanged).
-      if (!inPhase1) {
-        const leader = [...inits].sort((a,b) => (b.ebx_committed||0) - (a.ebx_committed||0))[0];
-        block.innerHTML = `
-          <div class="phase-recap__num">Phase 1</div>
-          <div class="phase-recap__body">
-            <div class="phase-recap__title">Pre-Initiative · Initiative Election</div>
-            <div class="phase-recap__sub">
-              Elected: <b style="color:var(--clr-honey)">${leader.emoji||''} ${leader.title}</b>
-              · decision <b>${fmtDate(decisionDate)}</b>
-            </div>
-          </div>`;
-        return;
-      }
+      // Pass-19 P0 #1: previously this method gated on
+      //   state.causeIndex === cause.index
+      // and returned a static recap for the other 6 causes. Jax reported
+      // (STRUCTURE.md ERRORS, README pass-18) that only 1/7 causes showed the
+      // live phase-1 voting widget. Drop the gate — every cause page renders
+      // the live election widget against its OWN next-decision cycle, which
+      // _causeDecisionMs already returns correctly post-pass-17.
 
       // PHASE 1 — live election widget. Branches on vote count:
       //   0 votes  → "Vote" button per row (single-vote default)

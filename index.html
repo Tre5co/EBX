@@ -1257,6 +1257,30 @@
     });
   }
 
+  // Pass-19 P0 #2 — one delegated click listener for the entity table.
+  // Bound once per page load (idempotent via _ebxClickBound). Survives every
+  // renderInitTable/renderOrgTable rerender. Routes by data-kind; ignores
+  // clicks that originated inside a button/anchor (watch ★, website link)
+  // so those keep their own behavior without the row also firing.
+  function _bindTableClickOnce(tbody) {
+    if (!tbody || tbody._ebxClickBound) return;
+    tbody.addEventListener('click', function(ev) {
+      if (ev.target.closest('button,a')) return;
+      const tr = ev.target.closest('tr[data-id]');
+      if (!tr || !tbody.contains(tr)) return;
+      const id   = tr.getAttribute('data-id');
+      const kind = tr.getAttribute('data-kind');
+      if (kind === 'org') {
+        const org = ((EBX.config && EBX.config.organizations) || []).find(o => String(o.id) === String(id));
+        if (org) idxSelectOrg(JSON.stringify(org));
+      } else {
+        const init = (_allInits || []).find(i => String(i.id) === String(id));
+        if (init) idxSelectInit(JSON.stringify(init));
+      }
+    });
+    tbody._ebxClickBound = true;
+  }
+
   function renderOrgTable(orgs) {
     const causes = (EBX.config && EBX.config.causes) || [];
     const causeMap = {};
@@ -1264,6 +1288,7 @@
     const watched = new Set(getWatched());
     const tbody = document.getElementById('init-table-body');
     if (!tbody) return;
+    _bindTableClickOnce(tbody);
     if (!orgs.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="init-table__empty">No organizations found.</td></tr>';
       return;
@@ -1285,7 +1310,12 @@
       const websiteCell = website
         ? `<a href="${website}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--clr-honey);text-decoration:none;font-family:var(--font-mono);font-size:0.72rem;">${website.replace(/^https?:\/\//,'').slice(0,28)}</a>`
         : '<span style="color:rgba(245,240,232,0.3);">—</span>';
-      return `<tr onclick="idxSelectOrg(${JSON.stringify(JSON.stringify(org)).slice(1,-1)})" data-id="${org.id}">
+      // Pass-19 P0 #2 — drop the broken inline onclick (HTML attribute couldn't
+      // survive the JSON.stringify(JSON.stringify(...)) double-escape — the `\"`
+      // sequences terminated the attribute on the first internal quote, so
+      // row-clicks did nothing). Now bound via the delegated listener on
+      // #init-table-body installed below; rows just carry data-id + data-kind.
+      return `<tr data-id="${org.id}" data-kind="org" class="init-table__row">
         <td class="col-watch"><button class="init-watch-btn ${isWatched ? 'watched' : ''}" onclick="toggleWatch(${JSON.stringify(org.id)}, event)" aria-label="${isWatched ? 'Unwatch' : 'Watch'} organization">${star}</button></td>
         <td><div class="init-table__name">${org.name || 'Untitled'}</div></td>
         <td><span class="init-table__cause" style="color:${causeColor}">${causeName}</span></td>
@@ -1333,6 +1363,7 @@
     causes.forEach(c => { causeMap[c.id] = c; causeMap[c.index] = c; });
     const watched = new Set(getWatched());
     const tbody = document.getElementById('init-table-body');
+    if (tbody) _bindTableClickOnce(tbody);
     if (!tbody) return;
     if (!inits.length) {
       tbody.innerHTML = '<tr><td colspan="7" class="init-table__empty">No initiatives found.</td></tr>';
@@ -1348,7 +1379,7 @@
       const emoji = init.emoji || '';
       const isWatched = watched.has(init.id);
       const star = isWatched ? '★' : '☆';
-      return `<tr onclick="idxSelectInit(${JSON.stringify(JSON.stringify(init)).slice(1,-1)})" data-id="${init.id}">
+      return `<tr data-id="${init.id}" data-kind="tiv" class="init-table__row">
         <td class="col-watch"><button class="init-watch-btn ${isWatched ? 'watched' : ''}" onclick="toggleWatch(${JSON.stringify(init.id)}, event)" aria-label="${isWatched ? 'Unwatch' : 'Watch'} initiative" title="${isWatched ? 'Unwatch' : 'Watch'}">${star}</button></td>
         <td><div class="init-table__name">${emoji ? emoji + ' ' : ''}<span>${init.title || 'Untitled'}</span></div></td>
         <td><span class="init-table__cause" style="color:${causeColor}">${causeName}</span></td>
