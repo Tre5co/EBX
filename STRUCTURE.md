@@ -1,7 +1,10 @@
 ## SYSTEM
-**Our goals** Root out wasteful and fraudulent charity organizations/players, reorient peoples media consumption towards meaningful things, focus charity efforts on the cause rather than sponsors, democratize charioty by finding the best idea rather than the most profitable one, rewarding thoughtful ideas, pooling donations to prevent redundant/competing charity missions. Provide unbiased and mission-oriented news coverage of every mission.
-**Cause rotation - 7 weeks**
-Atmosphere - Oceans - Land - Forests - Wildlife - Rights - Progress
+- **Our goals** 
+Streamline and publicize charity missions. Expose wasteful or fraudulent organizations/players. Reorient media consumption towards meaningful efforts, focus charity on the cause, not the sponsors. Democratize ideas to find the best one, not the most profitable one by rewarding thoughtful ideas, pooling donations to prevent redundant/competing activities. Provide unbiased and mission-oriented news coverage independently.
+- **Cause rotation - 7 weeks**
+Atmosphere - Oceans - Land - Forests - Wildlife - H-Rights - H-Progress
+- **Benefactor experience**
+Each week, benefactors elect an organization for the active cause and an initiative for the next cause.
 **Voting**
 1. Initiative voting - soft
 Vote tallied on the first day of its causes active period.
@@ -19,51 +22,77 @@ Vote weight amplified by contribution amount.
 2. Organization
 Additional votes can be bought for increasing prices.
 100% sent if your organization wins, 20% if not.
-
-**Weekly missions - 4 phases**
+**Weekly missions - 5 phases**
 1. Pre-Initiative-Election: weeks < 1
-    - mission page (broad template) is created.
 2. New-Initiative: weeks 1 - 8
-3. New-Mission: weeks 9 - 16
+3. Budget: weeks 9 - 16
 4. Credit-Release: weeks 17 - 32
 5. Resolution: weeks 33+
-**EN** Earthbux News generates interactive content
-- Benefactors and Organizations post content within each mission.
-Benefactor posts: 
-- Initiative ratings
-- organization reviews
-- mission ideas (idea i.e. a thoughtful suggestion for how the org should proceed).
-Org posts: 
-- `mission proposals` (When competing for an org election)
-- `mission_ideas`
-- `mission updates`
-- `feedback`
-EBX posts: 
-- `status-updates` on the mission metrics.
+- **Phase key-date naming.** One anchor with computed offsets is good. Pull dates from these precomputed.
+**EN** Interactive content from benefactors, organizations, and Earthbux News.
+The most helpful posts in the following categories are voted on.
+Benefactor posts (phase 1-2):
+- `case`
+- `evaluation`
+- `context`
+- `analysis`
+
 The app will eventually allow users to have constant location monitoring, and proximity-based selection of nearby missions or nearby mission opportunities.
-Benefactors and organizations can both create ratings. When they do, they have the option to create a post alongside it, which can "help". Benefactor posts that help the most can earn earthbux to their poster. If an organization helps the won earthbux actually has to go to a benefactor within that org.
-**Development**
-`backlog management` Update structure and content of readme
-`build` Is for making changes.
 
 ## STRUCTURE
-- [ ] **Main page** (index.html) c
+- [ ] **Profile page** backlog - Profiles. I NEED TO ASCII DRAW
+    - [ ] **Upcoming Decisions** 3 items: 
+    Top: Initiative decision for cause x - link to cause page phase 1 for that mission
+    Middle: Org decision for cause w - link to cause page phase 2 for that mission
+    Bottom: Initiative and org for most recent mission. - links to cause page for that mission
+    - [ ] **Dropdown dialog** Credit badge has dropdown hover where users can (log in/register or) log out, view wallet, or switch to an organization account.
+    - [ ] **Choices_Table** All upcoming decisions (14)
+        - ✅ **Toggle** between initiatives and orgs
+    - [ ] **Verification & perks**
+        - [ ] **Discounts** Earthbux fees are voided or discounted in certain cases
+        - Benefactor committed to the winning initiative early
+        - Benefactor committed to the winning organization early
+        - Benefactor has achieved "Helpful" status on mission
+        - Benefactor is willing to commit to a higher percentage being sent to the pool
+        - [ ] **Post rewards** Benefactors are awarded credit coins from a mission if their posts are highly related and deemed "Helpful"
+        - [ ] **Credit badge colorization** Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
+            - [ ] **Automatic coloring threshold** threshold: $10
+        - [ ] **Post visibility**
+        Larger donations can unlock more visibility for your posts.
+        - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.
+    - [ ] **Org page** Organizations have public profile pages
+    Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org rep. Once approved as a candidate, they build a mission page which continues if they win and is frozen and linked from their profile if not.
+    Organization profile pages are very similar to benefactor profile pages. 
+        - [ ] **Memberships** Page view and permissions depend on them
+        Human representative of the weekly mission - Every org account is a member...
+            - [ ] **Contributor**
+            Benefactor who voted for org/possesses credits for mission
+            credits=membership
+            This will build a community.
+            - [ ] **Representative**
+            Person with permissions to edit mission page
+            - [ ] **Executive**
+            Highest level of member permission
+            - [ ] **Beneficiary**
+            Representative for the recipient of the charity effort
+        - [ ] **Organization logos.** --backlog
+        Color wheel idea
+    - [ ] **Settings**
+        - [ ] **Settings window scope elaboration** not sure yet.
+        - [ ] **Testing**
+            **`is_test` column.** Lets us test without using real ebx.
+            **`cyclestart` config endpoint** I want to run simulations and this will be necessary to understand. I will need to read the code.
+- [ ] **Home page** (index.html)
     - ✅ **annulus 1** - recolor - roygbiv
         - [ ] **Maximize annulus size for screen**
-        - [ ] **Center of Annulus**
-        Todays date, leading initiative for upcoming vote (next cause) - Once this is done, we'll figure out how to differentiate it from the top-right card. It will have details about the election and previous initiative... i dont know yet.
+        - [ ] **Center of Annulus** More refinements soon
             - ✅ **glowy circle** Inner circle of "cause annulus* glows to represent the NEXT cause
             - [ ] **3D visual** backlog -
         - [ ] **Manipulate annulus & zoom** backlog -touchscreen
         - ✅ **`now` indicator** - UX aid for time-telling
             - ✅ **glowy marker** Glowy white vertical marker on top side of annulus. 
     - ✅ **Page toggle** Toggles whole page between upcoming org/tiv elections
-        - [ ] **Location** Located below the annulus, in between the side cards, above the table.
-        - [ ] **What it changes**
-        - Flips all 7 cards between front (org mode) and back (tiv mode)
-            - note that the top card will be the only thing on the page referencing an org while toggled to tiv mode.
-        - Flips table between initiative table and organization table
-            - flips between "propose an initiative" and "register an organization"
+        - ✅ **Location** Located below the annulus, in between the side cards, above the table.
     - [ ] **Election Cards** switching to 2-sided
         - [ ] **Side cards** Note that we will be changing ebx counts instead of %s because that allows one to estimate the total pool size
             - ✅ **Location**
@@ -108,48 +137,46 @@ Benefactors and organizations can both create ratings. When they do, they have t
             |choice_name_______________ % |_____|
         In the future, the top card will include more information.
     - [ ] **Table** - 2 states
-        - [ ] **rows** Each row selects a different entity card.
-        - [ ] **Filters** For now, keep same filters for both states
-        - ✅ **State 1 - Initiative Table** leading proposed initiatives
-        search   -   filters      -       Propose an initiative
-        Watch | Name | cause | my ebx committed | total ebx committed | status | next vote day
-            - [ ] **propose an initiative**
+        - ✅ **rows** Each row selects a different entity card.
+        - [ ] **State 1 - Initiative Table** leading proposed initiatives
+        Table only displays phase 1 tivs.
+            - ✅ **Filters**
+            - ✅ **propose an initiative**
             - cause
             - title
             - description
             handle/anonymous
-            - [ ] **columns**
-                - [ ] **status**
+            - [ ] **Design**
+            search   -   filters      -       Propose an initiative
+            Watch | Name | cause | my ebx committed | total ebx committed | tiv vote day
+            - [ ] **column details** (some of them, more incoming)
+                - [ ] **phase**
                 show the phase of the initiative. If no ebx has been committed, status  is "suggested"
                 - [ ] **watch** 
                 users can bookmark ("watch") initiatives
-        - ✅ **State 2 - Organization Table** leading organizations
-        search   -   filters      -       Nominate an Organization
-        Watch | Name | website_link | status | my ebx committed | total ebx committed | ring-mini
+        - [ ] **State 2 - Organization Table** leading organizations
+            - [ ] **Filters** Mission, status, etc. idk yet
             - [ ] **Org registration** move "compete for this mission" here
                 - [ ] **instructions**
                 Call for charity organizations or for people to suggest charitys. We need recipients for our donations!
+            - [ ] **Page design**
+            search   -   filters      -       Nominate an Organization
+            Watch | Name | website_link | status | my ebx committed | total ebx committed | ring-mini
+            - [ ] **Column details** More to come.
         - [ ] **Entity toggle** There will be a front and back of the entity card (below)
         Currently says selected and news. Switch to just front and back for now and move the toggle inside the card.
-    - [ ] **Entity Card** - Entity = tiv or org
-    Each tiv and org in the tables opens an organization/initiative (i.e. entity) card  Front and back eventually, for now we'll only be working on front. Defaults to the leading upcoming initiative (same as top right card back and center circle), or if "view organization elections" is toggled, it defaults to the leading organization on the front of the top card. Include vote option here. If the user has already voted and its the tiv vote, notify that they can split their vote and if they want to take them to the cause page. If it's an organization say that they have already voted for x and would they like to change their vote.
+    - [ ] **Entity Card** - Entity = tiv or org. Defaults to the leading upcoming initiative/the leading organization
+        - [ ] **Front and back** Replaces News/selected. For now we'll only be working on front. 
         - ✅ **Location** Fill area below table
         - [ ] **Vote** Both modes include a vote button
-            - [ ] **Case first vote** If a benefactor has not yet voted
-            Register the benefactors vote to the selected entity
-            - [ ] **else**
-            org: prompt to change vote or cancel.
-            tiv: prompt to divide vote, if yes move to cause page vote area.
-        - [ ] **case tiv**
-            - [ ] **Initiative ratings.** 
-            Posts tagged as a rating are factored into an initiative's overall rating.
-        - [ ] **case org**
+            - [ ] **case org**
+            - [ ] **case tiv**
 - [ ] **Cause page** (cause.html)
     - ✅ **Active missions bar**
     7 squares across the top of the screen that toggle between causes
         - [ ] **Add start dates**
     - [ ] **annulus 2**
-    Center: Date, time until cause
+    Center: Date, onclick changes selectMission to upcoming initiative election and renders active the phase 1 area.
     Tier 1 (center ring): Pie chart
     Tier 2: Highlight selected cause
     Tier 3 (Outside ring): Mission metrics
@@ -160,104 +187,85 @@ Benefactors and organizations can both create ratings. When they do, they have t
         See mission section.
     - ✅ **Left Cards**
     Display options for the next initiative vote for the selected cause
-    - ✅ **Right cards**
+    - [ ] **Right cards**
+    Onclick, each card changes the mission story section to its mission.
         - [ ] **Bottom** 
         Previous mission (in phase 3 or 4) of selected cause
         - [ ] **Middle** 
         Whatever mission is currently in phase 3 of selected cause
         - [ ] **Top** 
         Whatever mission is currently in phase 2 of selected cause
-    - [ ] **mission story RENOVATED** 5 sections that fill as the mission progresses, creating one big section.
-        - [ ] **New annulus** If a mission is selected, the outer annulus changes - backlog
-        - [ ] **Header row** Mission overview. Move card to connect with section below.
-        - [ ] **Top** Just below the annulus
-            - [ ] **phase 1 recap**
-                - [ ] **if active**
-                ____________________________________________________________________________________
-                |              |Leave this area empyth for now, it will contain discussion |cause cyclenum|
-                | Top 3 tivs   |and news                                                   |decision date|
-                |______________|                                                           |yourcommittment|
-                | My selections|                                                           |Totalpool|
-                | (top 3)      |____________________________________________________________________|
-                |______________|____Review____Discuss____Propose_____________other options__________|
-                - When a benefactor is modifying their vote distribution, the slider dialog expands the phase 1 area downward, and benefactors can collapse it back when they are satisfied.
-                - [ ] **else**
-                Show how the people decided on the tiv, and mention the runners up.
-        - [ ] **slot below top**
-            - [ ] **phase 2 recap**
-            When an initiative wins an election, the mission page template is created. This populates phase 2 in cause.html with a discussion of the initiative and the potential organizations to run it. It must include a discussion option. Posts to a wall, comments, images, ratings, I don't know and I'm open to suggestions. There are definitely 2 main categories - posts meant to educate about the initiative, and posts meant to educate, advertise, or criticize organizations.    
-                - [ ] **if active**
-                show election card
-                Ring-mini | Cause_name| Initiative | Your pool contribution so far | org-election date | your vote | Reviews | ebx committed | pool size | Leaders
-                - [ ] **else**
-                Show how the people decided on the org, and mention the runners up.
-        - [ ] **slot 2 below top**
-            - [ ] **if active**
+    - [ ] **mission story** 5 sections that fill as the mission progresses, creating one big section.
+    *Note* for phase 1 and 2, "vote" appears 6 times. This refers to the helpful|neutral|wrong voting for discussion posts.
+        - [ ] **Change annulus** If a mission is selected, the outer annulus changes - backlog
+        - [ ] **Header row** right below the annulus, in between left and right cards.
+        Just the cause name, and cycle number, or the mission title and organizaiton name if applicable.                ____________
+        __________________________|Brief header|__________________________
+        |Phase 1 area                                                    |
+        - [ ] **Phase 1** Top card, below the header
+            - [ ] **when Active** 
+            _____________________________________________________________________
+            | _________  _________   _______________|Discussion|_________________|
+            ||Leaders  ||My votes | ||vote|Most_helpful/trending_case_____<>|post|
+            ||         ||         | ||vote|Most_helpful/trending_context__<>|post|
+            ||_________||_________| ||vote|Most_helpful/trending_analysis_<>|post|
+            ||pool size||My commit|_|Search for an initiative____________________|
+            | Display area for an initiative. Default to top vote. If none leader|
+            | Slider vote bars (or just 'vote'), with new selected tiv option.   |
+            |         discussion                                                 |
+            |_|view initiatives|__|commit ebx|___________________________________|
+            - [ ] **When Recap** Discussion locks after vote
+            Show how the people decided on the tiv
+            _____________________________________________________________________
+            | _________  _________   _______________|Discussion|_________________|
+            ||Winner   ||My votes | |Most_helpful_case______________________<>|go|
+            ||2nd      ||         | |Winning intiative description               |
+            ||3rd______||_________| |____________________________________________|
+            ||pool size||My commit|_|See election details__v_____________________|
+            |_______Election details dropdown-backlog____________________________|
+        - [ ] **Phase 2** Below phase 1 card.
+        When an initiative wins an election, the mission page template is created. This populates phase 2 in cause.html with a discussion of the initiative and the potential organizations to run it. It must include a discussion option. Posts to a wall, comments, images, ratings, I don't know and I'm open to suggestions. There are definitely 2 main categories - posts meant to educate about the initiative, and posts meant to educate, advertise, or criticize organizations.    
+            - [ ] **Pre** Display 1-line "This phase is not yet active"
+            - [ ] **When Active** Similar to phase 1 when active
+            When the initiative is decided, organizations can compete for that pool. If they already have a page, it becomes unfrozen when the initiative is elected.
+            One organization gets to claim the mission.
+            _____________________________________________________________________
+            | _________  _________   _______________|Discussion|_________________|
+            ||Leaders  ||My vote  | ||vote|Most_helpful/trending_eval_____<>|post|
+            ||         ||         | ||vote|Most_helpful/trending_context__<>|post|
+            ||_________||_________| ||vote|Most_helpful/trending_analysis_<>|post|
+            ||pool size||My commit|_|Search for an organization__________________|
+            | Display area for an organization. Default to vote. If none leader. |
+            | Show discussion and org supplied content                           |
+            |                                                                    |
+            |_|View organizations|_|Commit ebx|__________________________________|
+            - [ ] **When Recap**
+            _____________________________________________________________________
+            | _________  _________   _______________|Discussion|_________________|
+            ||Leaders  ||My vote  | |Most_helpful_evaluation________________<>|go|
+            ||         ||         | |Winning organization mission statement      |
+            ||_________||_________| |____________________________________________|
+            ||pool size||My commit|_|See election details__v_____________________|
+            |_______Election details dropdown-backlog____________________________|
+        - [ ] **Phase 3** Budget phase
+        Once the mission begins, all committed money is locked. Organization learns how they can earn the full pool. 
+            - [ ] **Pre** Display 1-line "This phase is not yet active"
+            - [ ] **when active**
             benefactors and organization build an action plan
-            Ring-mini | Initiative | Organization | Your earthbucks | release date | credit | your intentions 
-            - [ ] **else**
-            phase 3 recap
-            Here is where the organization (with the help of earthbux) is responsible for creating an impact
-            - [ ] **phase 4 recap**
-            this is where the community discusses the organizations impact
-            - [ ] **phase 5** financial complexities - backlog
+            Ring-mini | Initiative | Organization | Your earthbucks | release date | credit | your intentions
+            - [ ] **Recap**
+        - [ ] **Phase 4** Evaluation phase
+        After phase 3, 1/16 of the credits are released to the benefactors who provided the best contributions, and for the weeks after that, the money is released to a combination of the organizaion and the benefactors. 
+            - [ ] **Pre** Display 1-line "This phase is not yet active"
+            - [ ] **Progress reports** The missions 7-12 step progress report is prominent on the mission page. This consists of a benefactor-moderated comparison of the organization's progress reporting and Earthbucks parallel report.
         - [ ] **items**
             - [ ] **Ring Mini** A mini *cause annulus* is displayed next to each mission (if phase 1, it's empty). This will resemble the missions credit coin.
         - [ ] **Admin side** Admins have the full table. 
-## MEMBERSHIPS
-- [ ] **BENEFACTOR** A human who intends to vote in the election.
-    - [ ] **Profile page** Benefactor profiles are mostly private
-        - [ ] **Upcoming Decisions** 3 items: 
-        Top: Initiative decision for cause x - link to cause page phase 1 for that tiv
-        Middle: Org decision for cause w - link to cause page phase 2 for that org
-        Bottom: Initiative and org for most recent mission. - links to mission page.
-        - [ ] **Dropdown dialog** Credit badge has dropdown hover where users can (log in/register or) log out, view wallet, or switch to an organization account.
-        - [ ] **Choices_Table** All of a users upcoming decisions.
-        - [ ] **Discounts** Earthbux fees are voided or discounted in certain cases
-        - Benefactor committed to the winning initiative early
-        - Benefactor committed to the winning organization early
-        - Benefactor has achieved "Helpful" status on mission
-        - Benefactor is willing to commit to a higher percentage being sent to the pool (maybe I should use "commit" here and replace previous usages of commit with "pledge"... thoughts?)
-        - [ ] **Postmint** After 7-week period This will be complicated and is super backlog
-    - [ ] **Verification & perks**
-        - [ ] **Feedback value** 
-        Good posts can be awarded `cause_EBX`
-        - [ ] **Review/rating awards** Benefactors are awarded credit coins from a mission if their posts are highly related and deemed "Helpful"
-        - [ ] **Credit badge colorization** Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
-            - [ ] **Automatic coloring threshold** threshold: $10
-        - [ ] **Post visibility**
-        Larger donations can unlock more visibility for your posts.
-        - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.
-- [ ] **ORGANIZATION** Organizations are mostly public, and work to build mission pages.
-Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org employee. Once approved as a candidate, they put all important information on a mission page which continues if they win and is frozen and linked from their profile if not.
-    - [ ] **Profile page** 
-    Organization profile pages are very similar to benefactor profile pages. 
-        - logo
-        - missions
-        - posts
-        - [ ] **Memberships**
-        Human representative of the weekly mission - Every org account is a member...
-            - [ ] **Contributor**
-            Benefactor who voted for org/possesses credits for mission
-            credits=membership
-            This will build a community.
-            - [ ] **Representative**
-            Person with permissions to edit mission page
-            - [ ] **Executive**
-            Highest level of member permission
-            - [ ] **Beneficiary**
-            Representative for the recipient of the charity effort
-    - [ ] **Missions page**
-    Home page for organizations.
-        - [ ] **Mission registration**
-        If an initiative is open (won one of the 7 causes) organizations can compete for that pool if they have a sufficiently developed page for that initiative. If they already have one, it becomes unfrozen when the initiative is elected.
-        Organizations fill out mission pages for whatever initiative they want to apply for. Once the election is active everything becomes linked together by election widgets, and when it's over one organization gets to claim the mission. Every stage hass a success metric and a cash reward.
-        - [ ] **Mission structure**
-        Organizations accomplish mission goals to earn as much money as possible
-            - [ ] **Budget phase**
-            Once the mission begins, all committed money is locked for 7 weeks. This is the early mission period, when the organization learns how they can best earn the full pool. 
-            - [ ] **Evaluation Phase**
-            After 7 weeks, 1/16 of the credits are released to the benefactors who provided the best contributions, and for the weeks after that, the money is released to a combination of the organizaion and the benefactors. 
+- [ ] **Credit page** - in progress. Forms after phase 3
+Note that this whole page is backlogged until after completion of phases 1 & 2.
+    - [ ] **Mission Annulus** Backlog
+    Each mission gets its own ring widget. Deadlines. Budget submission, beneficiary approval/outreach, issue resolution (for example, a response to donor questions), Earthbux check-ins. Flow from ring minis on homepage or mission index to mission page. Will increase in complexity. 7-12 steps. This will beome the 3rd (outer) annulus on the cause page.
+    - [ ] **Credits** a credit is 1 EBX
             - [ ] **Mission credit** Represented by a coin, value changes.
                 - [ ] **Parameters**
                 - Benefactor satisfaction
@@ -266,32 +274,25 @@ Auto-create an OrgAccount when a benefactor receives a credit coin, or help them
                 - Budget adherance - efficiency
                 - Transparency
                 - Misc. accomplishments/failures
-        - [ ] **Progress reports** The missions 7-12 step progress report is prominent on the mission page. This consists of a benefactor-moderated comparison of the organization's progress reporting and Earthbucks parallel report.
-        - [ ] **Mission Annulus** Backlog - 4 now just do a multi-sectored annulus.
-        Each mission gets its own ring widget which is on the cause page. Deadlines. Budget submission, beneficiary approval/outreach, issue resolution (for example, a response to donor questions), Earthbux check-ins. Flow from ring minis on homepage or mission index to mission page. Will increase in complexity. 7-12 steps which can just be labeled 1-12 and will all link to the mission page. This will beome the 3rd outer annulus on the cause page.
-        - [ ] **Organization logos.** 1/2 of credit coin.
-        Color wheel idea --backlog
-## CREDITS
-- [ ] **Credits** a credit is 1 EBX
-Life cycle: Generic -> cause-tagged -> mission-tagged -> organization-tagged -> Live
-    - [ ] **Conversion** $1 = 1 credit
-        - [ ] **Coin value** Exactly 1 for the first 7 weeks
-            EBX maintain a value of $1 7-weeks-post-mint
-            Unminted EBX can be exchanged for cash. They are not tax deductable yet.
-    - [ ] **Exchange** Non-donation exchanges
-        - [ ] **Transactional logic** 
-        Coins operate similarly to a cryptocurrency, can be exchanged for coins from other missions.
-            - [ ] **Any gains are not tax deductable**
-    - [ ] **Donation**
-        - [ ] **Tax deductable**
-        All minted credits are tax-redeemable. Only happens after it has been committed to a charity and converted.
-        - [ ] **The rest is now in your wallet**
-          - [ ] **EN Thresholds** We only take money if the pool is above $100. 
-          - [ ] **5/16 EN Cut** Users are notified that 5/16 % of their money is going to Earthbux News (EN) and they/we go and help the mission in any way we can while reporting and chase them if we have to.
-              - [ ] **1/16 to evaluation**  
-              Included in Earthbux 5/16.
-              - [ ] **1/4 to our side of the mission**
-              We will create a budget.
-    - [ ] **Badge**
-    Users possessing the credit have it displayed on their profile. It is the ring-mini for that mission annulus.
-        - [ ] **Coin visual** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission from m_indx
+    Life cycle: Generic -> cause-tagged -> mission-tagged -> organization-tagged -> Live
+        - [ ] **Conversion** $1 = 1 credit
+            - [ ] **Coin value** Exactly 1 for the first 7 weeks
+                EBX maintain a value of $1 7-weeks-post-mint
+                Unminted EBX can be exchanged for cash. They are not tax deductable yet.
+        - [ ] **Exchange** Non-donation exchanges
+            - [ ] **Transactional logic** 
+            Coins operate similarly to a cryptocurrency, can be exchanged for coins from other missions.
+                - [ ] **Any gains are not tax deductable**
+        - [ ] **Donation**
+            - [ ] **Tax deductable**
+            All minted credits are tax-redeemable. Only happens after it has been committed to a charity and converted.
+            - [ ] **The rest is now in your wallet**
+            - [ ] **EN Thresholds** We only take money if the pool is above $100. 
+            - [ ] **5/16 EN Cut** Users are notified that 5/16 % of their money is going to Earthbux News (EN) and they/we go and help the mission in any way we can while reporting and chase them if we have to.
+                - [ ] **1/16 to evaluation**  
+                Included in Earthbux 5/16.
+                - [ ] **1/4 to our side of the mission**
+                We will create a budget.
+        - [ ] **Badge**
+        Users possessing the credit have it displayed on their profile. It is the ring-mini for that mission annulus.
+            - [ ] **Coin visual** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission from m_indx

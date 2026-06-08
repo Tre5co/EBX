@@ -526,17 +526,17 @@
     </div>
   </section>
 
-  <!-- ── MAIN TOGGLE: Initiative Elections | Organization Elections ── -->
+  <!-- ── MAIN TOGGLE: View Initiatives | View Organizations ── -->
   <section class="main-toggle-section">
     <div class="container">
-      <div class="main-toggle" role="tablist" aria-label="Election view toggle">
+      <div class="main-toggle" role="tablist" aria-label="Initiative/organization view toggle">
         <button class="main-toggle__btn active" id="main-toggle-tiv"
                 onclick="setMainMode('tiv')" role="tab" aria-selected="true">
-          View Initiative Elections
+          View Initiatives
         </button>
         <button class="main-toggle__btn" id="main-toggle-org"
                 onclick="setMainMode('org')" role="tab" aria-selected="false">
-          View Organization Elections
+          View Organizations
         </button>
       </div>
       <span class="main-toggle__hint" id="main-toggle-hint">
@@ -557,8 +557,8 @@
           <select class="init-filter" id="filter-cause" onchange="filterInitiatives()" aria-label="Filter by cause">
             <option value="">All causes</option>
           </select>
-          <select class="init-filter" id="filter-stage" onchange="filterInitiatives()" aria-label="Filter by stage">
-            <option value="">All stages</option>
+          <select class="init-filter" id="filter-stage" onchange="filterInitiatives()" aria-label="Filter by phase">
+            <option value="">All phases</option>
             <option value="suggested">Suggested</option>
             <option value="debate">Debate</option>
             <option value="active">Active</option>
@@ -584,7 +584,7 @@
                 <th>Cause</th>
                 <th>My EBX</th>
                 <th>Total EBX</th>
-                <th>Status</th>
+                <th>Phase</th>
                 <th>Next vote</th>
               </tr>
             </thead>
@@ -1003,7 +1003,7 @@
         <th>Cause</th>
         <th>My EBX</th>
         <th>Total EBX</th>
-        <th>Status</th>
+        <th>Phase</th>
         <th>Next vote</th>
       </tr>`;
     } else {

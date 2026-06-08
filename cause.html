@@ -662,6 +662,34 @@
     }
     .mission-overview__meta b { color: var(--clr-parchment); font-weight: 600; }
 
+    /* Brief header row (pass-32b, per STRUCTURE drawing): a compact centered tab
+       between the annulus and the Phase-1 area — cause+cycle by default, or the
+       selected mission's title + org. */
+    .mission-header { text-align: center; margin: var(--sp-sm) 0 var(--sp-md); }
+    .mission-header__brief {
+      display: inline-flex; align-items: center; gap: 12px;
+      flex-wrap: wrap; justify-content: center;
+      padding: 8px 20px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius-md);
+    }
+    .mission-header__main {
+      font-size: 0.92rem; font-weight: 700;
+      color: var(--cause-color, var(--clr-parchment));
+    }
+    .mission-header__chip {
+      font-family: var(--font-mono); font-size: 0.6rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--clr-parchment);
+      background: rgba(255,255,255,0.06);
+      padding: 3px 10px; border-radius: 999px;
+    }
+    .mission-header__date {
+      font-family: var(--font-mono); font-size: 0.62rem;
+      color: rgba(245,240,232,0.55);
+    }
+
     /* ── Right mission cards (build-seq 2c) ──
        Each card represents a mission in phase 2, 3, or 4 of the selected cause.
        Click does NOT expand the card; instead it RE-TARGETS the 4 phase-recap
@@ -1006,8 +1034,7 @@
             <!-- SVG pie chart injected by JS -->
             <!-- Now-marker SVG overlaid by JS -->
           </div>
-          <!-- Mission overview block (build-seq 2d) -->
-          <div class="mission-overview" id="mission-overview"></div>
+          <!-- Mission overview relocated to header row above phase recaps (pass 32) -->
         </div>
 
         <!-- RIGHT: Mission cards (top=upcoming org election, middle=active, bottom=previous) -->
@@ -1030,6 +1057,12 @@
   <!-- ══ MISSION PHASE RECAPS (build-seq 2b): 4 stacked blocks per STRUCTURE.md ══ -->
   <section class="phase-recaps">
     <div class="container">
+      <!-- Mission header row (README §7 step 1c) — relocated from below annulus.
+           Subscribes to setSelectedMission; shows targeted mission's cycle/cause,
+           title, phase (derived from status), and start date. -->
+      <div class="mission-header" id="mission-header">
+        <div id="mission-overview"></div>
+      </div>
       <div class="phase-recap" id="phase-recap-1" data-phase="1">
         <div class="phase-recap__num">Phase 1</div>
         <div class="phase-recap__body">
@@ -1131,18 +1164,28 @@
           .sort((a,b) => (b.ebx_committed||0) - (a.ebx_committed||0))[0] || null;
       }
 
-      // Render the live election widget into phase-recap-1.
-      renderElectionCard(cause, causeInitsLocal, decisionDate);
+      // Render the live election widget into phase-recap-1. Pass missionRef so a
+      // selected past mission renders its Phase-1 RECAP instead of the live widget.
+      renderElectionCard(cause, causeInitsLocal, decisionDate, opts.missionRef);
 
       const set = (id, html) => {
         const el = document.getElementById(id); if (el) el.innerHTML = html;
       };
-      const orgVoteDate = new Date(decisionDate.getTime() + 7*WEEK_MS);
+      // Anchor-date model (README §4/§7): when a specific mission is selected and
+      // carries an election_open date, derive Phase-2/3/4 boundaries from THAT
+      // anchor via EBX.Cycle.missionPhaseDates — not the cause's CURRENT decision
+      // date. Falls back to the live cause cadence (+7w/+14w) when unselected.
+      let _pd = null;
+      if (opts.missionRef && opts.missionRef.election_open && EBX.Cycle.missionPhaseDates) {
+        try { _pd = EBX.Cycle.missionPhaseDates(opts.missionRef.election_open); } catch(e) { _pd = null; }
+      }
+      const orgVoteDate = _pd ? _pd.phase2_start : new Date(decisionDate.getTime() + 7*WEEK_MS);
+      const releaseDate = _pd ? _pd.phase3_start : new Date(decisionDate.getTime() + 14*WEEK_MS);
       set('phase-recap-2-sub',
         `Org election <b>${fmtDate(orgVoteDate)}</b> — organizations compete to run
          <b style="color:var(--cause-color)">${leader ? leader.title : 'the elected initiative'}</b>.`);
       set('phase-recap-3-sub',
-        `Budget locked, mission underway. Release window opens <b>${fmtDate(new Date(decisionDate.getTime() + 14*WEEK_MS))}</b>.`);
+        `Budget locked, mission underway. Release window opens <b>${fmtDate(releaseDate)}</b>.`);
       set('phase-recap-4-sub',
         leader && leader.status === 'resolved'
           ? `Resolved. Credits released in stages; benefactors posted evaluations of mission impact.`
@@ -1250,14 +1293,55 @@
     function _rerenderElectionCard(cause) {
       const initsLocal = (EBX.config.initiatives || []).filter(i =>
         i.cause_id === cause.id || i.cause_index === cause.index);
+      // Loose-end #9: funnel the current mission selection through the same path
+      // so a slider re-render on a live election doesn't paint over a recap.
+      let missionRef = null;
+      if (_missionRefId) missionRef = initsLocal.find(i => i.id === _missionRefId) || null;
       // build-seq 2a — share the past-cycle-aware decisionMs helper so the
       // re-render path doesn't reintroduce the stale-date bug.
-      renderElectionCard(cause, initsLocal, new Date(_causeDecisionMs(cause)));
+      renderElectionCard(cause, initsLocal, new Date(_causeDecisionMs(cause)), missionRef);
     }
 
-    function renderElectionCard(cause, inits, decisionDate) {
+    // Phase-1 RECAP (Vote-fix b / STRUCTURE "Phase 1 — When Recap"). Stub: a
+    // single winning-initiative line + locked Discussion placeholder. Step-3 will
+    // flesh out the Leaders/My-votes/pool columns per the STRUCTURE drawing.
+    function renderPhase1Recap(block, cause, missionRef) {
+      if (!block) return;
+      const title = missionRef.emoji ? (missionRef.emoji + ' ' + missionRef.title) : missionRef.title;
+      const when  = missionRef.election_open ? fmtDate(new Date(missionRef.election_open)) : '—';
+      const poolN = missionRef.ebx_committed || missionRef.pool_value || 0;
+      const poolS = poolN ? (poolN.toLocaleString() + ' EBX in pool') : '';
+      block.innerHTML = `
+        <div class="phase-recap__num">Phase 1</div>
+        <div class="phase-recap__body election-card election-card--recap">
+          <div class="election-card__header">
+            <div>
+              <div class="phase-recap__title">Initiative Election · Recap</div>
+              <div class="phase-recap__sub" style="font-size:0.7rem;">Voting closed — this mission's initiative has been elected.</div>
+            </div>
+          </div>
+          <div class="election-card__row" data-tally-id="${missionRef.id}"
+               style="background:rgba(var(--cause-color-rgb,78,122,78),0.06);border-color:var(--cause-color,rgba(255,255,255,0.18));">
+            <div>
+              <div class="election-card__row-title" style="color:var(--cause-color);">✓ ${title} won</div>
+              <div class="election-card__row-sub">Elected ${when}${poolS ? ' · ' + poolS : ''}</div>
+            </div>
+          </div>
+          <div class="election-card__actions">
+            <button class="election-card__withdraw-btn" disabled title="Voting closed for this mission">Voting closed</button>
+            <div class="election-card__status" style="opacity:0.55;">See election details (coming soon)</div>
+          </div>
+        </div>`;
+    }
+
+    function renderElectionCard(cause, inits, decisionDate, missionRef) {
       const block = document.getElementById('phase-recap-1');
       if (!block) return;
+      // Vote-fix (b): if a selected mission's initiative election already happened
+      // (org_vote/active/resolved), render the Phase-1 recap, not the live widget.
+      if (missionRef && ['org_vote','active','resolved'].includes(missionRef.status)) {
+        return renderPhase1Recap(block, cause, missionRef);
+      }
       const dayDiff = Math.max(0, Math.ceil((decisionDate.getTime() - Date.now()) / 86400000));
       const dayWord = dayDiff === 0 ? 'today' : (dayDiff + 'd to decision');
 
@@ -1361,7 +1445,21 @@
         </div>`;
       };
 
-      const rows = inits.map(rowFor).join('');
+      // INSTRUCTIONS step 2: limit visible tivs to top-3 phase-1 + benefactor's voted set.
+      // Past-phase-1 tivs (org_vote/active/resolved) have already won and belong in the right panel.
+      const _phase1 = inits
+        .filter(i => !i.status || ['suggested','debate'].includes(i.status))
+        .sort((a, b) => (b.ebx_committed||0) - (a.ebx_committed||0));
+      const _myVotedIds = new Set(Object.keys(shares).filter(k => (Number(shares[k])||0) > 0));
+      const _top3Ids = new Set(_phase1.slice(0, 3).map(i => i.id));
+      const _visibleInits = _phase1.filter(i => _top3Ids.has(i.id) || _myVotedIds.has(i.id));
+      const _hasMore = _phase1.length > _visibleInits.length;
+      const rows = _visibleInits.map(rowFor).join('')
+        + (_hasMore
+            ? `<div style="font-size:0.7rem;opacity:0.5;padding:6px 0 2px;">
+                 More on <a href="index.html" style="color:inherit;text-decoration:underline;">the main page</a>.
+               </div>`
+            : '');
 
       // Header pill — only meaningful in slider mode.
       const remainText = sliderMode
@@ -1836,36 +1934,57 @@
       buildAnnulusSVG(causeInits, CAUSE_COLOR);
 
     /* ── 6b. Mission overview block (build-seq 2d) — sits below annulus ── */
-    function renderMissionOverview() {
+    // Mission header (renamed from renderMissionOverview; relocated to header row).
+    // When a mission is targeted, phase is derived from its STATUS (mission-relative)
+    // rather than the cause's cycle position. Unselected = cause-relative default.
+    function renderMissionHeader(missionRef) {
       const el = document.getElementById('mission-overview');
       if (!el || !cause) return;
-      // Pick the currently-most-relevant initiative for this cause.
       const active = causeInits.find(i => i.status === 'active');
       const upcoming = causeInits.find(i => ['debate','org_vote','suggested'].includes(i.status));
-      const init = active || upcoming || causeInits[0] || null;
-      // Phase from cycle position within this cause's 49-day window
-      const wStart = EBX.Cycle.windowStart(cause.index, cycleNum);
-      const weeksIn = Math.max(0, Math.floor((Date.now() - wStart.getTime()) / (7 * MS_DAY)));
-      const phaseLabels = ['Pre-Initiative', 'New-Initiative', 'New-Mission', 'Credit-Release', 'Resolution'];
-      let phaseIdx = 0;
-      if (weeksIn >= 33) phaseIdx = 4;
-      else if (weeksIn >= 17) phaseIdx = 3;
-      else if (weeksIn >= 9)  phaseIdx = 2;
-      else if (weeksIn >= 1)  phaseIdx = 1;
-      const phaseLabel = phaseLabels[phaseIdx];
-      const totalEbxFmt = EBX.formatEBX
-        ? EBX.formatEBX(totalEBX || 0)
-        : (totalEBX || 0).toLocaleString() + ' EBX';
+      const init = missionRef || active || upcoming || causeInits[0] || null;
+
+      let phaseNum, phaseLabel;
+      if (missionRef) {
+        // Mission-relative phase from status (matches right-panel card labels).
+        const map = {
+          suggested: [1, 'Initiative Election'],
+          debate:    [1, 'Initiative Election'],
+          org_vote:  [2, 'Org Election'],
+          active:    [3, 'Mission Underway'],
+          resolved:  [4, 'Resolution'],
+        };
+        const pair = map[missionRef.status] || [1, 'Initiative Election'];
+        phaseNum = pair[0]; phaseLabel = pair[1];
+      } else {
+        // Cause-relative default (cycle position within the 49-day window).
+        const phaseLabels = ['Pre-Initiative', 'New-Initiative', 'New-Mission', 'Credit-Release', 'Resolution'];
+        const wStart = EBX.Cycle.windowStart(cause.index, cycleNum);
+        const weeksIn = Math.max(0, Math.floor((Date.now() - wStart.getTime()) / (7 * MS_DAY)));
+        let phaseIdx = 0;
+        if (weeksIn >= 33) phaseIdx = 4;
+        else if (weeksIn >= 17) phaseIdx = 3;
+        else if (weeksIn >= 9)  phaseIdx = 2;
+        else if (weeksIn >= 1)  phaseIdx = 1;
+        phaseNum = phaseIdx + 1; phaseLabel = phaseLabels[phaseIdx];
+      }
+
+      const startDate = (init && init.election_open) ? fmtDate(new Date(init.election_open)) : null;
+      const orgName = missionRef && missionRef.winning_org ? missionRef.winning_org : null;
+      // Brief header content: mission title (+ org) when a mission is targeted,
+      // else the cause name + cycle number. Phase chip + start date are secondary.
+      const briefMain = missionRef
+        ? `${init ? (init.emoji || '🌱') + ' ' + init.title : cause.name}${orgName ? ' · ' + orgName : ''}`
+        : `${cause.emoji ? cause.emoji + ' ' : ''}${cause.name} · Cycle ${(cycleNum || 0) + 1}`;
       el.innerHTML = `
-        <div class="mission-overview__eyebrow">Mission overview · ${cause.name}</div>
-        <div class="mission-overview__title">${init ? (init.emoji || '🌱') + ' ' + init.title : 'No mission selected'}</div>
-        <div class="mission-overview__phase">Phase ${phaseIdx + 1} — ${phaseLabel}</div>
-        <div class="mission-overview__meta">
-          <span><b>${causeInits.length}</b> initiative${causeInits.length === 1 ? '' : 's'}</span>
-          <span><b>${totalEbxFmt}</b> pool</span>
-          <span>week <b>${weeksIn + 1}</b> / 49</span>
+        <div class="mission-header__brief">
+          <span class="mission-header__main">${briefMain}</span>
+          <span class="mission-header__chip">Phase ${phaseNum} — ${phaseLabel}</span>
+          ${startDate ? `<span class="mission-header__date">started ${startDate}</span>` : ''}
         </div>`;
     }
+    // Back-compat alias for any caller still using the old name.
+    function renderMissionOverview() { return renderMissionHeader(null); }
 
     function bindMissionCardToggles() {
       document.querySelectorAll('.mission-card').forEach(card => {
@@ -1877,10 +1996,13 @@
       });
     }
 
-    renderMissionOverview();
+    renderMissionHeader(null);
 
     /* ── 7. Leading Initiatives (left panel) — top 3 by EBX committed ── */
-    const leading = causeInits.slice(0, 3);
+    // Leading panel: only show phase-1 initiatives (suggested/debate).
+    // Past-phase-1 tivs (org_vote/active/resolved) have already won; their EBX
+    // transferred to the mission and they appear in the right panel only.
+    const leading = causeInits.filter(i => ['suggested','debate'].includes(i.status)).slice(0, 3);
     const topShare = leading.length ? voteShare(leading[0]) : 1;
 
     document.getElementById('leading-initiatives-panel').innerHTML = leading.length
@@ -1985,15 +2107,28 @@
     }
     window.missionPage = missionPage;
 
-    function selectMission(initId) {
+    // ── selectedMissionId reducer (README §7 step 1c) ──
+    // The ONLY writer of _missionRefId. Fans out to named subscribers:
+    //   • renderMissionHeader  — header row above Phase 1
+    //   • renderPhaseRecaps    — Phase-1 (recap vs live) + Phase-2/3/4 sub-text
+    //   • highlightTargetedCard— right-panel card highlight
+    // NOT subscribed: annulus, mission-ring overlay (Jax roadblock 3).
+    function setSelectedMission(initId, opts) {
+      opts = opts || {};
       const target = causeInits.find(i => i.id === initId);
       if (!target) return;
       _missionRefId = initId;
+      renderMissionHeader(target);
       renderPhaseRecaps(cause, { missionRef: target });
       highlightTargetedCard();
-      document.getElementById('phase-recap-2')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (opts.scroll !== false) {
+        (document.getElementById('mission-header') ||
+         document.getElementById('phase-recap-1'))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
+    function selectMission(initId) { return setSelectedMission(initId); }
     window.selectMission = selectMission;
+    window.setSelectedMission = setSelectedMission;
 
     function highlightTargetedCard() {
       document.querySelectorAll('.mission-card').forEach(c => {

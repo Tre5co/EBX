@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // src/ebx_shared.ts
+  // frontend/src/ebx_shared.ts
   var config = {
     dataRoot: "/data/",
     apiBase: "",
@@ -117,7 +117,7 @@
       const offset = (causeIndex - state.causeIndex + 7) % 7;
       const targetWeek = state.weekNum + offset;
       return new Date(
-        config.cycleStart.getTime() + (targetWeek + 1) * config.decisionIntervalDays * MS_PER_DAY
+        config.cycleStart.getTime() + targetWeek * config.decisionIntervalDays * MS_PER_DAY
       );
     },
     /** Date when this cause's CURRENT 7-week debate window opened. */
@@ -138,6 +138,31 @@
     },
     initiativeForCause(causeIndex) {
       return config.initiatives.find((i) => i.cause_index === causeIndex) ?? null;
+    },
+    /**
+     * Anchor-date model (README §4). Given a mission's election date (= mission
+     * start date = the day its initiative was elected), derive every later phase
+     * boundary by fixed week offsets. One anchor in, all downstream dates out.
+     *
+     * Offsets follow STRUCTURE §SYSTEM "Weekly missions — 5 phases":
+     *   New-Initiative wks 1-8  -> Phase 1 (anchor)
+     *   Budget         wks 9-16 -> Phase 2 begins +8w
+     *   Credit-Release wks 17-32-> Phase 3 begins +16w
+     *   Resolution     wks 33+  -> Phase 4 begins +32w
+     * (README §7 sketched +7/+14/+32; STRUCTURE week boundaries give +8/+16/+32,
+     *  which is canonical — logged as a pass-32 decision in README.)
+     */
+    missionPhaseDates(electionDate) {
+      const anchor = electionDate instanceof Date ? electionDate : new Date(electionDate);
+      const wk = config.decisionIntervalDays * MS_PER_DAY;
+      const base = anchor.getTime();
+      return {
+        phase1_start: new Date(base),
+        phase2_start: new Date(base + 8 * wk),
+        phase3_start: new Date(base + 16 * wk),
+        phase4_start: new Date(base + 32 * wk),
+        phase4_resolved: new Date(base + 48 * wk)
+      };
     }
   };
   var RANK_COLORS = [
@@ -214,6 +239,25 @@
       if (!all.length) return [];
       const tagged = all.filter((o) => (o.causes || []).includes(causeIndex));
       return tagged.length ? tagged : all;
+    },
+    /**
+     * Rank a cause's initiatives for a SPECIFIC cycle.
+     * Real EBX commitments always win; ties (e.g. all-zero seed data) are broken
+     * deterministically per-cycle so consecutive cycles surface different leaders.
+     * This is why the top card's "This week" (cycleNum) and "Newest" (cycleNum+1)
+     * panes no longer collapse onto the same initiative when commit data is empty.
+     * Replace the tie-breaker with a real per-cycle winning-initiative tally once
+     * the backend records which initiative won each cycle.
+     */
+    initiativesForCause(causeIndex, cycleNum, inits) {
+      return [...inits].sort((a, b) => {
+        const ca = a.committed_ebx || 0;
+        const cb = b.committed_ebx || 0;
+        if (cb !== ca) return cb - ca;
+        const sa = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(a.id));
+        const sb = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(b.id));
+        return sb - sa;
+      });
     }
   };
   function hashString(s) {
@@ -812,8 +856,6 @@
       return fetch(config.apiBase + path, { ...init, headers });
     },
     async fetchMe() {
-      // Skip the network request entirely when there's no token — otherwise
-      // every page load by a signed-out visitor logs a noisy 401 to the console.
       if (!Auth.getToken()) return null;
       const res = await Auth.fetchAuthed("/auth/me");
       if (res.status === 401) {
@@ -1350,7 +1392,7 @@
     const daysToThis = Math.ceil((thisDecision.getTime() - Date.now()) / MS_PER_DAY);
     const thisInits = config.initiatives.filter((i) => i.cause_index === activeIndex);
     const thisPool = thisInits.reduce((s, i) => s + (i.committed_ebx || 0), 0);
-    const thisInit = [...thisInits].sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+    const thisInit = Votes.initiativesForCause(activeIndex, cycleNum, thisInits)[0];
     let myOrgVote = null;
     try {
       const ch = JSON.parse(localStorage.getItem("ebx_choices") || "{}");
@@ -1378,7 +1420,7 @@
     const nextDecision = new Date(thisDecision.getTime() + config.causeLengthDays * MS_PER_DAY);
     const daysToNext = Math.ceil((nextDecision.getTime() - Date.now()) / MS_PER_DAY);
     const nextInits = config.initiatives.filter((i) => i.cause_index === activeIndex);
-    const nextInit = [...nextInits].sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0];
+    const nextInit = Votes.initiativesForCause(activeIndex, nextCycle, nextInits)[0];
     const nextVoteBars = nextShares.slice(0, 3).map((s) => `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
       <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;opacity:0.75;"></span>

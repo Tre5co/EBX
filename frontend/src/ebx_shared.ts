@@ -205,9 +205,15 @@ const Cycle = {
     const state = Cycle.now();
     const offset = ((causeIndex - state.causeIndex) + 7) % 7;
     const targetWeek = state.weekNum + offset;
+    // Initiative election = FIRST day of the cause's active week (STRUCTURE
+    // §SYSTEM: "Vote tallied on the first day of its cause's active period").
+    // targetWeek is already that week boundary — do NOT add +1, which pushes the
+    // date a week forward. (Regressed pass-32 via a git-restore that reverted the
+    // uncommitted pass-27/30 fix. RE-FIXED pass-32b. *** This fix lives only in the
+    // working tree — COMMIT ebx_shared.ts so the next git-restore doesn't wipe it. ***)
     return new Date(
       config.cycleStart.getTime() +
-        (targetWeek + 1) * config.decisionIntervalDays * MS_PER_DAY
+        targetWeek * config.decisionIntervalDays * MS_PER_DAY
     );
   },
 
@@ -232,6 +238,40 @@ const Cycle = {
 
   initiativeForCause(causeIndex: number): Initiative | null {
     return config.initiatives.find(i => i.cause_index === causeIndex) ?? null;
+  },
+
+  /**
+   * Anchor-date model (README §4). Given a mission's election date (= mission
+   * start date = the day its initiative was elected), derive every later phase
+   * boundary by fixed week offsets. One anchor in, all downstream dates out.
+   *
+   * Offsets follow STRUCTURE §SYSTEM "Weekly missions — 5 phases":
+   *   New-Initiative wks 1-8  -> Phase 1 (anchor)
+   *   Budget         wks 9-16 -> Phase 2 begins +8w
+   *   Credit-Release wks 17-32-> Phase 3 begins +16w
+   *   Resolution     wks 33+  -> Phase 4 begins +32w
+   * (README §7 sketched +7/+14/+32; STRUCTURE week boundaries give +8/+16/+32,
+   *  which is canonical — logged as a pass-32 decision in README.)
+   */
+  missionPhaseDates(electionDate: Date | string | number): {
+    phase1_start: Date;
+    phase2_start: Date;
+    phase3_start: Date;
+    phase4_start: Date;
+    phase4_resolved: Date;
+  } {
+    const anchor = electionDate instanceof Date
+      ? electionDate
+      : new Date(electionDate);
+    const wk = config.decisionIntervalDays * MS_PER_DAY;
+    const base = anchor.getTime();
+    return {
+      phase1_start:    new Date(base),
+      phase2_start:    new Date(base + 8 * wk),
+      phase3_start:    new Date(base + 16 * wk),
+      phase4_start:    new Date(base + 32 * wk),
+      phase4_resolved: new Date(base + 48 * wk),
+    };
   },
 };
 

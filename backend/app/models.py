@@ -10,8 +10,18 @@ BenefactorAccount      - a personal user account (email + hashed password + wall
 Membership             - links a BenefactorAccount to an Organization with a role
 Contribution           - EBX a benefactor has committed to an initiative
 CreditCoin             - a credit token issued to a benefactor on a specific mission
-Post                   - feed content (editorial / opinion / org_update / headline)
-Review                 - rating left on an organization
+Post                   - benefactor/org/EBX content; type values:
+                           Benefactor election commentary (phase 1 & 2):
+                             'context'    — shared: background on initiative or org (both elections)
+                             'analysis'   — shared: data-driven / expert take (both elections)
+                             'case'       — tiv-vote only: "why I voted for this initiative"
+                             'evaluation' — org-vote only: "why I voted for this organization"
+                           Org & EBX operational posts:
+                             'org_update' — mission progress from an org
+                             'editorial'  — EBX-authored news / status
+                             'headline'   — short EBX headline
+PostVote               - per-benefactor helpful/neutral/wrong vote on a post
+Review                 - rating left on an organization (star-based; backlog: deprecate)
 MissionMetric          - a single tracked metric for a mission (name, target, current, unit)
 """
 from __future__ import annotations
@@ -312,11 +322,15 @@ class Post(Base):
     __tablename__ = "posts"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
+    # See module docstring for valid type values.
     type: Mapped[str] = mapped_column(String, default="editorial")
 
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    likes: Mapped[int] = mapped_column(Integer, default=0)
+    # Denormalised vote tallies — kept in sync by the PostVote upsert endpoint.
+    helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    neutral_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    wrong_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     author_type: Mapped[str] = mapped_column(String, default="earthbux")
@@ -354,6 +368,32 @@ class Post(Base):
         back_populates="news",
         foreign_keys="Post.mission_id",
     )
+    votes: Mapped[list["PostVote"]] = relationship(
+        back_populates="post",
+        cascade="all, delete-orphan",
+    )
+
+
+# ---------------------------------------------------------------------------
+# PostVote (per-benefactor helpful/neutral/wrong vote on a post)
+# ---------------------------------------------------------------------------
+class PostVote(Base):
+    __tablename__ = "post_votes"
+    __table_args__ = (
+        UniqueConstraint("post_id", "benefactor_id", name="uq_post_vote_benefactor"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    post_id: Mapped[str] = mapped_column(ForeignKey("posts.id"), nullable=False)
+    benefactor_id: Mapped[int] = mapped_column(
+        ForeignKey("benefactor_accounts.id"), nullable=False
+    )
+    # 'helpful' | 'neutral' | 'wrong'
+    value: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    post: Mapped["Post"] = relationship(back_populates="votes")
+    benefactor: Mapped["BenefactorAccount"] = relationship()
 
 
 # ---------------------------------------------------------------------------
@@ -387,7 +427,6 @@ class Vote(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     benefactor_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
     initiative_id: Mapped[str] = mapped_column(ForeignKey("initiatives.id"), nullable=False)
-    # build-seq 3 — denormalised cause_id so /causes/{id}/votes can aggregate
     # without joining through initiatives. Backfilled by the migration.
     cause_id: Mapped[Optional[str]] = mapped_column(ForeignKey("causes.id"), nullable=True)
     # org_id is NULL for initiative-only (soft) votes; set during the org-election phase.
