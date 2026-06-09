@@ -1383,10 +1383,13 @@
         const shareLabel = hasShare ? share.toFixed(1) : '0.0';
         // build-seq 3 — extra `tally` line gets back-filled by syncCauseTally
         // with the server-computed weighted share + voter count.
+        // Step 1b: races are measured in VOTES. Lead with the live vote tally
+        // (back-filled by syncCauseTally); the EBX pool is a secondary money
+        // stat, not the race metric.
         const ratingDisp = init.rating_avg || init.rating || 0;
-        const subline    = `${ebx > 0 ? ebx.toLocaleString() + ' EBX in pool' : 'no commits yet'}` +
-                           `${ratingDisp ? ' · ★ ' + Number(ratingDisp).toFixed(1) : ''}` +
-                           ` · <span class="election-card__tally" style="opacity:0.55;">…</span>`;
+        const subline    = `<span class="election-card__tally" style="opacity:0.7;">tallying votes…</span>` +
+                           `${ebx > 0 ? ' · pool ' + ebx.toLocaleString() + ' EBX' : ''}` +
+                           `${ratingDisp ? ' · ★ ' + Number(ratingDisp).toFixed(1) : ''}`;
 
         if (sliderMode) {
           // Multi-vote mode: every row in the active set is a slider; rows
@@ -1490,6 +1493,14 @@
           </div>
           ${rows}
           <div class="election-card__actions">
+            <div class="election-card__commit-ebx" style="flex-basis:100%;display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <label style="font-family:var(--font-mono);font-size:0.7rem;opacity:0.7;">Commit EBX (adds weight to your vote):</label>
+              <input id="cause-ebx-input" type="number" min="0" step="1"
+                     value="${committed && committed.ebx ? committed.ebx : 0}"
+                     style="width:90px;padding:3px 6px;font-family:var(--font-mono);font-size:0.72rem;
+                            background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);
+                            border-radius:4px;color:inherit;" />
+            </div>
             <button class="election-card__commit-btn"
                     id="vote-commit-btn"
                     onclick="commitVote('${cause.id}')"
@@ -1594,7 +1605,11 @@
       const shares = loadShares(causeId);
       const sum = Object.values(shares).reduce((s,vv) => s + (Number(vv)||0), 0);
       if (sum <= 0 || sum > 1.0001) return;
-      saveCommitted(causeId, { shares: { ...shares }, at: Date.now() });
+      // Step 1a — capture the committed EBX amount alongside the vote shares.
+      let ebx = 0;
+      const ebxInput = document.getElementById('cause-ebx-input');
+      if (ebxInput) ebx = Math.max(0, Math.round(Number(ebxInput.value) || 0));
+      saveCommitted(causeId, { shares: { ...shares }, at: Date.now(), ebx });
       // build-seq 3 — lock against the server too. Best-effort; UI updates
       // either way so a sign-out user still sees ✓ Committed locally.
       try { await commitCauseVote(causeId); } catch (e) {}
@@ -1957,16 +1972,26 @@
         const pair = map[missionRef.status] || [1, 'Initiative Election'];
         phaseNum = pair[0]; phaseLabel = pair[1];
       } else {
-        // Cause-relative default (cycle position within the 49-day window).
-        const phaseLabels = ['Pre-Initiative', 'New-Initiative', 'New-Mission', 'Credit-Release', 'Resolution'];
-        const wStart = EBX.Cycle.windowStart(cause.index, cycleNum);
-        const weeksIn = Math.max(0, Math.floor((Date.now() - wStart.getTime()) / (7 * MS_DAY)));
-        let phaseIdx = 0;
-        if (weeksIn >= 33) phaseIdx = 4;
-        else if (weeksIn >= 17) phaseIdx = 3;
-        else if (weeksIn >= 9)  phaseIdx = 2;
-        else if (weeksIn >= 1)  phaseIdx = 1;
-        phaseNum = phaseIdx + 1; phaseLabel = phaseLabels[phaseIdx];
+        // Bug A: when unselected, the live Phase-1 election widget is what's on
+        // screen (renderElectionCard always renders the Phase-1 block). If this
+        // cause has a live phase-1 election open (proposals in suggested/debate),
+        // the header must match it — Phase 1 — rather than falling back to the
+        // cause-relative cycle position (which read "Phase 2 — New-Initiative").
+        const livePhase1 = causeInits.some(i => ['suggested', 'debate'].includes(i.status));
+        if (livePhase1) {
+          phaseNum = 1; phaseLabel = 'Initiative Election';
+        } else {
+          // Cause-relative default (cycle position within the 49-day window).
+          const phaseLabels = ['Pre-Initiative', 'New-Initiative', 'New-Mission', 'Credit-Release', 'Resolution'];
+          const wStart = EBX.Cycle.windowStart(cause.index, cycleNum);
+          const weeksIn = Math.max(0, Math.floor((Date.now() - wStart.getTime()) / (7 * MS_DAY)));
+          let phaseIdx = 0;
+          if (weeksIn >= 33) phaseIdx = 4;
+          else if (weeksIn >= 17) phaseIdx = 3;
+          else if (weeksIn >= 9)  phaseIdx = 2;
+          else if (weeksIn >= 1)  phaseIdx = 1;
+          phaseNum = phaseIdx + 1; phaseLabel = phaseLabels[phaseIdx];
+        }
       }
 
       const startDate = (init && init.election_open) ? fmtDate(new Date(init.election_open)) : null;

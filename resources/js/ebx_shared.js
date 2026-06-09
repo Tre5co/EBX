@@ -1,6 +1,6 @@
 "use strict";
 (() => {
-  // frontend/src/ebx_shared.ts
+  // src/ebx_shared.ts
   var config = {
     dataRoot: "/data/",
     apiBase: "",
@@ -578,6 +578,14 @@
   }
   var formatNumber = (n) => Number(n).toLocaleString();
   var formatEBX = (n) => `${formatNumber(n)} EBX`;
+  var EBX_PER_VOTE = 100;
+  function voteWeight(baseVotes, committedEbx) {
+    return baseVotes * (1 + (committedEbx || 0) / EBX_PER_VOTE);
+  }
+  var formatVotes = (n) => {
+    const v = Math.round(Number(n) || 0);
+    return `${formatNumber(v)} vote${v === 1 ? "" : "s"}`;
+  };
   var formatPercent = (v, d = 1) => `${Number(v).toFixed(d)}%`;
   var formatDate = (iso) => new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
   var formatShortDate = (d) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -1312,43 +1320,42 @@
     </a>
   `;
   }
+  function electionCardFace(d) {
+    const ranks = ["1.", "2.", "3."];
+    const rowsHtml = d.rows.slice(0, 3).map((r, i) => '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 12px;font-family:var(--font-mono);font-size:0.6rem;color:rgba(245,240,232,0.8);"><span style="color:rgba(245,240,232,0.4);width:14px;flex-shrink:0;">' + ranks[i] + '</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + r.name + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (r.votes > 0 ? formatVotes(r.votes) : "--") + "</span></div>").join("");
+    const body = d.rows.length ? rowsHtml : '<div style="padding:10px 12px;font-size:0.68rem;color:rgba(245,240,232,0.35);font-style:italic;">No votes yet.</div>';
+    const glow = d.glow ? "box-shadow:0 0 14px rgba(255,255,255,0.28),0 0 4px rgba(255,255,255,0.5);" : "";
+    return '<div class="race-card" style="--rc-color:' + d.color + ";display:block;text-decoration:none;width:100%;box-sizing:border-box;background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);border-radius:10px;overflow:hidden;transition:background 0.2s;" + glow + '"><div style="padding:8px 12px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--rc-color);display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><a href="' + d.href + '" style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + d.headerLeft + '</a><span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.55);white-space:nowrap;flex-shrink:0;">' + d.headerRight + "</span></div>" + body + '<div style="border-top:1px solid rgba(255,255,255,0.06);padding:6px 12px 8px;"><div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4);"><span>My choice &middot; my commitment</span><span>pool</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:2px;font-family:var(--font-mono);font-size:0.6rem;color:rgba(245,240,232,0.82);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (d.myChoice ? d.myChoice + (d.myCommit > 0 ? " &middot; " + formatEBX(d.myCommit) : "") : '<span style="opacity:0.45;font-style:italic;">no vote yet</span>') + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (d.pool > 0 ? formatEBX(d.pool) : "--") + "</span></div></div></div>";
+  }
   function sideCard(causeIndex) {
     const cause = config.causes.find((c) => c.index === causeIndex);
     if (!cause) return "";
     const cycleNum = Cycle.currentCycleNum();
     const orgs = Votes.orgsForCause(causeIndex);
     const orgShares = Votes.forCause(causeIndex, cycleNum, orgs);
-    const orgLeader = orgShares[0];
+    const inits = config.initiatives.filter((i) => i.cause_index === causeIndex).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
+    const pool = inits.reduce((s, i) => s + (i.committed_ebx || 0), 0);
+    const leadingTiv = inits[0];
     const decision = Cycle.nextDecisionDate(causeIndex);
-    const initiatives = config.initiatives.filter((i) => i.cause_index === causeIndex).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
-    const initLeader = initiatives[0];
-    const totalPool = initiatives.reduce((s, i) => s + (i.committed_ebx || 0), 0);
-    const voteStart = new Date(decision.getTime() - 6 * MS_PER_DAY);
-    const sameMonth = voteStart.getMonth() === decision.getMonth();
-    const dateRange = sameMonth ? voteStart.toLocaleDateString("en-US", { month: "short" }) + " " + voteStart.getDate() + "-" + decision.getDate() : formatShortDate(voteStart) + " - " + formatShortDate(decision);
-    const section = (label, title, sub, href, pool, empty) => {
-      if (empty) {
-        return '<div style="padding:10px 12px;"><div style="font-family:var(--font-mono);font-size:0.5rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.42);margin-bottom:4px;">' + label + '</div><div style="font-size:0.7rem;color:rgba(245,240,232,0.35);font-style:italic;">No votes yet</div></div>';
-      }
-      return '<div style="padding:10px 12px;"><div style="font-family:var(--font-mono);font-size:0.5rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.42);margin-bottom:3px;">' + label + '</div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;flex-wrap:wrap;"><div style="font-size:0.74rem;color:rgba(245,240,232,0.9);font-weight:600;line-height:1.25;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + title + '</div><a href="' + href + '" style="font-family:var(--font-mono);font-size:0.55rem;font-weight:700;white-space:nowrap;color:' + cause.color + ";text-decoration:none;padding:2px 7px;border-radius:4px;border:1px solid " + cause.color + ';opacity:0.85;">Contribute</a></div><div style="font-family:var(--font-mono);font-size:0.6rem;color:rgba(245,240,232,0.55);margin-top:2px;">' + sub + '</div><div style="font-family:var(--font-mono);font-size:0.55rem;color:rgba(245,240,232,0.38);margin-top:3px;">Total pool: ' + (pool > 0 ? "$" + formatNumber(pool) : "--") + "</div></div>";
-    };
-    const orgLabel = initLeader ? 'Organization for "' + (initLeader.title.length > 20 ? initLeader.title.slice(0, 20) + "..." : initLeader.title) + '"' : "Organization election";
-    const initSub = initLeader ? (initLeader.committed_ebx || 0) > 0 ? formatEBX(initLeader.committed_ebx || 0) + " EBX" : "No commitments yet" : "";
-    return '<div class="race-card" style="--rc-color:' + cause.color + ';display:block;text-decoration:none;width:100%;box-sizing:border-box;background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);border-radius:10px;overflow:hidden;transition:background 0.2s;"><div style="padding:8px 12px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--rc-color);display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><a href="cause.html?id=' + cause.id + '" style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;">' + cause.name + '</a><span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.55);white-space:nowrap;">Vote ' + dateRange + "</span></div>" + section(
-      "Initiative",
-      initLeader ? initLeader.title : "",
-      initSub,
-      "cause.html?id=" + cause.id,
-      totalPool,
-      !initLeader
-    ) + '<div style="height:1px;background:rgba(255,255,255,0.06);margin:0 12px;"></div>' + section(
-      orgLabel,
-      orgLeader ? orgLeader.org_name : "",
-      orgLeader ? orgLeader.pct.toFixed(0) + "% of votes" : "",
-      orgLeader ? "mission.html?cause=" + cause.id : "cause.html?id=" + cause.id,
-      totalPool,
-      !orgLeader
-    ) + "</div>";
+    const SYNTH_TURNOUT = 200;
+    const rows = orgShares.filter((sh) => !sh.isOther).map((sh) => ({ name: sh.org_name, votes: Math.round(sh.pct / 100 * SYNTH_TURNOUT), ebx: Math.round(sh.pct / 100 * pool) }));
+    let myChoice = null;
+    try {
+      myChoice = JSON.parse(localStorage.getItem("ebx_choices") || "{}")["org_" + causeIndex] || null;
+    } catch (_e) {
+    }
+    const tivName = leadingTiv ? leadingTiv.title.length > 18 ? leadingTiv.title.slice(0, 18) + "..." : leadingTiv.title : cause.name;
+    return electionCardFace({
+      causeId: cause.id,
+      color: cause.color,
+      headerLeft: tivName + " &middot; org race",
+      headerRight: formatShortDate(decision),
+      rows,
+      myChoice,
+      myCommit: 0,
+      pool,
+      href: "cause.html?id=" + cause.id
+    });
   }
   function upcomingCauseBanner(activeIndex) {
     const n = 7;
@@ -1490,6 +1497,8 @@
     renderEmpty,
     formatNumber,
     formatEBX,
+    formatVotes,
+    voteWeight,
     formatPercent,
     formatDate,
     formatShortDate,
@@ -1506,6 +1515,7 @@
     userBadge,
     feedCard,
     raceCard,
+    electionCardFace,
     sideCard,
     topCard,
     topCardHeader,

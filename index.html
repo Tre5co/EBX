@@ -648,57 +648,58 @@
     // back face here so the flip lives in this page's mode state without
     // needing a rebuild of ebx_shared.ts.
     function sideCardBack(causeIndex) {
+      // BACK face: upcoming phase-2 initiative election (build-seq step 1).
+      // Ranked initiatives by EBX committed; My-choice / commitment pulled
+      // from the same localStorage the cause-page voting widget writes.
       const c = EBX.config.causes.find(x => x.index === causeIndex);
       if (!c) return '';
       const inits = (EBX.config.initiatives || [])
         .filter(i => i.cause_index === causeIndex || i.cause_id === c.id)
         .sort((a,b) => (b.committed_ebx||b.ebx_committed||0) - (a.committed_ebx||a.ebx_committed||0));
-      const total = inits.reduce((s,i) => s + (i.committed_ebx||i.ebx_committed||0), 0);
-      const top4 = inits.slice(0,4);
-      const decision = EBX.Cycle.nextDecisionDate(causeIndex);
-      const dateStr = decision.toLocaleDateString('en-US', { month:'short', day:'numeric' });
-      const rows = top4.length
-        ? top4.map((init, idx) => {
-            const ebx = init.committed_ebx || init.ebx_committed || 0;
-            const pct = total > 0 ? Math.round((ebx/total)*100) : (idx === 0 ? 100 : 0);
-            const labels = ['leader', 'choice', 'second', 'third'];
-            return `<div style="display:flex;justify-content:space-between;align-items:baseline;
-                       padding:4px 12px;font-family:var(--font-mono);font-size:0.6rem;
-                       color:rgba(245,240,232,0.78);gap:8px;">
-                      <span style="text-transform:uppercase;letter-spacing:0.08em;
-                                   color:rgba(245,240,232,0.42);width:48px;">${labels[idx]||'…'}</span>
-                      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                        ${(init.emoji?init.emoji+' ':'') + (init.title||'Untitled')}
-                      </span>
-                      <span style="color:${c.color};font-weight:700;">${pct}%</span>
-                    </div>`;
-          }).join('<div style="height:1px;background:rgba(255,255,255,0.04);margin:0 12px;"></div>')
-        : `<div style="padding:10px 12px;font-size:0.7rem;color:rgba(245,240,232,0.35);font-style:italic;">
-             No initiative proposals yet — use the Propose button to add one.
-           </div>`;
-      return `<div class="race-card" style="--rc-color:${c.color};
-                display:block;text-decoration:none;width:100%;box-sizing:border-box;
-                background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);
-                border-radius:10px;overflow:hidden;transition:background 0.2s;">
-                <div style="padding:8px 12px;background:rgba(0,0,0,0.18);
-                            border-bottom:1px solid var(--rc-color);
-                            display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
-                  <a href="cause.html?id=${c.id}" style="font-family:var(--font-mono);font-size:0.6rem;
-                     letter-spacing:0.12em;text-transform:uppercase;color:var(--rc-color);
-                     font-weight:700;text-decoration:none;">${c.name}</a>
-                  <span style="font-family:var(--font-mono);font-size:0.54rem;
-                               color:rgba(245,240,232,0.55);white-space:nowrap;">
-                    Initiative vote · ${dateStr}
-                  </span>
-                </div>
-                ${rows}
-                <div style="display:flex;justify-content:space-between;padding:6px 12px;
-                            background:rgba(0,0,0,0.12);font-family:var(--font-mono);
-                            font-size:0.54rem;color:rgba(245,240,232,0.5);">
-                  <span>Pool ${total > 0 ? '$'+total.toLocaleString() : '—'}</span>
-                  <a href="cause.html?id=${c.id}" style="color:${c.color};text-decoration:none;font-weight:700;">Vote →</a>
-                </div>
-              </div>`;
+      // Step 1b: rows show VOTES, not EBX. The only live signal on the back
+      // face is the local benefactor's own vote (share) and their committed
+      // EBX (which adds weight via EBX.voteWeight). The EBX pool stays the
+      // money stat and grows by the local commitment so the demo reflects it.
+      let shares = {}, myCommit = 0;
+      try {
+        shares = (JSON.parse(localStorage.getItem('ebx_vote_shares') || '{}'))[c.id] || {};
+        const committed = (JSON.parse(localStorage.getItem('ebx_vote_committed') || '{}'))[c.id];
+        if (committed) myCommit = committed.ebx || 0;
+      } catch (e) { shares = {}; }
+      const basePool = inits.reduce((s,i) => s + (i.committed_ebx||i.ebx_committed||0), 0);
+      const pool = basePool + myCommit;
+      const rows = inits.map(i => {
+        const share = +shares[i.id] || 0;
+        const perEbx = myCommit * share;
+        const votes = share > 0 ? EBX.voteWeight(share, perEbx) : 0;
+        return { name: (i.emoji ? i.emoji + ' ' : '') + (i.title || 'Untitled'), votes,
+                 ebx: i.committed_ebx || i.ebx_committed || 0 };
+      }).sort((a,b) => b.votes - a.votes);
+      // First day of the upcoming active window.
+      const winStart = EBX.Cycle.windowStart(causeIndex);
+      // Mission number stand-in: cycle index + 1 until real mission history lands.
+      const missionNum = (EBX.Cycle.currentCycleNum ? EBX.Cycle.currentCycleNum() : 0) + 1;
+      // My choice from the shared vote store (largest share).
+      let myChoice = null;
+      try {
+        let bestId = null, best = 0;
+        Object.keys(shares).forEach(id => { if ((+shares[id]||0) > best) { best = +shares[id]; bestId = id; } });
+        if (bestId) {
+          const chosen = inits.find(i => i.id === bestId);
+          myChoice = chosen ? ((chosen.emoji ? chosen.emoji + ' ' : '') + chosen.title) : null;
+        }
+      } catch (e) { /* ignore */ }
+      return EBX.electionCardFace({
+        causeId: c.id,
+        color: c.color,
+        headerLeft: c.name + ' &middot; Mission ' + missionNum,
+        headerRight: EBX.formatShortDate(winStart),
+        rows,
+        myChoice,
+        myCommit,
+        pool,
+        href: 'cause.html?id=' + c.id,
+      });
     }
 
     function topCardBack(activeIndex) {
@@ -1045,6 +1046,48 @@
     all[causeId] = shares;
     localStorage.setItem(VOTE_SHARES_KEY, JSON.stringify(all));
   }
+  // Step 1a — committing EBX. Shared store with the cause-page widget:
+  // ebx_vote_committed[causeId] = { shares, at, ebx }. Committing EBX from
+  // the entity card adds weight to the benefactor's initiative vote.
+  function _loadCauseCommit(causeId) {
+    try { return (JSON.parse(localStorage.getItem(VOTE_COMMIT_KEY) || '{}'))[causeId] || null; }
+    catch(e) { return null; }
+  }
+  function _saveCauseCommitEbx(causeId, ebx) {
+    let all = {};
+    try { all = JSON.parse(localStorage.getItem(VOTE_COMMIT_KEY) || '{}'); } catch(e) {}
+    const shares = _loadCauseShares(causeId);
+    all[causeId] = { shares: { ...shares }, at: Date.now(), ebx: Math.max(0, Math.round(Number(ebx) || 0)) };
+    localStorage.setItem(VOTE_COMMIT_KEY, JSON.stringify(all));
+  }
+  function entityCommitEbx(btn) {
+    const causeId = btn && btn.getAttribute('data-cause-id');
+    const input = document.getElementById('entity-ebx-input');
+    if (!causeId || !input) return;
+    const amt = Math.max(0, Math.round(Number(input.value) || 0));
+    _saveCauseCommitEbx(causeId, amt);
+    _flashEntityToast(amt > 0
+      ? 'Committed ' + amt.toLocaleString() + ' EBX — added weight to your vote.'
+      : 'EBX commitment cleared.');
+    if (_selectedInit) idxSelectInit(JSON.stringify(_selectedInit));
+    else idxRenderDefaultInfo();
+  }
+  window.entityCommitEbx = entityCommitEbx;
+  // Inline EBX-commit control shown once a benefactor has voted in a cause.
+  function _entityCommitControl(causeId) {
+    const committed = _loadCauseCommit(causeId);
+    const cur = committed ? (committed.ebx || 0) : 0;
+    return `<div class="entity-commit" style="flex-basis:100%;display:flex;align-items:center;gap:6px;margin-top:8px;">
+      <label style="font-family:var(--font-mono);font-size:0.7rem;opacity:0.7;">Commit EBX:</label>
+      <input id="entity-ebx-input" type="number" min="0" step="1" value="${cur}"
+             style="width:90px;padding:3px 6px;font-family:var(--font-mono);font-size:0.72rem;
+                    background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);
+                    border-radius:4px;color:inherit;" />
+      <button class="btn btn-ghost btn-sm" onclick="entityCommitEbx(this)" data-cause-id="${causeId}">
+        ${cur > 0 ? 'Update EBX' : 'Commit EBX'}</button>
+      ${cur > 0 ? '<span class="entity-vote-status cast" style="font-size:0.7rem;">✓ ' + cur.toLocaleString() + ' EBX</span>' : ''}
+    </div>`;
+  }
   function _loadOrgVote(causeId) {
     try { return (JSON.parse(localStorage.getItem(ORG_VOTE_KEY) || '{}'))[causeId] || null; }
     catch(e) { return null; }
@@ -1106,12 +1149,14 @@
     }
     if (active.includes(init.id) && active.length === 1) {
       return `<span class="entity-vote-status cast">✓ Voted — full share</span>
-              <a href="${causeHref}" class="btn btn-ghost btn-sm">Split this vote on the cause page →</a>`;
+              <a href="${causeHref}" class="btn btn-ghost btn-sm">Split this vote on the cause page →</a>`
+              + _entityCommitControl(init.cause_id || '');
     }
     if (active.includes(init.id)) {
       const share = (Number(shares[init.id]) || 0).toFixed(1);
       return `<span class="entity-vote-status cast">✓ Voted · share ${share}</span>
-              <a href="${causeHref}" class="btn btn-ghost btn-sm">Re-balance on cause page →</a>`;
+              <a href="${causeHref}" class="btn btn-ghost btn-sm">Re-balance on cause page →</a>`
+              + _entityCommitControl(init.cause_id || '');
     }
     // Voted on a different initiative in this cause.
     return `<span class="entity-vote-status">You already voted in this cause</span>

@@ -1,68 +1,76 @@
 ## SYSTEM
-- **Our goals** 
+- **Our goals** Motivation
 Streamline and publicize charity missions. Expose wasteful or fraudulent organizations/players. Reorient media consumption towards meaningful efforts, focus charity on the cause, not the sponsors. Democratize ideas to find the best one, not the most profitable one by rewarding thoughtful ideas, pooling donations to prevent redundant/competing activities. Provide unbiased and mission-oriented news coverage independently.
-- **Cause rotation - 7 weeks**
-Atmosphere - Oceans - Land - Forests - Wildlife - H-Rights - H-Progress
-- **Benefactor experience**
-Each week, benefactors elect an organization for the active cause and an initiative for the next cause.
-**Voting**
-1. Initiative voting - soft
-Vote tallied on the first day of its causes active period.
-Vote-split-economy - .1 division floor.
-First vote from vote-entity on main page (or cause page), subsequently managed from cause page.
-2. Organization voting - hard
-Vote occurs on the final day of its causes active period
-1 vote 1 organization.
-Vote from main page, cause page or mission page.
-Benefactors can publicly buy votes & By doing so buy publicity.
-**Committing**
-1. Initiative
-Vote weight amplified by contribution amount.
-20% sent if your initiative wins, 10% if not.
-2. Organization
-Additional votes can be bought for increasing prices.
-100% sent if your organization wins, 20% if not.
-**Weekly missions - 5 phases**
+- **7-Cause-Rotation** Each week, a mission focused on one of these causes begins.
+Atmosphere - Oceans - Land - Forests - Wildlife - Human Rights - Human Progress
+**Mission Phases** Missions have a detailed structure.
 1. Pre-Initiative-Election: weeks < 1
 2. New-Initiative: weeks 1 - 8
 3. Budget: weeks 9 - 16
 4. Credit-Release: weeks 17 - 32
 5. Resolution: weeks 33+
-- **Phase key-date naming.** One anchor with computed offsets is good. Pull dates from these precomputed.
+**Phase 1** Initiative Voting
+Vote-split-economy - .1 division floor.
+Vote weight amplified by contribution amount.
+20% sent if your initiative wins, 10% if not.
+Vote tallied on the first day of its causes active period.
+**Phase 2** Organization Voting
+1 vote 1 organization.
+Additional votes can be bought for increasing prices.
+100% sent if your organization wins, 20% if not.
+Vote occurs on the final day of its causes active period
+**Phase 3** Budgeting
+**Phase 4** Credit Release
+**Phase 5** Resolution
 **EN** Interactive content from benefactors, organizations, and Earthbux News.
-The most helpful posts in the following categories are voted on.
-Benefactor posts (phase 1-2):
-- `case`
-- `evaluation`
-- `context`
-- `analysis`
-
-The app will eventually allow users to have constant location monitoring, and proximity-based selection of nearby missions or nearby mission opportunities.
-
 ## STRUCTURE
-- [ ] **Profile page** backlog - Profiles. I NEED TO ASCII DRAW
-    - [ ] **Upcoming Decisions** 3 items: 
-    Top: Initiative decision for cause x - link to cause page phase 1 for that mission
-    Middle: Org decision for cause w - link to cause page phase 2 for that mission
-    Bottom: Initiative and org for most recent mission. - links to cause page for that mission
-    - [ ] **Dropdown dialog** Credit badge has dropdown hover where users can (log in/register or) log out, view wallet, or switch to an organization account.
+- [ ] **Profile page** Settings/Profile page for anybody on app (Benefactor/Organization/Admin)
+    - [ ] **Design**
+    ______________________________________________________
+    | _____________                         ____  _______ |a. Profile badge
+    ||CreditCoin   |                       | b  ||       ||b. Upcoming initiative decision
+    ||Wallet       |                __     |____||   a   ||c. Upcoming organization decision
+    ||_____________|           '           `     |_______||
+    ||choices   |          '                  `     | c  ||
+    || table    |                                   |____||
+    ||          |    /                             \      |
+    ||          |            Annulus 3                    |
+    ||          |   |                                     |
+    ||          |                                         |
+    ||__________|    \                             /      |
+    |                                                     |
+    |                     .                     ,
+    |                               __
+
+    - [ ] **Annulus 3** Specific to each benefactor
     - [ ] **Choices_Table** All upcoming decisions (14)
         - ✅ **Toggle** between initiatives and orgs
-    - [ ] **Verification & perks**
-        - [ ] **Discounts** Earthbux fees are voided or discounted in certain cases
-        - Benefactor committed to the winning initiative early
-        - Benefactor committed to the winning organization early
-        - Benefactor has achieved "Helpful" status on mission
-        - Benefactor is willing to commit to a higher percentage being sent to the pool
-        - [ ] **Post rewards** Benefactors are awarded credit coins from a mission if their posts are highly related and deemed "Helpful"
-        - [ ] **Credit badge colorization** Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
+        - [ ] **For multiple tiv selections** Only show the top one (temp)
+        - [ ] **Expand** Choices table will eventually be more in depth, similar to a stock trading interface.
+    - [ ] **Credit Badge**
+        - [ ] **Colorization** Participating each week colorizes your credit badge for that weeks sector
+        Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
             - [ ] **Automatic coloring threshold** threshold: $10
-        - [ ] **Post visibility**
-        Larger donations can unlock more visibility for your posts.
-        - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.
-    - [ ] **Org page** Organizations have public profile pages
-    Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org rep. Once approved as a candidate, they build a mission page which continues if they win and is frozen and linked from their profile if not.
-    Organization profile pages are very similar to benefactor profile pages. 
+
+    - [ ] **Org page** User profile to represent a specific org.
+    Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org rep (the user automatically gets a benefactor profile too). Orgs build a mission page which continues if they win and is frozen and linked from their profile if not.
+        - [ ] **Design** -backlog
+        ______________________________________________________
+        | _____________                         ____  _______ |
+        ||             |                       | b  ||       ||
+        ||             |                __     |____||   a   ||
+        ||_____________|           '           `     |_______||
+        ||          |          '                  `     | c  ||
+        ||          |                                   |____||
+        ||          |    /                             \      |
+        ||          |            Annulus 4                    |
+        ||          |   |                                     |
+        ||          |                                         |
+        ||__________|    \                             /      |
+        |                                                     |
+        |                     .                     ,
+        |                               __
+        - [ ] **Annulus 4** Specific to each organization
         - [ ] **Memberships** Page view and permissions depend on them
         Human representative of the weekly mission - Every org account is a member...
             - [ ] **Contributor**
@@ -78,7 +86,7 @@ The app will eventually allow users to have constant location monitoring, and pr
         - [ ] **Organization logos.** --backlog
         Color wheel idea
     - [ ] **Settings**
-        - [ ] **Settings window scope elaboration** not sure yet.
+        - [ ] **Settings window scope elaboration**
         - [ ] **Testing**
             **`is_test` column.** Lets us test without using real ebx.
             **`cyclestart` config endpoint** I want to run simulations and this will be necessary to understand. I will need to read the code.
@@ -96,47 +104,46 @@ The app will eventually allow users to have constant location monitoring, and pr
     - [ ] **Election Cards** switching to 2-sided
         - [ ] **Side cards** Note that we will be changing ebx counts instead of %s because that allows one to estimate the total pool size
             - ✅ **Location**
-            - [ ] **front** upcoming *new-Mission*
-            Yes, the cause name only needs to be on the back
+            - [ ] **front** upcoming phase 3
             ____________________________________
-            |tiv_name organization race    date*| *For the org election, this is the day at the END of the active cause window.
-            |1. org_name                    #ebx|
-            |2. org_name                    #ebx|
-            |3._org_name____________________#ebx|
-            |My choice - amnt_committed - | orgs|
-            |choice_name_______________ % |_____|
-            - [ ] **back** - upcoming *new-initiative*
+            |tiv_name                      date*| *Last day of cards upcoming active window
+            |1. org_name                  #votes|
+            |2. org_name                  #votes|
+            |3._org_name__________________#votes|
+            |My choice - My committment  |ebx   |
+            |choice_name_____x_ebx_______|pool__|
+            - [ ] **back** - upcoming phase 2
             ____________________________________
-            |cause_name mission i          date*| *We fixed the election decision date on cause.html. Fix it here too.
-            |1. tiv_name                    #ebx|
-            |2. tiv_name                    #ebx|
-            |3._tiv_name____________________#ebx|
-            |My choice - amnt_committed - | tivs|
-            |choice_name_______________ % |_____|
+            |cause_name mission_num        date*| *First day of cards upcoming active window
+            |1. tiv_name                  #votes|
+            |2. tiv_name                  #votes|
+            |3._tiv_name__________________#votes|
+            |My choice - My committment -| ebx  |
+            |choice_name______x_ebx______|pool__|
         - [ ] **Top card** only card with 2 org-elections
         The front and back are the 2 consecutive org elections in the active cause.
             - [ ] **Glowy** top card glows white like now marker
             - ✅ **Location**
                 Horizontal: In between the side cards
                 Vertical: From the now marker all the way to the top of the display.
-            - [ ] **front** Next vote
+            - [ ] **front** upcoming phase 3
             ____________________________________
-            |tiv_name organization race    date*| *For the org election, this is the day at the END of the active cause window.
-            |1. org_name                    #ebx|
-            |2. org_name                    #ebx|
-            |3._org_name____________________#ebx|
-            |My choice - amnt_committed - | orgs|
-            |choice_name_______________ % |_____|
-            - [ ] **back** This week - newest initiative
+            |tiv_name                      date*| *Last day of current active window
+            |1. org_name                  #votes|
+            |2. org_name                  #votes|
+            |3._org_name__________________#votes|
+            |My choice - My committment  |ebx   |
+            |choice_name_____x_ebx_______|pool__|
+            - [ ] **back** Most recent phase 2
             ____________________________________
-            |tiv_name organization race    date*| *For the org election, this is the day at the END of the active cause window.
-            |1. org_name                    #ebx|
-            |2. org_name                    #ebx|
-            |3._org_name____________________#ebx|
-            |My choice - amnt_committed - | orgs|
-            |choice_name_______________ % |_____|
-        In the future, the top card will include more information.
+            |tiv_name                      date*| *Last day of NEXT active window (in 7-8 weeks)
+            |1. org_name                  #votes|
+            |2. org_name                  #votes|
+            |3._org_name__________________#votes|
+            |My choice - My committment   |ebx  |
+            |choice_name_____x_ebx________|pool_|
     - [ ] **Table** - 2 states
+        - [ ] **Description** "Click on a row to interact"
         - ✅ **rows** Each row selects a different entity card.
         - [ ] **State 1 - Initiative Table** leading proposed initiatives
         Table only displays phase 1 tivs.
@@ -176,18 +183,15 @@ The app will eventually allow users to have constant location monitoring, and pr
     7 squares across the top of the screen that toggle between causes
         - [ ] **Add start dates**
     - [ ] **annulus 2**
-    Center: Date, onclick changes selectMission to upcoming initiative election and renders active the phase 1 area.
-    Tier 1 (center ring): Pie chart
-    Tier 2: Highlight selected cause
-    Tier 3 (Outside ring): Mission metrics
+        - [ ] **Inner**
+        Pie chart for initiative voting
+        - [ ] **Outer**
+        Pie chart for organization voting
         - ✅ **Now marker**
-            - [ ] **Arrow**
-            good arrow
-        - [ ] **Mission Progress annulus** Surrounds 2 inner sections.
-        See mission section.
+            - ✅ **Arrow**
     - ✅ **Left Cards**
     Display options for the next initiative vote for the selected cause
-    - [ ] **Right cards**
+    - ✅ **Right cards**
     Onclick, each card changes the mission story section to its mission.
         - [ ] **Bottom** 
         Previous mission (in phase 3 or 4) of selected cause
@@ -261,7 +265,7 @@ The app will eventually allow users to have constant location monitoring, and pr
         - [ ] **items**
             - [ ] **Ring Mini** A mini *cause annulus* is displayed next to each mission (if phase 1, it's empty). This will resemble the missions credit coin.
         - [ ] **Admin side** Admins have the full table. 
-- [ ] **Credit page** - in progress. Forms after phase 3
+- [ ] **Credit page** - in progress. Forms at phase 3
 Note that this whole page is backlogged until after completion of phases 1 & 2.
     - [ ] **Mission Annulus** Backlog
     Each mission gets its own ring widget. Deadlines. Budget submission, beneficiary approval/outreach, issue resolution (for example, a response to donor questions), Earthbux check-ins. Flow from ring minis on homepage or mission index to mission page. Will increase in complexity. 7-12 steps. This will beome the 3rd (outer) annulus on the cause page.
@@ -296,3 +300,11 @@ Note that this whole page is backlogged until after completion of phases 1 & 2.
         - [ ] **Badge**
         Users possessing the credit have it displayed on their profile. It is the ring-mini for that mission annulus.
             - [ ] **Coin visual** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission from m_indx
+
+## STRUCTURE MISC.
+    - [ ] **Verification & perks**
+        - [ ] **Discounts** EBX is discounted in certain cases
+            - Benefactor committed to the winning initiative early
+            - Benefactor committed to the winning organization early
+            - Benefactor has achieved "Helpful" status on mission
+            - Benefactor is willing to commit to a higher
