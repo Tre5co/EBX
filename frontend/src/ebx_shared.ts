@@ -806,9 +806,14 @@ const formatEBX = (n: number | string) => `${formatNumber(n)} EBX`;
 // EBX_PER_VOTE is the tunable conversion: this many committed EBX adds the
 // equivalent of one extra vote of weight. The EBX pool (total committed)
 // remains a separate, money-side stat shown alongside the vote standings.
-const EBX_PER_VOTE = 100;
+// Jax (Step 1 feedback): 1:1 EBX→weight while there's a single voter — 10 EBX
+// = a vote weight of 10. A plain vote still counts as its base share (floor),
+// and committing EBX raises the weight to the EBX amount (max, not additive),
+// so committing 10 EBX reads as exactly 10. EBX_PER_VOTE=1 keeps it direct;
+// revisit the model when turnout scales.
+const EBX_PER_VOTE = 1;
 function voteWeight(baseVotes: number, committedEbx: number): number {
-  return baseVotes * (1 + (committedEbx || 0) / EBX_PER_VOTE);
+  return Math.max(baseVotes || 0, (committedEbx || 0) / EBX_PER_VOTE);
 }
 const formatVotes = (n: number | string) => {
   const v = Math.round(Number(n) || 0);
@@ -1648,6 +1653,7 @@ interface FaceData {
   headerRight: string;
   rows: FaceRow[];
   myChoice: string | null;
+  myChoiceEbx?: number;   // EBX shown beside My-choice row (build-seq 1a layout)
   myCommit: number;
   pool: number;
   href: string;
@@ -1669,74 +1675,101 @@ function electionCardFace(d: FaceData): string {
   const glow = d.glow
     ? 'box-shadow:0 0 14px rgba(255,255,255,0.28),0 0 4px rgba(255,255,255,0.5);'
     : '';
-  return '<div class="race-card" style="--rc-color:' + d.color + ';display:block;text-decoration:none;'
+  // data-cause-id → build-seq 3d: clicking a card filters the entity table.
+  return '<div class="race-card" data-cause-id="' + d.causeId + '" style="--rc-color:' + d.color + ';display:block;text-decoration:none;cursor:pointer;'
     + 'width:100%;box-sizing:border-box;background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);'
     + 'border-radius:10px;overflow:hidden;transition:background 0.2s;' + glow + '">'
+    // Header — no "org race" suffix (build-seq 1a); title may spill to 2 lines.
     + '<div style="padding:8px 12px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--rc-color);'
-    + 'display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'
+    + 'display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
     + '<a href="' + d.href + '" style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.06em;'
     + 'text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;'
-    + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + d.headerLeft + '</a>'
+    + 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;'
+    + 'line-height:1.35;word-break:break-word;">' + d.headerLeft + '</a>'
     + '<span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.55);'
     + 'white-space:nowrap;flex-shrink:0;">' + d.headerRight + '</span>'
     + '</div>'
     + body
-    + '<div style="border-top:1px solid rgba(255,255,255,0.06);padding:6px 12px 8px;">'
-    + '<div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:0.46rem;'
-    + 'letter-spacing:0.1em;text-transform:uppercase;color:rgba(245,240,232,0.4);">'
-    + '<span>My choice &middot; my commitment</span><span>pool</span></div>'
-    + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-top:2px;'
-    + 'font-family:var(--font-mono);font-size:0.6rem;color:rgba(245,240,232,0.82);">'
+    // Footer — 2-row STRUCTURE layout (build-seq 1a):
+    //   My choice · name   | ebx
+    //   My commitment · x  | pool
+    + '<div style="border-top:1px solid rgba(255,255,255,0.06);padding:6px 12px 8px;'
+    + 'display:flex;flex-direction:column;gap:3px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;'
+    + 'font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);">'
     + '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
-    + (d.myChoice
-        ? d.myChoice + (d.myCommit > 0 ? ' &middot; ' + formatEBX(d.myCommit) : '')
-        : '<span style="opacity:0.45;font-style:italic;">no vote yet</span>')
+    + '<span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My choice</span> '
+    + (d.myChoice ? d.myChoice : '<span style="opacity:0.45;font-style:italic;">no vote yet</span>')
+    + '</span>'
+    + '<span style="flex-shrink:0;">'
+    + ((d.myChoiceEbx ?? 0) > 0 ? formatEBX(d.myChoiceEbx as number) : '--') + '</span>'
+    + '</div>'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;'
+    + 'font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);">'
+    + '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'
+    + '<span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> '
+    + (d.myCommit > 0 ? formatEBX(d.myCommit) : '--')
     + '</span>'
     + '<span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">'
+    + '<span style="color:rgba(245,240,232,0.4);font-weight:400;font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> '
     + (d.pool > 0 ? formatEBX(d.pool) : '--') + '</span>'
     + '</div></div>'
     + '</div>';
 }
 
-/* sideCard — FRONT face: upcoming phase-3 organization race.
-   Header: leading initiative + "org race", date = last day of the
-   upcoming active window (the decision date). Org EBX is estimated from
-   the synthetic vote share x the mission pool (no per-org commitment
-   data yet — see README loose-end). */
+/* sideCard — BACK face (org mode): upcoming phase-3 organization race.
+   Header: the mission's elected initiative, full title (spills to 2 lines —
+   build-seq 1a; the "org race" suffix is gone). Date = LAST day of the card's
+   upcoming active window: org vote day = window start + 1 week (build-seq 1b).
+   Pool = the mission's phase-1 pool (EBX committed during its own initiative
+   election) + current phase-2 org-vote commitments (build-seq 1c) — NOT the
+   next cycle's tiv pool. */
 function sideCard(causeIndex: number): string {
   const cause = config.causes.find(c => c.index === causeIndex);
   if (!cause) return '';
   const cycleNum = Cycle.currentCycleNum();
   const orgs = Votes.orgsForCause(causeIndex);
   const orgShares = Votes.forCause(causeIndex, cycleNum, orgs);
-  const inits = config.initiatives
-    .filter(i => i.cause_index === causeIndex)
-    .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
-  const pool = inits.reduce((s, i) => s + (i.committed_ebx || 0), 0);
-  const leadingTiv = inits[0];
-  const decision = Cycle.nextDecisionDate(causeIndex);
-  // Step 1b: rows are measured in VOTES. Synthesize a stable vote count
-  // from the share pct against a per-cause synthetic turnout (no real org
-  // vote tally yet — see README loose-end). EBX pool stays the money stat.
+  const all = config.initiatives.filter(i => i.cause_index === causeIndex);
+  // The mission whose org vote is upcoming = the elected (past-phase-1) tiv.
+  const mission = all
+    .filter(i => ['org_vote', 'active'].includes(i.status))
+    .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0] || null;
+  // 1c — phase-1 carry-over pool for THIS mission…
+  const phase1Pool = mission ? (mission.committed_ebx || 0) : 0;
+  // …plus current phase-2 commitments (local org-vote commit store).
+  let myChoice: string | null = null;
+  let myCommit = 0;
+  try {
+    const votedOrgId = (JSON.parse(localStorage.getItem('ebx_org_votes') || '{}'))[cause.id] || null;
+    if (votedOrgId) {
+      const o = orgs.find(x => x.id === votedOrgId);
+      myChoice = o ? o.name : null;
+    }
+    const committed = (JSON.parse(localStorage.getItem('ebx_org_committed') || '{}'))[cause.id];
+    if (committed) myCommit = committed.ebx || 0;
+  } catch (_e) { /* ignore */ }
+  const pool = phase1Pool + myCommit;
+  // Rows are measured in VOTES — synthetic turnout until the backend tallies.
   const SYNTH_TURNOUT = 200;
   const rows: FaceRow[] = orgShares
     .filter(sh => !sh.isOther)
     .map(sh => ({ name: sh.org_name, votes: Math.round((sh.pct / 100) * SYNTH_TURNOUT), ebx: Math.round((sh.pct / 100) * pool) }));
-  let myChoice: string | null = null;
-  try {
-    myChoice = (JSON.parse(localStorage.getItem('ebx_choices') || '{}'))['org_' + causeIndex] || null;
-  } catch (_e) { /* ignore */ }
-  const tivName = leadingTiv
-    ? (leadingTiv.title.length > 18 ? leadingTiv.title.slice(0, 18) + '...' : leadingTiv.title)
-    : cause.name;
+  const myRow = myChoice ? rows.find(r => r.name === myChoice) : null;
+  // 1b — org vote day = LAST day of the upcoming active window (+1 week).
+  const orgVoteDay = new Date(
+    Cycle.nextDecisionDate(causeIndex).getTime() +
+      config.decisionIntervalDays * MS_PER_DAY
+  );
   return electionCardFace({
     causeId: cause.id,
     color: cause.color,
-    headerLeft: tivName + ' &middot; org race',
-    headerRight: formatShortDate(decision),
+    headerLeft: mission ? mission.title : cause.name,
+    headerRight: formatShortDate(orgVoteDay),
     rows,
     myChoice,
-    myCommit: 0,
+    myChoiceEbx: myRow ? myRow.ebx : 0,
+    myCommit,
     pool,
     href: 'cause.html?id=' + cause.id,
   });
@@ -1798,89 +1831,83 @@ function topCardHeader(activeIndex: number): string {
 }
 
 /* ─────────────────────────────────────────────────────────
-   topCard — 2-column org-election body.
-   Header lives in the topbar via topCardHeader().
-   Left = This week (current cycle). Right = Newest (~7 weeks out).
-   Primary heading is initiative title; org vote bars below.
-   Vote button links to m_indx.html (org votes only here).
+   topCard — build-seq 1d: the only card with TWO org-elections,
+   rendered in the same electionCardFace format as the side cards
+   (STRUCTURE "Top card" drawings) and glowing white like the now-marker.
+     face 'front' = upcoming phase-3: the org vote that closes on the
+                    LAST day of the CURRENT active window.
+     face 'back'  = most recent phase-2: the mission whose tiv was just
+                    elected; its org vote closes on the last day of the
+                    NEXT active window (~7-8 weeks out).
+   Header strip lives in the topbar via topCardHeader().
    ───────────────────────────────────────────────────────── */
-function topCard(activeIndex: number): string {
+function topCard(activeIndex: number, face: 'front' | 'back' = 'front'): string {
   const cause = config.causes.find(c => c.index === activeIndex);
   if (!cause) return '';
-
   const cycleNum = Cycle.currentCycleNum();
   const orgs = Votes.orgsForCause(activeIndex);
+  const all = config.initiatives.filter(i => i.cause_index === activeIndex);
+  const winStart = Cycle.nextDecisionDate(activeIndex); // first day of current active window
+  const wk = config.decisionIntervalDays * MS_PER_DAY;
 
-  // ── This week: current cycle ──
-  const thisShares   = Votes.forCause(activeIndex, cycleNum, orgs);
-  const thisLeader   = thisShares[0];
-  const thisDecision = Cycle.nextDecisionDate(activeIndex);
-  const daysToThis   = Math.ceil((thisDecision.getTime() - Date.now()) / MS_PER_DAY);
+  let missionTiv: Initiative | null;
+  let orgVoteDay: Date;
+  let shares: VoteShare[];
+  if (face === 'front') {
+    // Mission elected one cycle ago — org vote closes at the end of THIS window.
+    missionTiv = all
+      .filter(i => ['org_vote', 'active'].includes(i.status))
+      .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0] || null;
+    orgVoteDay = new Date(winStart.getTime() + wk);
+    shares = Votes.forCause(activeIndex, cycleNum, orgs);
+  } else {
+    // Mission whose tiv vote is this window's day-1 tally — presumptive winner
+    // is the leading phase-1 proposal; its org vote closes at the end of the
+    // NEXT active window (window start + 7 weeks + 1 week).
+    missionTiv = all
+      .filter(i => ['suggested', 'debate'].includes(i.status))
+      .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0] || null;
+    orgVoteDay = new Date(winStart.getTime() + config.causeLengthDays * MS_PER_DAY + wk);
+    shares = Votes.forCause(activeIndex, cycleNum + 1, orgs);
+  }
 
-  const thisInits = config.initiatives.filter(i => i.cause_index === activeIndex);
-  const thisPool  = thisInits.reduce((s, i) => s + (i.committed_ebx || 0), 0);
-  const thisInit  = Votes.initiativesForCause(activeIndex, cycleNum, thisInits)[0];
-
-  let myOrgVote: string | null = null;
+  // 1c — org-vote pool: this mission's phase-1 carry-over + phase-2 commitments.
+  const phase1Pool = missionTiv ? (missionTiv.committed_ebx || 0) : 0;
+  let myChoice: string | null = null;
+  let myCommit = 0;
   try {
-    const ch = JSON.parse(localStorage.getItem('ebx_choices') || '{}');
-    myOrgVote = ch[`org_${activeIndex}`] || null;
+    const votedOrgId = (JSON.parse(localStorage.getItem('ebx_org_votes') || '{}'))[cause.id] || null;
+    if (votedOrgId) {
+      const o = orgs.find(x => x.id === votedOrgId);
+      myChoice = o ? o.name : null;
+    }
+    const committed = (JSON.parse(localStorage.getItem('ebx_org_committed') || '{}'))[cause.id];
+    if (committed) myCommit = committed.ebx || 0;
   } catch (_e) { /* ignore */ }
+  // Local org vote/commit is tracked per-cause (one live org election per
+  // cause); show it on the front face only so the back face stays projection.
+  if (face === 'back') { myChoice = null; myCommit = 0; }
+  const pool = phase1Pool + (face === 'front' ? myCommit : 0);
 
-  const thisVoteBars = thisShares.slice(0, 4).map(s => `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;"></span>
-      <span style="font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.72);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.org_name}</span>
-      <span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.45);flex-shrink:0;">${s.pct.toFixed(0)}%</span>
-    </div>`).join('');
+  const SYNTH_TURNOUT = 200;
+  const rows: FaceRow[] = shares
+    .filter(sh => !sh.isOther)
+    .map(sh => ({ name: sh.org_name, votes: Math.round((sh.pct / 100) * SYNTH_TURNOUT), ebx: Math.round((sh.pct / 100) * pool) }));
+  const myRow = myChoice ? rows.find(r => r.name === myChoice) : null;
 
-  const leftPane = `
-    <div style="padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:0;">
-      <div style="font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:${cause.color};font-weight:700;margin-bottom:5px;">This week · ${daysToThis}d</div>
-      <div style="font-size:0.8rem;font-weight:700;color:rgba(245,240,232,0.95);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px;">${thisInit ? (thisInit.emoji ? thisInit.emoji + ' ' : '') + thisInit.title : '<span style="opacity:0.4;font-style:italic;">No initiative yet</span>'}</div>
-      ${thisVoteBars}
-      <div style="margin-top:6px;font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.38);">Pool: ${thisPool > 0 ? '$' + formatNumber(thisPool) : '—'} · ${formatShortDate(thisDecision)}</div>
-      ${myOrgVote ? `<div style="margin-top:5px;font-family:var(--font-mono);font-size:0.52rem;color:${cause.color};opacity:0.85;">✓ Your vote: ${myOrgVote}</div>` : ''}
-      <a href="m_indx.html" style="display:inline-block;margin-top:9px;font-family:var(--font-mono);font-size:0.54rem;font-weight:700;padding:3px 9px;border-radius:4px;background:${cause.color};color:#0f1a14;text-decoration:none;">Vote →</a>
-    </div>`;
-
-  // ── Newest: next cycle (~7 weeks out) ──
-  const nextCycle    = cycleNum + 1;
-  const nextShares   = Votes.forCause(activeIndex, nextCycle, orgs);
-  const nextLeader   = nextShares[0];
-  const nextDecision = new Date(thisDecision.getTime() + config.causeLengthDays * MS_PER_DAY);
-  const daysToNext   = Math.ceil((nextDecision.getTime() - Date.now()) / MS_PER_DAY);
-  const nextInits    = config.initiatives.filter(i => i.cause_index === activeIndex);
-  const nextInit     = Votes.initiativesForCause(activeIndex, nextCycle, nextInits)[0];
-
-  const nextVoteBars = nextShares.slice(0, 3).map(s => `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${s.color};flex-shrink:0;opacity:0.75;"></span>
-      <span style="font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.55);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.org_name}</span>
-      <span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.35);flex-shrink:0;">${s.pct.toFixed(0)}%</span>
-    </div>`).join('');
-
-  const rightPane = `
-    <div style="padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:0;">
-      <div style="font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.16em;text-transform:uppercase;color:rgba(245,240,232,0.35);margin-bottom:5px;">Newest · ${daysToNext}d</div>
-      <div style="font-size:0.8rem;font-weight:700;color:rgba(245,240,232,0.68);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:8px;">${nextInit ? (nextInit.emoji ? nextInit.emoji + ' ' : '') + nextInit.title : '<span style="opacity:0.4;font-style:italic;">No initiative yet</span>'}</div>
-      ${nextVoteBars}
-      <div style="margin-top:6px;font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.28);">${formatShortDate(nextDecision)}</div>
-      ${nextLeader ? `<div style="margin-top:5px;font-family:var(--font-mono);font-size:0.52rem;color:rgba(245,240,232,0.42);">Leading: ${nextLeader.org_name} ${nextLeader.pct.toFixed(0)}%</div>` : ''}
-      <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
-        <a href="m_indx.html" style="font-family:var(--font-mono);font-size:0.52rem;padding:2px 8px;border-radius:4px;border:1px solid rgba(245,240,232,0.16);color:rgba(245,240,232,0.45);text-decoration:none;">m_indx →</a>
-        <a href="en.html?cause=${cause.id}" style="font-family:var(--font-mono);font-size:0.52rem;padding:2px 8px;border-radius:4px;border:1px solid rgba(245,240,232,0.1);color:rgba(245,240,232,0.32);text-decoration:none;">EN feed</a>
-      </div>
-    </div>`;
-
-  // Body only — header is rendered separately via topCardHeader() into the topbar
-  return `<div style="background:rgba(15,26,20,0.82);border-left:1px solid rgba(255,255,255,0.09);border-right:1px solid rgba(255,255,255,0.09);border-bottom:1px solid rgba(255,255,255,0.09);border-top:1px solid rgba(255,255,255,0.07);overflow:hidden;width:100%;box-sizing:border-box;height:100%;border-radius:0 0 8px 8px;">
-    <div style="display:grid;grid-template-columns:1fr 1px 1fr;height:100%;">
-      ${leftPane}
-      <div style="background:rgba(255,255,255,0.07);"></div>
-      ${rightPane}
-    </div>
-  </div>`;
+  return electionCardFace({
+    causeId: cause.id,
+    color: cause.color,
+    headerLeft: missionTiv ? missionTiv.title : cause.name,
+    headerRight: formatShortDate(orgVoteDay),
+    rows,
+    myChoice,
+    myChoiceEbx: myRow ? myRow.ebx : 0,
+    myCommit,
+    pool,
+    href: 'cause.html?id=' + cause.id,
+    glow: true,
+  });
 }
 
 

@@ -1,5 +1,15 @@
 # Backlog
 
+## Automated build run — 2026-06-10 (pass 33)
+
+Shipped build-seq 0–5 (see README §1 for detail). Decisions made autonomously, flagging for Jax:
+
+1. **Org→initiative "registration" proxy.** Orgs have no initiative link in the API, so `orgRegisteredFor(org, init)` = `org.causes` contains `init.cause_index`, with `org.initiative_ids` honored if/when the backend adds it. Org filter options = elected (`org_vote`/`active`) tivs.
+2. **Org commits get their own store** — `ebx_org_committed` (localStorage), written by the entity card's commit control when reached via an org vote (`data-kind="org"`). Keeps org-card pool math (phase-1 carry-over + phase-2 commits) separate from tiv vote weight.
+3. **Top card faces.** Front = current window's closing org vote (mission elected last cycle). Back = just-elected mission's org vote (~8 wks out, cycle+1 synthetic shares); its "winner" is the leading phase-1 tiv until mission history exists. Both faces glow; local org vote/commit shown on front only.
+4. **Phase-1 recap math** = 20% × (myEbx × winner-share) + 10% × (myEbx × rest), shares normalized; commit-snapshot shares preferred over live store.
+5. **Truncation recoveries (3×)** — NUL-strip + git-blob tail splice. Used the staged blob for cause.html (Jax's uncommitted edits), HEAD for index/profile. All scripts re-parse clean; build + tsc green.
+
 ## Automated debug run — 2026-06-01
 
 ---

@@ -1300,17 +1300,69 @@
       // build-seq 2a — share the past-cycle-aware decisionMs helper so the
       // re-render path doesn't reintroduce the stale-date bug.
       renderElectionCard(cause, initsLocal, new Date(_causeDecisionMs(cause)), missionRef);
+      try { refreshCauseRace(); } catch (e) {}
     }
 
-    // Phase-1 RECAP (Vote-fix b / STRUCTURE "Phase 1 — When Recap"). Stub: a
-    // single winning-initiative line + locked Discussion placeholder. Step-3 will
-    // flesh out the Leaders/My-votes/pool columns per the STRUCTURE drawing.
+    // Phase-1 RECAP (build-seq 4 / STRUCTURE "Phase 1 — When Recap").
+    // Visible-tivs hardening step 2: the benefactor sees how much of their vote
+    // (share + EBX) was committed to the tiv they selected, whether that vote
+    // won, and the resulting EBX they contributed to the pool — phase-1
+    // economics per STRUCTURE §SYSTEM: 20% sent if your initiative wins,
+    // 10% if not.
     function renderPhase1Recap(block, cause, missionRef) {
       if (!block) return;
       const title = missionRef.emoji ? (missionRef.emoji + ' ' + missionRef.title) : missionRef.title;
       const when  = missionRef.election_open ? fmtDate(new Date(missionRef.election_open)) : '—';
       const poolN = missionRef.ebx_committed || missionRef.pool_value || 0;
       const poolS = poolN ? (poolN.toLocaleString() + ' EBX in pool') : '';
+
+      // ── My-vote recap ──
+      // Shares are snapshotted into the commit payload at commit time; fall
+      // back to the live share store for uncommitted (vote-only) benefactors.
+      let myHtml = '';
+      try {
+        const committed = loadCommitted(cause.id);
+        const shares = (committed && committed.shares) || loadShares(cause.id) || {};
+        const myEbx = committed ? (Number(committed.ebx) || 0) : 0;
+        const sumShares = Object.values(shares).reduce((s,v) => s + (Number(v)||0), 0);
+        const winShare  = Number(shares[missionRef.id] || 0);
+        const loseShare = Math.max(0, sumShares - winShare);
+        if (sumShares > 0) {
+          // Normalize in case shares don't sum to exactly 1.
+          const winFrac  = winShare  / sumShares;
+          const loseFrac = loseShare / sumShares;
+          const ebxOnWinner = myEbx * winFrac;
+          const won = winShare > 0;
+          // 20% of EBX behind the winner is sent; 10% of the rest.
+          const contributed = 0.2 * ebxOnWinner + 0.1 * (myEbx * loseFrac);
+          const shareLine = won
+            ? `You committed <b style="color:var(--cause-color)">${(winFrac*100).toFixed(0)}%</b> of your vote` +
+              (myEbx > 0 ? ` (<b>${Math.round(ebxOnWinner).toLocaleString()} EBX</b>)` : '') +
+              ` to ${title}.`
+            : `None of your vote went to ${title} — your share backed other initiatives.`;
+          const resultLine = won
+            ? `<span style="color:var(--cause-color);font-weight:700;">✓ Your vote won.</span>`
+            : `<span style="opacity:0.75;">✗ Your vote didn't win this election.</span>`;
+          const contribLine = myEbx > 0
+            ? `Resulting contribution: <b style="color:var(--cause-color)">${contributed.toFixed(1)} EBX</b>
+               <span style="opacity:0.6;">(20% of EBX behind the winner, 10% behind the rest)</span>`
+            : `<span style="opacity:0.6;">No EBX was committed with this vote.</span>`;
+          myHtml = `
+          <div class="election-card__row" style="display:block;border-style:dashed;">
+            <div class="election-card__row-title" style="font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;opacity:0.7;">My vote</div>
+            <div class="election-card__row-sub" style="margin-top:4px;">${shareLine}</div>
+            <div class="election-card__row-sub" style="margin-top:2px;">${resultLine}</div>
+            <div class="election-card__row-sub" style="margin-top:2px;">${contribLine}</div>
+          </div>`;
+        } else {
+          myHtml = `
+          <div class="election-card__row" style="display:block;border-style:dashed;opacity:0.7;">
+            <div class="election-card__row-title" style="font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;">My vote</div>
+            <div class="election-card__row-sub" style="margin-top:4px;">You didn't vote in this election.</div>
+          </div>`;
+        }
+      } catch (e) { myHtml = ''; }
+
       block.innerHTML = `
         <div class="phase-recap__num">Phase 1</div>
         <div class="phase-recap__body election-card election-card--recap">
@@ -1327,6 +1379,7 @@
               <div class="election-card__row-sub">Elected ${when}${poolS ? ' · ' + poolS : ''}</div>
             </div>
           </div>
+          ${myHtml}
           <div class="election-card__actions">
             <button class="election-card__withdraw-btn" disabled title="Voting closed for this mission">Voting closed</button>
             <div class="election-card__status" style="opacity:0.55;">See election details (coming soon)</div>
@@ -1554,6 +1607,7 @@
       }
       const commitBtn = document.getElementById('vote-commit-btn');
       if (commitBtn) commitBtn.disabled = over || sum <= 0;
+      try { refreshCauseRace(); } catch (e) {}
     }
     window.onVoteShareChange = onVoteShareChange;
 
@@ -1622,6 +1676,8 @@
       if (btn) btn.textContent = 'Update commitment';
       // Refresh the running tally so the widget reflects the new commitment.
       try { syncCauseTally(causeId); } catch (e) {}
+      // Reflect the new EBX weight in the pie + leading cards.
+      try { refreshCauseRace(); } catch (e) {}
     }
     window.commitVote = commitVote;
 
@@ -1774,12 +1830,27 @@
       .filter(i => i.cause_index === cause.index || i.cause_id === cause.id)
       .sort((a, b) => (b.ebx_committed || 0) - (a.ebx_committed || 0));
 
-    /* Vote shares — by EBX committed; equal weight if none */
-    const totalEBX = causeInits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
+    /* Vote weight per init — folds the local benefactor's vote + committed
+       EBX (1:1 weight, Jax Step-1 feedback) onto any backend ebx_committed so
+       the pie + leading cards react to your own commit. */
+    function localVoteWeight(init) {
+      try {
+        const shares = (JSON.parse(localStorage.getItem(VOTE_KEY) || '{}'))[cause.id] || {};
+        const share = +shares[init.id] || 0;
+        if (share <= 0) return 0;
+        const committed = (JSON.parse(localStorage.getItem(VOTE_COMMIT_KEY) || '{}'))[cause.id];
+        const ebx = committed ? (committed.ebx || 0) : 0;
+        return EBX.voteWeight ? EBX.voteWeight(share, ebx * share) : share + ebx * share;
+      } catch (e) { return 0; }
+    }
+    function initWeight(init) {
+      return (init.ebx_committed || 0) + localVoteWeight(init);
+    }
     function voteShare(init) {
       if (causeInits.length === 0) return 0;
-      if (totalEBX === 0) return 1 / causeInits.length;
-      return (init.ebx_committed || 0) / totalEBX;
+      const total = causeInits.reduce((s, i) => s + initWeight(i), 0);
+      if (total === 0) return 1 / causeInits.length;
+      return initWeight(init) / total;
     }
 
     /* ── 6. Initiative Annulus (SVG pie chart) + now-marker ── */
@@ -1793,7 +1864,7 @@
       // sense once 2+ initiatives have received votes. Branch on the number of
       // *voted* initiatives, not the number of proposals, so a pool that is
       // empty or 100% one-way drops the pie and shows center text instead.
-      const votedInits = inits.filter(i => (i.ebx_committed || 0) > 0);
+      const votedInits = inits.filter(i => initWeight(i) > 0);
       const votedCount = votedInits.length;
 
       let paths = '';
@@ -1839,11 +1910,11 @@
       } else {
         // 2+ initiatives have votes → normal pie, divided by vote share.
         // Unvoted proposals contribute a 0-width slice (invisible).
-        const total = inits.reduce((s, i) => s + (i.ebx_committed || 0), 0);
+        const total = inits.reduce((s, i) => s + initWeight(i), 0);
         let startAngle = -Math.PI / 2;
 
         inits.forEach((init, idx) => {
-          const share = total > 0 ? (init.ebx_committed || 0) / total : 1 / n;
+          const share = total > 0 ? initWeight(init) / total : 1 / n;
           const angle = share * TAU;
           const endAngle = startAngle + angle;
           const mid = (startAngle + endAngle) / 2;
@@ -1945,8 +2016,11 @@
       </svg>`;
     }
 
-    document.getElementById('cause-annulus-mount').innerHTML =
-      buildAnnulusSVG(causeInits, CAUSE_COLOR);
+    function renderAnnulus() {
+      document.getElementById('cause-annulus-mount').innerHTML =
+        buildAnnulusSVG(causeInits, CAUSE_COLOR);
+    }
+    renderAnnulus();
 
     /* ── 6b. Mission overview block (build-seq 2d) — sits below annulus ── */
     // Mission header (renamed from renderMissionOverview; relocated to header row).
@@ -2027,9 +2101,9 @@
     // Leading panel: only show phase-1 initiatives (suggested/debate).
     // Past-phase-1 tivs (org_vote/active/resolved) have already won; their EBX
     // transferred to the mission and they appear in the right panel only.
+    function renderLeadingPanel() {
     const leading = causeInits.filter(i => ['suggested','debate'].includes(i.status)).slice(0, 3);
     const topShare = leading.length ? voteShare(leading[0]) : 1;
-
     document.getElementById('leading-initiatives-panel').innerHTML = leading.length
       ? leading.map((init, i) => {
           const pct = Math.round(voteShare(init) * 100);
@@ -2043,12 +2117,22 @@
               </div>
               <div class="init-card__meta">
                 <span class="init-card__pct">${pct}% of pool</span>
-                <span>${EBX.formatEBX ? EBX.formatEBX(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' EBX'}</span>
+                <span>${EBX.formatVotes ? EBX.formatVotes(initWeight(init)) : Math.round(initWeight(init)) + ' votes'}</span>
               </div>
               ${init.rating > 0 ? `<div class="init-card__meta" style="margin-top:4px;"><span>★ ${init.rating.toFixed(1)}</span></div>` : ''}
             </div>`;
         }).join('')
       : `<div style="color:rgba(245,240,232,0.35);font-size:0.8rem;padding:12px 0;">No proposals yet.</div>`;
+    }
+    renderLeadingPanel();
+
+    // Re-render the cause-page race visuals (pie + leading cards) after a
+    // vote/commit so the benefactor's own weight shows immediately (Jax fix).
+    function refreshCauseRace() {
+      try { renderAnnulus(); } catch (e) {}
+      try { renderLeadingPanel(); } catch (e) {}
+    }
+    window.refreshCauseRace = refreshCauseRace;
 
     /* ── 8. Right panel — 3 stacked mission cards ──
        Top:    Upcoming org election (status debate/org_vote/suggested with most EBX)

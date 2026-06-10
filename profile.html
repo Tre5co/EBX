@@ -1256,7 +1256,11 @@
               <!-- ── (a+c) Left sidebar: handle card + credit portfolio ── -->
               <aside class="profile-sidebar">
 
-                <div class="profile-card">
+                <div class="profile-card" style="position:relative;">
+                  <button onclick="openSettingsModal()" title="Settings" aria-label="Open settings"
+                          style="position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;
+                                 font-size:1.05rem;opacity:0.55;line-height:1;padding:4px;"
+                          onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.55">⚙</button>
                   <div class="profile-card__avatar">${initials}</div>
                   <div class="profile-card__handle">@${p.handle}</div>
                   <div class="profile-card__name">${p.display || p.handle}</div>
@@ -1284,8 +1288,23 @@
                   </div>
                 </div>
 
-                <div style="margin-top:var(--sp-2xl);">
-                  <div class="profile-feed-eyebrow">Settings</div>
+                <!-- Build-seq 5 (P1): settings moved out of the page flow into a
+                     window, opened from the gear on the profile card. -->
+
+              </main>
+
+              <!-- ── Settings window (modal) ── -->
+              <div id="settings-modal-bg" onclick="closeSettingsOnBg(event)"
+                   style="display:none;position:fixed;inset:0;z-index:60;background:rgba(20,26,22,0.45);
+                          align-items:center;justify-content:center;padding:24px;">
+                <div style="background:var(--clr-paper,#fdfbf6);border:1px solid var(--clr-border,#ddd);
+                            border-radius:var(--radius-md,10px);max-width:480px;width:100%;
+                            max-height:85vh;overflow:auto;padding:var(--sp-xl,24px);box-shadow:0 18px 50px rgba(0,0,0,0.25);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-md,12px);">
+                    <div class="profile-feed-eyebrow" style="margin:0;">Settings</div>
+                    <button onclick="closeSettingsModal()" aria-label="Close settings"
+                            style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;">✕</button>
+                  </div>
                   <div class="settings-group">
                     <div class="settings-group__title">Identity</div>
                     <div class="settings-row">
@@ -1306,8 +1325,7 @@
                     </button>
                   </div>
                 </div>
-
-              </main>
+              </div>
 
               <!-- ── (d) Right: choices table ── -->
               <aside class="profile-choices-col">
@@ -1320,6 +1338,22 @@
                     </div>
                   </div>
                   <table class="choices-table" id="choices-table-inits">
+                    <tbody>
+                      ${choicesTableRows.map(row => `
+                        <tr>
+                          <td style="width:36px;">
+                            <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
+                          </td>
+                          <td>
+                            <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
+                            ${row.initChoice
+                              ? `<a class="choice-link" href="${row.initChoiceId ? 'initiative.html?id=' + row.initChoiceId : 'cause.html?id=' + row.cause.id}">${row.initChoice}</a>`
+                              : `<span class="no-choice">No vote yet</span>`}
+                          </td>
+                        </tr>`).join('')}
+                    </tbody>
+                  </table>
+                  <table class="choices-table" id="choices-table-orgs" style="display:none;">
                     <tbody>
                       ${choicesTableRows.map(row => `
                         <tr>

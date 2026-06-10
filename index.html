@@ -540,7 +540,7 @@
         </button>
       </div>
       <span class="main-toggle__hint" id="main-toggle-hint">
-        Showing initiatives competing for the next mission
+        Select an initiative to learn more
       </span>
     </div>
   </section>
@@ -553,23 +553,16 @@
           <input type="search" class="init-search-input" id="init-search"
             placeholder="Search initiatives…" oninput="filterInitiatives()" />
         </div>
-        <div class="init-filters" role="group" aria-label="Initiative filters">
+        <!-- Build-seq 2: tiv mode filters by CAUSE only (phases/ratings gone —
+             everything in the table is phase 1); org mode filters by
+             INITIATIVE only (orgs register for an initiative, not a cause). -->
+        <div class="init-filters" role="group" aria-label="Table filters">
           <select class="init-filter" id="filter-cause" onchange="filterInitiatives()" aria-label="Filter by cause">
             <option value="">All causes</option>
           </select>
-          <select class="init-filter" id="filter-stage" onchange="filterInitiatives()" aria-label="Filter by phase">
-            <option value="">All phases</option>
-            <option value="suggested">Suggested</option>
-            <option value="debate">Debate</option>
-            <option value="active">Active</option>
-            <option value="resolved">Resolved</option>
-          </select>
-          <select class="init-filter" id="filter-rating" onchange="filterInitiatives()" aria-label="Filter by rating">
-            <option value="">All ratings</option>
-            <option value="4">4+ stars</option>
-            <option value="3">3+ stars</option>
-            <option value="2">2+ stars</option>
-            <option value="1">1+ stars</option>
+          <select class="init-filter" id="filter-initiative" onchange="filterInitiatives()"
+                  aria-label="Filter by initiative" style="display:none;">
+            <option value="">All initiatives</option>
           </select>
         </div>
         <button class="btn btn-forest" id="main-propose-btn" onclick="onProposePrimary()">+ Propose an Initiative</button>
@@ -577,6 +570,7 @@
       <div class="init-table-wrap">
         <div class="init-table-scroll">
           <table class="init-table">
+            <!-- Build-seq 3b: no Phase column — everything here is phase 1. -->
             <thead id="init-table-head">
               <tr>
                 <th class="col-watch" aria-label="Watch"></th>
@@ -584,7 +578,6 @@
                 <th>Cause</th>
                 <th>My EBX</th>
                 <th>Total EBX</th>
-                <th>Phase</th>
                 <th>Next vote</th>
               </tr>
             </thead>
@@ -653,8 +646,11 @@
       // from the same localStorage the cause-page voting widget writes.
       const c = EBX.config.causes.find(x => x.index === causeIndex);
       if (!c) return '';
+      // Build-seq 1c: the tiv-vote pool is ONLY the current phase-1 pool —
+      // elected (org_vote/active) tivs belong to the org card, not this one.
       const inits = (EBX.config.initiatives || [])
-        .filter(i => i.cause_index === causeIndex || i.cause_id === c.id)
+        .filter(i => (i.cause_index === causeIndex || i.cause_id === c.id)
+                  && ['suggested','debate'].includes(i.status))
         .sort((a,b) => (b.committed_ebx||b.ebx_committed||0) - (a.committed_ebx||a.ebx_committed||0));
       // Step 1b: rows show VOTES, not EBX. The only live signal on the back
       // face is the local benefactor's own vote (share) and their committed
@@ -672,21 +668,24 @@
         const share = +shares[i.id] || 0;
         const perEbx = myCommit * share;
         const votes = share > 0 ? EBX.voteWeight(share, perEbx) : 0;
-        return { name: (i.emoji ? i.emoji + ' ' : '') + (i.title || 'Untitled'), votes,
+        return { id: i.id, name: (i.emoji ? i.emoji + ' ' : '') + (i.title || 'Untitled'), votes,
                  ebx: i.committed_ebx || i.ebx_committed || 0 };
       }).sort((a,b) => b.votes - a.votes);
-      // First day of the upcoming active window.
-      const winStart = EBX.Cycle.windowStart(causeIndex);
+      // Build-seq 1b: tiv vote day = FIRST day of the upcoming active window
+      // (was windowStart(), which is the previous window's first day).
+      const winStart = EBX.Cycle.nextDecisionDate(causeIndex);
       // Mission number stand-in: cycle index + 1 until real mission history lands.
       const missionNum = (EBX.Cycle.currentCycleNum ? EBX.Cycle.currentCycleNum() : 0) + 1;
       // My choice from the shared vote store (largest share).
-      let myChoice = null;
+      let myChoice = null, myChoiceEbx = 0;
       try {
         let bestId = null, best = 0;
         Object.keys(shares).forEach(id => { if ((+shares[id]||0) > best) { best = +shares[id]; bestId = id; } });
         if (bestId) {
           const chosen = inits.find(i => i.id === bestId);
           myChoice = chosen ? ((chosen.emoji ? chosen.emoji + ' ' : '') + chosen.title) : null;
+          const chosenRow = rows.find(r => r.id === bestId);
+          myChoiceEbx = chosenRow ? chosenRow.ebx : 0;
         }
       } catch (e) { /* ignore */ }
       return EBX.electionCardFace({
@@ -696,76 +695,23 @@
         headerRight: EBX.formatShortDate(winStart),
         rows,
         myChoice,
+        myChoiceEbx,
         myCommit,
         pool,
         href: 'cause.html?id=' + c.id,
       });
     }
 
-    function topCardBack(activeIndex) {
-      const c = EBX.config.causes.find(x => x.index === activeIndex);
-      if (!c) return '';
-      const inits = (EBX.config.initiatives || [])
-        .filter(i => i.cause_index === activeIndex || i.cause_id === c.id)
-        .sort((a,b) => (b.committed_ebx||b.ebx_committed||0) - (a.committed_ebx||a.ebx_committed||0));
-      const total = inits.reduce((s,i) => s + (i.committed_ebx||i.ebx_committed||0), 0);
-      const decision = EBX.Cycle.nextDecisionDate(activeIndex);
-      const daysToInitVote = Math.ceil((decision.getTime() - Date.now()) / 86400000);
-      const top = inits[0];
-      const top4 = inits.slice(0,4);
-      const labels = ['leader', 'choice', 'second', 'third'];
-      const rows = top4.length ? top4.map((init, idx) => {
-        const ebx = init.committed_ebx || init.ebx_committed || 0;
-        const pct = total > 0 ? Math.round((ebx/total)*100) : (idx === 0 ? 100 : 0);
-        return `<div style="display:flex;align-items:baseline;gap:8px;font-family:var(--font-mono);
-                     font-size:0.6rem;color:rgba(245,240,232,0.75);margin-bottom:3px;">
-                  <span style="text-transform:uppercase;letter-spacing:0.08em;
-                               color:rgba(245,240,232,0.4);width:48px;">${labels[idx]||'…'}</span>
-                  <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                    ${(init.emoji?init.emoji+' ':'') + (init.title||'Untitled')}
-                  </span>
-                  <span style="color:${c.color};font-weight:700;">${pct}%</span>
-                </div>`;
-      }).join('') : `<div style="font-size:0.7rem;color:rgba(245,240,232,0.4);font-style:italic;">
-        No initiative proposals yet for this cause.
-      </div>`;
-      return `<div style="background:rgba(15,26,20,0.82);
-                border-left:1px solid rgba(255,255,255,0.09);
-                border-right:1px solid rgba(255,255,255,0.09);
-                border-bottom:1px solid rgba(255,255,255,0.09);
-                border-top:1px solid rgba(255,255,255,0.07);
-                overflow:hidden;width:100%;box-sizing:border-box;height:100%;
-                border-radius:0 0 8px 8px;padding:12px 14px;display:flex;
-                flex-direction:column;gap:6px;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;">
-          <div style="font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.16em;
-                      text-transform:uppercase;color:${c.color};font-weight:700;">
-            Newest initiative · ${daysToInitVote}d to vote
-          </div>
-          <div style="font-family:var(--font-mono);font-size:0.5rem;
-                      color:rgba(245,240,232,0.4);">${decision.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
-        </div>
-        <div style="font-size:0.85rem;font-weight:700;color:rgba(245,240,232,0.95);
-                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-          ${top ? (top.emoji?top.emoji+' ':'') + top.title : '<span style="opacity:0.4;font-style:italic;">No initiative yet</span>'}
-        </div>
-        <div style="margin-top:4px;">${rows}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;
-                    padding-top:6px;border-top:1px solid rgba(255,255,255,0.06);">
-          <span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.45);">
-            Pool ${total > 0 ? '$'+total.toLocaleString() : '—'}
-          </span>
-          <a href="cause.html?id=${c.id}" style="font-family:var(--font-mono);font-size:0.54rem;
-             font-weight:700;padding:3px 9px;border-radius:4px;background:${c.color};
-             color:#0f1a14;text-decoration:none;">Vote on initiative →</a>
-        </div>
-      </div>`;
-    }
+    // Build-seq 1d: topCardBack (initiative ranking) removed — the top card is
+    // the only card with TWO org-elections (STRUCTURE drawings). Both faces now
+    // render via the shared EBX.topCard(active, face).
 
     function topCardHeaderForMode(activeIndex, mode) {
       const cause = EBX.config.causes.find(c => c.index === activeIndex);
       if (!cause) return '';
-      const label = mode === 'tiv' ? 'Initiative Election' : 'Organization Election';
+      // Both top-card faces are org elections (build-seq 1d): front = the org
+      // vote closing this window; back = the just-elected mission's org vote.
+      const label = mode === 'tiv' ? 'Org Election · next window' : 'Organization Election';
       return `<div style="display:flex;align-items:center;gap:8px;padding:0 16px;height:100%;
                   border-top:2px solid ${cause.color};
                   border-left:1px solid rgba(255,255,255,0.09);
@@ -826,7 +772,7 @@
       // Top card header in topbar + body in hero center column — varies with mode
       document.getElementById("ebx-topcard-header-mount").innerHTML = topCardHeaderForMode(active, _mainMode);
       document.getElementById("ebx-top-card-mount").innerHTML =
-        _mainMode === 'org' ? EBX.topCard(active) : topCardBack(active);
+        EBX.topCard(active, _mainMode === 'org' ? 'front' : 'back');
 
       // Annulus-center leader summary: leading initiative for the NEXT cause
       const nextIdx = (active + 1) % n;
@@ -856,13 +802,47 @@
     // expose so the main-toggle setter can re-render cards without re-running the whole pipeline
     window.renderCards = renderCards;
 
+    // Build-seq 3d — clicking a card filters the entity table. Delegated on the
+    // three card mounts; survives every re-render. The header <a> still
+    // navigates to the cause page, so we only intercept body clicks.
+    function _bindCardFilterClicks() {
+      ['left-panel', 'right-panel', 'ebx-top-card-mount'].forEach(id => {
+        const mount = document.getElementById(id);
+        if (!mount || mount._ebxCardFilterBound) return;
+        mount.addEventListener('click', function (ev) {
+          if (ev.target.closest('a')) return; // header link keeps navigating
+          const card = ev.target.closest('.race-card[data-cause-id]');
+          if (!card) return;
+          const causeId = card.getAttribute('data-cause-id');
+          if (!causeId) return;
+          if (_mainMode === 'org') {
+            // Org mode → filter by the cause's elected initiative (its mission).
+            const cause = (EBX.config.causes || []).find(c => c.id === causeId);
+            const mission = (EBX.config.initiatives || []).find(i =>
+              ['org_vote','active'].includes(i.status) &&
+              (i.cause_id === causeId || (cause && i.cause_index === cause.index)));
+            const sel = document.getElementById('filter-initiative');
+            if (sel) sel.value = mission ? mission.id : '';
+          } else {
+            const sel = document.getElementById('filter-cause');
+            if (sel) sel.value = causeId;
+          }
+          filterInitiatives();
+          const table = document.querySelector('.tiv-table-section');
+          if (table) table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        mount._ebxCardFilterBound = true;
+      });
+    }
+    _bindCardFilterClicks();
+
     EBX.Annulus.mount("#ebx-annulus-mount");
       // Populate initiative table (all causes)
       _allInits = (EBX.config.initiatives || []).sort((a,b) =>
         ((b.committed_ebx||b.ebx_committed||0) - (a.committed_ebx||a.ebx_committed||0))
       );
       populateCauseFilter();
-      renderInitTable(_allInits);
+      filterInitiatives(); // initial render — applies the phase-1-only rule (3b)
       idxRenderFeed();
       // build-seq 1d — info tab is the default; seed it with the leader card.
       if (typeof idxRenderDefaultInfo === 'function') idxRenderDefaultInfo();
@@ -950,12 +930,18 @@
     const orgBtn = document.getElementById('main-toggle-org');
     if (tivBtn) { tivBtn.classList.toggle('active', mode === 'tiv'); tivBtn.setAttribute('aria-selected', mode === 'tiv'); }
     if (orgBtn) { orgBtn.classList.toggle('active', mode === 'org'); orgBtn.setAttribute('aria-selected', mode === 'org'); }
+    // Build-seq 3a — table description.
     const hint = document.getElementById('main-toggle-hint');
     if (hint) {
       hint.textContent = mode === 'tiv'
-        ? 'Showing initiatives competing for the next mission'
-        : 'Showing organizations applying to run elected initiatives';
+        ? 'Select an initiative to learn more'
+        : 'Select an organization to learn more';
     }
+    // Build-seq 2 — swap which filter is visible: cause (tiv) vs initiative (org).
+    const causeSel = document.getElementById('filter-cause');
+    const initSel  = document.getElementById('filter-initiative');
+    if (causeSel) causeSel.style.display = mode === 'tiv' ? '' : 'none';
+    if (initSel)  initSel.style.display  = mode === 'org' ? '' : 'none';
     const btn = document.getElementById('main-propose-btn');
     if (btn) {
       btn.textContent = mode === 'tiv' ? '+ Propose an Initiative' : '+ Register an Organization';
@@ -998,20 +984,21 @@
     const thead = document.getElementById('init-table-head');
     if (!thead) return;
     if (mode === 'tiv') {
+      // Build-seq 3b: no Phase column — all listed tivs are phase 1.
       thead.innerHTML = `<tr>
         <th class="col-watch" aria-label="Watch"></th>
         <th>Name</th>
         <th>Cause</th>
         <th>My EBX</th>
         <th>Total EBX</th>
-        <th>Phase</th>
         <th>Next vote</th>
       </tr>`;
     } else {
+      // Build-seq 3c: orgs register for an INITIATIVE, not a cause.
       thead.innerHTML = `<tr>
         <th class="col-watch" aria-label="Watch"></th>
         <th>Organization</th>
-        <th>Cause</th>
+        <th>Initiative</th>
         <th>My EBX</th>
         <th>Total EBX</th>
         <th>Status</th>
@@ -1049,33 +1036,41 @@
   // Step 1a — committing EBX. Shared store with the cause-page widget:
   // ebx_vote_committed[causeId] = { shares, at, ebx }. Committing EBX from
   // the entity card adds weight to the benefactor's initiative vote.
-  function _loadCauseCommit(causeId) {
-    try { return (JSON.parse(localStorage.getItem(VOTE_COMMIT_KEY) || '{}'))[causeId] || null; }
+  // Org-vote commits live under their own key (build-seq 1c) so the org card
+  // pool (phase-1 carry-over + phase-2 commits) never mixes with tiv weight.
+  const ORG_COMMIT_KEY = 'ebx_org_committed';      // { causeId: { at, ebx } }
+  function _commitKeyFor(kind) { return kind === 'org' ? ORG_COMMIT_KEY : VOTE_COMMIT_KEY; }
+  function _loadCauseCommit(causeId, kind) {
+    try { return (JSON.parse(localStorage.getItem(_commitKeyFor(kind)) || '{}'))[causeId] || null; }
     catch(e) { return null; }
   }
-  function _saveCauseCommitEbx(causeId, ebx) {
+  function _saveCauseCommitEbx(causeId, ebx, kind) {
     let all = {};
-    try { all = JSON.parse(localStorage.getItem(VOTE_COMMIT_KEY) || '{}'); } catch(e) {}
-    const shares = _loadCauseShares(causeId);
-    all[causeId] = { shares: { ...shares }, at: Date.now(), ebx: Math.max(0, Math.round(Number(ebx) || 0)) };
-    localStorage.setItem(VOTE_COMMIT_KEY, JSON.stringify(all));
+    try { all = JSON.parse(localStorage.getItem(_commitKeyFor(kind)) || '{}'); } catch(e) {}
+    const entry = { at: Date.now(), ebx: Math.max(0, Math.round(Number(ebx) || 0)) };
+    if (kind !== 'org') entry.shares = { ..._loadCauseShares(causeId) };
+    all[causeId] = entry;
+    localStorage.setItem(_commitKeyFor(kind), JSON.stringify(all));
   }
   function entityCommitEbx(btn) {
     const causeId = btn && btn.getAttribute('data-cause-id');
+    const kind = (btn && btn.getAttribute('data-kind')) || 'tiv';
     const input = document.getElementById('entity-ebx-input');
     if (!causeId || !input) return;
     const amt = Math.max(0, Math.round(Number(input.value) || 0));
-    _saveCauseCommitEbx(causeId, amt);
+    _saveCauseCommitEbx(causeId, amt, kind);
     _flashEntityToast(amt > 0
       ? 'Committed ' + amt.toLocaleString() + ' EBX — added weight to your vote.'
       : 'EBX commitment cleared.');
+    if (typeof renderCards === 'function') renderCards();
     if (_selectedInit) idxSelectInit(JSON.stringify(_selectedInit));
     else idxRenderDefaultInfo();
   }
   window.entityCommitEbx = entityCommitEbx;
   // Inline EBX-commit control shown once a benefactor has voted in a cause.
-  function _entityCommitControl(causeId) {
-    const committed = _loadCauseCommit(causeId);
+  function _entityCommitControl(causeId, kind) {
+    kind = kind || 'tiv';
+    const committed = _loadCauseCommit(causeId, kind);
     const cur = committed ? (committed.ebx || 0) : 0;
     return `<div class="entity-commit" style="flex-basis:100%;display:flex;align-items:center;gap:6px;margin-top:8px;">
       <label style="font-family:var(--font-mono);font-size:0.7rem;opacity:0.7;">Commit EBX:</label>
@@ -1083,7 +1078,7 @@
              style="width:90px;padding:3px 6px;font-family:var(--font-mono);font-size:0.72rem;
                     background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);
                     border-radius:4px;color:inherit;" />
-      <button class="btn btn-ghost btn-sm" onclick="entityCommitEbx(this)" data-cause-id="${causeId}">
+      <button class="btn btn-ghost btn-sm" onclick="entityCommitEbx(this)" data-cause-id="${causeId}" data-kind="${kind}">
         ${cur > 0 ? 'Update EBX' : 'Commit EBX'}</button>
       ${cur > 0 ? '<span class="entity-vote-status cast" style="font-size:0.7rem;">✓ ' + cur.toLocaleString() + ' EBX</span>' : ''}
     </div>`;
@@ -1184,7 +1179,8 @@
     }
     if (current === org.id) {
       return `<span class="entity-vote-status cast">✓ Your pick for ${cause ? cause.name : 'this cause'}</span>
-              <button class="btn btn-ghost btn-sm" onclick="entityCancelOrgVote('${causeId}')">Cancel vote</button>${websiteBtn}`;
+              <button class="btn btn-ghost btn-sm" onclick="entityCancelOrgVote('${causeId}')">Cancel vote</button>${websiteBtn}`
+              + _entityCommitControl(causeId, 'org');
     }
     // Already voted for a different org in this cause.
     return `<span class="entity-vote-status">You voted for another org in this cause</span>
@@ -1300,6 +1296,40 @@
         sel.appendChild(opt);
       }
     });
+    populateInitiativeFilter();
+  }
+
+  // Build-seq 2b — the org table filters by INITIATIVE (orgs must register
+  // for one). Options = elected initiatives (the missions orgs compete for).
+  function populateInitiativeFilter() {
+    const sel = document.getElementById('filter-initiative');
+    if (!sel) return;
+    const elected = (EBX.config.initiatives || [])
+      .filter(i => ['org_vote','active'].includes(i.status));
+    const existing = new Set([''].concat(Array.from(sel.options).map(o => o.value)));
+    elected.forEach(i => {
+      if (!existing.has(i.id)) {
+        const opt = document.createElement('option');
+        opt.value = i.id;
+        opt.textContent = (i.emoji ? i.emoji + ' ' : '') + i.title;
+        sel.appendChild(opt);
+      }
+    });
+  }
+
+  // Org ↔ initiative registration. No backend registration table yet, so:
+  // 1) honor an explicit org.initiative_ids list when the API grows one;
+  // 2) fall back to cause membership against the initiative's cause (proxy).
+  function orgRegisteredFor(org, init) {
+    if (!org || !init) return false;
+    if (Array.isArray(org.initiative_ids)) return org.initiative_ids.includes(init.id);
+    return (org.causes || []).includes(init.cause_index);
+  }
+  // The elected initiative an org is (proxy-)registered for — for the table cell.
+  function orgInitiative(org) {
+    const elected = (EBX.config.initiatives || [])
+      .filter(i => ['org_vote','active'].includes(i.status));
+    return elected.find(i => orgRegisteredFor(org, i)) || null;
   }
 
   // Pass-19 P0 #2 — one delegated click listener for the entity table.
@@ -1339,12 +1369,11 @@
       return;
     }
     tbody.innerHTML = orgs.map(org => {
-      // Orgs can be associated with multiple causes; show the first one for table density.
-      const orgCauses = (org.causes || []);
-      const primaryCauseIdx = orgCauses[0];
-      const cause = (primaryCauseIdx != null ? causeMap[primaryCauseIdx] : null) || {};
-      const causeName = cause.name || (orgCauses.length ? 'Multiple' : '—');
-      const causeColor = cause.color || 'var(--clr-moss)';
+      // Build-seq 3c — show the initiative the org is registered for, not a cause.
+      const reg = orgInitiative(org);
+      const regCause = reg ? (causeMap[reg.cause_index] || causeMap[reg.cause_id] || {}) : {};
+      const initName  = reg ? ((reg.emoji ? reg.emoji + ' ' : '') + reg.title) : '—';
+      const initColor = regCause.color || 'var(--clr-moss)';
       const totalEbx = org.committed_ebx || 0;
       const myEbx   = org.my_committed_ebx || 0;
       const status  = org.verified ? 'active' : 'suggested';
@@ -1363,7 +1392,7 @@
       return `<tr data-id="${org.id}" data-kind="org" class="init-table__row">
         <td class="col-watch"><button class="init-watch-btn ${isWatched ? 'watched' : ''}" onclick="toggleWatch(${JSON.stringify(org.id)}, event)" aria-label="${isWatched ? 'Unwatch' : 'Watch'} organization">${star}</button></td>
         <td><div class="init-table__name">${org.name || 'Untitled'}</div></td>
-        <td><span class="init-table__cause" style="color:${causeColor}">${causeName}</span></td>
+        <td><span class="init-table__cause" style="color:${initColor}">${initName}</span></td>
         <td class="init-table__ebx">${myEbx > 0 ? myEbx.toLocaleString() : '—'}</td>
         <td class="init-table__ebx">${totalEbx > 0 ? totalEbx.toLocaleString() : '—'}</td>
         <td><span class="init-table__status status-${status}">${statusLabel}</span></td>
@@ -1411,7 +1440,7 @@
     if (tbody) _bindTableClickOnce(tbody);
     if (!tbody) return;
     if (!inits.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="init-table__empty">No initiatives found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="init-table__empty">No initiatives found.</td></tr>';
       return;
     }
     tbody.innerHTML = inits.map(init => {
@@ -1430,47 +1459,43 @@
         <td><span class="init-table__cause" style="color:${causeColor}">${causeName}</span></td>
         <td class="init-table__ebx">${myEbx > 0 ? myEbx.toLocaleString() : '—'}</td>
         <td class="init-table__ebx">${totalEbx > 0 ? totalEbx.toLocaleString() : '—'}</td>
-        <td><span class="init-table__status status-${status}">${status}</span></td>
         <td class="init-table__nextvote">${nextVoteLabel(init, cause)}</td>
       </tr>`;
     }).join('');
   }
 
   function filterInitiatives() {
+    // Build-seq 2 — single filter per mode: cause (tiv) / initiative (org).
     const q = (document.getElementById('init-search').value || '').toLowerCase();
-    const causeF  = document.getElementById('filter-cause')?.value  || '';
-    const stageF  = document.getElementById('filter-stage')?.value  || '';
-    const ratingF = parseFloat(document.getElementById('filter-rating')?.value || '0');
+    const causeF = document.getElementById('filter-cause')?.value || '';
+    const initF  = document.getElementById('filter-initiative')?.value || '';
     const searchInput = document.getElementById('init-search');
     if (searchInput) {
       searchInput.placeholder = _mainMode === 'tiv' ? 'Search initiatives…' : 'Search organizations…';
     }
     if (_mainMode === 'org') {
-      const causes = (EBX.config && EBX.config.causes) || [];
-      const causeIdxOf = (id) => (causes.find(c => c.id === id) || {}).index;
-      const wantedIdx = causeF ? causeIdxOf(causeF) : null;
+      const wantedInit = initF
+        ? (EBX.config.initiatives || []).find(i => i.id === initF) || null
+        : null;
       const allOrgs = (EBX.config && EBX.config.organizations) || [];
       const filtered = allOrgs.filter(o => {
         if (q && !((o.name||'').toLowerCase().includes(q) || (o.description||'').toLowerCase().includes(q))) return false;
-        if (causeF && wantedIdx != null && !(o.causes||[]).includes(wantedIdx)) return false;
-        // Stage filter: only "active" (verified) vs "suggested" (unverified) make sense here.
-        if (stageF === 'active' && !o.verified) return false;
-        if (stageF === 'suggested' && o.verified) return false;
+        if (wantedInit && !orgRegisteredFor(o, wantedInit)) return false;
         return true;
       });
       renderOrgTable(filtered);
       idxRenderFeed();
       return;
     }
+    // Build-seq 3b — the initiative table only lists phase-1 tivs.
     const filtered = _allInits.filter(i => {
+      if (!['suggested','debate'].includes(i.status || 'suggested')) return false;
       if (q && !(
         (i.title||'').toLowerCase().includes(q) ||
         (i.description||'').toLowerCase().includes(q) ||
         (i.cause_id||'').toLowerCase().includes(q)
       )) return false;
       if (causeF && i.cause_id !== causeF) return false;
-      if (stageF && (i.status || 'suggested') !== stageF) return false;
-      if (ratingF && (i.rating || 0) < ratingF) return false;
       return true;
     });
     renderInitTable(filtered);
@@ -1612,10 +1637,9 @@
     const el = document.getElementById('idx-feed-list');
     if (!el) return;
     // Tags applied to feed posts use the same filter values as the initiative table.
-    // Cause filter scopes posts via cause_index/cause_id; stage and rating may be
-    // ignored by older posts that don't carry them, so we treat missing values as a pass.
+    // Build-seq 2: stage/rating filters removed — cause is the only table-level scope.
     const causeF  = document.getElementById('filter-cause')?.value  || '';
-    const stageF  = document.getElementById('filter-stage')?.value  || '';
+    const stageF  = ''; // stage filter retired (build-seq 2a)
     const causes  = (EBX.config && EBX.config.causes) || [];
     const causeById = {};
     causes.forEach(c => { causeById[c.id] = c; });

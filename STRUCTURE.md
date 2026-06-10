@@ -51,7 +51,6 @@ Vote occurs on the final day of its causes active period
         - [ ] **Colorization** Participating each week colorizes your credit badge for that weeks sector
         Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
             - [ ] **Automatic coloring threshold** threshold: $10
-
     - [ ] **Org page** User profile to represent a specific org.
     Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org rep (the user automatically gets a benefactor profile too). Orgs build a mission page which continues if they win and is frozen and linked from their profile if not.
         - [ ] **Design** -backlog
@@ -104,22 +103,22 @@ Vote occurs on the final day of its causes active period
     - [ ] **Election Cards** switching to 2-sided
         - [ ] **Side cards** Note that we will be changing ebx counts instead of %s because that allows one to estimate the total pool size
             - ✅ **Location**
-            - [ ] **front** upcoming phase 3
+            - [ ] **back** upcoming phase 3
             ____________________________________
             |tiv_name                      date*| *Last day of cards upcoming active window
             |1. org_name                  #votes|
             |2. org_name                  #votes|
             |3._org_name__________________#votes|
-            |My choice - My committment  |ebx   |
-            |choice_name_____x_ebx_______|pool__|
-            - [ ] **back** - upcoming phase 2
+            |My choice - choice_name     |ebx   |
+            |My committment_-_x_ebx______|pool__|
+            - [ ] **front** - upcoming phase 2
             ____________________________________
             |cause_name mission_num        date*| *First day of cards upcoming active window
             |1. tiv_name                  #votes|
             |2. tiv_name                  #votes|
             |3._tiv_name__________________#votes|
-            |My choice - My committment -| ebx  |
-            |choice_name______x_ebx______|pool__|
+            |My choice - choice_name     |ebx   |
+            |My committment_-_x_ebx______|pool__|
         - [ ] **Top card** only card with 2 org-elections
         The front and back are the 2 consecutive org elections in the active cause.
             - [ ] **Glowy** top card glows white like now marker
@@ -132,16 +131,16 @@ Vote occurs on the final day of its causes active period
             |1. org_name                  #votes|
             |2. org_name                  #votes|
             |3._org_name__________________#votes|
-            |My choice - My committment  |ebx   |
-            |choice_name_____x_ebx_______|pool__|
+            |My choice - choice_name     |ebx   |
+            |My committment_-_x_ebx______|pool__|
             - [ ] **back** Most recent phase 2
             ____________________________________
             |tiv_name                      date*| *Last day of NEXT active window (in 7-8 weeks)
             |1. org_name                  #votes|
             |2. org_name                  #votes|
             |3._org_name__________________#votes|
-            |My choice - My committment   |ebx  |
-            |choice_name_____x_ebx________|pool_|
+            |My choice - choice_name     |ebx   |
+            |My committment_-_x_ebx______|pool__|
     - [ ] **Table** - 2 states
         - [ ] **Description** "Click on a row to interact"
         - ✅ **rows** Each row selects a different entity card.
@@ -307,4 +306,8 @@ Note that this whole page is backlogged until after completion of phases 1 & 2.
             - Benefactor committed to the winning initiative early
             - Benefactor committed to the winning organization early
             - Benefactor has achieved "Helpful" status on mission
-            - Benefactor is willing to commit to a higher
+            - Benefactor is willing to commit to a higher percentage being sent to the pool
+        - [ ] **Post rewards** Benefactors are awarded ebx if they contributed the most helpful post.
+        - [ ] **Post visibility**
+        Larger donations can unlock more visibility for your posts.
+        - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.
