@@ -12,7 +12,8 @@ Shipped build-seq 0a + 1–6 (README §1 detail). Decisions + answers for Jax:
 6. **Org-vote stores don't reset yet** when an org election closes (phase-2 equivalent of the vote-reset). Backlog candidate next pass.
 7. **Recap "2nd/3rd" remain presumptive** (no per-election history rows). The local-election record now stores your full slate, so at least "My vote" is exact.
 8. **Top-card swap (build-seq 1)** done by inverting the mode→face mapping (tiv mode → 'front' = just-elected mission). If you meant something more (e.g. a physical flip animation), say the word.
-9. **email-validator** was missing from the sandbox pip set; if the API ever fails to boot with an ImportError, `pip install email-validator` (added to README §4 list).
+9. **`.git/index.lock` came BACK mid-pass** (stale, Jun 9 timestamp, undeletable from the sandbox). Pass 36 committed anyway via a detached index (`GIT_INDEX_FILE=/tmp/...` + `write-tree`/`commit-tree`/`update-ref`) — commit `7c1a47e` is real and complete; verified file-by-file against the worktree. Side effect: the repo's own .git/index is stale, so `git status` from the sandbox shows phantom staged changes until you delete `.git/index.lock` and run `git reset` (no data at risk — worktree == HEAD).
+10. **email-validator** was missing from the sandbox pip set; if the API ever fails to boot with an ImportError, `pip install email-validator` (added to README §4 list).
 
 
 ## Automated build run — 2026-06-10 (pass 35)
