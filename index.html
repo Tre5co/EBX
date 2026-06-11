@@ -739,7 +739,8 @@
       if (!cause) return '';
       // Both top-card faces are org elections (build-seq 1d): front = the org
       // vote closing this window; back = the just-elected mission's org vote.
-      const label = mode === 'tiv' ? 'Org Election · next window' : 'Organization Election';
+      // Pass 36 (build-seq 1): labels follow the face swap below.
+      const label = mode === 'tiv' ? 'Organization Election' : 'Org Election · next window';
       return `<div style="display:flex;align-items:center;gap:8px;padding:0 16px;height:100%;
                   border-top:2px solid ${cause.color};
                   border-left:1px solid rgba(255,255,255,0.09);
@@ -799,8 +800,11 @@
 
       // Top card header in topbar + body in hero center column — varies with mode
       document.getElementById("ebx-topcard-header-mount").innerHTML = topCardHeaderForMode(active, _mainMode);
+      // Pass 36 (build-seq 1): faces SWAPPED — the just-elected mission's
+      // org race (formerly 'back') now leads; the org vote closing this
+      // window flips to the reverse side.
       document.getElementById("ebx-top-card-mount").innerHTML =
-        EBX.topCard(active, _mainMode === 'org' ? 'front' : 'back');
+        EBX.topCard(active, _mainMode === 'org' ? 'back' : 'front');
 
       // Annulus-center leader summary: leading initiative for the NEXT cause
       const nextIdx = (active + 1) % n;

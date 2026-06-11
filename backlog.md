@@ -1,5 +1,20 @@
 # Backlog
 
+## Automated build run — 2026-06-11 (pass 36)
+
+Shipped build-seq 0a + 1–6 (README §1 detail). Decisions + answers for Jax:
+
+1. **Your DB was corrupt — rescued.** `earthbucks.db` had its last 4 pages truncated (mount plague, binary edition). Rebuilt at alembic head and copied every readable row: all accounts/initiatives/votes/contributions/missions/orgs survived. **Lost: the 15 posts and credit_coins** (they lived on the truncated pages). Corrupt original kept at `backend/earthbucks.corrupt-pass36.db`. Consider keeping periodic DB backups outside the mounted folder.
+2. **"Is this because of the 1-day counting period?" — No.** Nothing was counting at all: phase statuses were static seed data and no code ever advanced them. Pass 36 adds the clock — backend `app/rollover.py` (runs lazily on GET /initiatives) + frontend `EBX.LocalElections` for slates that only exist in your browser. Which leads to…
+3. **Your CAFO initiative/vote never reached the backend** — it isn't in the DB (no land proposals exist server-side). Your vote lived in localStorage only. The frontend rollover handles exactly this: on your next load of cause.html?id=land it will tally your local slate, declare CAFO elected (status org_vote, election_close Jun 11), reset your votes, convert phase 1 to recap, and shift the rhs cards. Worth checking why the POST /initiatives + PUT votes didn't fire when you proposed it — likely you weren't signed in.
+4. **"Is there no backend for separate data in separate accounts?"** There IS — Vote/Contribution/etc. are keyed by benefactor_id. The bleed-through was the shared localStorage demo stores. `EBX.Accounts` now stashes/restores all of them per handle on login/logout (first run claims existing data for whoever is signed in — i.e. your GameMaster keeps what it has).
+5. **Election rollover rules chosen autonomously:** phase-1 winner = weighted tally (committed EBX + max(share, contribution×share) per ballot) over ballots cast on/before the vote day; an election only tallies if ≥1 real ballot exists (seed EBX alone never elects — protects the sample proposals from mass-election). Phase 2→3 fires on election+8w ONLY if an org tally exists, else the race stays open for EN. Phase 3→resolved at +33w.
+6. **Org-vote stores don't reset yet** when an org election closes (phase-2 equivalent of the vote-reset). Backlog candidate next pass.
+7. **Recap "2nd/3rd" remain presumptive** (no per-election history rows). The local-election record now stores your full slate, so at least "My vote" is exact.
+8. **Top-card swap (build-seq 1)** done by inverting the mode→face mapping (tiv mode → 'front' = just-elected mission). If you meant something more (e.g. a physical flip animation), say the word.
+9. **email-validator** was missing from the sandbox pip set; if the API ever fails to boot with an ImportError, `pip install email-validator` (added to README §4 list).
+
+
 ## Automated build run — 2026-06-10 (pass 35)
 
 Shipped build-seq 0–6 (README §1 per-item detail). Autonomous decisions + answers, flagging for Jax:

@@ -42,16 +42,47 @@ CAUSE_CODES: dict[str, str] = {
 }
 
 # Phase mapping for the three per-cause cycles. 1001 is the oldest (already
-# resolved); 1003 is the youngest (just elected, org-vote phase). Each phase
-# has a backdate offset relative to today.
-#   1001 → resolved (phase 5) — 28 weeks ago
-#   1002 → active   (phase 3) — 14 weeks ago
-#   1003 → org_vote (phase 2) —  1 week  ago
+# resolved); 1003 is the youngest (just elected, org-vote phase).
+#
+# Pass 36 (INSTRUCTIONS build-seq 3): every pilot mission gets a UNIQUE
+# election date that sits on its own cause's real vote-day grid. A cause's
+# vote days are CYCLE_START + 7d*(cause_index + 7k) — the first day of each
+# of its active windows (matches EBX.Cycle.nextDecisionDate in the frontend;
+# e.g. Oceans Jun 4 2026, Land Jun 11 2026). The third column is the number
+# of 49-day ROTATIONS back from the cause's most recent strictly-past vote day:
+#   1003 → org_vote (phase 2)  — rotation 0 (just elected; org vote upcoming)
+#   1002 → active   (phase 3+) — 2 rotations (14 weeks) ago
+#   1001 → resolved (phase 5)  — 5 rotations (35 weeks) ago
 PILOT_PHASES: list[tuple[int, str, int]] = [
-    (1001, "resolved",  28 * 7),
-    (1002, "active",    14 * 7),
-    (1003, "org_vote",   1 * 7),
+    (1001, "resolved", 5),
+    (1002, "active",   2),
+    (1003, "org_vote", 0),
 ]
+
+# Mirrors frontend EBX config: cycleStart 2026-01-01, 7-day decision interval,
+# 49-day cause windows.
+CYCLE_START = datetime(2026, 1, 1)
+WEEK = timedelta(days=7)
+ROTATION = 7 * WEEK
+
+
+def cause_vote_day(cause_index, rotations_ago, now=None):
+    """The cause's most recent vote day STRICTLY before today, minus
+    ``rotations_ago`` full 49-day rotations. Strictly-before matters: on a
+    cause's own vote day the live election is the community's to win — the
+    pilot mission elected 'most recently' must come from the previous
+    rotation, not collide with today's tally."""
+    now = now or datetime.utcnow()
+    today = datetime(now.year, now.month, now.day)
+    first = CYCLE_START + WEEK * cause_index
+    if today <= first:
+        d = first
+    else:
+        k = int((today - first) / ROTATION)
+        d = first + k * ROTATION
+        while d >= today:
+            d -= ROTATION
+    return d - rotations_ago * ROTATION
 
 GAMEMASTER_HANDLE = "GameMaster"
 GAMEMASTER_EMAIL = "gamemaster@earthbucks.test"
@@ -126,11 +157,16 @@ def ensure_pilot_initiatives(
     org_idx = 0
     for cause in causes:
         code = CAUSE_CODES.get(cause.id, cause.id[:3].title())
-        for cycle, status, days_ago in PILOT_PHASES:
+        for cycle, status, rotations_ago in PILOT_PHASES:
             init_id = f"{code}-{cycle}"
             init = db.get(models.Initiative, init_id)
             assigned_org = orgs[org_idx % len(orgs)]
             org_idx += 1
+            # Pass 36 (build-seq 3): unique per-cause election dates on the
+            # real vote-day grid. The election close IS the mission start
+            # date (the day the initiative was elected).
+            close = cause_vote_day(cause.index, rotations_ago, now)
+            opened = close - timedelta(days=7)
             # build-seq 6 (pass 35): pilot initiatives PAST phase 2 are each
             # linked to a pilot organization. Phase-1/2 tivs must not carry a
             # winner yet (org_vote means the org race is still open).
@@ -142,9 +178,12 @@ def ensure_pilot_initiatives(
                     init.winning_org_id = assigned_org.id
                 elif not past_phase2 and init.winning_org_id:
                     init.winning_org_id = None
+                # Pass 36: re-sync election dates onto the vote-day grid
+                # (older seeds stamped every cause with the same now-based
+                # offsets, so all missions claimed the same start date).
+                init.election_open = opened
+                init.election_close = close
             if init is None:
-                close = now - timedelta(days=days_ago)
-                opened = close - timedelta(days=7)
                 init = models.Initiative(
                     id=init_id,
                     cause_id=cause.id,
@@ -178,7 +217,11 @@ def ensure_pilot_missions(
         if init.status not in {"active", "resolved"}:
             continue
         mission_id = f"mission-{init.id}"
-        if db.get(models.Mission, mission_id) is not None:
+        existing = db.get(models.Mission, mission_id)
+        if existing is not None:
+            # Pass 36: keep the mission start date in lockstep with the
+            # (re-synced) election date.
+            existing.started_at = init.election_close
             continue
         if not init.winning_org_id:
             continue
@@ -233,6 +276,12 @@ def ensure_gamemaster_votes(
                 share=1.0,
                 committed=True,
             ))
+        else:
+            # Pass 36 (build-seq 5): keep the GM org vote consistent with the
+            # mission's phase — org_vote tivs have NO org wired in yet (the
+            # org election hasn't happened), so the standing GM vote must not
+            # carry one either.
+            existing_vote.org_id = init.winning_org_id
     db.flush()
 
 

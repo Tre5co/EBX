@@ -1,12 +1,19 @@
 ## AI TUNING
 @CLAUDE Stop process now if there are any lines in between here and ## BUILD SEQUENCE
 ## BUILD SEQUENCE
-Some of the following steps depend on each other.
+Progress is being made.
+
+1. **Small top card tweak** Switch top election card front with back.
+2. **Different Accounts - Different Votes** Currently, every account retains the current committments of my GameMaster account. Each account needs its own wallet and independent voting. Is there no backend for seperate data in seperate accounts?
+3. **Simulated past vote dates** - Each of the pilot missions should have a unique set of past election dates that lines up with the current state of their cause. Currently they all say they started on the same date. The official mission start date is the date of the phase 1 election, when the initiative is elected. 
+4. **Election Functionality and phase shift** It's June 11, so the forests active window just began. I expected my votes for the phase 1 land election to be finalized. Unfortunately, the rhs cards did not shift, the phase 1 election did not convert to recap, and my votes did not reset. 
+5. **Phase 2 confusion** The phase 2 pilot org missions have orgs wired in, but phase 2 is before the org election. Only missions phase 3 and onward have united initiatives with organizations
+6. **Vote UX**The slider bars should not have any initiatives that the user has not voted for unless they are currently selected.
 
 0. Resolve if any
 - (a) **Errors**
-*Vote shares dont add up to 1*
-For some of the causes, the vote shares aren't adding up to 1. I'm not able to figure out why.
+*Vote not registered.* It's june 11, and the active cause just switched to land. We had the CAFO initiative winning, but the program hasn't shifted the phases. It still has land pilot 0003 in phase 2, and all the rhs cards are the same as they were before. Shift the phases for each initiative on its vote day and organization. In fact, no data i sdifferent between accounts. I think I already mentioned this... I'm gonna go eat some steak. Is this because of the 1 day counting period? I guess I need to figure this out todsy to stay on track.
+
 - (b) **Blockers**
 - (c) **Inconsistencies**
 - (d) **Not blocking** Acknowledge but do not attempt to fix yet.
@@ -41,25 +48,13 @@ Note that selecting the re-balance on the home page should have the same effect 
 **Side card locations**
 **Org profile** - Place where orgs build a budget, a plan, interact with the community, post updates, communicate with EN, etc.
 **Display incremental votes**
-
-
-### Tier 1 — Trivial (≤15 min, single file, no cross-cutting impact)
-- **GameMaster account** — make it a benefactor account with privileges. Single-row backend tweak.
-- **`docs/posts.md`** Implement into workflow
-- **Pruning** (carry-over). Dead CSS in cause.html: `.init-table-section`, `.cause-toggle-section`, `.org-register-section`, `.init-bridge-section`, `.cause-feed-section`, `.init-detail*`, `.feed-post*`, `.mission-table*`, `.mrow-*`, `.phase-badge-*`. Dead JS: `renderTable`, `filteredInits`, `showSelectedPanel`, `fmt`. Currently guarded; safe to bulk-delete when list grows.
-
-### Tier 2 — Small (contained UI or markup additions)
-- **Element search box (STRUCTURE Phase-1 Active drawing "Search for an initiative").** Both. If no results, show empty and option to clear the search box.
-- **`InitiativeRating` deletion ordering.** That's fine. Add `is_test` before deleting the ratings endpoint.
-
-### Tier 3 — Medium (deferred until spec lands, or new widget)
-- **Annulus election markers** — I'll do this after the next build. Backlogged for Jax drawing.
-- **Cause-page annulus election markers** — depends on Annulus election markers above.
-
-### Tier 4 — Large (cross-cutting; multiple files or schema impact)
-- **Entity table** refinements:
-  - (a) **collapsible** Once onclick entity functional, make collapsible.
-  - (b) **Mission Start date** Replace the "next vote date" column in the table with "Vote date" which is either the missions start date, or the upcoming initiative vote date.
-  - (c) **Organization table** Does not need cause column. Instead, the status column links to the mission page (if any). If it has no mission yet, it links to the org election phase on cause.html (if competing in an org election, option to nominate if not) or simply to the entity card on index.html.
-- **Pilot** Change cards depending on current phase. The missions start date (When the initiative was elected) should be coded into the pilot missions, and visible on all missions. Changed *new-mission* phase to *budget* phase to avoid naming confusion.
-- **Remove old star-rating and review system** — drop `InitiativeRating` + `Review` tables; delete `crud.create_initiative_rating`, `routers/initiatives.py POST /rate`, `schemas.InitiativeRating*`. Sequenced after `is_test` ships.
+**Make 1 vote 10 Earthbux.** This slight change will globalize nicely
+Change the background color within the text boxes to creamy white
+1. When proposing an initiative, users should also be able to look through preexisting initiatives. 
+1. The leaders section is showing 0 no matter how many ebx I commit.
+1. Phase 1 doesn't need the initiative-suggested section
+1. Phase 1-2 timing
+- When the phase 1 election has not yet happened, the phase 2 area should still be in the "pre" mode.
+- When the phase 1 election happens the header should change to phase 2, and the phase 1 area should switch to recap mode.
+1. Update register/nominate organization
+- When nominating, allow se

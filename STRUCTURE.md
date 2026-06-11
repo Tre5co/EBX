@@ -315,19 +315,4 @@ Note that this whole page is backlogged until after completion of phases 1 & 2.
                 - [ ] **1/16 to evaluation**  
                 Included in Earthbux 5/16.
                 - [ ] **1/4 to our side of the mission**
-                We will create a budget.
-        - [ ] **Badge**
-        Users possessing the credit have it displayed on their profile. It is the ring-mini for that mission annulus.
-            - [ ] **Coin visual** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission from m_indx
-
-## STRUCTURE MISC.
-    - [ ] **Verification & perks**
-        - [ ] **Discounts** EBX is discounted in certain cases
-            - Benefactor committed to the winning initiative early
-            - Benefactor committed to the winning organization early
-            - Benefactor has achieved "Helpful" status on mission
-            - Benefactor is willing to commit to a higher percentage being sent to the pool
-        - [ ] **Post rewards** Benefactors are awarded ebx if they contributed the most helpful post.
-        - [ ] **Post visibility**
-        Larger donations can unlock more visibility for your posts.
-        - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.
+                We will create a budg

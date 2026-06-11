@@ -89,6 +89,17 @@
         i.winning_org = orgNameById[String(i.winning_org_id)] ?? null;
       }
     });
+    try {
+      const me = await Auth.fetchMe();
+      Accounts.activate(me ? me.handle : null);
+    } catch (_e) {
+      Accounts.activate(null);
+    }
+    try {
+      LocalElections.runRollover();
+      LocalElections.applyOverrides();
+    } catch (_e) {
+    }
   }
   var MS_PER_DAY = 864e5;
   var Cycle = {
@@ -172,6 +183,142 @@
         phase4_start: new Date(base + 32 * wk),
         phase4_resolved: new Date(base + 48 * wk)
       };
+    }
+  };
+  var LocalElections = {
+    KEY: "ebx_local_elections",
+    EPOCH_KEY: "ebx_vote_epoch",
+    SHARES_KEY: "ebx_vote_shares",
+    COMMIT_KEY: "ebx_vote_committed",
+    _read(k) {
+      try {
+        return JSON.parse(localStorage.getItem(k) || "{}");
+      } catch {
+        return {};
+      }
+    },
+    _write(k, v) {
+      localStorage.setItem(k, JSON.stringify(v));
+    },
+    records() {
+      return LocalElections._read(LocalElections.KEY);
+    },
+    recordFor(causeId) {
+      return LocalElections.records()[causeId] || null;
+    },
+    /** Stamp the decision date the cause's current slate is aimed at.
+        Call whenever shares are saved; no-op if an epoch already exists. */
+    touchEpoch(causeId, causeIndex) {
+      const ep = LocalElections._read(LocalElections.EPOCH_KEY);
+      if (ep[causeId]) return;
+      ep[causeId] = Cycle.nextDecisionDate(causeIndex).toISOString();
+      LocalElections._write(LocalElections.EPOCH_KEY, ep);
+    },
+    /** Finalize every local election whose decision date has passed. */
+    runRollover() {
+      const sharesAll = LocalElections._read(LocalElections.SHARES_KEY);
+      const commitsAll = LocalElections._read(LocalElections.COMMIT_KEY);
+      const epochs = LocalElections._read(LocalElections.EPOCH_KEY);
+      const recs = LocalElections.records();
+      let dirty = false;
+      config.causes.forEach((cause) => {
+        const shares = sharesAll[cause.id];
+        const votedIds = shares ? Object.keys(shares).filter((k) => (Number(shares[k]) || 0) > 0) : [];
+        if (!votedIds.length) return;
+        let epochIso = epochs[cause.id];
+        if (!epochIso) {
+          epochIso = Cycle.nextDecisionDate(cause.index).toISOString();
+          epochs[cause.id] = epochIso;
+          dirty = true;
+        }
+        if (new Date(epochIso).getTime() > Date.now()) return;
+        const candidates = config.initiatives.filter((i) => (i.cause_id === cause.id || i.cause_index === cause.index) && (!i.status || ["suggested", "debate"].includes(i.status)));
+        const committed = commitsAll[cause.id] || null;
+        const myEbx = committed && committed.ebx ? Number(committed.ebx) : 0;
+        const weight = (i) => {
+          const base = Number(i.committed_ebx ?? i.ebx_committed ?? 0);
+          const s = Number(shares[i.id] || 0);
+          return base + (s > 0 ? Math.max(s, myEbx * s) : 0);
+        };
+        const stillLive = candidates.filter((i) => votedIds.includes(String(i.id)));
+        if (candidates.length && stillLive.length) {
+          const winner = candidates.slice().sort((a, b) => weight(b) - weight(a))[0];
+          recs[cause.id] = {
+            winner_id: winner.id,
+            closed_at: epochIso,
+            shares,
+            ebx: myEbx,
+            at: Date.now()
+          };
+        }
+        delete sharesAll[cause.id];
+        delete commitsAll[cause.id];
+        delete epochs[cause.id];
+        dirty = true;
+      });
+      if (dirty) {
+        LocalElections._write(LocalElections.SHARES_KEY, sharesAll);
+        LocalElections._write(LocalElections.COMMIT_KEY, commitsAll);
+        LocalElections._write(LocalElections.EPOCH_KEY, epochs);
+        LocalElections._write(LocalElections.KEY, recs);
+      }
+    },
+    /** Promote locally-elected winners in the in-memory initiative list. */
+    applyOverrides() {
+      const recs = LocalElections.records();
+      Object.keys(recs).forEach((causeId) => {
+        const rec = recs[causeId];
+        const init = config.initiatives.find((i) => String(i.id) === String(rec.winner_id));
+        if (!init) return;
+        if (!init.status || ["suggested", "debate"].includes(init.status)) {
+          init.status = "org_vote";
+          init.election_close = rec.closed_at;
+          init.election_open = new Date(
+            new Date(rec.closed_at).getTime() - 7 * MS_PER_DAY
+          ).toISOString();
+          init.winning_org = init.winning_org || null;
+        }
+      });
+    }
+  };
+  var ACCOUNT_SCOPED_KEYS = [
+    "ebx_vote_shares",
+    "ebx_vote_committed",
+    "ebx_vote_epoch",
+    "ebx_local_elections",
+    "ebx_org_votes",
+    "ebx_org_committed",
+    "ebx_org_regs",
+    "ebx_org_tasks",
+    "ebx_post_votes",
+    "ebx_local_posts",
+    "ebx_profile",
+    "ebx_watchlist"
+  ];
+  var Accounts = {
+    CUR_KEY: "ebx_active_account",
+    _stashKey(account, key) {
+      return "ebx_acct:" + account + ":" + key;
+    },
+    /** Switch the localStorage working set to `handle` (null = guest). */
+    activate(handle) {
+      const next = handle || "__guest__";
+      const prev = localStorage.getItem(Accounts.CUR_KEY);
+      if (prev === null) {
+        localStorage.setItem(Accounts.CUR_KEY, next);
+        return;
+      }
+      if (prev === next) return;
+      ACCOUNT_SCOPED_KEYS.forEach((k) => {
+        const cur = localStorage.getItem(k);
+        const stash = Accounts._stashKey(prev, k);
+        if (cur !== null) localStorage.setItem(stash, cur);
+        else localStorage.removeItem(stash);
+        const restored = localStorage.getItem(Accounts._stashKey(next, k));
+        if (restored !== null) localStorage.setItem(k, restored);
+        else localStorage.removeItem(k);
+      });
+      localStorage.setItem(Accounts.CUR_KEY, next);
     }
   };
   var RANK_COLORS = [
@@ -1497,6 +1644,8 @@
     Cycle,
     Annulus,
     Votes,
+    LocalElections,
+    Accounts,
     initFooter,
     initPage,
     getParam,

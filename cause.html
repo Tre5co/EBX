@@ -1490,6 +1490,13 @@
       try { all = JSON.parse(localStorage.getItem(VOTE_KEY) || '{}'); } catch(e) { all = {}; }
       all[causeId] = shares;
       localStorage.setItem(VOTE_KEY, JSON.stringify(all));
+      // Pass 36 (build-seq 4): stamp WHICH election this slate targets so
+      // the shared rollover can finalize it (and reset the votes) the
+      // moment the decision date passes.
+      try {
+        const c = (EBX.config.causes || []).find(x => x.id === causeId);
+        if (c && EBX.LocalElections) EBX.LocalElections.touchEpoch(causeId, c.index);
+      } catch (e) {}
       // Best-effort: push to backend when signed in. We don't await here so
       // the slider UI stays snappy; failures fall back to local-only state.
       try { syncMyShares(causeId, shares); } catch(e) {}
@@ -1676,10 +1683,18 @@
       // Shares are snapshotted into the commit payload at commit time; fall
       // back to the live share store for uncommitted (vote-only) benefactors.
       let myHtml = '';
+      // Pass 36: after a local election finalizes, the live share store is
+      // CLEARED (votes reset) — the recap reads the archived election record.
+      const _lerec = (EBX.LocalElections && EBX.LocalElections.recordFor)
+        ? EBX.LocalElections.recordFor(cause.id) : null;
+      const _lerecMine = _lerec && String(_lerec.winner_id) === String(missionRef.id) ? _lerec : null;
       try {
         const committed = loadCommitted(cause.id);
-        const shares = (committed && committed.shares) || loadShares(cause.id) || {};
-        const myEbx = committed ? (Number(committed.ebx) || 0) : 0;
+        const shares = (_lerecMine && _lerecMine.shares)
+          || (committed && committed.shares) || loadShares(cause.id) || {};
+        const myEbx = _lerecMine
+          ? (Number(_lerecMine.ebx) || 0)
+          : (committed ? (Number(committed.ebx) || 0) : 0);
         const sumShares = Object.values(shares).reduce((s,v) => s + (Number(v)||0), 0);
         const winShare  = Number(shares[missionRef.id] || 0);
         const loseShare = Math.max(0, sumShares - winShare);
@@ -1738,7 +1753,9 @@
          </div>`),
       ].join('');
       const _committedRecap = loadCommitted(cause.id);
-      const _myEbxRecap = _committedRecap && _committedRecap.ebx ? Number(_committedRecap.ebx) : 0;
+      const _myEbxRecap = _lerecMine
+        ? (Number(_lerecMine.ebx) || 0)
+        : (_committedRecap && _committedRecap.ebx ? Number(_committedRecap.ebx) : 0);
       let _caseHtml = '';
       try {
         const best = p1Featured(cause, 'case');
@@ -2088,21 +2105,23 @@
         </div>`;
       };
 
-      // INSTRUCTIONS step 2: limit visible tivs to top-3 phase-1 + benefactor's voted set.
-      // Past-phase-1 tivs (org_vote/active/resolved) have already won and belong in the right panel.
+      // Pass 36 (build-seq 6): the vote/slider rows contain ONLY initiatives
+      // the benefactor has voted for, plus the currently-selected one. Other
+      // proposals are reachable through the Leaders box, the search field,
+      // and the display area's vote button — not as idle slider rows.
       const _phase1 = inits
         .filter(i => !i.status || ['suggested','debate'].includes(i.status))
         .sort((a, b) => (b.ebx_committed||0) - (a.ebx_committed||0));
       const _myVotedIds = new Set(Object.keys(shares).filter(k => (Number(shares[k])||0) > 0));
-      const _top3Ids = new Set(_phase1.slice(0, 3).map(i => i.id));
-      const _visibleInits = _phase1.filter(i => _top3Ids.has(i.id) || _myVotedIds.has(i.id));
-      const _hasMore = _phase1.length > _visibleInits.length;
+      const _visibleInits = _phase1.filter(i =>
+        _myVotedIds.has(i.id) || i.id === window._p1SelectedId);
       const rows = _visibleInits.map(rowFor).join('')
-        + (_hasMore
-            ? `<div style="font-size:0.7rem;opacity:0.5;padding:6px 0 2px;">
-                 More on <a href="index.html" style="color:inherit;text-decoration:underline;">the main page</a>.
-               </div>`
-            : '');
+        + (_visibleInits.length
+            ? ''
+            : `<div style="font-size:0.72rem;opacity:0.5;padding:6px 0 2px;">
+                 No votes yet — pick a leader above, search for an initiative,
+                 or vote from the display area.
+               </div>`);
 
       // Header pill — only meaningful in slider mode.
       const remainText = sliderMode

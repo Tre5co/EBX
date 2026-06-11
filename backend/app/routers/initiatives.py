@@ -8,6 +8,7 @@ from .. import crud, schemas
 from ..auth import get_current_benefactor
 from ..database import get_db
 from ..models import BenefactorAccount
+from ..rollover import maybe_rollover
 
 router = APIRouter(prefix="/initiatives", tags=["initiatives"])
 
@@ -18,6 +19,9 @@ def read_initiatives(
     status: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
+    # Pass 36: lazily advance any due elections (phase 1→2→3) so the UI
+    # shifts on vote days without a server restart. Throttled internally.
+    maybe_rollover(db)
     return crud.list_initiatives(db, cause_id=cause_id, status_filter=status)
 
 
