@@ -598,10 +598,38 @@
   <section class="idx-toggle-section">
     <div class="container">
       <div class="idx-toggle-tabs">
-        <button class="idx-toggle-tab active" id="idx-tab-initiative" onclick="idxShowTab('initiative')">Selected</button>
-        <button class="idx-toggle-tab" id="idx-tab-news" onclick="idxShowTab('news')">↳ News</button>
+        <!-- build-seq 1 (pass 35): Selected/News → Overview/Discussion. Tab ids
+             and idxShowTab() values unchanged so existing call sites survive. -->
+        <button class="idx-toggle-tab active" id="idx-tab-initiative" onclick="idxShowTab('initiative')">Overview</button>
+        <button class="idx-toggle-tab" id="idx-tab-news" onclick="idxShowTab('news')">Discussion</button>
       </div>
       <div id="idx-panel-news" style="display:none;">
+        <!-- build-seq 1 (pass 35): discussion board compose box. Categories per
+             docs/posts.md — tiv mode: Case/Context/Analysis; org mode:
+             Evaluation/Context/Analysis. -->
+        <div id="idx-compose" style="background:rgba(15,26,20,0.5);border:1px solid rgba(255,255,255,0.09);
+             border-radius:var(--radius-sm);padding:14px;margin-bottom:var(--sp-md);">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;">
+            <div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;
+                        text-transform:uppercase;opacity:0.7;">Join the discussion</div>
+            <div id="idx-compose-scope" style="font-family:var(--font-mono);font-size:0.62rem;opacity:0.5;"></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+            <select id="idx-compose-type" class="init-filter" style="min-width:140px;" aria-label="Post category"></select>
+            <input id="idx-compose-title" type="text" placeholder="Title (optional)"
+                   style="flex:1;min-width:160px;padding:6px 10px;font-size:0.8rem;
+                          background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);
+                          border-radius:var(--radius-sm);color:inherit;" />
+          </div>
+          <textarea id="idx-compose-body" rows="3" placeholder="Share context, analysis, or your case…"
+                    style="width:100%;margin-top:8px;padding:8px 10px;font-size:0.82rem;line-height:1.4;
+                           background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);
+                           border-radius:var(--radius-sm);color:inherit;resize:vertical;"></textarea>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+            <button class="btn btn-forest btn-sm" onclick="idxSubmitPost()">Post</button>
+            <span id="idx-compose-msg" style="font-family:var(--font-mono);font-size:0.68rem;opacity:0.7;"></span>
+          </div>
+        </div>
         <!-- Feed has no in-section filters; the table-level Cause/Stage/Rating
              selectors above already scope these posts. -->
         <div id="idx-feed-filter-banner" style="display:none;background:rgba(232,168,76,0.08);
@@ -844,8 +872,22 @@
       populateCauseFilter();
       filterInitiatives(); // initial render — applies the phase-1-only rule (3b)
       idxRenderFeed();
+      // build-seq 1 (pass 35): seed the discussion compose box for the current mode.
+      try { idxRefreshCompose(); } catch (e) {}
       // build-seq 1d — info tab is the default; seed it with the leader card.
       if (typeof idxRenderDefaultInfo === 'function') idxRenderDefaultInfo();
+      // build-seq 4 (pass 34): deep link from cause.html left cards —
+      // index.html?init=<id> selects that initiative's entry and scrolls to it.
+      (function () {
+        const wantId = EBX.getParam ? EBX.getParam('init') : null;
+        if (!wantId) return;
+        const init = (EBX.config.initiatives || []).find(i => String(i.id) === String(wantId));
+        if (!init) return;
+        try { idxSelectInit(JSON.stringify(init)); } catch (e) { return; }
+        const row = document.querySelector(`#init-table-body tr[data-id="${init.id}"]`);
+        const target = row || document.querySelector('.init-selected-panel');
+        if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      })();
     render();
     setInterval(render, 60000);
     await EBX.initPage();
@@ -942,6 +984,8 @@
     const initSel  = document.getElementById('filter-initiative');
     if (causeSel) causeSel.style.display = mode === 'tiv' ? '' : 'none';
     if (initSel)  initSel.style.display  = mode === 'org' ? '' : 'none';
+    // build-seq 1 (pass 35): compose categories + discussion filter follow the mode.
+    try { idxRefreshCompose(); idxRenderFeed(); } catch (e) {}
     const btn = document.getElementById('main-propose-btn');
     if (btn) {
       btn.textContent = mode === 'tiv' ? '+ Propose an Initiative' : '+ Register an Organization';
@@ -1021,7 +1065,7 @@
   // election is gated to the active cause in this pass).
   const VOTE_SHARES_KEY    = 'ebx_vote_shares';      // { causeId: { initId: share } }
   const VOTE_COMMIT_KEY    = 'ebx_vote_committed';   // { causeId: { shares, at } }
-  const ORG_VOTE_KEY       = 'ebx_org_votes';        // { causeId: orgId }
+  const ORG_VOTE_KEY       = 'ebx_org_votes';        // { causeId: {org_id, tiv_id, votes, at} } (pass 35)
 
   function _loadCauseShares(causeId) {
     try { return (JSON.parse(localStorage.getItem(VOTE_SHARES_KEY) || '{}'))[causeId] || {}; }
@@ -1083,15 +1127,25 @@
       ${cur > 0 ? '<span class="entity-vote-status cast" style="font-size:0.7rem;">✓ ' + cur.toLocaleString() + ' EBX</span>' : ''}
     </div>`;
   }
+  // pass 35: ebx_org_votes entries are objects ({org_id, tiv_id, votes, at}).
+  // _loadOrgVote returns the org id (normalizing the old plain-string shape);
+  // _saveOrgVote writes the object shape used by cause.html's phase-2 widget.
   function _loadOrgVote(causeId) {
-    try { return (JSON.parse(localStorage.getItem(ORG_VOTE_KEY) || '{}'))[causeId] || null; }
+    try {
+      const v = (JSON.parse(localStorage.getItem(ORG_VOTE_KEY) || '{}'))[causeId] || null;
+      return v && typeof v === 'object' ? (v.org_id || null) : v;
+    }
     catch(e) { return null; }
   }
   function _saveOrgVote(causeId, orgId) {
     let all = {};
     try { all = JSON.parse(localStorage.getItem(ORG_VOTE_KEY) || '{}'); } catch(e) {}
     if (orgId == null) delete all[causeId];
-    else all[causeId] = orgId;
+    else {
+      const prev = all[causeId];
+      const votes = prev && typeof prev === 'object' && prev.org_id === orgId ? (prev.votes || 1) : 1;
+      all[causeId] = { org_id: orgId, votes, at: Date.now() };
+    }
     localStorage.setItem(ORG_VOTE_KEY, JSON.stringify(all));
   }
 
@@ -1150,12 +1204,14 @@
     if (active.includes(init.id)) {
       const share = (Number(shares[init.id]) || 0).toFixed(1);
       return `<span class="entity-vote-status cast">✓ Voted · share ${share}</span>
-              <a href="${causeHref}" class="btn btn-ghost btn-sm">Re-balance on cause page →</a>`
+              <a href="${causeHref}&add=${init.id}" class="btn btn-ghost btn-sm">Re-balance on cause page →</a>`
               + _entityCommitControl(init.cause_id || '');
     }
     // Voted on a different initiative in this cause.
+    // build-seq 2 (pass 35): carries &add= so the cause page performs the
+    // same 'add' as its own + Add control on arrival.
     return `<span class="entity-vote-status">You already voted in this cause</span>
-            <a href="${causeHref}" class="btn-entity-vote" style="text-decoration:none;display:inline-block;">Split your vote →</a>`;
+            <a href="${causeHref}&add=${init.id}" class="btn-entity-vote" style="text-decoration:none;display:inline-block;">Split your vote →</a>`;
   }
 
   // Render the vote actions for an org. Hard vote, one per cause.
@@ -1466,6 +1522,8 @@
 
   function filterInitiatives() {
     // Build-seq 2 — single filter per mode: cause (tiv) / initiative (org).
+    // build-seq 1 (pass 35): the discussion compose scope follows the filters.
+    try { idxRefreshCompose(); } catch (e) {}
     const q = (document.getElementById('init-search').value || '').toLowerCase();
     const causeF = document.getElementById('filter-cause')?.value || '';
     const initF  = document.getElementById('filter-initiative')?.value || '';
@@ -1626,6 +1684,122 @@
   }
   window.idxRenderDefaultInfo = idxRenderDefaultInfo;
 
+  // ── build-seq 1 (pass 35): discussion board ──
+  // Post categories per docs/posts.md. Context/Analysis are shared; Case is
+  // tiv-vote-specific, Evaluation is org-vote-specific.
+  const IDX_POST_CATS = {
+    tiv: [
+      { value: 'case',     label: 'Case — why I voted for this initiative' },
+      { value: 'context',  label: 'Context — background for voters' },
+      { value: 'analysis', label: 'Analysis — data or expert take' },
+    ],
+    org: [
+      { value: 'evaluation', label: 'Evaluation — why I voted for this organization' },
+      { value: 'context',    label: 'Context — background for voters' },
+      { value: 'analysis',   label: 'Analysis — data or expert take' },
+    ],
+  };
+  function idxRefreshCompose() {
+    const sel = document.getElementById('idx-compose-type');
+    if (!sel) return;
+    const cats = IDX_POST_CATS[_mainMode] || IDX_POST_CATS.tiv;
+    sel.innerHTML = cats.map(c => `<option value="${c.value}">${c.label}</option>`).join('');
+    // Scope hint mirrors the board's filter rule: tiv discussions are filtered
+    // by cause; org discussions are filtered by initiative.
+    const scope = document.getElementById('idx-compose-scope');
+    if (scope) {
+      if (_mainMode === 'org') {
+        const initSel = document.getElementById('filter-initiative');
+        const opt = initSel && initSel.selectedIndex >= 0 ? initSel.options[initSel.selectedIndex] : null;
+        scope.textContent = initSel && initSel.value
+          ? 'Posting about: ' + (opt ? opt.textContent : initSel.value)
+          : 'Posting to: all initiatives';
+      } else {
+        const causeSel = document.getElementById('filter-cause');
+        const opt = causeSel && causeSel.selectedIndex >= 0 ? causeSel.options[causeSel.selectedIndex] : null;
+        scope.textContent = causeSel && causeSel.value
+          ? 'Posting about: ' + (opt ? opt.textContent : causeSel.value)
+          : 'Posting to: all causes';
+      }
+    }
+  }
+  window.idxRefreshCompose = idxRefreshCompose;
+
+  const LOCAL_POSTS_KEY = 'ebx_local_posts';
+  function idxLocalPosts() {
+    try { return JSON.parse(localStorage.getItem(LOCAL_POSTS_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  async function idxSubmitPost() {
+    const typeSel = document.getElementById('idx-compose-type');
+    const titleEl = document.getElementById('idx-compose-title');
+    const bodyEl  = document.getElementById('idx-compose-body');
+    const msg     = document.getElementById('idx-compose-msg');
+    const body    = (bodyEl && bodyEl.value || '').trim();
+    if (!body) { if (msg) msg.textContent = 'Write something first.'; return; }
+    const causes = (EBX.config && EBX.config.causes) || [];
+    let cause_id = null, cause_index = null, initiative_id = null;
+    if (_mainMode === 'org') {
+      // Org discussions are filtered by initiative.
+      initiative_id = document.getElementById('filter-initiative')?.value || null;
+      const init = (EBX.config.initiatives || []).find(i => i.id === initiative_id);
+      if (init) { cause_id = init.cause_id || null; cause_index = init.cause_index ?? null; }
+    } else {
+      // Initiative discussions are filtered by cause.
+      cause_id = document.getElementById('filter-cause')?.value || null;
+      if (_selectedInit) {
+        initiative_id = _selectedInit.id;
+        cause_id = cause_id || _selectedInit.cause_id || null;
+      }
+      const c = causes.find(x => x.id === cause_id);
+      if (c) cause_index = c.index;
+    }
+    let author = 'Anonymous';
+    try {
+      const me = EBX.Auth && EBX.Auth.me ? EBX.Auth.me : null;
+      if (me && me.handle) author = '@' + me.handle;
+      else if (EBX.Auth && EBX.Auth.fetchMe && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn()) {
+        const m = await EBX.Auth.fetchMe();
+        if (m && m.handle) author = '@' + m.handle;
+      }
+    } catch (e) {}
+    const post = {
+      id: 'post_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      type: typeSel ? typeSel.value : 'context',
+      title: (titleEl && titleEl.value.trim()) || null,
+      body,
+      author, author_type: 'benefactor', author_label: author,
+      cause_id, cause_index, initiative_id,
+      opinion_type: _mainMode === 'org' ? 'org' : 'initiative',
+      created_at: new Date().toISOString(),
+      likes: 0,
+    };
+    // Best-effort API write; localStorage fallback so the board works offline.
+    let saved = false;
+    try {
+      const fetcher = (EBX.Auth && EBX.Auth.fetchAuthed)
+        ? (u, o) => EBX.Auth.fetchAuthed(u, o)
+        : (u, o) => fetch((EBX.config.apiBase || '') + u, { headers: { 'Content-Type': 'application/json' }, ...o });
+      const res = await fetcher('/posts', { method: 'POST', body: JSON.stringify({
+        id: post.id, type: post.type, title: post.title, body: post.body,
+        author_type: post.author_type, author_label: post.author_label,
+        cause_id: post.cause_id, initiative_id: post.initiative_id,
+        opinion_type: post.opinion_type,
+      }) });
+      saved = !!(res && (res.ok === undefined || res.ok));
+    } catch (e) { saved = false; }
+    if (!saved) {
+      const local = idxLocalPosts(); local.unshift(post);
+      localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(local.slice(0, 100)));
+    }
+    EBX.config.feed = [post].concat(EBX.config.feed || []);
+    if (bodyEl) bodyEl.value = '';
+    if (titleEl) titleEl.value = '';
+    if (msg) msg.textContent = saved ? '✓ Posted' : '✓ Posted (saved locally — sign in to publish)';
+    idxRenderFeed();
+  }
+  window.idxSubmitPost = idxSubmitPost;
+
   function idxShowTab(tab) {
     document.getElementById('idx-panel-news').style.display = tab === 'news' ? '' : 'none';
     document.getElementById('idx-panel-initiative').style.display = tab === 'initiative' ? '' : 'none';
@@ -1667,8 +1841,19 @@
       }
     }
 
-    const feed = ((EBX.config && EBX.config.feed) || [])
+    // build-seq 1 (pass 35): merge locally-saved posts (offline compose
+    // fallback) that the API copy of the feed doesn't carry yet.
+    const _apiFeed = (EBX.config && EBX.config.feed) || [];
+    const _seen = new Set(_apiFeed.map(p => p.id));
+    const _all = _apiFeed.concat(idxLocalPosts().filter(p => !_seen.has(p.id)));
+    // build-seq 1: org-mode discussions are filtered by INITIATIVE (the org
+    // table's filter); tiv-mode discussions stay filtered by cause below.
+    const initFilterF = _mainMode === 'org'
+      ? (document.getElementById('filter-initiative')?.value || '')
+      : '';
+    const feed = _all
       .filter(p => {
+        if (initFilterF && p.initiative_id !== initFilterF) return false;
         if (selInitId) {
           // Prefer initiative_id match. If posts in this cause don't carry the
           // initiative_id, fall back to cause-level match for that cause only.

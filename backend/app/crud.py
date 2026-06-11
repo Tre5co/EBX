@@ -575,3 +575,51 @@ def create_benefactor(db: Session, data: schemas.BenefactorCreate) -> models.Ben
             db.commit()
 
     return user
+
+
+# ---------------------------------------------------------------------------
+# Org registrations / nominations (pass 34, build-seq 2)
+# ---------------------------------------------------------------------------
+def create_org_registration(
+    db: Session,
+    data: schemas.OrgRegistrationCreate,
+    benefactor_id: Optional[int] = None,
+) -> models.OrgRegistration:
+    reg = models.OrgRegistration(
+        kind=data.kind,
+        org_name=data.org_name,
+        website=data.website,
+        justification=data.justification,
+        member_name=data.member_name,
+        member_position=data.member_position,
+        initiative_ids=json.dumps(data.initiative_ids),
+        submitted_by_id=benefactor_id,
+    )
+    db.add(reg)
+    db.commit()
+    db.refresh(reg)
+    return reg
+
+
+def list_org_registrations(
+    db: Session,
+    initiative_id: Optional[str] = None,
+    status: Optional[str] = None,
+) -> list[models.OrgRegistration]:
+    regs = db.scalars(
+        select(models.OrgRegistration)
+        .order_by(models.OrgRegistration.created_at.desc())
+    ).all()
+    out = []
+    for r in regs:
+        if status and r.status != status:
+            continue
+        if initiative_id:
+            try:
+                ids = json.loads(r.initiative_ids or "[]")
+            except Exception:
+                ids = []
+            if initiative_id not in ids:
+                continue
+        out.append(r)
+    return out

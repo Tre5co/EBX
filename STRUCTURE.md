@@ -25,51 +25,67 @@ Vote occurs on the final day of its causes active period
 **EN** Interactive content from benefactors, organizations, and Earthbux News.
 ## STRUCTURE
 - [ ] **Profile page** Settings/Profile page for anybody on app (Benefactor/Organization/Admin)
-    - [ ] **Design**
-    ______________________________________________________
-    | _____________                         ____  _______ |a. Profile badge
-    ||CreditCoin   |                       | b  ||       ||b. Upcoming initiative decision
-    ||Wallet       |                __     |____||   a   ||c. Upcoming organization decision
-    ||_____________|           '           `     |_______||
-    ||choices   |          '                  `     | c  ||
-    || table    |                                   |____||
-    ||          |    /                             \      |
-    ||          |            Annulus 3                    |
-    ||          |   |                                     |
-    ||          |                                         |
-    ||__________|    \                             /      |
-    |                                                     |
-    |                     .                     ,
-    |                               __
-
-    - [ ] **Annulus 3** Specific to each benefactor
-    - [ ] **Choices_Table** All upcoming decisions (14)
-        - ✅ **Toggle** between initiatives and orgs
-        - [ ] **For multiple tiv selections** Only show the top one (temp)
-        - [ ] **Expand** Choices table will eventually be more in depth, similar to a stock trading interface.
-    - [ ] **Credit Badge**
-        - [ ] **Colorization** Participating each week colorizes your credit badge for that weeks sector
-        Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
-            - [ ] **Automatic coloring threshold** threshold: $10
-    - [ ] **Org page** User profile to represent a specific org.
-    Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org rep (the user automatically gets a benefactor profile too). Orgs build a mission page which continues if they win and is frozen and linked from their profile if not.
-        - [ ] **Design** -backlog
+    - [ ] **Benefactor Profile**
+        - [ ] **Design**
         ______________________________________________________
         | _____________                         ____  _______ |
-        ||             |                       | b  ||       ||
-        ||             |                __     |____||   a   ||
+        ||CreditCoin   |                       | b  ||       ||
+        ||<   Wallet  >|                __     |____||   a   ||
         ||_____________|           '           `     |_______||
-        ||          |          '                  `     | c  ||
-        ||          |                                   |____||
+        ||choices   |          '                  `     | c  ||
+        || table    |                                   |____||
         ||          |    /                             \      |
-        ||          |            Annulus 4                    |
-        ||          |   |                                     |
+        ||          |            Annulus 3                    |
+        ||          |   |         front/back toggle     |     |
         ||          |                                         |
         ||__________|    \                             /      |
         |                                                     |
         |                     .                     ,
         |                               __
-        - [ ] **Annulus 4** Specific to each organization
+
+        - [ ] **Annulus 3** Specific to each benefactor
+            Empty for now
+        - [ ] **Choices_Table** All upcoming decisions (14)
+            - ✅ **Toggle** between initiatives and orgs
+            - [ ] **Selections** All of a benefactors current votes are displayed here. Each links to its respective cause page.
+                - [ ] **For multiple tiv selections** Only show the top one for now
+            - [ ] **Expand** Backlog - Choices table will eventually be more in depth, similar to a stock trading interface.
+        - [ ] **Top Right section**
+            - [ ] **Credit Badge** a - Username and annulus
+                - [ ] **Colorization** Participating each week colorizes your credit badge for that weeks sector
+                Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
+                    - [ ] **Automatic coloring threshold** threshold: $10
+            - [ ] **Settings** - b
+            - [ ] **Switch to Organization mode** - c
+            If a benefactor has the credit coin, they have access to org mode for that mission
+            If they do not, every org page is still linked from it's cause page mission
+        - [ ] **CreditCoin Wallet**
+        Contains all missions a benefactor has contributed to. Scrolls left-right
+    - [ ] **Organization Profile** User profile to represent a specific org.
+    Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org rep (the user automatically gets a benefactor profile too). Orgs build a mission page which continues if they win and is frozen and linked from their profile if not.
+        - [ ] **Design** 
+        ______________________________________________________
+        | _____________                         ____  _______ |
+        ||Initiative   |                       | b  ||       ||
+        || Coins       |                __     |____||   a   ||
+        ||_____________|           '           `     |_______||
+        ||Tasklist  |          '                  `     | c  ||
+        ||          |                                   |____||
+        ||          |    /                             \      |
+        ||          |            Annulus 4                    |
+        ||          |   |         front/back toggle           |
+        ||          |                                         |
+        ||__________|    \                             /      |
+        |                                                     |
+        |                     .                     ,
+        |                               __
+        - [ ] **Annulus 4** Almost identical to Annulus 3.
+            Empty for now
+        - [ ] **Top right section** 
+            - [ ] **Settings** - b
+            - [ ] **Switch to Benefactor mode** - c
+        - [ ] **Tasklist**
+        - [ ] **Initiative coins** Every initiative that the org has ever registered for produces a coin which toggles the page.
         - [ ] **Memberships** Page view and permissions depend on them
         Human representative of the weekly mission - Every org account is a member...
             - [ ] **Contributor**
@@ -81,7 +97,7 @@ Vote occurs on the final day of its causes active period
             - [ ] **Executive**
             Highest level of member permission
             - [ ] **Beneficiary**
-            Representative for the recipient of the charity effort
+            Representative for the recipients of the charity effort
         - [ ] **Organization logos.** --backlog
         Color wheel idea
     - [ ] **Settings**
@@ -185,28 +201,32 @@ Vote occurs on the final day of its causes active period
         - [ ] **Inner**
         Pie chart for initiative voting
         - [ ] **Outer**
-        Pie chart for organization voting
+        One sector highlighted denoting selected cause
         - ✅ **Now marker**
             - ✅ **Arrow**
     - ✅ **Left Cards**
     Display options for the next initiative vote for the selected cause
+        - [ ] **Pagination** Page through all initiatives with votes for that cause
+        - [ ] **Links** Link to home page area for that initiative
     - ✅ **Right cards**
     Onclick, each card changes the mission story section to its mission.
-        - [ ] **Bottom** 
-        Previous mission (in phase 3 or 4) of selected cause
-        - [ ] **Middle** 
-        Whatever mission is currently in phase 3 of selected cause
         - [ ] **Top** 
         Whatever mission is currently in phase 2 of selected cause
+        - [ ] **Middle** 
+        Previous mission
+        - [ ] **Bottom** 
+        Mission before that
+        - [ ] **Subsequent pages**
+        Every past mission in chronological order.
     - [ ] **mission story** 5 sections that fill as the mission progresses, creating one big section.
     *Note* for phase 1 and 2, "vote" appears 6 times. This refers to the helpful|neutral|wrong voting for discussion posts.
-        - [ ] **Change annulus** If a mission is selected, the outer annulus changes - backlog
         - [ ] **Header row** right below the annulus, in between left and right cards.
         Just the cause name, and cycle number, or the mission title and organizaiton name if applicable.                ____________
         __________________________|Brief header|__________________________
         |Phase 1 area                                                    |
         - [ ] **Phase 1** Top card, below the header
-            - [ ] **when Active** 
+            - [ ] **when Active**
+            Note that the leaders and my votes sections will be wider than they appear below.
             _____________________________________________________________________
             | _________  _________   _______________|Discussion|_________________|
             ||Leaders  ||My votes | ||vote|Most_helpful/trending_case_____<>|post|
@@ -216,7 +236,7 @@ Vote occurs on the final day of its causes active period
             | Display area for an initiative. Default to top vote. If none leader|
             | Slider vote bars (or just 'vote'), with new selected tiv option.   |
             |         discussion                                                 |
-            |_|view initiatives|__|commit ebx|___________________________________|
+            |__|view initiatives|__|commit ebx|__________________________________|
             - [ ] **When Recap** Discussion locks after vote
             Show how the people decided on the tiv
             _____________________________________________________________________
@@ -241,7 +261,7 @@ Vote occurs on the final day of its causes active period
             | Display area for an organization. Default to vote. If none leader. |
             | Show discussion and org supplied content                           |
             |                                                                    |
-            |_|View organizations|_|Commit ebx|__________________________________|
+            |__|View organizations|_|Commit ebx|_________________________________|
             - [ ] **When Recap**
             _____________________________________________________________________
             | _________  _________   _______________|Discussion|_________________|

@@ -153,6 +153,15 @@ async function loadAll(): Promise<void> {
   // Causes must come first so the initiatives loader can fill cause_index.
   await loadCauses();
   await Promise.all([loadInitiatives(), loadOrganizations(), loadFeed()]);
+  // build-seq 6 (pass 35): the API serves winning_org_id; the UI renders the
+  // ORG NAME (init.winning_org). Resolve it once both lists are loaded.
+  const orgNameById: Record<string, string> = {};
+  config.organizations.forEach(o => { orgNameById[String(o.id)] = o.name; });
+  config.initiatives.forEach((i: any) => {
+    if (!i.winning_org && i.winning_org_id) {
+      i.winning_org = orgNameById[String(i.winning_org_id)] ?? null;
+    }
+  });
 }
 
 
@@ -1741,7 +1750,9 @@ function sideCard(causeIndex: number): string {
   let myChoice: string | null = null;
   let myCommit = 0;
   try {
-    const votedOrgId = (JSON.parse(localStorage.getItem('ebx_org_votes') || '{}'))[cause.id] || null;
+    // pass 35: ebx_org_votes entries are now objects ({org_id, tiv_id, votes}); accept both shapes.
+    const _ovRaw = (JSON.parse(localStorage.getItem('ebx_org_votes') || '{}'))[cause.id] || null;
+    const votedOrgId = _ovRaw && typeof _ovRaw === 'object' ? (_ovRaw as any).org_id : _ovRaw;
     if (votedOrgId) {
       const o = orgs.find(x => x.id === votedOrgId);
       myChoice = o ? o.name : null;
@@ -1876,7 +1887,9 @@ function topCard(activeIndex: number, face: 'front' | 'back' = 'front'): string 
   let myChoice: string | null = null;
   let myCommit = 0;
   try {
-    const votedOrgId = (JSON.parse(localStorage.getItem('ebx_org_votes') || '{}'))[cause.id] || null;
+    // pass 35: ebx_org_votes entries are now objects ({org_id, tiv_id, votes}); accept both shapes.
+    const _ovRaw = (JSON.parse(localStorage.getItem('ebx_org_votes') || '{}'))[cause.id] || null;
+    const votedOrgId = _ovRaw && typeof _ovRaw === 'object' ? (_ovRaw as any).org_id : _ovRaw;
     if (votedOrgId) {
       const o = orgs.find(x => x.id === votedOrgId);
       myChoice = o ? o.name : null;

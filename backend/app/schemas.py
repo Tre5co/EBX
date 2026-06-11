@@ -329,3 +329,49 @@ class MembershipRead(BaseModel):
     organization_id: str
     role: str
     joined_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# OrgRegistration (pass 34, build-seq 2)
+# ---------------------------------------------------------------------------
+class OrgRegistrationBase(BaseModel):
+    kind: str = "nomination"  # nomination | registration
+    org_name: str
+    website: str
+    justification: str
+    member_name: Optional[str] = None
+    member_position: Optional[str] = None
+    # At least one initiative the org is believed fit to accomplish.
+    initiative_ids: list[str] = Field(min_length=1)
+
+    @field_validator("kind")
+    @classmethod
+    def _kind_known(cls, v: str) -> str:
+        if v not in ("nomination", "registration"):
+            raise ValueError("kind must be 'nomination' or 'registration'")
+        return v
+
+
+class OrgRegistrationCreate(OrgRegistrationBase):
+    pass
+
+
+class OrgRegistrationRead(OrgRegistrationBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    status: str = "pending"
+    submitted_by_id: Optional[int] = None
+    organization_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    @field_validator("initiative_ids", mode="before")
+    @classmethod
+    def _coerce_initiative_ids(cls, v):
+        if v is None:
+            return []
+        if isinstance(v, str):
+            try:
+                return _json.loads(v)
+            except Exception:
+                return []
+        return v

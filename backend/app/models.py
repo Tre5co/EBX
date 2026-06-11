@@ -464,3 +464,34 @@ class InitiativeRating(Base):
 
     benefactor: Mapped["BenefactorAccount"] = relationship()
     initiative: Mapped["Initiative"] = relationship()
+
+
+# ---------------------------------------------------------------------------
+# OrgRegistration (pass 34, build-seq 2) — an organization nominated by a
+# benefactor ('nomination') or registered by one of its own members
+# ('registration'). Replaces the cause-membership proxy once approved rows
+# are promoted to Organization + linked initiatives.
+# ---------------------------------------------------------------------------
+class OrgRegistration(Base):
+    __tablename__ = "org_registrations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(String, nullable=False, default="nomination")  # nomination | registration
+    org_name: Mapped[str] = mapped_column(String, nullable=False)
+    website: Mapped[str] = mapped_column(String, nullable=False)
+    justification: Mapped[str] = mapped_column(Text, nullable=False)
+    # registration-only fields
+    member_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    member_position: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # JSON-encoded list of initiative ids the org is believed fit to accomplish (>=1)
+    initiative_ids: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
+    submitted_by_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("benefactor_accounts.id"), nullable=True)
+    # set when an admin approves and promotes/links to a real Organization row
+    organization_id: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("organizations.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="pending")  # pending | approved | rejected
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    submitted_by: Mapped[Optional["BenefactorAccount"]] = relationship()
+    organization: Mapped[Optional["Organization"]] = relationship()

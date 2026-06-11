@@ -80,6 +80,15 @@
   async function loadAll() {
     await loadCauses();
     await Promise.all([loadInitiatives(), loadOrganizations(), loadFeed()]);
+    const orgNameById = {};
+    config.organizations.forEach((o) => {
+      orgNameById[String(o.id)] = o.name;
+    });
+    config.initiatives.forEach((i) => {
+      if (!i.winning_org && i.winning_org_id) {
+        i.winning_org = orgNameById[String(i.winning_org_id)] ?? null;
+      }
+    });
   }
   var MS_PER_DAY = 864e5;
   var Cycle = {
@@ -1339,7 +1348,8 @@
     let myChoice = null;
     let myCommit = 0;
     try {
-      const votedOrgId = JSON.parse(localStorage.getItem("ebx_org_votes") || "{}")[cause.id] || null;
+      const _ovRaw = JSON.parse(localStorage.getItem("ebx_org_votes") || "{}")[cause.id] || null;
+      const votedOrgId = _ovRaw && typeof _ovRaw === "object" ? _ovRaw.org_id : _ovRaw;
       if (votedOrgId) {
         const o = orgs.find((x) => x.id === votedOrgId);
         myChoice = o ? o.name : null;
@@ -1423,7 +1433,8 @@
     let myChoice = null;
     let myCommit = 0;
     try {
-      const votedOrgId = JSON.parse(localStorage.getItem("ebx_org_votes") || "{}")[cause.id] || null;
+      const _ovRaw = JSON.parse(localStorage.getItem("ebx_org_votes") || "{}")[cause.id] || null;
+      const votedOrgId = _ovRaw && typeof _ovRaw === "object" ? _ovRaw.org_id : _ovRaw;
       if (votedOrgId) {
         const o = orgs.find((x) => x.id === votedOrgId);
         myChoice = o ? o.name : null;

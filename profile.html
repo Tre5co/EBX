@@ -697,6 +697,107 @@
 
     .toggle.on::after { transform: translateX(18px); }
 
+    /* ── Pass 34 overhaul — drawing layout ── */
+    .pf-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr 220px;
+      gap: var(--sp-xl);
+      align-items: start;
+      padding: var(--sp-2xl) 0;
+    }
+    @media (max-width: 1100px) { .pf-grid { grid-template-columns: 240px 1fr; } .pf-right { grid-column: 1 / -1; flex-direction: row; align-items: center; } }
+    @media (max-width: 720px)  { .pf-grid { grid-template-columns: 1fr; } .pf-right { flex-direction: column; } }
+
+    .pf-left { display: flex; flex-direction: column; gap: var(--sp-lg); }
+
+    /* CreditCoin Wallet — horizontal scroll strip */
+    .wallet-strip-card {
+      background: white; border: 1px solid var(--clr-border);
+      border-radius: var(--radius-md); overflow: hidden;
+    }
+    .wallet-strip-card__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--sp-md) var(--sp-lg);
+      border-bottom: 1px solid var(--clr-border); background: var(--clr-surface);
+    }
+    .wallet-strip-card__nav button {
+      background: none; border: 1px solid var(--clr-border); border-radius: 3px;
+      width: 22px; height: 22px; cursor: pointer; color: var(--clr-ink-muted);
+      font-size: 0.85rem; line-height: 1; margin-left: 4px;
+    }
+    .wallet-strip-card__nav button:hover { background: var(--clr-surface); }
+    .wallet-strip {
+      display: flex; gap: var(--sp-sm); overflow-x: auto;
+      padding: var(--sp-md); scroll-snap-type: x mandatory;
+    }
+    .coin-chip {
+      flex: 0 0 116px; scroll-snap-align: start;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: var(--sp-sm); border: 1px solid var(--clr-border);
+      border-radius: var(--radius-sm); text-decoration: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .coin-chip:hover { background: var(--clr-surface); border-color: var(--clr-moss); }
+    .coin-chip__name { font-size: 0.68rem; font-weight: 600; color: var(--clr-earth); text-align: center; }
+    .coin-chip__ebx  { font-family: var(--font-mono); font-size: 0.62rem; color: var(--clr-ink-light); }
+    .coin-chip--empty {
+      flex: 1 1 auto; border-style: dashed; cursor: default;
+      font-size: 0.72rem; color: var(--clr-ink-light); text-align: center; line-height: 1.6;
+    }
+
+    /* Annulus 3 (center) */
+    .annulus3-card {
+      background: #0f1a14; border: 1px solid rgba(255,255,255,0.07);
+      border-radius: var(--radius-lg); padding: var(--sp-xl);
+      display: flex; flex-direction: column; align-items: center; gap: var(--sp-md);
+    }
+    .annulus3-svg { width: 100%; max-width: 360px; height: auto; }
+    .annulus3-toggle { display: flex; gap: 4px; }
+    .annulus3-toggle button {
+      padding: 4px 14px; font-family: var(--font-mono); font-size: 0.62rem;
+      letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 3px;
+      background: none; color: rgba(245,240,232,0.45);
+    }
+    .annulus3-toggle button.active {
+      background: rgba(232,168,76,0.12); color: var(--clr-honey); border-color: var(--clr-honey);
+    }
+    .annulus3-caption {
+      font-size: 0.72rem; color: rgba(245,240,232,0.3);
+      text-align: center; line-height: 1.6; max-width: 300px;
+    }
+
+    /* Right rail: gear (b), badge (a), org mode (c) */
+    .pf-right { display: flex; flex-direction: column; gap: var(--sp-lg); }
+    .pf-right-row { display: flex; gap: var(--sp-sm); align-items: flex-start; }
+    .pf-gear {
+      width: 36px; height: 36px; flex-shrink: 0; cursor: pointer;
+      background: white; border: 1px solid var(--clr-border); border-radius: var(--radius-sm);
+      font-size: 1rem; color: var(--clr-ink-muted); transition: background 0.15s;
+    }
+    .pf-gear:hover { background: var(--clr-surface); }
+    .pf-badge-card {
+      flex: 1; background: var(--clr-forest); border-radius: var(--radius-md);
+      padding: var(--sp-lg); text-align: center; color: var(--clr-parchment);
+    }
+    .pf-badge-card__ring { display: flex; justify-content: center; margin-bottom: var(--sp-sm); }
+    .pf-badge-card__handle {
+      font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 2px;
+    }
+    .pf-orgmode {
+      width: 100%; padding: 10px 12px; cursor: pointer;
+      background: white; border: 1px solid var(--clr-border); border-radius: var(--radius-sm);
+      font-size: 0.78rem; font-weight: 600; color: var(--clr-earth);
+      display: flex; flex-direction: column; gap: 2px; align-items: center;
+      transition: border-color 0.15s;
+    }
+    .pf-orgmode:hover:not(:disabled) { border-color: var(--clr-moss); }
+    .pf-orgmode:disabled { cursor: not-allowed; opacity: 0.55; }
+    .pf-orgmode__lock {
+      font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400;
+      color: var(--clr-ink-light);
+    }
+
   </style>
 </head>
 <body>
@@ -1117,121 +1218,110 @@
 
 
     /* ─────────────────────────────────────────
-       PROFILE VIEW
+       PROFILE VIEW — pass 34 overhaul (build-seq 1)
+       Layout per STRUCTURE.md Benefactor-Profile drawing:
+         left   = CreditCoin Wallet (top) + Choices table
+         center = Annulus 3, front/back toggle (empty for now)
+         right  = (b) settings gear · (a) credit badge · (c) org-mode switch
+       Upcoming-decisions banner removed (drawing has no banner; also a
+       BACKLOG item). Settings modal kept; open/close helpers now defined
+       (they were referenced but missing — gear was dead before this pass).
        ───────────────────────────────────────── */
 
     function renderProfile(p) {
       document.title = `Earthbux — @${p.handle}`;
       const root = document.getElementById('app-root');
+      // build-seq 5 (pass 35): org mode stays ON profile.html — the page
+      // re-renders its org face (Initiative Coins / Tasklist / Annulus 4)
+      // instead of navigating away. The two faces resemble each other.
+      window._lastProfileData = p;
+      const orgMode = window._profileMode === 'org';
 
       const initials = (p.display || p.handle || '?')
         .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
 
-      // ── (c) Credit portfolio — these ARE the wallet ──
-      const creditBadgesHTML = (p.causes || []).length
-        ? p.causes.map(ci => {
-            const c = causes.find(x => x.index === ci);
-            if (!c) return '';
-            return `
-              <div class="credit-badge-row" onclick="window.location.href='cause.html?id=${c.id}'">
-                ${EBX.creditBadge([{causeIndex:ci, amount: p.ebx_balance || 0}], 40)}
-                <div class="credit-badge-row__info">
-                  <div class="credit-badge-row__title">${c.name}</div>
-                  <div class="credit-badge-row__meta">0 EBX · no missions yet</div>
-                </div>
-              </div>`;
-          }).join('')
-        : `<p class="text-sm text-muted" style="padding:var(--sp-md) 0;">No credits yet. Your first pool mints your first credit.</p>`;
+      const _ls = k => { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch(e) { return {}; } };
+      const tivShares  = _ls('ebx_vote_shares');     // { causeId: { initId: share } }
+      const tivCommits = _ls('ebx_vote_committed');  // { causeId: { shares, at, ebx } }
+      const orgVotes   = _ls('ebx_org_votes');       // { causeId: {org_id, tiv_id, votes} } (pass 35; was plain orgId)
+      const orgCommits = _ls('ebx_org_committed');   // { causeId: { at, ebx } }
+      const inits = EBX.config.initiatives   || [];
+      const orgs  = EBX.config.organizations || [];
+      const initById = {}; inits.forEach(i => { initById[String(i.id)] = i; });
+      const orgById  = {}; orgs.forEach(o => { orgById[String(o.id)]  = o; });
 
-      // ── (b) Upcoming cause banner ──
-      const cycleState = EBX.Cycle.now();
-      const activeCause = causes.find(c => c.index === cycleState.activeCauseIndex);
-      const nextCause   = causes[(cycleState.activeCauseIndex + 1) % causes.length];
-      const nextPool = getNextPoolDate();
-      // Countdown: ms until end of active cause window
-      const winStart = EBX.Cycle.windowStart(cycleState.activeCauseIndex, cycleState.cycleNum);
-      const winEnd   = new Date(winStart.getTime() + (EBX.config.causeLengthDays || 14) * EBX.Cycle.MS_PER_DAY);
-      const msLeft   = Math.max(0, winEnd - new Date());
-      const daysLeft = Math.floor(msLeft / EBX.Cycle.MS_PER_DAY);
-      const hrsLeft  = Math.floor((msLeft % EBX.Cycle.MS_PER_DAY) / 3600000);
-      const countdownStr = daysLeft > 0 ? `${daysLeft}d ${hrsLeft}h left` : `${hrsLeft}h left`;
+      /* ── CreditCoin Wallet — one coin per mission contributed to ── */
+      const coins = causes.map(c => {
+        const ebx = ((tivCommits[c.id] && tivCommits[c.id].ebx) || 0)
+                  + ((orgCommits[c.id] && orgCommits[c.id].ebx) || 0);
+        return ebx > 0 ? { cause: c, ebx } : null;
+      }).filter(Boolean);
 
-      // User's stored choices from localStorage
-      let userChoices = {};
-      try { userChoices = JSON.parse(localStorage.getItem('ebx_choices') || '{}'); } catch(e) {}
-      const userInitChoice = userChoices[`init_${cycleState.activeCauseIndex}`] || null;
-      const userOrgChoice  = userChoices[`org_${cycleState.activeCauseIndex}`]  || null;
+      const walletHTML = coins.length
+        ? coins.map(coin => `
+            <a class="coin-chip" href="cause.html?id=${coin.cause.id}" title="${coin.cause.name} mission">
+              ${EBX.creditBadge([{ causeIndex: coin.cause.index, amount: coin.ebx }], 40)}
+              <div class="coin-chip__name">${coin.cause.name}</div>
+              <div class="coin-chip__ebx">${EBX.formatEBX(coin.ebx)}</div>
+            </a>`).join('')
+        : `<div class="coin-chip coin-chip--empty">No credit coins yet.<br/>Commit EBX to a mission to mint your first.</div>`;
 
-      const upcomingBannerHTML = `
-        <div class="upcoming-banner">
-          <div class="upcoming-banner__eyebrow">Your upcoming decisions</div>
-          <div class="upcoming-banner__rows">
-            <a class="upcoming-banner__row upcoming-banner__row--cause"
-               href="cause.html?id=${activeCause?.id || ''}">
-              <div class="upcoming-banner__row-label">Initiative</div>
-              <div class="upcoming-banner__row-choice">
-                ${activeCause ? `${activeCause.emoji || ''} ${activeCause.name}` : 'Loading…'}
-                ${userInitChoice
-                  ? `<div style="font-size:0.75rem;color:rgba(245,240,232,0.5);font-weight:400;margin-top:2px;">
-                       Your choice: ${userInitChoice}
-                     </div>`
-                  : `<div style="font-size:0.75rem;color:rgba(245,240,232,0.35);font-weight:400;margin-top:2px;">
-                       No vote yet — <span style="color:var(--clr-honey)">commit EBX →</span>
-                     </div>`}
-              </div>
-              <div class="upcoming-banner__row-meta">
-                <div>${EBX.formatEBX ? EBX.formatEBX(p.ebx_balance || 0) : '0 EBX'}</div>
-                <div class="upcoming-banner__row-timer">${countdownStr}</div>
-              </div>
-            </a>
-            <a class="upcoming-banner__row upcoming-banner__row--org"
-               href="cause.html?id=${activeCause?.id || ''}">
-              <div class="upcoming-banner__row-label">Org vote</div>
-              <div class="upcoming-banner__row-choice">
-                ${activeCause ? `${activeCause.emoji || ''} ${activeCause.name}` : 'Loading…'}
-                ${userOrgChoice
-                  ? `<div style="font-size:0.75rem;color:rgba(245,240,232,0.5);font-weight:400;margin-top:2px;">
-                       Your choice: ${userOrgChoice}
-                     </div>`
-                  : `<div style="font-size:0.75rem;color:rgba(245,240,232,0.35);font-weight:400;margin-top:2px;">
-                       Opens in final 2 days of debate
-                     </div>`}
-              </div>
-              <div class="upcoming-banner__row-meta">
-                <div>—</div>
-                <div class="upcoming-banner__row-timer">${countdownStr}</div>
-              </div>
-            </a>
-          </div>
-        </div>`;
+      /* ── Choices table — one row per cause; multi-tiv splits show top share only ── */
+      const choiceRows = causes.map(c => {
+        const shares = tivShares[c.id] || {};
+        let topId = null, topShare = 0;
+        Object.keys(shares).forEach(id => {
+          const s = Number(shares[id]) || 0;
+          if (s > topShare) { topShare = s; topId = id; }
+        });
+        const tiv   = topId != null ? (initById[String(topId)] || null) : null;
+        // build-seq 4/5 (pass 35): ebx_org_votes now stores objects
+        // ({org_id, tiv_id, votes}); accept both shapes.
+        const _ov = orgVotes[c.id];
+        const orgId = _ov && typeof _ov === 'object' ? _ov.org_id : _ov;
+        const org   = orgId != null ? (orgById[String(orgId)] || null) : null;
+        return {
+          cause: c, topShare,
+          tivLabel: tiv ? tiv.title : (topId != null ? 'Initiative #' + topId : null),
+          orgLabel: org ? org.name  : (orgId != null ? 'Org #' + orgId : null),
+        };
+      });
 
-      // ── (e) Feed history — posts by this user ──
-      const allPosts = EBX.config.feed || [];
-      const recentENPosts = allPosts
-        .slice()
-        .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 3);
-      const enStripHTML = recentENPosts.length
-        ? `<div class="profile-en-strip">
-             <div class="profile-en-strip__header">
-               <span class="profile-feed-eyebrow">From Earthbux News</span>
-               <a href="en.html" class="profile-en-strip__more">All EN posts →</a>
-             </div>
-             <div class="profile-en-strip__grid">
-               ${recentENPosts.map(post => EBX.feedCard(post)).join('')}
-             </div>
-           </div>`
-        : '';
+      const choiceRowHTML = (row, kind) => {
+        const label = kind === 'org' ? row.orgLabel : row.tivLabel;
+        const split = kind === 'tiv' && label && row.topShare > 0 && row.topShare < 1
+          ? ` <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--clr-ink-light);">${Math.round(row.topShare * 100)}%</span>`
+          : '';
+        return `
+          <tr>
+            <td style="width:36px;">
+              <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
+            </td>
+            <td>
+              <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
+              ${label
+                ? `<a class="choice-link" href="cause.html?id=${row.cause.id}">${label}</a>${split}`
+                : `<span class="no-choice">${kind === 'org' ? 'No org vote yet' : 'No vote yet'}</span>`}
+            </td>
+          </tr>`;
+      };
+
+      /* ── (a) credit badge holdings · (c) org-mode gate ── */
+      const holdings = coins.map(c => ({ causeIndex: c.cause.index, amount: c.ebx }));
+      const hasCoin  = coins.length > 0;
+
+      /* ── posts history (kept below the drawing's fold) ── */
+      const allPosts  = EBX.config.feed || [];
       const userPosts = allPosts
         .filter(post => post.author === p.handle || post.author === `@${p.handle}`)
-        .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       const feedHistoryHTML = userPosts.length
         ? userPosts.map(post => `
             <div class="activity-item">
               <div class="activity-item__icon" style="font-size:0.75rem;background:var(--clr-surface);">💬</div>
               <div class="activity-item__body">
                 ${post.title ? `<div style="font-size:0.82rem;font-weight:600;color:var(--clr-ink);margin-bottom:2px;">${post.title}</div>` : ''}
-                <div class="activity-item__text">${(post.body||'').slice(0,120)}${post.body?.length > 120 ? '…' : ''}</div>
+                <div class="activity-item__text">${(post.body || '').slice(0, 120)}${post.body?.length > 120 ? '…' : ''}</div>
                 <div class="activity-item__time">${EBX.timeAgo(post.created_at)}</div>
               </div>
             </div>`).join('')
@@ -1239,97 +1329,75 @@
              No posts yet. <a href="en.html" style="color:var(--clr-moss);">Join the discussion →</a>
            </div>`;
 
-      // ── (d) Choices table — per-cause initiative or org choices ──
-      const choicesTableRows = causes.map(c => {
-        const initChoice   = userChoices[`init_${c.index}`]    || null;
-        const initChoiceId = userChoices[`init_id_${c.index}`] || null;
-        const orgChoice    = userChoices[`org_${c.index}`]     || null;
-        const orgChoiceId  = userChoices[`org_id_${c.index}`]  || null;
-        return { cause: c, initChoice, initChoiceId, orgChoice, orgChoiceId };
-      });
+      /* ── build-seq 5 (pass 35): org-mode face content ── */
+      let initiativeCoinsHTML = '', tasklistCardHTML = '';
+      if (orgMode) {
+        // Initiative Coins — every initiative this account has registered an
+        // org for (local ebx_org_regs) or voted-as-org on (tiv_id), proxy
+        // until real OrgAccount membership rows exist.
+        let _regs = [];
+        try { _regs = JSON.parse(localStorage.getItem('ebx_org_regs') || '[]'); } catch (e) { _regs = []; }
+        const _tivIds = new Set();
+        (Array.isArray(_regs) ? _regs : []).forEach(r =>
+          (r && r.initiative_ids || []).forEach(id => _tivIds.add(String(id))));
+        Object.values(orgVotes || {}).forEach(v => {
+          if (v && v.tiv_id) _tivIds.add(String(v.tiv_id));
+        });
+        const _regTivs = [..._tivIds].map(id => initById[id]).filter(Boolean);
+        initiativeCoinsHTML = _regTivs.length
+          ? _regTivs.map(i => {
+              const c = causes.find(x => x.index === i.cause_index || x.id === i.cause_id);
+              return `<a class="coin-chip" href="cause.html?id=${c ? c.id : ''}" title="${i.title}">
+                ${EBX.creditBadge(c ? [{ causeIndex: c.index, amount: i.ebx_committed || 0 }] : [], 40)}
+                <div class="coin-chip__name">${i.emoji || '🌱'} ${i.title}</div>
+                <div class="coin-chip__ebx">${EBX.formatEBX(i.ebx_committed || 0)}</div>
+              </a>`;
+            }).join('')
+          : `<div class="coin-chip coin-chip--empty">No initiative coins yet.<br/>Register your organization for a mission to mint one.</div>`;
+        let _done = {};
+        try { _done = JSON.parse(localStorage.getItem('ebx_org_tasks') || '{}'); } catch (e) { _done = {}; }
+        const _tasks = [
+          'Build your mission page',
+          'Submit a budget (phase 3)',
+          'Post a progress update',
+          'Respond to benefactor questions',
+          'Confirm beneficiary outreach',
+        ];
+        tasklistCardHTML = `
+                <div class="choices-col-card">
+                  <div class="choices-col-header">
+                    <div class="choices-col-title">Tasklist</div>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0;">
+                    ${_tasks.map((t, i) => `
+                      <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;cursor:pointer;
+                                    ${_done[i] ? 'opacity:0.5;text-decoration:line-through;' : ''}">
+                        <input type="checkbox" ${_done[i] ? 'checked' : ''} onchange="toggleOrgTask(${i})" />
+                        ${t}
+                      </label>`).join('')}
+                  </div>
+                </div>`;
+      }
 
       root.innerHTML = `
         <div style="background:var(--clr-bg);">
           <div class="container">
-            <div class="profile-layout">
+            <div class="pf-grid">
 
-              <!-- ── (a+c) Left sidebar: handle card + credit portfolio ── -->
-              <aside class="profile-sidebar">
-
-                <div class="profile-card" style="position:relative;">
-                  <button onclick="openSettingsModal()" title="Settings" aria-label="Open settings"
-                          style="position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;
-                                 font-size:1.05rem;opacity:0.55;line-height:1;padding:4px;"
-                          onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.55">⚙</button>
-                  <div class="profile-card__avatar">${initials}</div>
-                  <div class="profile-card__handle">@${p.handle}</div>
-                  <div class="profile-card__name">${p.display || p.handle}</div>
-                  <div class="profile-card__type">${p.type === 'org' ? 'Organization' : 'Benefactor'}</div>
+              <!-- ── Left: CreditCoin Wallet + choices table ── -->
+              <aside class="pf-left">
+                <div class="wallet-strip-card">
+                  <div class="wallet-strip-card__head">
+                    <span class="choices-col-title">${orgMode ? 'Initiative Coins' : 'CreditCoin Wallet'}</span>
+                    <span class="wallet-strip-card__nav">
+                      <button onclick="walletScroll(-1)" aria-label="Scroll wallet left">‹</button>
+                      <button onclick="walletScroll(1)" aria-label="Scroll wallet right">›</button>
+                    </span>
+                  </div>
+                  <div class="wallet-strip" id="wallet-strip">${orgMode ? initiativeCoinsHTML : walletHTML}</div>
                 </div>
 
-                <div class="credits-section">
-                  <div class="credits-section__title">Credit portfolio</div>
-                  ${creditBadgesHTML}
-                </div>
-
-              </aside>
-
-              <!-- ── (b+e) Center: upcoming banner + feed history ── -->
-              <main class="profile-main">
-
-                ${upcomingBannerHTML}
-
-                ${enStripHTML}
-
-                <div class="profile-feed-history">
-                  <div class="profile-feed-eyebrow">Your posts</div>
-                  <div style="background:white;border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:var(--sp-lg);">
-                    ${feedHistoryHTML}
-                  </div>
-                </div>
-
-                <!-- Build-seq 5 (P1): settings moved out of the page flow into a
-                     window, opened from the gear on the profile card. -->
-
-              </main>
-
-              <!-- ── Settings window (modal) ── -->
-              <div id="settings-modal-bg" onclick="closeSettingsOnBg(event)"
-                   style="display:none;position:fixed;inset:0;z-index:60;background:rgba(20,26,22,0.45);
-                          align-items:center;justify-content:center;padding:24px;">
-                <div style="background:var(--clr-paper,#fdfbf6);border:1px solid var(--clr-border,#ddd);
-                            border-radius:var(--radius-md,10px);max-width:480px;width:100%;
-                            max-height:85vh;overflow:auto;padding:var(--sp-xl,24px);box-shadow:0 18px 50px rgba(0,0,0,0.25);">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-md,12px);">
-                    <div class="profile-feed-eyebrow" style="margin:0;">Settings</div>
-                    <button onclick="closeSettingsModal()" aria-label="Close settings"
-                            style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;">✕</button>
-                  </div>
-                  <div class="settings-group">
-                    <div class="settings-group__title">Identity</div>
-                    <div class="settings-row">
-                      <div><div class="settings-row__label">Handle</div><div class="settings-row__sub">@${p.handle}</div></div>
-                    </div>
-                    <div class="settings-row">
-                      <div><div class="settings-row__label">Email</div><div class="settings-row__sub">${p.email || '—'}</div></div>
-                    </div>
-                    <div class="settings-row">
-                      <div><div class="settings-row__label">Donation per cycle</div><div class="settings-row__sub">$${p.amount || 0} / 14 days</div></div>
-                      <button class="btn btn-ghost btn-sm">Change</button>
-                    </div>
-                  </div>
-                  <div style="padding-top:var(--sp-md);display:flex;gap:var(--sp-sm);">
-                    <button class="btn btn-ghost btn-sm" style="color:var(--clr-ink-light);font-size:0.7rem;"
-                      onclick="if(confirm('Clear local data?')){localStorage.removeItem('ebx_profile');localStorage.removeItem('ebx_choices');location.reload();}">
-                      Reset local data (dev)
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ── (d) Right: choices table ── -->
-              <aside class="profile-choices-col">
-                <div class="choices-col-card">
+                ${orgMode ? tasklistCardHTML : `<div class="choices-col-card">
                   <div class="choices-col-header">
                     <div class="choices-col-title">Your choices</div>
                     <div class="choices-toggle">
@@ -1338,68 +1406,149 @@
                     </div>
                   </div>
                   <table class="choices-table" id="choices-table-inits">
-                    <tbody>
-                      ${choicesTableRows.map(row => `
-                        <tr>
-                          <td style="width:36px;">
-                            <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
-                          </td>
-                          <td>
-                            <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
-                            ${row.initChoice
-                              ? `<a class="choice-link" href="${row.initChoiceId ? 'initiative.html?id=' + row.initChoiceId : 'cause.html?id=' + row.cause.id}">${row.initChoice}</a>`
-                              : `<span class="no-choice">No vote yet</span>`}
-                          </td>
-                        </tr>`).join('')}
-                    </tbody>
+                    <tbody>${choiceRows.map(r => choiceRowHTML(r, 'tiv')).join('')}</tbody>
                   </table>
                   <table class="choices-table" id="choices-table-orgs" style="display:none;">
-                    <tbody>
-                      ${choicesTableRows.map(row => `
-                        <tr>
-                          <td style="width:36px;">
-                            <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
-                          </td>
-                          <td>
-                            <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
-                            ${row.initChoice
-                              ? `<a class="choice-link" href="${row.initChoiceId ? 'initiative.html?id=' + row.initChoiceId : 'cause.html?id=' + row.cause.id}">${row.initChoice}</a>`
-                              : `<span class="no-choice">No vote yet</span>`}
-                          </td>
-                        </tr>`).join('')}
-                    </tbody>
+                    <tbody>${choiceRows.map(r => choiceRowHTML(r, 'org')).join('')}</tbody>
                   </table>
-                  <table class="choices-table" id="choices-table-orgs" style="display:none;">
-                    <tbody>
-                      ${choicesTableRows.map(row => `
-                        <tr>
-                          <td style="width:36px;">
-                            <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
-                          </td>
-                          <td>
-                            <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
-                            ${row.orgChoice
-                              ? `<a class="choice-link" href="${row.orgChoiceId ? 'mission.html?org=' + row.orgChoiceId : 'mission.html?cause=' + row.cause.id}">${row.orgChoice}</a>`
-                              : `<span class="no-choice">No org vote yet</span>`}
-                          </td>
-                        </tr>`).join('')}
-                    </tbody>
-                  </table>
-                </div>
+                </div>`}
               </aside>
 
+              <!-- ── Center: Annulus 3 (benefactor-specific; empty for now) ── -->
+              <main class="pf-center">
+                <div class="annulus3-card">
+                  <div class="annulus3-toggle">
+                    <button id="a3-front" class="active" onclick="a3Flip('front')">Front</button>
+                    <button id="a3-back" onclick="a3Flip('back')">Back</button>
+                  </div>
+                  <svg viewBox="0 0 320 320" class="annulus3-svg" aria-label="Annulus 3 placeholder">
+                    <circle cx="160" cy="160" r="130" fill="none" stroke="rgba(245,240,232,0.12)" stroke-width="26" stroke-dasharray="4 7"/>
+                    <circle cx="160" cy="160" r="92"  fill="none" stroke="rgba(245,240,232,0.07)" stroke-width="18" stroke-dasharray="3 8"/>
+                    <text x="160" y="152" text-anchor="middle" fill="rgba(245,240,232,0.55)"
+                          style="font-family:var(--font-display);font-size:17px;font-weight:700;">Annulus ${orgMode ? 4 : 3}</text>
+                    <text id="a3-face-label" x="160" y="176" text-anchor="middle" fill="rgba(245,240,232,0.3)"
+                          style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;">FRONT · COMING SOON</text>
+                  </svg>
+                  <div class="annulus3-caption">${orgMode
+                    ? 'The organization ring — fills as your missions progress. Almost identical to Annulus 3.'
+                    : 'Your personal ring — fills as you vote and commit across the seven causes.'}</div>
+                </div>
+              </main>
+
+              <!-- ── Right: (b) settings · (a) credit badge · (c) org mode ── -->
+              <aside class="pf-right">
+                <div class="pf-right-row">
+                  <button class="pf-gear" onclick="openSettingsModal()" title="Settings" aria-label="Open settings">⚙</button>
+                  <div class="pf-badge-card">
+                    <div class="pf-badge-card__ring">
+                      ${hasCoin
+                        ? EBX.creditBadge(holdings, 56)
+                        : `<div class="profile-card__avatar" style="width:56px;height:56px;margin:0 auto;font-size:1.1rem;">${initials}</div>`}
+                    </div>
+                    <div class="pf-badge-card__handle">@${p.handle}</div>
+                    <div class="profile-card__type">${orgMode ? 'Organization mode' : (p.type === 'org' ? 'Organization' : 'Benefactor')}</div>
+                  </div>
+                </div>
+                ${orgMode
+                  ? `<button class="pf-orgmode" onclick="switchProfileMode('benefactor')">
+                       Switch to Benefactor mode
+                     </button>`
+                  : `<button class="pf-orgmode" ${hasCoin ? '' : 'disabled'}
+                        title="${hasCoin ? 'Open organization mode' : 'Hold a credit coin to unlock org mode for that mission'}"
+                        ${hasCoin ? `onclick="switchProfileMode('org')"` : ''}>
+                  Switch to Organization mode
+                  ${hasCoin ? '' : '<span class="pf-orgmode__lock">🔒 needs a credit coin</span>'}
+                </button>`}
+              </aside>
+
+            </div>
+
+            <div class="profile-feed-history" style="max-width:760px;margin:0 auto var(--sp-2xl);">
+              <div class="profile-feed-eyebrow">Your posts</div>
+              <div style="background:white;border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:var(--sp-lg);">
+                ${feedHistoryHTML}
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Settings window (modal, opened from the gear) ── -->
+          <div id="settings-modal-bg" onclick="closeSettingsOnBg(event)"
+               style="display:none;position:fixed;inset:0;z-index:60;background:rgba(20,26,22,0.45);
+                      align-items:center;justify-content:center;padding:24px;">
+            <div style="background:var(--clr-paper,#fdfbf6);border:1px solid var(--clr-border,#ddd);
+                        border-radius:var(--radius-md,10px);max-width:480px;width:100%;
+                        max-height:85vh;overflow:auto;padding:var(--sp-xl,24px);box-shadow:0 18px 50px rgba(0,0,0,0.25);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-md,12px);">
+                <div class="profile-feed-eyebrow" style="margin:0;">Settings</div>
+                <button onclick="closeSettingsModal()" aria-label="Close settings"
+                        style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;">✕</button>
+              </div>
+              <div class="settings-group">
+                <div class="settings-group__title">Identity</div>
+                <div class="settings-row">
+                  <div><div class="settings-row__label">Handle</div><div class="settings-row__sub">@${p.handle}</div></div>
+                </div>
+                <div class="settings-row">
+                  <div><div class="settings-row__label">Email</div><div class="settings-row__sub">${p.email || '—'}</div></div>
+                </div>
+                <div class="settings-row">
+                  <div><div class="settings-row__label">Donation per cycle</div><div class="settings-row__sub">$${p.amount || 0} / 14 days</div></div>
+                  <button class="btn btn-ghost btn-sm">Change</button>
+                </div>
+              </div>
+              <div style="padding-top:var(--sp-md);display:flex;gap:var(--sp-sm);">
+                <button class="btn btn-ghost btn-sm" style="color:var(--clr-ink-light);font-size:0.7rem;"
+                  onclick="if(confirm('Clear local data?')){localStorage.removeItem('ebx_profile');localStorage.removeItem('ebx_choices');location.reload();}">
+                  Reset local data (dev)
+                </button>
+              </div>
             </div>
           </div>
         </div>`;
 
-      // Wire choices toggle
-      window.toggleChoicesView = function(view) {
+      /* ── window helpers ── */
+      // build-seq 5 (pass 35): in-place mode switch — stays on profile.html.
+      window.switchProfileMode = function (mode) {
+        window._profileMode = mode === 'org' ? 'org' : 'benefactor';
+        renderProfile(window._lastProfileData);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      window.toggleOrgTask = function (idx) {
+        let done = {};
+        try { done = JSON.parse(localStorage.getItem('ebx_org_tasks') || '{}'); } catch (e) { done = {}; }
+        done[idx] = !done[idx];
+        localStorage.setItem('ebx_org_tasks', JSON.stringify(done));
+        renderProfile(window._lastProfileData);
+      };
+      window.toggleChoicesView = function (view) {
         document.getElementById('choices-table-inits').style.display = view === 'inits' ? '' : 'none';
         document.getElementById('choices-table-orgs').style.display  = view === 'orgs'  ? '' : 'none';
         document.getElementById('toggle-inits').classList.toggle('active', view === 'inits');
         document.getElementById('toggle-orgs').classList.toggle('active',  view === 'orgs');
       };
+      window.walletScroll = function (dir) {
+        const strip = document.getElementById('wallet-strip');
+        if (strip) strip.scrollBy({ left: dir * 132, behavior: 'smooth' });
+      };
+      window.a3Flip = function (face) {
+        const lbl = document.getElementById('a3-face-label');
+        if (lbl) lbl.textContent = (face === 'back' ? 'BACK' : 'FRONT') + ' · COMING SOON';
+        document.getElementById('a3-front').classList.toggle('active', face === 'front');
+        document.getElementById('a3-back').classList.toggle('active',  face === 'back');
+      };
+      window.openSettingsModal = function () {
+        const bg = document.getElementById('settings-modal-bg');
+        if (bg) bg.style.display = 'flex';
+      };
+      window.closeSettingsModal = function () {
+        const bg = document.getElementById('settings-modal-bg');
+        if (bg) bg.style.display = 'none';
+      };
+      window.closeSettingsOnBg = function (e) {
+        if (e.target && e.target.id === 'settings-modal-bg') window.closeSettingsModal();
+      };
     }
+
 
     function getNextPoolDate() {
       const cycleState = EBX.Cycle.now();

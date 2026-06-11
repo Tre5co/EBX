@@ -131,6 +131,17 @@ def ensure_pilot_initiatives(
             init = db.get(models.Initiative, init_id)
             assigned_org = orgs[org_idx % len(orgs)]
             org_idx += 1
+            # build-seq 6 (pass 35): pilot initiatives PAST phase 2 are each
+            # linked to a pilot organization. Phase-1/2 tivs must not carry a
+            # winner yet (org_vote means the org race is still open).
+            past_phase2 = status in {"active", "resolved"}
+            if init is not None:
+                # Backfill rows seeded before winning_org_id existed, and
+                # clear presumptive winners from not-yet-decided tivs.
+                if past_phase2 and not init.winning_org_id:
+                    init.winning_org_id = assigned_org.id
+                elif not past_phase2 and init.winning_org_id:
+                    init.winning_org_id = None
             if init is None:
                 close = now - timedelta(days=days_ago)
                 opened = close - timedelta(days=7)
@@ -149,7 +160,7 @@ def ensure_pilot_initiatives(
                     election_open=opened,
                     election_close=close,
                     status=status,
-                    winning_org_id=assigned_org.id,
+                    winning_org_id=assigned_org.id if past_phase2 else None,
                 )
                 db.add(init)
             out.append(init)
