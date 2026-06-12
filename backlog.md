@@ -1,5 +1,10 @@
 # Backlog
 
+## Automated build run — 2026-06-12 (pass 37, audit-only)
+
+Scheduled task asked for an item reconciliation, not a build: ~20 STRUCTURE.md items audited against live code — 13 to resolve ✅, 3 stale-text updates, 2 relocations, 2 new items (org-vote reset on election close; real tally → causeOrgShares). Full list in README §1 (Pass 37). STRUCTURE.md deliberately untouched per task. No code edits; NUL/tail sweep clean. Notable for Jax: the `vvv` colorization flag exists in the DB model but nothing renders it — that's the biggest "looks done in STRUCTURE-adjacent notes but isn't" gap found.
+
+
 ## Automated build run — 2026-06-11 (pass 36)
 
 Shipped build-seq 0a + 1–6 (README §1 detail). Decisions + answers for Jax:

@@ -10,6 +10,39 @@ Earthbux is a weekly charity pool elected by our community. Earthbux News covers
 
 ## 1. Current state
 
+**Pass 37 (Jun 12, automated) — STRUCTURE.md audit.** Per the scheduled task, STRUCTURE items were reconciled against the live code (each verified by inspection, not just pass notes). STRUCTURE.md itself untouched — apply these edits when convenient:
+
+**Resolve — mark ✅ (verified implemented):**
+1. Profile › Choices_Table › **Selections** — rows render all current votes and link to their cause pages (profile.html:1269+).
+2. Profile › Choices_Table › **For multiple tiv selections** — top share only (profile.html:1269–1292).
+3. Profile › **CreditCoin Wallet** — h-scroll coin strip live (profile.html:713, 1253).
+4. Profile › Top Right › **Switch to Organization mode (c)** — in-place org mode, credit-coin gated (profile.html:1238, 1334).
+5. Org Profile › **Design** + **Tasklist** + **Initiative coins** — all rendering; Annulus 4 placeholder per "empty for now" (profile.html:1358–1400).
+6. Profile › Top Right › **Settings (b)** — gear wired to a working modal (profile.html:1441, 1539). (Child item "Settings window scope elaboration" stays open.)
+7. Home › Election Cards › **front** + **back** + **Side cards** — 2-sided since pass 33; pool split + date semantics per STRUCTURE.
+8. Home › Top card › **front** + **back** — two org-elections via EBX.topCard, faces swapped pass 36 (index.html:735, 807). ("Glowy" child stays open — no glow class on the top card yet.)
+9. Home › Table › **watch** — watch/bookmark buttons live (index.html:339–347, 576).
+10. Cause › Phase 1 › **when Active** + **When Recap** — STRUCTURE layout shipped pass 35.
+11. Cause › Phase 2 › **When Active** (org voting w/ buy-votes, cause.html:1453, 1577) + **When Recap** — shipped pass 35.
+12. Cause › **Annulus 2 › Inner** + **Outer** — pass-35 redo: 7-sector outer + phase-toggling inner pie.
+13. Cause › **Left Cards › Pagination + Links** and **Right cards › Top/Middle/Bottom/Subsequent pages** — paged 3/page, chronological, home-page links (pass 34).
+
+**Update — item text is stale:**
+14. Home › Table › **Description** — drawing says "Click on a row to interact"; shipped copy is "Select an initiative/organization to learn more" (index.html:543). Pick one.
+15. Home › **Entity toggle** — STRUCTURE says rename Selected/News → front/back; pass 35 (per INSTRUCTIONS build-seq 1) made it Overview/Discussion instead. STRUCTURE should adopt Overview/Discussion.
+16. Profile › Credit Badge › **Colorization** — backend half exists (`vvv` on BenefactorAccount, models.py:130); the frontend badge-coloring perk is NOT built. Suggest splitting the item: ✅ flag, [ ] perk render + $10 threshold.
+
+**Relocate:**
+17. Cause › Active missions bar › **Add start dates** — start date now shows in the mission header (cause.html:2854) but not on the 7 squares; suggest moving this under "mission story › Header row" as done, or keeping a small bar-chip item in BACKLOG.
+18. Credit page subtree — STRUCTURE already notes it's backlogged until phases 1–2 are done; suggest relocating "Mission credit parameters" and "Exchange/Transactional logic" into INSTRUCTIONS BACKLOG so STRUCTURE keeps only the model.
+
+**Create — gaps found during audit (new items, suggested under Phase 2 / Annulus 2):**
+19. **Org-vote store reset** when an org election closes (phase-2 twin of the pass-36 vote reset; backlog.md pass-36 #6).
+20. **Real org tally into `causeOrgShares`** — wire `GET /initiatives/{id}/vote/tally` so Annulus 2 / phase-2 leaders drop the synthetic shares.
+
+No code changed this pass; repo NUL/tail sweep clean (index/cause/profile all end `</html>`).
+
+
 **Pass 36 (Jun 11, automated)** shipped build-seq 0a/1–6 + a database rescue:
 - **DB RESCUE.** `backend/earthbucks.db` was found corrupted — the sqlite header said 44 pages but the file held 40 (the mount-truncation plague hit a binary). Rebuilt: fresh schema via `alembic upgrade head`, then every salvageable row copied over. **Recovered intact: all 4 benefactor accounts, 55 initiatives, 21 votes, 33 contributions, 15 missions, 35 orgs, the org registration.** Lost (their pages were the truncated tail): the 15 `posts` rows and `credit_coins`. The corrupt original is preserved at `backend/earthbucks.corrupt-pass36.db`.
 - **0a/4 Election rollover** — the missing clock. `backend/app/rollover.py`: phase 1→2 on each cause's vote day (winner = vote/EBX-weighted tally of ballots cast on/before the day), 2→3 on the org vote day (election + 8 weeks; Mission row created), 3→resolved at +33 weeks. Idempotent; wired into `GET /initiatives` (throttled 10 min) so a long-running server shifts without restart. Frontend twin `EBX.LocalElections` (ebx_shared.ts) finalizes LOCAL-only slates (Jax's CAFO vote never reached the DB): every saved share-slate gets an epoch (its decision date); once passed, the slate is tallied, archived to `ebx_local_elections`, shares+commit CLEARED (votes reset), and `applyOverrides()` promotes the winner to org_vote in-memory so rhs cards / recap / annulus / top card all shift. Phase-1 recap reads the archived record for "My vote".
