@@ -2033,6 +2033,23 @@
       const sliderMode = voteCount >= 2;
       const over       = sumShares > 1.0001;
 
+      // NOW #2 (pass 39): reflect the benefactor's OWN committed EBX in the
+      // phase-1 leaderboard immediately. Committed EBX is split across the
+      // voted initiatives by share. The portion already pushed to the backend
+      // (committed.synced[id]) is subtracted so we never double-count what the
+      // server-side ebx_committed aggregate (GET /initiatives) already returns
+      // — signed-out commits show locally; signed-in commits show via the
+      // backend total without inflation.
+      const _myEbxCommit   = committed && committed.ebx ? Number(committed.ebx) : 0;
+      const _commitShares  = (committed && committed.shares) || shares || {};
+      const _commitSynced  = (committed && committed.synced) || {};
+      const _localEbxFor   = (id) => {
+        const sh = Number(_commitShares[id] || 0);
+        if (sh <= 0 || _myEbxCommit <= 0) return 0;
+        return Math.max(0, Math.round(_myEbxCommit * sh) - Number(_commitSynced[id] || 0));
+      };
+      const _ebxOf = (i) => (i.ebx_committed || 0) + _localEbxFor(i.id);
+
       const rowFor = (init) => {
         const ebx        = init.ebx_committed || 0;
         const share      = Number(shares[init.id] || 0);
@@ -2111,7 +2128,7 @@
       // and the display area's vote button — not as idle slider rows.
       const _phase1 = inits
         .filter(i => !i.status || ['suggested','debate'].includes(i.status))
-        .sort((a, b) => (b.ebx_committed||0) - (a.ebx_committed||0));
+        .sort((a, b) => _ebxOf(b) - _ebxOf(a));
       const _myVotedIds = new Set(Object.keys(shares).filter(k => (Number(shares[k])||0) > 0));
       const _visibleInits = _phase1.filter(i =>
         _myVotedIds.has(i.id) || i.id === window._p1SelectedId);
@@ -2142,7 +2159,7 @@
 
       // build-seq 2 (pass 35): STRUCTURE Phase-1 layout.
       window._p1CauseId = cause.id;
-      const _basePool = _phase1.reduce((t, i) => t + (i.ebx_committed || 0), 0);
+      const _basePool = _phase1.reduce((t, i) => t + _ebxOf(i), 0);
       const _myCommitEbx = committed && committed.ebx ? Number(committed.ebx) : 0;
       // Leaders box — top 3 by committed EBX (vote tallies backfill the rows below).
       const _leadersHtml = _phase1.slice(0, 3).map((i, idx) => `
@@ -2150,7 +2167,7 @@
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
             ${idx + 1}. ${i.emoji || '🌱'} ${i.title}</span>
           <span style="opacity:0.6;font-family:var(--font-mono);font-size:0.66rem;">
-            ${(i.ebx_committed || 0).toLocaleString()}</span>
+            ${_ebxOf(i).toLocaleString()}</span>
         </div>`).join('') || '<div style="font-size:0.74rem;opacity:0.5;">No proposals yet.</div>';
       // My-votes box — the local share slate.
       const _myIds = Object.keys(shares).filter(k => (Number(shares[k]) || 0) > 0)
@@ -2176,7 +2193,7 @@
           <div style="font-size:0.78rem;opacity:0.75;line-height:1.45;margin-top:4px;">
             ${_disp.description || 'No description provided yet.'}</div>
           <div style="font-family:var(--font-mono);font-size:0.66rem;opacity:0.6;margin-top:6px;">
-            ${(_disp.ebx_committed || 0).toLocaleString()} EBX committed
+            ${_ebxOf(_disp).toLocaleString()} EBX committed
             ${shares[_disp.id] ? ' · your share ' + Number(shares[_disp.id]).toFixed(1) : ''}
           </div>
           ${!shares[_disp.id] ? `<button class="election-card__commit-btn"
@@ -2206,7 +2223,7 @@
                 ${_myVotesHtml}
               </div>
               <div style="display:flex;gap:8px;margin-top:var(--sp-sm);">
-                <div class="p1-chip">Pool size<b>${(_basePool + _myCommitEbx).toLocaleString()} EBX</b></div>
+                <div class="p1-chip">Pool size<b>${_basePool.toLocaleString()} EBX</b></div>
                 <div class="p1-chip">My commit<b>${_myCommitEbx.toLocaleString()} EBX</b></div>
               </div>
             </div>
@@ -2344,9 +2361,40 @@
       let ebx = 0;
       const ebxInput = document.getElementById('cause-ebx-input');
       if (ebxInput) ebx = Math.max(0, Math.round(Number(ebxInput.value) || 0));
-      saveCommitted(causeId, { shares: { ...shares }, at: Date.now(), ebx });
-      // build-seq 3 — lock against the server too. Best-effort; UI updates
-      // either way so a sign-out user still sees ✓ Committed locally.
+      // NOW #2 (pass 39): PERSIST committed EBX to the backend, split across
+      // the voted initiatives by share. Each contribution increments the
+      // server-side ebx_committed so the phase-1 leaderboards register it AND
+      // it becomes visible from every other account (GET /initiatives is the
+      // shared aggregate). We POST only the positive delta vs. what we already
+      // synced (committed.synced), so repeated "Update commitment" clicks do
+      // not double-count; reductions are left server-side for now (simulated
+      // pilot money — commit_ebx only adds).
+      const prev   = loadCommitted(causeId) || {};
+      const synced = Object.assign({}, prev.synced || {});
+      const loggedIn = !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
+      if (loggedIn && ebx > 0) {
+        for (const id of Object.keys(shares)) {
+          const sh = Number(shares[id] || 0);
+          if (sh <= 0) continue;
+          const target = Math.round(ebx * sh);
+          const delta  = target - Number(synced[id] || 0);
+          if (delta <= 0) continue;
+          try {
+            const res = await EBX.Auth.fetchAuthed('/initiatives/' + id + '/commit', {
+              method: 'POST',
+              body: JSON.stringify({ initiative_id: id, amount_ebx: delta }),
+            });
+            if (res && res.ok) {
+              synced[id] = target;
+              const ci = (EBX.config.initiatives || []).find(x => x.id === id);
+              if (ci) ci.ebx_committed = (ci.ebx_committed || 0) + delta;
+            }
+          } catch (e) { /* keep local-only; synced unchanged so we retry later */ }
+        }
+      }
+      saveCommitted(causeId, { shares: { ...shares }, at: Date.now(), ebx, synced });
+      // build-seq 3 — lock the soft shares against the server too. Best-effort;
+      // UI updates either way so a signed-out user still sees ✓ Committed locally.
       try { await commitCauseVote(causeId); } catch (e) {}
       const status = document.getElementById('vote-status');
       const btn = document.getElementById('vote-commit-btn');
@@ -2355,12 +2403,48 @@
         status.textContent = '✓ Committed just now';
       }
       if (btn) btn.textContent = 'Update commitment';
+      // Re-render so the Leaders box + pool reflect the new ebx_committed.
+      try {
+        const _c = (EBX.config.causes || []).find(c => c.id === causeId);
+        if (_c) _rerenderElectionCard(_c);
+      } catch (e) {}
       // Refresh the running tally so the widget reflects the new commitment.
       try { syncCauseTally(causeId); } catch (e) {}
       // Reflect the new EBX weight in the pie + leading cards.
       try { refreshCauseRace(); } catch (e) {}
     }
     window.commitVote = commitVote;
+
+    // NOW #2 (pass 39): commit EBX directly to one initiative from the table's
+    // selected-initiative panel. Previously referenced by the panel button but
+    // never defined (clicking threw ReferenceError). POSTs to the same backend
+    // endpoint as the phase-1 widget so the contribution lands in the shared
+    // ebx_committed aggregate.
+    async function commitEbxToInit(initId) {
+      const init = (EBX.config.initiatives || []).find(i => i.id === initId);
+      const loggedIn = !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
+      if (!loggedIn) { alert('Sign in to commit EBX and cast your vote.'); return; }
+      const amtStr = prompt('Commit how many EBX to "' + (init ? init.title : initId) +
+                            '"?\n(simulated pilot money)', '10');
+      if (amtStr == null) return;
+      const amt = Math.max(0, Math.round(Number(amtStr) || 0));
+      if (amt <= 0) return;
+      try {
+        const res = await EBX.Auth.fetchAuthed('/initiatives/' + initId + '/commit', {
+          method: 'POST',
+          body: JSON.stringify({ initiative_id: initId, amount_ebx: amt }),
+        });
+        if (res && res.ok) {
+          if (init) init.ebx_committed = (init.ebx_committed || 0) + amt;
+          try { renderTable(filteredInits()); } catch (e) {}
+          try { if (init) showSelectedPanel(init); } catch (e) {}
+          try { refreshCauseRace(); } catch (e) {}
+        } else {
+          alert('Commit failed' + (res ? ' (' + res.status + ')' : '') + '.');
+        }
+      } catch (e) { alert('Commit failed: ' + e); }
+    }
+    window.commitEbxToInit = commitEbxToInit;
 
     function withdrawVote(causeId) {
       saveShares(causeId, {});

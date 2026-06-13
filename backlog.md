@@ -1,5 +1,24 @@
 # Backlog
 
+## Automated build run — 2026-06-13 (pass 39)
+
+Shipped INSTRUCTIONS NOW **#2 (vote counting)**. Symptom: phase-1 leaderboards showed 0 committed EBX and votes cast on one account were invisible from another. Root cause was NOT the backend — `POST /initiatives/{id}/commit` already creates a `Contribution` and increments `ebx_committed`, and I proved it end-to-end (two accounts → aggregate moves, public GET reflects it). The gap was the frontend: `cause.html`'s `commitVote` captured the EBX amount but only saved it to localStorage; it never called the endpoint, so the shared server aggregate stayed 0.
+
+Changes (all in `cause.html`, safe-spliced):
+1. **`commitVote` now persists.** On commit (when signed in), it splits the committed EBX across the voted initiatives by share and POSTs each slice to `/initiatives/{id}/commit`. Repeated "Update commitment" clicks only send the positive delta vs. an in-payload `synced` map, so nothing double-counts. Reductions are left server-side for now (commit_ebx only adds — simulated pilot money; flagged).
+2. **Immediate local leaderboard attribution.** A new `_ebxOf(i)` adds the benefactor's own un-synced committed EBX (ebx×share, minus already-synced) on top of the backend `ebx_committed`, so the Leaders box / display area / pool reflect a commit instantly — even signed out — without inflating once the backend total catches up.
+3. **Defined `commitEbxToInit`.** The table's selected-initiative panel had an `onclick="commitEbxToInit(...)"` button that was never defined (threw ReferenceError). It now prompts for an amount and POSTs to the same endpoint.
+
+Verification: `node --check` on the written 109 KB script block (OK); a pure-function sim of the delta-guard + attribution (no double-count across commit/re-commit/update/signed-out); and a TestClient run against a DB **copy** (`/tmp/ebx_test.db`, pilot DB untouched) confirming a 100-EBX 0.6/0.4 split lands 60/40 and is visible from a second account.
+
+Notes / decisions for Jax:
+- **Cross-account visibility** falls out of (1): `ebx_committed` is the shared aggregate returned by `GET /initiatives`, so once a contribution is written every account sees it. No per-account leakage — contributions are keyed by `benefactor_id`; only the aggregate is shared (by design).
+- **Backend env in the sandbox:** the host-made `backend/.venv` has broken script shebangs; drive it via `.venv/bin/python -m pip` / `-m alembic` / `-m uvicorn`. Had to (re)install `passlib[bcrypt]`, `python-jose`, `python-multipart`, `email-validator`, `pydantic-settings`, `httpx`. Migrations are at head (`e8c5d2a7b491`). DB backup saved to `/tmp` before any test.
+- **Stray file:** `cause.html.stage` (my splice scratch) couldn't be deleted from the sandbox (same mount unlink restriction as the locks) — it's untracked and NOT committed; please delete it host-side.
+- **Index lock:** resolved — you removed the locks and git works again; this pass committed normally.
+- **Still open in NOW:** #1 (phase shift/rollover UI + the phase-2-card mutation bug), #4 (per-account wallet refinement), #5 (simulated past dates refinement).
+
+
 ## Automated build run — 2026-06-13 (pass 38)
 
 Shipped INSTRUCTIONS NOW **#3 (recap date bug)** + the display half of **#5 (mission start date)**. Root cause: three spots in `cause.html` rendered a mission's `election_open` (the day the debate window opened = vote day − 7d) where the canonical value is `election_close` (the actual election/vote day = mission start = first day of the cause's active window). `missionPhaseDates`' own docstring says its argument is "the election date = mission start date = the day its initiative was elected" — i.e. `election_close`, but cause.html was feeding it `election_open`.
