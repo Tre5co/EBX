@@ -1,5 +1,23 @@
 # Backlog
 
+## Automated build run — 2026-06-13 (pass 38)
+
+Shipped INSTRUCTIONS NOW **#3 (recap date bug)** + the display half of **#5 (mission start date)**. Root cause: three spots in `cause.html` rendered a mission's `election_open` (the day the debate window opened = vote day − 7d) where the canonical value is `election_close` (the actual election/vote day = mission start = first day of the cause's active window). `missionPhaseDates`' own docstring says its argument is "the election date = mission start date = the day its initiative was elected" — i.e. `election_close`, but cause.html was feeding it `election_open`.
+
+Fixes (all `election_open` → `election_close || election_open` fallback, so nothing breaks if a row lacks the close stamp):
+1. **Phase-date anchor** (cause.html ~1335-1336) — `missionPhaseDates(...)` now anchored on `election_close`, so derived phase-2/3/4 boundaries land on the right week.
+2. **Phase-1 recap "Voting closed — elected {when}"** (~1678) — the headline bug; now reads `election_close`.
+3. **Mission-header "started {date}"** (~2843) — start date = election day per STRUCTURE/INSTRUCTIONS #5.
+
+Verified by simulation against the seed's `cause_vote_day` grid (now=2026-06-13): displayed dates move from the wrong `election_open` values to the correct `election_close` ones, matching INSTRUCTIONS exactly — Land Jun 4→**Jun 11**, Oceans May 28→**Jun 4**, Atmosphere May 21→**May 28**. Forests (future live election Jun 18) renders via the live/`nextDecisionDate` path, not the recap path, so it was already correct and is untouched — consistent with INSTRUCTIONS' "Forests is correct" note.
+
+Notes / decisions:
+- **No rebuild needed.** The bug was inline in `cause.html`; `ebx_shared.ts`→`.js` was already correct (the function expected `election_close`). cause.html only changed which argument it passes.
+- **Edit method:** Python splice via `scripts/safe_write.py` with `assert count==1` per anchor + `</html>` tail check + line-count invariant + byte read-back verify. Mount HARD RULE honored, no Edit-tool writes to the 147 KB file.
+- **NOW #5 caveat:** only the *display* of start date was wrong-path here; the underlying seed dates were already correct (pass 36/37). The "shipped, refine" data-side of #5 still stands.
+- **Blocker carried over:** `.git/index.lock` is still a stale, unremovable lock on the mount (host-side). `git status` shows phantom staged changes; worktree == HEAD verified by md5 against `git cat-file`. Committed this pass via the detached-index workaround (see README §3). Jax: please delete `.git/index.lock` so normal git resumes.
+
+
 ## Automated build run — 2026-06-12 (pass 37, audit-only)
 
 Scheduled task asked for an item reconciliation, not a build: ~20 STRUCTURE.md items audited against live code — 13 to resolve ✅, 3 stale-text updates, 2 relocations, 2 new items (org-vote reset on election close; real tally → causeOrgShares). Full list in README §1 (Pass 37). STRUCTURE.md deliberately untouched per task. No code edits; NUL/tail sweep clean. Notable for Jax: the `vvv` colorization flag exists in the DB model but nothing renders it — that's the biggest "looks done in STRUCTURE-adjacent notes but isn't" gap found.

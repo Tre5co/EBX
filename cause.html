@@ -1332,8 +1332,8 @@
       // anchor via EBX.Cycle.missionPhaseDates — not the cause's CURRENT decision
       // date. Falls back to the live cause cadence (+7w/+14w) when unselected.
       let _pd = null;
-      if (opts.missionRef && opts.missionRef.election_open && EBX.Cycle.missionPhaseDates) {
-        try { _pd = EBX.Cycle.missionPhaseDates(opts.missionRef.election_open); } catch(e) { _pd = null; }
+      if (opts.missionRef && (opts.missionRef.election_close || opts.missionRef.election_open) && EBX.Cycle.missionPhaseDates) {
+        try { _pd = EBX.Cycle.missionPhaseDates(opts.missionRef.election_close || opts.missionRef.election_open); } catch(e) { _pd = null; }
       }
       const orgVoteDate = _pd ? _pd.phase2_start : new Date(decisionDate.getTime() + 7*WEEK_MS);
       const releaseDate = _pd ? _pd.phase3_start : new Date(decisionDate.getTime() + 14*WEEK_MS);
@@ -1675,7 +1675,7 @@
     function renderPhase1Recap(block, cause, missionRef) {
       if (!block) return;
       const title = missionRef.emoji ? (missionRef.emoji + ' ' + missionRef.title) : missionRef.title;
-      const when  = missionRef.election_open ? fmtDate(new Date(missionRef.election_open)) : '—';
+      const when  = (missionRef.election_close || missionRef.election_open) ? fmtDate(new Date(missionRef.election_close || missionRef.election_open)) : '—';
       const poolN = missionRef.ebx_committed || missionRef.pool_value || 0;
       const poolS = poolN ? (poolN.toLocaleString() + ' EBX in pool') : '';
 
@@ -2840,7 +2840,7 @@
         }
       }
 
-      const startDate = (init && init.election_open) ? fmtDate(new Date(init.election_open)) : null;
+      const startDate = (init && (init.election_close || init.election_open)) ? fmtDate(new Date(init.election_close || init.election_open)) : null;
       const orgName = missionRef && missionRef.winning_org ? missionRef.winning_org : null;
       // Brief header content: mission title (+ org) when a mission is targeted,
       // else the cause name + cycle number. Phase chip + start date are secondary.

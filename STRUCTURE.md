@@ -27,65 +27,67 @@ Vote occurs on the final day of its causes active period
 - [ ] **Profile page** Settings/Profile page for anybody on app (Benefactor/Organization/Admin)
     - [ ] **Benefactor Profile**
         - [ ] **Design**
-        ______________________________________________________
-        | _____________                         ____  _______ |
-        ||CreditCoin   |                       | b  ||       ||
-        ||<   Wallet  >|                __     |____||   a   ||
-        ||_____________|           '           `     |_______||
-        ||choices   |          '                  `     | c  ||
-        || table    |                                   |____||
-        ||          |    /                             \      |
-        ||          |            Annulus 3                    |
-        ||          |   |         front/back toggle     |     |
-        ||          |                                         |
-        ||__________|    \                             /      |
-        |                                                     |
-        |                     .                     ,
-        |                               __
-
+            ______________________________________________________
+            | _____________                         ____  _______ |
+            ||CreditCoin   |                       | b  ||       ||
+            ||<   Wallet  >|                __     |____||   a   ||
+            ||_____________|           '           `     |_______||
+            ||choices   |          '                  `     | c  ||
+            || table    |                                   |____||
+            ||          |    /                             \      |
+            ||          |            Annulus 3                    |
+            ||          |   |         front/back toggle     |     |
+            ||          |                                         |
+            ||__________|    \                             /      |
+            |                                                     |
+            |                     .                     ,
+            |                               __
         - [ ] **Annulus 3** Specific to each benefactor
             Empty for now
-        - [ ] **Choices_Table** All upcoming decisions (14)
+        - ✅ **Choices_Table** All upcoming decisions (14)
             - ✅ **Toggle** between initiatives and orgs
-            - [ ] **Selections** All of a benefactors current votes are displayed here. Each links to its respective cause page.
-                - [ ] **For multiple tiv selections** Only show the top one for now
+            - ✅ **Selections** All of a benefactors current votes are displayed here. Each links to its respective cause page.
+                - ✅ **For multiple tiv selections** Only show the top one for now
             - [ ] **Expand** Backlog - Choices table will eventually be more in depth, similar to a stock trading interface.
         - [ ] **Top Right section**
             - [ ] **Credit Badge** a - Username and annulus
                 - [ ] **Colorization** Participating each week colorizes your credit badge for that weeks sector
                 Below a total donation threshold, a benefactor must have participated in the initiative and org vote to unlock the colored perk for that weeks sector. Add `vvv: bool` to `BenefactorAccount`, set after first vote.
                     - [ ] **Automatic coloring threshold** threshold: $10
-            - [ ] **Settings** - b
-            - [ ] **Switch to Organization mode** - c
+            - ✅ **Settings** - b
+            - ✅ **Switch to Organization mode** - c
             If a benefactor has the credit coin, they have access to org mode for that mission
             If they do not, every org page is still linked from it's cause page mission
         - [ ] **CreditCoin Wallet**
-        Contains all missions a benefactor has contributed to. Scrolls left-right
+            - [ ] **Contents**
+            Each mission will have a unique logo, which becomes the credit coin. They will link from the wallet to the Mission page. Backlogged because logos are still a concept
+            - ✅ **Design** 
+            Contains all missions a benefactor has contributed to. Scrolls left-right
     - [ ] **Organization Profile** User profile to represent a specific org.
     Auto-create an OrgAccount when a benefactor receives a credit coin, or help them create one if they're an org rep (the user automatically gets a benefactor profile too). Orgs build a mission page which continues if they win and is frozen and linked from their profile if not.
         - [ ] **Design** 
-        ______________________________________________________
-        | _____________                         ____  _______ |
-        ||Initiative   |                       | b  ||       ||
-        || Coins       |                __     |____||   a   ||
-        ||_____________|           '           `     |_______||
-        ||Tasklist  |          '                  `     | c  ||
-        ||          |                                   |____||
-        ||          |    /                             \      |
-        ||          |            Annulus 4                    |
-        ||          |   |         front/back toggle           |
-        ||          |                                         |
-        ||__________|    \                             /      |
-        |                                                     |
-        |                     .                     ,
-        |                               __
+            ______________________________________________________
+            | _____________                         ____  _______ |
+            ||Initiative   |                       | b  ||       ||
+            || Coins       |                __     |____||   a   ||
+            ||_____________|           '           `     |_______||
+            ||Tasklist  |          '                  `     | c  ||
+            ||          |                                   |____||
+            ||          |    /                             \      |
+            ||          |            Annulus 4                    |
+            ||          |   |         front/back toggle           |
+            ||          |                                         |
+            ||__________|    \                             /      |
+            |                                                     |
+            |                     .                     ,
+            |                               __
         - [ ] **Annulus 4** Almost identical to Annulus 3.
             Empty for now
         - [ ] **Top right section** 
             - [ ] **Settings** - b
             - [ ] **Switch to Benefactor mode** - c
         - [ ] **Tasklist**
-        - [ ] **Initiative coins** Every initiative that the org has ever registered for produces a coin which toggles the page.
+        - ✅ **Initiative coins** Every initiative that the org has ever registered for produces a coin which toggles the page.
         - [ ] **Memberships** Page view and permissions depend on them
         Human representative of the weekly mission - Every org account is a member...
             - [ ] **Contributor**
@@ -141,7 +143,7 @@ Vote occurs on the final day of its causes active period
             - ✅ **Location**
                 Horizontal: In between the side cards
                 Vertical: From the now marker all the way to the top of the display.
-            - [ ] **front** upcoming phase 3
+            - [ ] **back** upcoming phase 3
             ____________________________________
             |tiv_name                      date*| *Last day of current active window
             |1. org_name                  #votes|
@@ -149,7 +151,7 @@ Vote occurs on the final day of its causes active period
             |3._org_name__________________#votes|
             |My choice - choice_name     |ebx   |
             |My committment_-_x_ebx______|pool__|
-            - [ ] **back** Most recent phase 2
+            - [ ] **front** Most recent phase 2
             ____________________________________
             |tiv_name                      date*| *Last day of NEXT active window (in 7-8 weeks)
             |1. org_name                  #votes|
@@ -158,7 +160,6 @@ Vote occurs on the final day of its causes active period
             |My choice - choice_name     |ebx   |
             |My committment_-_x_ebx______|pool__|
     - [ ] **Table** - 2 states
-        - [ ] **Description** "Click on a row to interact"
         - ✅ **rows** Each row selects a different entity card.
         - [ ] **State 1 - Initiative Table** leading proposed initiatives
         Table only displays phase 1 tivs.
@@ -185,8 +186,6 @@ Vote occurs on the final day of its causes active period
             search   -   filters      -       Nominate an Organization
             Watch | Name | website_link | status | my ebx committed | total ebx committed | ring-mini
             - [ ] **Column details** More to come.
-        - [ ] **Entity toggle** There will be a front and back of the entity card (below)
-        Currently says selected and news. Switch to just front and back for now and move the toggle inside the card.
     - [ ] **Entity Card** - Entity = tiv or org. Defaults to the leading upcoming initiative/the leading organization
         - [ ] **Front and back** Replaces News/selected. For now we'll only be working on front. 
         - ✅ **Location** Fill area below table
@@ -274,8 +273,21 @@ Vote occurs on the final day of its causes active period
         Once the mission begins, all committed money is locked. Organization learns how they can earn the full pool. 
             - [ ] **Pre** Display 1-line "This phase is not yet active"
             - [ ] **when active**
-            benefactors and organization build an action plan
-            Ring-mini | Initiative | Organization | Your earthbucks | release date | credit | your intentions
+            ________________________________________________________________
+            |           |   Phase 3 Info                      |             |             
+            |           |                                     |
+            |           |                                     |
+            |           |_____________________________________|                 
+            |       \                 _________                   /
+            |           \           /             \            /     
+            |               \                               /         
+            |                 \ /                     \ /            
+            |         in       |      Annulus4         |     out   
+            |                  |                       |             
+            |                  / \                     / \            
+            |              /                                \        
+            |           /           \  __________  /            \
+            |      /                                                \
             - [ ] **Recap**
         - [ ] **Phase 4** Evaluation phase
         After phase 3, 1/16 of the credits are released to the benefactors who provided the best contributions, and for the weeks after that, the money is released to a combination of the organizaion and the benefactors. 
@@ -315,4 +327,19 @@ Note that this whole page is backlogged until after completion of phases 1 & 2.
                 - [ ] **1/16 to evaluation**  
                 Included in Earthbux 5/16.
                 - [ ] **1/4 to our side of the mission**
-                We will create a budg
+                We will create a budget.
+        - [ ] **Badge**
+        Users possessing the credit have it displayed on their profile. It is the ring-mini for that mission annulus.
+            - [ ] **Coin visual** Coins are mini cause annuli their mission-specific cause solely highlighted  The coin can be expanded to show details like "Pool for this mission", "Value donated", Transaction history for this mission from m_indx
+
+## STRUCTURE MISC.
+    - [ ] **Verification & perks**
+        - [ ] **Discounts** EBX is discounted in certain cases
+            - Benefactor committed to the winning initiative early
+            - Benefactor committed to the winning organization early
+            - Benefactor has achieved "Helpful" status on mission
+            - Benefactor is willing to commit to a higher percentage being sent to the pool
+        - [ ] **Post rewards** Benefactors are awarded ebx if they contributed the most helpful post.
+        - [ ] **Post visibility**
+        Larger donations can unlock more visibility for your posts.
+        - [ ] **Founding 49-EBX bonus.** First 100 BenefactorAccount signups should receive 49 EBX automatically. Implementation: all id numbers below 100 get bonus.

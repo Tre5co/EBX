@@ -1,111 +1,82 @@
 # Earthbucks — README
 
-Earthbux is a weekly charity pool elected by our community. Earthbux News covers, supervises, and helps organize the missions.
+Earthbux is a weekly charity pool elected by our community; a new mission for one of the 7 causes (Atmosphere · Oceans · Land · Forests · Wildlife · Human Rights · Human Progress) begins each week and runs through 5 phases (initiative vote → org vote → budget → credit release → resolution). **Earthbux News (EN)** covers, supervises, and helps organize the missions, funded by a cut of the pool.
 
-- **STRUCTURE.md** — design intent (the model of the platform).
-- **INSTRUCTIONS.md** — per-pass driver: BUILD SEQUENCE, ROADBLOCKS (Jax's responses), and BACKLOG (ordered least → most intensive).
-- **backlog.md** — Claude's working memory.
+**Doc map**
+- **STRUCTURE.md** — the design model (what we're building, page by page).
+- **INSTRUCTIONS.md** — Jax's per-pass driver: BUILD SEQUENCE, ROADBLOCKS, BACKLOG.
+- **README.md** (this file) — current state + the refined, ordered build plan.
+- **backlog.md** — Claude's working memory (per-pass change log).
+- **docs/posts.md** — post-category design (Context/Analysis/Case/Evaluation).
 
 ---
 
 ## 1. Current state
 
-**Pass 37 (Jun 12, automated) — STRUCTURE.md audit.** Per the scheduled task, STRUCTURE items were reconciled against the live code (each verified by inspection, not just pass notes). STRUCTURE.md itself untouched — apply these edits when convenient:
+**Stack.** FastAPI + SQLite backend (Alembic head `e8c5d2a7b491`, applied); static front end — `index.html` (home), `cause.html` (mission/phase view), `profile.html` (benefactor + org modes), plus `about.html`, `mission.html`. Shared logic compiles `frontend/src/ebx_shared.ts` → `resources/js/ebx_shared.js` (a `.ts` edit ships nothing until rebuilt). Pilot runs on cofounder accounts with simulated money.
 
-**Resolve — mark ✅ (verified implemented):**
-1. Profile › Choices_Table › **Selections** — rows render all current votes and link to their cause pages (profile.html:1269+).
-2. Profile › Choices_Table › **For multiple tiv selections** — top share only (profile.html:1269–1292).
-3. Profile › **CreditCoin Wallet** — h-scroll coin strip live (profile.html:713, 1253).
-4. Profile › Top Right › **Switch to Organization mode (c)** — in-place org mode, credit-coin gated (profile.html:1238, 1334).
-5. Org Profile › **Design** + **Tasklist** + **Initiative coins** — all rendering; Annulus 4 placeholder per "empty for now" (profile.html:1358–1400).
-6. Profile › Top Right › **Settings (b)** — gear wired to a working modal (profile.html:1441, 1539). (Child item "Settings window scope elaboration" stays open.)
-7. Home › Election Cards › **front** + **back** + **Side cards** — 2-sided since pass 33; pool split + date semantics per STRUCTURE.
-8. Home › Top card › **front** + **back** — two org-elections via EBX.topCard, faces swapped pass 36 (index.html:735, 807). ("Glowy" child stays open — no glow class on the top card yet.)
-9. Home › Table › **watch** — watch/bookmark buttons live (index.html:339–347, 576).
-10. Cause › Phase 1 › **when Active** + **When Recap** — STRUCTURE layout shipped pass 35.
-11. Cause › Phase 2 › **When Active** (org voting w/ buy-votes, cause.html:1453, 1577) + **When Recap** — shipped pass 35.
-12. Cause › **Annulus 2 › Inner** + **Outer** — pass-35 redo: 7-sector outer + phase-toggling inner pie.
-13. Cause › **Left Cards › Pagination + Links** and **Right cards › Top/Middle/Bottom/Subsequent pages** — paged 3/page, chronological, home-page links (pass 34).
+**Working.** Home annulus + page-mode toggle + 2-sided election cards + table swap; cause-page 7-tab view with phase-1 election widget, propose + org-reg modals, annulus-2 wheel, phase-2 org voting and recap; per-benefactor server data (`Vote`/`Contribution` keyed by `benefactor_id`); per-account localStorage stores via `EBX.Accounts`; an election clock (`backend/app/rollover.py` + frontend `EBX.LocalElections`); pilot seed (`backend/seed/pilot.py`) with unique past election dates per cause.
 
-**Update — item text is stale:**
-14. Home › Table › **Description** — drawing says "Click on a row to interact"; shipped copy is "Select an initiative/organization to learn more" (index.html:543). Pick one.
-15. Home › **Entity toggle** — STRUCTURE says rename Selected/News → front/back; pass 35 (per INSTRUCTIONS build-seq 1) made it Overview/Discussion instead. STRUCTURE should adopt Overview/Discussion.
-16. Profile › Credit Badge › **Colorization** — backend half exists (`vvv` on BenefactorAccount, models.py:130); the frontend badge-coloring perk is NOT built. Suggest splitting the item: ✅ flag, [ ] perk render + $10 threshold.
-
-**Relocate:**
-17. Cause › Active missions bar › **Add start dates** — start date now shows in the mission header (cause.html:2854) but not on the 7 squares; suggest moving this under "mission story › Header row" as done, or keeping a small bar-chip item in BACKLOG.
-18. Credit page subtree — STRUCTURE already notes it's backlogged until phases 1–2 are done; suggest relocating "Mission credit parameters" and "Exchange/Transactional logic" into INSTRUCTIONS BACKLOG so STRUCTURE keeps only the model.
-
-**Create — gaps found during audit (new items, suggested under Phase 2 / Annulus 2):**
-19. **Org-vote store reset** when an org election closes (phase-2 twin of the pass-36 vote reset; backlog.md pass-36 #6).
-20. **Real org tally into `causeOrgShares`** — wire `GET /initiatives/{id}/vote/tally` so Annulus 2 / phase-2 leaders drop the synthetic shares.
-
-No code changed this pass; repo NUL/tail sweep clean (index/cause/profile all end `</html>`).
-
-
-**Pass 36 (Jun 11, automated)** shipped build-seq 0a/1–6 + a database rescue:
-- **DB RESCUE.** `backend/earthbucks.db` was found corrupted — the sqlite header said 44 pages but the file held 40 (the mount-truncation plague hit a binary). Rebuilt: fresh schema via `alembic upgrade head`, then every salvageable row copied over. **Recovered intact: all 4 benefactor accounts, 55 initiatives, 21 votes, 33 contributions, 15 missions, 35 orgs, the org registration.** Lost (their pages were the truncated tail): the 15 `posts` rows and `credit_coins`. The corrupt original is preserved at `backend/earthbucks.corrupt-pass36.db`.
-- **0a/4 Election rollover** — the missing clock. `backend/app/rollover.py`: phase 1→2 on each cause's vote day (winner = vote/EBX-weighted tally of ballots cast on/before the day), 2→3 on the org vote day (election + 8 weeks; Mission row created), 3→resolved at +33 weeks. Idempotent; wired into `GET /initiatives` (throttled 10 min) so a long-running server shifts without restart. Frontend twin `EBX.LocalElections` (ebx_shared.ts) finalizes LOCAL-only slates (Jax's CAFO vote never reached the DB): every saved share-slate gets an epoch (its decision date); once passed, the slate is tallied, archived to `ebx_local_elections`, shares+commit CLEARED (votes reset), and `applyOverrides()` promotes the winner to org_vote in-memory so rhs cards / recap / annulus / top card all shift. Phase-1 recap reads the archived record for "My vote".
-- **1 Top-card faces swapped** (index.html): tiv mode now leads with the just-elected mission's org race ('front'), org mode shows the window-closing org vote on the reverse; header labels follow.
-- **2 Per-account wallets/votes** — `EBX.Accounts`: all demo localStorage keys (vote shares, commits, org votes, regs, tasks, posts, profile, watchlist…) are stashed/restored per handle on login/logout, switched inside `loadAll()` before any page reads. First run claims existing data for the currently-signed-in account. Server data was already per-benefactor (`Vote`/`Contribution` keyed by benefactor_id) — the shared localStorage was the offender.
-- **3 Unique pilot election dates** (seed/pilot.py): each pilot mission's election now sits on its own cause's REAL vote-day grid (`CYCLE_START + 7d*(cause_index+7k)`): 1003 = most recent strictly-past vote day (org_vote), 1002 = −2 rotations (active), 1001 = −5 rotations (resolved). Mission `started_at` re-synced. Verified: Lnd-1003 Apr 23, Oce-1003 Jun 4 — matches the frontend grid.
-- **5 Phase-2 orgs unwired**: seed re-run cleared `winning_org_id` AND the GameMaster org-vote rows on all seven 1003s — org races are genuinely open until their org vote day.
-- **6 Vote rows trimmed** (cause.html): the phase-1 vote/slider list shows ONLY the benefactor's voted initiatives + the currently-selected one; others are reachable via Leaders box / search / display area. Empty state hints accordingly.
-- **Seed + migration RAN this pass** (pip works in the sandbox now — sqlalchemy/alembic/fastapi installed). API smoke-tested on :8077: GET /initiatives 200 with rollover wired, all 1003s org_vote with no winner.
-
-**Pass 35 (Jun 10, automated)** shipped build-seq 0–6:
-- **0a vote-share fix** (cause.html): stored shares referencing tivs that left the phase-1 election (org_vote/active/resolved) made visible shares sum <1 for causes with a resolved election. `pruneShares` drops stale ids on widget render and `renormalizeShares` (0.1 snap, drift→largest) restores the slate to 1.0; `withdrawSingleVote` now renormalizes; `addVoteFor` capped at 10 splits (an 11th 0.1-floor split would exceed 1).
-- **1 Overview/Discussion** (index.html): Selected/News tabs → Overview/Discussion. Discussion = board with compose (categories per docs/posts.md — tiv mode: Case/Context/Analysis; org mode: Evaluation/Context/Analysis), POST /posts best-effort with `ebx_local_posts` fallback merged into the feed. Tiv discussions filter by cause, org discussions by initiative (the org table's filter).
-- **2 Phase-1 redesign** (cause.html): STRUCTURE layout — left col Leaders + My-votes boxes + Pool-size/My-commit chips; right col Discussion (3 featured categories with helpful/neutral/wrong votes — local `ebx_post_votes` until POST /posts/{id}/vote ships — and inline compose) + initiative search (in-place filter, empty state + clear button); display area = selected tiv (default my top vote, else leader); footer View-initiatives/Commit-EBX. Recap face = Winner/2nd/3rd + My vote + chips left; most-helpful Case + winner description + disabled "See election details ▾" right. Home-page "Re-balance"/"Split your vote" links now carry `&add=<initId>`; cause.html runs `addVoteFor` on arrival (same effect as '+ Add').
-- **3 Annulus 2 REDO** (cause.html): outer ring restored to the pre-pass-34 7-sector wheel with the selected cause's sector highlighted; inner pie toggles with the SELECTED mission's phase — phase 2 → orgs with votes (`causeOrgShares`: synthetic shares + my local org votes folded in), phase 1 → initiatives. `setSelectedMission` now fans out to `renderAnnulus`.
-- **4 Org voting** (cause.html phase-2 area): org rows with vote buttons (1 vote 1 org), buy-additional-votes at 10×2^(n-1) EBX (autonomous pricing, see backlog), withdraw; POST /initiatives/{tiv}/vote when signed in, localStorage otherwise. `ebx_org_votes` is now object-shaped `{org_id, tiv_id, votes, at}` — index.html, profile.html and ebx_shared.ts readers normalize both shapes; index.html `_saveOrgVote` writes the new shape.
-- **5 Org profile mode** (profile.html): the (c) switch re-renders profile.html in place — Initiative Coins (from `ebx_org_regs` + org-vote tiv links), Tasklist (5 starter tasks, checkboxes persisted in `ebx_org_tasks`), Annulus 4 placeholder, Switch-to-Benefactor — no more navigation to mission.html.
-- **6 Pilot org links** (seed/pilot.py + ebx_shared.ts + cause.html): past-phase-2 pilot tivs keep/backfill `winning_org_id`; not-yet-decided tivs get it cleared (org_vote = race still open). `loadAll` resolves `winning_org` names from ids. Phase-2 RECAP completed per STRUCTURE: winner + runner-ups, my vote with 100%/20% outcome line, pool/commit chips, most-helpful Evaluation, winning-org statement. **Re-run the seed to apply the backfill.**
-
-**backend** (FastAPI · SQLite)
-- Alembic head `e8c5d2a7b491` — APPLIED (pass 36 rebuilt the DB at head; no pending migration).
-- `app/rollover.py` (pass 36) — election clock: `run_rollover` / throttled `maybe_rollover` from `GET /initiatives`. Phase-1 tally = committed EBX + per-ballot `max(share, contribution*share)`, ballots cast on/before the vote day only (seed EBX alone never triggers an election).
-- `routers/organizations.py` — `GET/POST /organizations/registrations` (declared before `/{org_id}`). POST requires auth; `kind=registration` additionally requires member name + position; both kinds require ≥1 `initiative_ids`.
-- `routers/votes.py` — `PUT /benefactors/me/votes`, `GET /causes/{id}/votes`, `POST /votes/commit`.
-- `routers/posts.py` — `GET/POST /posts` only. **No `POST /posts/{id}/vote` yet.**
-- `routers/initiatives.py` — `POST /initiatives/{id}/rate` (to be removed with `InitiativeRating`); `POST /initiatives/{id}/vote` + `GET /initiatives/{id}/vote/tally` (hard org-election vote — now driven by the pass-35 phase-2 widget).
-- `backend/seed/pilot.py` — GameMaster + 21 initiatives + 21 orgs + mission rows. Idempotent. Pass 35: winning_org_id only on past-phase-2 tivs (backfills/clears existing rows).
-
-**index.html** — hero, annulus, page-mode toggle, 2-sided side cards, table swap, entity card, modals. Pass 35: Overview/Discussion toggle (see above). Pass 34 (Jun 10): `?init=<id>` deep link selects + scrolls to an initiative's entry (target of cause-page left-card links). Pass 33 (Jun 10) shipped build-seq 1–3: electionCardFace 2-row My-choice/My-commitment footer + 2-line header spill (no "org race" suffix); tiv face date = first day of upcoming active window, org face date = last day (+1wk); pool split — tiv card = phase-1 pool only, org card = mission phase-1 carry-over + phase-2 commits (`ebx_org_committed` store, commit control now kind-aware); top card = TWO org-elections via shared `EBX.topCard(active, face)` (glowing, electionCardFace format; old 2-column body + local `topCardBack` deleted); filters = cause-only (tiv) / initiative-only (org, **proxy: org.causes ∋ init.cause_index until a real registration table lands — honors `org.initiative_ids` when the API grows one**); Phase column dropped (table lists phase-1 tivs only); org table Cause column → Initiative; hint text = "Select an initiative/organization to learn more"; card-click filters the table (3d).
-
-**cause.html** — 7 cause tabs, annulus + now-marker, phase-1 election widget, propose + org-reg modals, paged left/right cards. Pass 35: share-store prune/renormalize, STRUCTURE phase-1 layout + recap, Annulus-2 redo, phase-2 org voting + completed recap (see above). Pass 34 (Jun 10) shipped build-seq 2–5: org register/nominate modal wired into the phase-2 recap when a tiv is in `org_vote` (POST when authed, `ebx_org_regs` localStorage fallback); annulus filtered to `electionInits` (current phase-1 only — past elections' tivs no longer pollute pie or `voteShare`); left cards page through ALL voted current-election tivs 3/page with "Home page entry →" links; right cards = chronological missions only (`org_vote`→`active`→`resolved`, 3/page, page count = ceil(missions/3) — phantom phase-2 cards on p2+ eliminated). Pass 33: Phase-1 recap "My vote" block. Election dates verified: Oceans Jun 4, Land Jun 11.
-
-**profile.html** — Pass 35 (build-seq 5): in-place org mode (see above); `ebx_org_votes` object shape accepted in the choices table. Pass 34 (build-seq 1) rebuilt to the STRUCTURE drawing: left = CreditCoin Wallet (h-scroll coin strip from tiv+org commits) + choices table (tiv/org toggle; multi-tiv split shows top share only; rows link to cause pages); center = Annulus 3 placeholder w/ front-back toggle (empty per STRUCTURE); right = credit badge (a) + settings gear (b) + org-mode switch (c, gated on holding a credit coin). Fixed: duplicate `choices-table-orgs` id (first copy rendered tiv data) and `openSettingsModal` was referenced but never defined (gear was dead). Upcoming-decisions banner removed (drawing + BACKLOG). Posts history kept below the fold.
+**Known broken / imperfect (see §2 NOW).** Phase rollover doesn't actually shift the UI on a cause's vote day; phase-1 leaderboards read 0 committed EBX; recap conversion shifts elected dates backwards; per-account isolation and simulated dates are "shipped but not perfect." `errors.md` is currently empty.
 
 ---
 
-## 3. Active roadblocks
+## 2. Build plan — refined & ordered
 
-- **Mount truncation now eats BINARIES too (pass 36).** `earthbucks.db` lost its last 4 pages (posts + credit_coins gone — see §1). It also struck twice DURING pass 36 via the Edit tool (pilot.py, initiatives.py — both caught by syntax checks and re-spliced from HEAD). Sandbox writes are now python-splice-only with tail asserts, but the DB corruption predates this pass. **Jax: keep DB backups outside the mount** (pass 36 left one at `backend/earthbucks.corrupt-pass36.db`; the recovered DB is live).
-- **15 posts + credit_coins rows lost** in the DB rescue — unrecoverable (their pages were the truncated tail). Discussion seeds/posts will need re-creating.
-- **git: index.lock returned mid-pass.** Pass 36 still committed (detached-index plumbing; see backlog #9), but the sandbox-visible `git status` is stale. **Jax: delete `.git/index.lock`, run `git reset` — worktree matches HEAD, nothing at risk.**
-- **Org↔initiative registration proxy — half resolved.** `org_registrations` table + endpoints exist (pass 34) and capture initiative links on submit, but approved rows aren't yet promoted to `Organization` + a real org↔initiative join, so the index.html org filter still uses the cause-membership proxy. (Jax pass-35: auto-approve for now — backend auto-approval still to be written.)
-- **Annulus 2 / phase-2 org race is still synthetic at the community level** — `Votes.forCause` deterministic shares with the local benefactor's own votes folded in (pass 35). Honest data needs the backend org-vote tally surfaced (`GET /initiatives/{id}/vote/tally` exists — wiring it into `causeOrgShares` is the next step).
-- **Top-card BACK face winner is presumptive** — leading phase-1 tiv stands in for "most recent phase 2" until mission history rows exist. Pass-35 org voting writes real local votes, so the top card can start reading `ebx_org_votes` next pass (Jax's roadblock note).
+Integrates INSTRUCTIONS.md BUILD SEQUENCE + ROADBLOCKS + BACKLOG with STRUCTURE.md and docs/posts.md. Arc: **demo-ready core → initiative-vote pilot → mission/org layer → credits & cash → hardening & reach.** Each pass: first resolve any errors / blockers / inconsistencies (note, don't fix, anything non-blocking), then take the top open item.
+
+### NOW — fix the election engine (core + initiative-vote pilot)
+
+1. **Phase shift & rollover.** On a cause's vote day, finalize phase-1 votes, convert the phase-1 card to recap, shift the rhs cards, and reset the user's votes. Bug: a land-initiative vote currently mutates the phase-2 card instead of accruing to the next mission's phase-1 period.
+2. **Vote counting.** Phase-1 leaderboards must register committed EBX (they show 0); votes cast on one account must be visible from another.
+3. ✅ **(pass 38) Recap date bug — fixed.** Root cause: `cause.html` rendered `election_open` (vote day − 7d) for the recap "elected" date, the mission-header start date, and the phase-date anchor; canonical value is `election_close` (the election/vote day = mission start). Switched all three to `election_close` (with `election_open` fallback). Verified by simulation: Land now shows **Jun 11**, Oceans **Jun 4**, Atmosphere **May 28**. Forests (future live election) was already correct (renders via `nextDecisionDate`, not the recap path).
+4. **Per-account wallets/votes** (shipped, refine). Each account needs a fully independent wallet and ballot; finish removing GameMaster bleed-through.
+5. **Simulated past vote dates** (shipped, refine). Each pilot mission's past election dates must line up with its cause's real position in the rotation. Mission start date = the day its initiative was elected.
+
+### NEXT — election-card & table UX
+
+6. **Election-card navigation.** Add three buttons to each card: **View** (jump to that entity's expanded table row), **Explore** (link to the cause page), **Vote** (link to the phase-1 or phase-2 voting dialog, matching the card face clicked).
+7. **Overview into the table.** Remove the Overview/Discussion toggle (discussion only). Clicking a table row expands it to show the overview and filters discussion by that cause / initiative / organization.
+8. **Election-card faces.** Make the two sides visually distinct so viewers can tell them apart.
+9. **Pool metrics.** Show "Guaranteed pool" and "Committed pool" (personal + overall); committed money stays in the system until the user pulls it.
+10. **Remove sample voting data** so it can be generated by running the real process.
+11. **Start dates everywhere.** Cause-page rhs cards and the 7 cause squares show mission start dates.
+12. **Creamy-white textbox backgrounds.**
+
+### THEN — mission / org layer
+
+13. **Phase-2 cause experience.** When a phase-2 mission is selected, the lhs cards show candidate organizations instead of next-phase initiatives.
+14. **Top-card back face.** Now that org voting writes real data, render the active cause's org-election on the top card's reverse.
+15. **Cause-page phase flip.** Order phase 1 at the bottom, phase 5 just below the header; inactive/future phases show a one-line "This phase is not yet active."
+16. **Phase-1 cleanup.** Drop the initiative-suggested section; add pre-mode text for any phase not yet begun.
+17. **Org registration / nomination.** Auto-approve registrations for now (add safeguards later). The dialog must let users browse/search every org in the DB, and be identical when opened from the home page.
+18. **Initiative proposal.** Let proposers search existing initiatives while proposing.
+19. **Org table filtering.** Filter by cause; an org with multiple initiatives appears in each relevant cause table; later, sub-filter by initiative.
+20. **Org profile.** A place for orgs to build a budget and plan, post updates, talk to the community and EN — the cause page becomes the mission page.
+21. **Post categories** (docs/posts.md). Context + Analysis (both elections), Case (tiv vote), Evaluation (org vote), with the cause/tiv/org tagging rules; remove star ratings; ship `POST /posts/{id}/vote` (helpful +1 / wrong −1, neutral feeds visibility).
+22. **Display incremental votes.**
+23. **Profile ring** (backburner). Large ring sticky to the rhs with the credit badge in the top-right corner.
+
+### LATER — credits & cash, then hardening & reach
+
+24. **1 vote = 10 EBX.** Rescale to globalize cleanly.
+25. **Credits & cash layer** (STRUCTURE "Credit page" — backlogged until phases 1 & 2 are solid). Coin lifecycle (generic → cause → mission → org → live), $1 = 1 credit holding $1 for 7 weeks post-mint, EN's 5/16 cut (incl. 1/16 evaluation + 1/4 to EN's side of the mission), $100 pool threshold, tax-deductible donation flow, and the per-mission coin badge. The mission annulus (7–12-step ring widget) grows out of this and becomes the cause page's outer annulus.
+26. **Simulation mode.** Add `is_test` column + `cycleStart` config endpoint to simulate votes and whole cycles.
+27. **Apache infra.** Plan for Kafka, Flink, Airflow, Cassandra.
+28. **Hardening & reach.** Tests (pytest backend + Playwright smoke), Postgres for prod (env-var swap), pagination on `/posts` and `/initiatives`, static offline demo snapshot, Swift mobile after pilot, fly.io deferred until post-pilot.
+
+**Roadblocks resolved by Jax:** registration → auto-approve for now; annulus 2 → handled (item 13/STRUCTURE); top-card back face → unblocked once org voting writes real data (item 14).
 
 ---
 
-## 4. Build & tooling
+## 3. Build & tooling
 
-- **Build.** `npm run build` in `frontend/` compiles `src/ebx_shared.ts` → `resources/js/ebx_shared.js`. All pages load the compiled `.js` — a `.ts` edit without rebuild ships nothing.
-- **Type-check.** `node node_modules/typescript/bin/tsc --noEmit` from `frontend/`.
-- **Tests.** None yet. Pytest (backend) + playwright (frontend smoke) planned. Pilot uses cofounder accounts + simulated money.
-- **Pre-commit hook.** Blocks commits when `ebx_shared.ts` has more than one `EBX_TAIL_SENTINEL`. Extend to `models.py` / `cause.html` / `index.html`.
-- **Mount-truncation HARD RULE (tightened pass 36).** NO Edit-tool writes to repo files at all — python splice with `assert count==1` anchors + tail assert + `ast.parse`/sentinel check, every time. Pass 36 caught two Edit-tool truncations (pilot.py, initiatives.py) the moment they ran. Binary files are also at risk (earthbucks.db lost 4 pages) — checksum after copying any binary through the mount (`md5sum` both sides).
-- **Sandbox CAN run the backend now** — `pip install --break-system-packages sqlalchemy alembic fastapi email-validator passlib[bcrypt] python-jose uvicorn python-multipart pydantic-settings` works (pass 36). Migrations, seeds, and uvicorn smoke tests are all runnable in-pass.
+- **Build:** `npm run build` in `frontend/` (compiles `ebx_shared.ts`). **Type-check:** `node node_modules/typescript/bin/tsc --noEmit`.
+- **Backend in sandbox:** `pip install --break-system-packages sqlalchemy alembic fastapi email-validator passlib[bcrypt] python-jose uvicorn python-multipart pydantic-settings`, then `alembic upgrade head` and re-run the pilot seed before smoke-testing on uvicorn.
+- **Mount-truncation HARD RULE.** The mount can silently truncate files (it has cost us HTML, `.md`, and 4 DB pages). NO Edit-tool writes to large repo files — use a Python splice with `assert count==1` anchors plus a tail/`ast.parse`/sentinel check every time; `md5sum` both sides when copying binaries. The pre-commit hook blocks commits when `ebx_shared.ts` has more than one `EBX_TAIL_SENTINEL`; extend it to `models.py` / `cause.html` / `index.html`. Commit after every pass and keep DB backups outside the mounted folder.
 
 ---
 
-## 5. Infra · later
+## 4. Infra · later
 
-- Postgres for prod (env-var swap documented).
-- Pagination on `/posts` and `/initiatives` (only `limit` today).
-- `cycleStart` API endpoint for simulations.
-- Static offline mode (hard-drive demo snapshot).
-- Swift mobile version after pilot.
-- Remote access: LAN-only confirmed; fly.io deferred until post-pilot smoke-tests.
+Postgres for prod · pagination on `/posts` and `/initiatives` · `cycleStart` simulation endpoint · static offline demo · Swift mobile after pilot · remote access LAN-only for now (fly.io post-pilot) · Apache stack (Kafka/Flink/Airflow/Cassandra) when scale demands it.
