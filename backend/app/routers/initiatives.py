@@ -56,7 +56,11 @@ def commit_ebx(
     try:
         return crud.commit_ebx(db, initiative_id, user.id, data.amount_ebx)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        msg = str(e)
+        # 404 for a genuinely missing initiative; a closed election is a 409
+        # conflict (the phase-1 window is over). NOW #1 (pass 40).
+        code = 404 if "not found" in msg.lower() else 409
+        raise HTTPException(status_code=code, detail=msg)
 
 
 @router.post(

@@ -2376,6 +2376,12 @@
         for (const id of Object.keys(shares)) {
           const sh = Number(shares[id] || 0);
           if (sh <= 0) continue;
+          // NOW #1 (pass 40): never commit to an initiative whose election
+          // has closed — a stale share for a just-elected tiv must not
+          // accrue to its phase-2 carry-over pool. The widget prunes these
+          // from view; this guards the raw share store read above.
+          const _ci0 = (EBX.config.initiatives || []).find(x => x.id === id);
+          if (_ci0 && _ci0.status && !['suggested','debate'].includes(_ci0.status)) continue;
           const target = Math.round(ebx * sh);
           const delta  = target - Number(synced[id] || 0);
           if (delta <= 0) continue;
@@ -2422,6 +2428,11 @@
     // ebx_committed aggregate.
     async function commitEbxToInit(initId) {
       const init = (EBX.config.initiatives || []).find(i => i.id === initId);
+      if (init && init.status && !['suggested','debate'].includes(init.status)) {
+        alert('This initiative has already been elected — its mission is now in the ' +
+              'organization vote. Commit EBX to a current phase-1 initiative instead.');
+        return;
+      }
       const loggedIn = !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
       if (!loggedIn) { alert('Sign in to commit EBX and cast your vote.'); return; }
       const amtStr = prompt('Commit how many EBX to "' + (init ? init.title : initId) +

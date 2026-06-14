@@ -99,6 +99,15 @@ def commit_ebx(
     init = db.get(models.Initiative, initiative_id)
     if init is None:
         raise ValueError("Initiative not found")
+    # NOW #1 (pass 40): phase-1 commitments are only valid while the
+    # initiative election is open. Once a tiv is elected (org_vote) or its
+    # mission is live/resolved, new EBX must NOT swell that mission's phase-1
+    # carry-over pool (the phase-2/org card reads it straight off
+    # ebx_committed) — it belongs to the NEXT cycle's phase-1 election.
+    if (init.status or "suggested") not in ("suggested", "debate"):
+        raise ValueError(
+            "Initiative election has closed; phase-1 commitments are no longer accepted"
+        )
     contrib = models.Contribution(
         benefactor_id=benefactor_id,
         initiative_id=initiative_id,

@@ -1,5 +1,24 @@
 # Backlog
 
+## Automated build run — 2026-06-13 (pass 40)
+
+Shipped the actionable bug in INSTRUCTIONS NOW **#1**: *"a just-elected-initiative vote currently mutates the phase-2 card instead of accruing to the next mission's phase-1 period."*
+
+Root cause: the phase-2/org card's pool is `phase1Pool = mission.committed_ebx` (the elected tiv's committed EBX = its "phase-1 carry-over"). Nothing stopped EBX from being committed to an already-elected initiative — `commit_ebx` had no phase guard, `commitVote` POSTed from the RAW (unpruned) share store, and pass-39's new `commitEbxToInit` could target any tiv from the table. So committing to a just-elected tiv grew its `committed_ebx`, which the phase-2 card reads live → the phase-2 pool mutated instead of the money going to the next cycle's phase-1 election. Reproduced: a 100-EBX commit to a resolved tiv moved its pool 49→149.
+
+Fix (authoritative at the backend, UX guards on the client):
+1. **`crud.commit_ebx`** rejects commits unless `status in (suggested, debate)` — phase-1 is the only window EBX commitments are accepted. `POST /initiatives/{id}/commit` maps that to **409** (genuine missing tiv stays **404**).
+2. **`commitVote`** skips any share whose tiv is no longer phase-1 before POSTing (guards the raw `loadShares` read; the widget already prunes these from view).
+3. **`commitEbxToInit`** blocks with an explanation ("…already elected — its mission is now in the organization vote. Commit to a current phase-1 initiative instead.").
+
+Verified end-to-end against a DB copy: elected/resolved tiv commit → **409**, `ebx_committed` unchanged (pool frozen); phase-1 tiv commit → **201** (40→80); missing tiv → **404**. `node --check` clean on the written cause.html.
+
+Notes for Jax:
+- This freezes the carry-over pool at election close, which is the intended behavior (the elected mission's phase-1 money is settled; new money belongs to the next election). If you'd rather *redirect* a late commit to the next-cycle phase-1 candidate automatically (instead of rejecting), say so — it's a small follow-up on top of this guard.
+- The rest of #1 (the rollover finalize / recap-convert / rhs-shift / vote-reset) is the engine shipped in passes 35-36; this pass closed the one remaining data-integrity leak. Still listed as "refine" if you see UI shift glitches on an actual vote day — point me at a specific cause/date and I'll trace it.
+- **Lock churn continues:** `.git/index.lock` reappeared as a 0-byte file mid-session (the signature of an interrupted/killed git process — consistent with a background git GUI or sync client). Committed via the detached-index workaround again. Troubleshooting steps (resmon / procmon / handle64, check for OneDrive + git GUIs) given to Jax in chat.
+
+
 ## Automated build run — 2026-06-13 (pass 39)
 
 Shipped INSTRUCTIONS NOW **#2 (vote counting)**. Symptom: phase-1 leaderboards showed 0 committed EBX and votes cast on one account were invisible from another. Root cause was NOT the backend — `POST /initiatives/{id}/commit` already creates a `Contribution` and increments `ebx_committed`, and I proved it end-to-end (two accounts → aggregate moves, public GET reflects it). The gap was the frontend: `cause.html`'s `commitVote` captured the EBX amount but only saved it to localStorage; it never called the endpoint, so the shared server aggregate stayed 0.
