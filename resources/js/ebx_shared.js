@@ -6,7 +6,8 @@
     apiBase: "",
     // empty means same origin — works when FastAPI hosts the static files
     version: "0.4.0",
-    cycleStart: /* @__PURE__ */ new Date("2026-01-01T00:00:00"),
+    cycleStart: /* @__PURE__ */ new Date("2026-06-15T00:00:00"),
+    // mission GENESIS (atm0) — aligns the annulus with the backend mission timeline
     causeLengthDays: 49,
     // 7 weeks per cause
     decisionIntervalDays: 7,
@@ -15,7 +16,8 @@
     causes: [],
     initiatives: [],
     organizations: [],
-    feed: []
+    feed: [],
+    missions: []
   };
   async function fetchJSON(path) {
     const url = config.dataRoot + path;
@@ -47,14 +49,11 @@
   async function loadInitiatives() {
     const data = config.useApi ? await fetchAPI("/initiatives") : await fetchJSON("causes/initiatives.json");
     if (data) {
-      config.initiatives = data.map((i) => {
-        const causeIndex = i.cause_index ?? (config.causes.find((c) => c.id === i.cause_id)?.index ?? 0);
-        return {
-          ...i,
-          cause_index: causeIndex,
-          committed_ebx: i.committed_ebx ?? i.ebx_committed ?? 0
-        };
-      });
+      config.initiatives = data.map((i) => ({
+        ...i,
+        cause_index: config.causes.find((c) => c.id === i.cause_id)?.index ?? 0,
+        committed_ebx: 0
+      }));
     }
     return config.initiatives;
   }
@@ -64,41 +63,46 @@
       config.organizations = data.map((o) => ({
         id: o.id,
         name: o.name,
-        causes: o.causes ?? [],
+        causes: [],
         verified: o.verified ?? false,
         description: o.description,
-        founded: o.founded ?? o.founded_year
+        founded: o.founded_year
       }));
     }
     return config.organizations;
   }
   async function loadFeed() {
     const data = config.useApi ? await fetchAPI("/posts?limit=50") : await fetchJSON("causes/feed.json");
-    if (data) config.feed = data;
+    if (data) {
+      config.feed = data.map((p) => ({
+        ...p,
+        type: p.type ?? p.category ?? "editorial",
+        author: p.author ?? p.author_type ?? "Earthbux",
+        likes: p.likes ?? p.helpful_count ?? 0,
+        cause_index: p.cause_index ?? (config.causes.find((c) => c.id === p.cause_id)?.index ?? 0)
+      }));
+    }
     return config.feed;
+  }
+  async function loadMissions() {
+    if (!config.useApi) return config.missions;
+    const data = await fetchAPI("/missions");
+    if (data) {
+      config.missions = data.map((m) => ({
+        ...m,
+        cause_index: config.causes.find((c) => c.id === m.cause_id)?.index ?? 0
+      }));
+    }
+    return config.missions;
   }
   async function loadAll() {
     await loadCauses();
-    await Promise.all([loadInitiatives(), loadOrganizations(), loadFeed()]);
-    const orgNameById = {};
-    config.organizations.forEach((o) => {
-      orgNameById[String(o.id)] = o.name;
-    });
-    config.initiatives.forEach((i) => {
-      if (!i.winning_org && i.winning_org_id) {
-        i.winning_org = orgNameById[String(i.winning_org_id)] ?? null;
-      }
-    });
+    await Promise.all([loadInitiatives(), loadOrganizations(), loadFeed(), loadMissions()]);
     try {
       const me = await Auth.fetchMe();
       Accounts.activate(me ? me.handle : null);
     } catch (_e) {
       Accounts.activate(null);
-    }
-    try {
-      LocalElections.runRollover();
-      LocalElections.applyOverrides();
-    } catch (_e) {
     }
   }
   var MS_PER_DAY = 864e5;
@@ -186,108 +190,23 @@
     }
   };
   var LocalElections = {
-    KEY: "ebx_local_elections",
-    EPOCH_KEY: "ebx_vote_epoch",
-    SHARES_KEY: "ebx_vote_shares",
-    COMMIT_KEY: "ebx_vote_committed",
-    _read(k) {
-      try {
-        return JSON.parse(localStorage.getItem(k) || "{}");
-      } catch {
-        return {};
-      }
-    },
-    _write(k, v) {
-      localStorage.setItem(k, JSON.stringify(v));
-    },
+    // DECONSTRUCTED (v2): phase transitions are server-side (scheduler.py +
+    // the /missions/{id}/p1|p2 tallies). Kept as no-op stubs so any lingering
+    // call sites don't throw while the pages are rebuilt.
     records() {
-      return LocalElections._read(LocalElections.KEY);
+      return {};
     },
-    recordFor(causeId) {
-      return LocalElections.records()[causeId] || null;
+    recordFor(_causeId) {
+      return null;
     },
-    /** Stamp the decision date the cause's current slate is aimed at.
-        Call whenever shares are saved; no-op if an epoch already exists. */
-    touchEpoch(causeId, causeIndex) {
-      const ep = LocalElections._read(LocalElections.EPOCH_KEY);
-      if (ep[causeId]) return;
-      ep[causeId] = Cycle.nextDecisionDate(causeIndex).toISOString();
-      LocalElections._write(LocalElections.EPOCH_KEY, ep);
+    touchEpoch(_causeId, _causeIndex) {
     },
-    /** Finalize every local election whose decision date has passed. */
     runRollover() {
-      const sharesAll = LocalElections._read(LocalElections.SHARES_KEY);
-      const commitsAll = LocalElections._read(LocalElections.COMMIT_KEY);
-      const epochs = LocalElections._read(LocalElections.EPOCH_KEY);
-      const recs = LocalElections.records();
-      let dirty = false;
-      config.causes.forEach((cause) => {
-        const shares = sharesAll[cause.id];
-        const votedIds = shares ? Object.keys(shares).filter((k) => (Number(shares[k]) || 0) > 0) : [];
-        if (!votedIds.length) return;
-        let epochIso = epochs[cause.id];
-        if (!epochIso) {
-          epochIso = Cycle.nextDecisionDate(cause.index).toISOString();
-          epochs[cause.id] = epochIso;
-          dirty = true;
-        }
-        if (new Date(epochIso).getTime() > Date.now()) return;
-        const candidates = config.initiatives.filter((i) => (i.cause_id === cause.id || i.cause_index === cause.index) && (!i.status || ["suggested", "debate"].includes(i.status)));
-        const committed = commitsAll[cause.id] || null;
-        const myEbx = committed && committed.ebx ? Number(committed.ebx) : 0;
-        const weight = (i) => {
-          const base = Number(i.committed_ebx ?? i.ebx_committed ?? 0);
-          const s = Number(shares[i.id] || 0);
-          return base + (s > 0 ? Math.max(s, myEbx * s) : 0);
-        };
-        const stillLive = candidates.filter((i) => votedIds.includes(String(i.id)));
-        if (candidates.length && stillLive.length) {
-          const winner = candidates.slice().sort((a, b) => weight(b) - weight(a))[0];
-          recs[cause.id] = {
-            winner_id: winner.id,
-            closed_at: epochIso,
-            shares,
-            ebx: myEbx,
-            at: Date.now()
-          };
-        }
-        delete sharesAll[cause.id];
-        delete commitsAll[cause.id];
-        delete epochs[cause.id];
-        dirty = true;
-      });
-      if (dirty) {
-        LocalElections._write(LocalElections.SHARES_KEY, sharesAll);
-        LocalElections._write(LocalElections.COMMIT_KEY, commitsAll);
-        LocalElections._write(LocalElections.EPOCH_KEY, epochs);
-        LocalElections._write(LocalElections.KEY, recs);
-      }
     },
-    /** Promote locally-elected winners in the in-memory initiative list. */
     applyOverrides() {
-      const recs = LocalElections.records();
-      Object.keys(recs).forEach((causeId) => {
-        const rec = recs[causeId];
-        const init = config.initiatives.find((i) => String(i.id) === String(rec.winner_id));
-        if (!init) return;
-        if (!init.status || ["suggested", "debate"].includes(init.status)) {
-          init.status = "org_vote";
-          init.election_close = rec.closed_at;
-          init.election_open = new Date(
-            new Date(rec.closed_at).getTime() - 7 * MS_PER_DAY
-          ).toISOString();
-          init.winning_org = init.winning_org || null;
-        }
-      });
     }
   };
   var ACCOUNT_SCOPED_KEYS = [
-    "ebx_vote_shares",
-    "ebx_vote_committed",
-    "ebx_vote_epoch",
-    "ebx_local_elections",
-    "ebx_org_votes",
-    "ebx_org_committed",
     "ebx_org_regs",
     "ebx_org_tasks",
     "ebx_post_votes",
@@ -342,88 +261,23 @@
     if (rank < 0) return OTHER_COLOR;
     return RANK_COLORS[Math.min(rank, RANK_COLORS.length - 1)];
   }
-  function pseudoRandom(seed) {
-    const x = Math.sin(seed * 12.9898) * 43758.5453;
-    return x - Math.floor(x);
-  }
   var Votes = {
     RANK_COLORS,
     OTHER_COLOR,
     rankColor,
-    /**
-     * Synthesize a stable vote distribution for (causeIndex, cycleNum, orgs).
-     * Bucket anything < 5% into a single gray "Other" slice.
-     */
-    forCause(causeIndex, cycleNum, orgs) {
-      if (!orgs.length) return [];
-      const weights = orgs.map((o, i) => {
-        const seed = causeIndex * 1009 + cycleNum * 31 + i * 17 + hashString(o.id);
-        return Math.pow(pseudoRandom(seed) + 0.05, 2.4);
-      });
-      const total = weights.reduce((a, b) => a + b, 0) || 1;
-      const shares = orgs.map((o, i) => ({
-        org_id: o.id,
-        org_name: o.name,
-        pct: weights[i] / total * 100
-      })).sort((a, b) => b.pct - a.pct);
-      const main = shares.filter((s) => s.pct >= 5);
-      const tail = shares.filter((s) => s.pct < 5);
-      const result = main.map((s, idx) => ({
-        ...s,
-        rank: idx,
-        isOther: false,
-        color: idx === 0 ? config.causes[causeIndex]?.color ?? "#888" : fadeToWhite(
-          config.causes[causeIndex]?.color ?? "#888",
-          Math.min(0.92, idx / Math.max(2, main.length - 1))
-        )
-      }));
-      if (tail.length) {
-        result.push({
-          org_id: "other",
-          org_name: `Other (${tail.length})`,
-          pct: tail.reduce((a, b) => a + b.pct, 0),
-          rank: -1,
-          isOther: true,
-          color: OTHER_COLOR
-        });
-      }
-      return result;
+    // DECONSTRUCTED (v2): org standings + initiative ranking come from the
+    // backend tallies (/missions/{id}/p2/tally and /p1/tally), not a synthetic
+    // distribution. These return empty / passthrough until the pages are wired.
+    forCause(_causeIndex, _cycleNum, _orgs) {
+      return [];
     },
-    /** Pick the orgs that will appear in a given cause's race. */
-    orgsForCause(causeIndex) {
-      const all = config.organizations;
-      if (!all.length) return [];
-      const tagged = all.filter((o) => (o.causes || []).includes(causeIndex));
-      return tagged.length ? tagged : all;
+    orgsForCause(_causeIndex) {
+      return [];
     },
-    /**
-     * Rank a cause's initiatives for a SPECIFIC cycle.
-     * Real EBX commitments always win; ties (e.g. all-zero seed data) are broken
-     * deterministically per-cycle so consecutive cycles surface different leaders.
-     * This is why the top card's "This week" (cycleNum) and "Newest" (cycleNum+1)
-     * panes no longer collapse onto the same initiative when commit data is empty.
-     * Replace the tie-breaker with a real per-cycle winning-initiative tally once
-     * the backend records which initiative won each cycle.
-     */
-    initiativesForCause(causeIndex, cycleNum, inits) {
-      return [...inits].sort((a, b) => {
-        const ca = a.committed_ebx || 0;
-        const cb = b.committed_ebx || 0;
-        if (cb !== ca) return cb - ca;
-        const sa = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(a.id));
-        const sb = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(b.id));
-        return sb - sa;
-      });
+    initiativesForCause(_causeIndex, _cycleNum, inits) {
+      return [...inits];
     }
   };
-  function hashString(s) {
-    let h = 2166136261;
-    for (let i = 0; i < s.length; i++) {
-      h ^= s.charCodeAt(i);
-      h = h * 16777619 >>> 0;
-    }
-    return h % 1e5;
-  }
   var Annulus = {
     _rafId: null,
     _rotatingGroup: null,
@@ -1270,15 +1124,6 @@
       }
     }
   };
-  function fadeToWhite(hex, t) {
-    const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-    if (!m) return hex;
-    const r = parseInt(m[1], 16);
-    const g = parseInt(m[2], 16);
-    const b = parseInt(m[3], 16);
-    const lerp = (a) => Math.round(a + (255 - a) * t);
-    return `rgb(${lerp(r)}, ${lerp(g)}, ${lerp(b)})`;
-  }
   function electionPanel(causeIndex) {
     const cause = config.causes.find((c) => c.index === causeIndex);
     if (!cause) return "";
@@ -1640,6 +1485,7 @@
     loadInitiatives,
     loadOrganizations,
     loadFeed,
+    loadMissions,
     loadAll,
     Cycle,
     Annulus,

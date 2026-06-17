@@ -1,4 +1,4 @@
-"""Initiative endpoints."""
+"""Initiative (tiv) endpoints — v2."""
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,112 +7,69 @@ from sqlalchemy.orm import Session
 from .. import crud, schemas
 from ..auth import get_current_benefactor
 from ..database import get_db
+from ._deps import get_current_staff
 from ..models import BenefactorAccount
-from ..rollover import maybe_rollover
 
 router = APIRouter(prefix="/initiatives", tags=["initiatives"])
 
 
 @router.get("", response_model=list[schemas.InitiativeRead])
-def read_initiatives(
+def list_tivs(
     cause_id: Optional[str] = None,
+    mission_id: Optional[str] = None,
     status: Optional[str] = None,
+    approved_only: bool = False,
     db: Session = Depends(get_db),
 ):
-    # Pass 36: lazily advance any due elections (phase 1→2→3) so the UI
-    # shifts on vote days without a server restart. Throttled internally.
-    maybe_rollover(db)
-    return crud.list_initiatives(db, cause_id=cause_id, status_filter=status)
+    return crud.list_tivs(db, cause_id=cause_id, mission_id=mission_id,
+                          status_filter=status, approved_only=approved_only)
 
 
-@router.get("/{initiative_id}", response_model=schemas.InitiativeRead)
-def read_initiative(initiative_id: str, db: Session = Depends(get_db)):
-    init = crud.get_initiative(db, initiative_id)
-    if init is None:
+@router.get("/{tiv_id}", response_model=schemas.InitiativeRead)
+def get_tiv(tiv_id: str, db: Session = Depends(get_db)):
+    tiv = crud.get_tiv(db, tiv_id)
+    if tiv is None:
         raise HTTPException(status_code=404, detail="Initiative not found")
-    return init
+    return tiv
 
 
 @router.post("", response_model=schemas.InitiativeRead, status_code=201)
-def create_initiative(data: schemas.InitiativeCreate, db: Session = Depends(get_db)):
-    if crud.get_initiative(db, data.id):
-        raise HTTPException(status_code=409, detail="Initiative already exists")
-    return crud.create_initiative(db, data)
-
-
-@router.post(
-    "/{initiative_id}/commit",
-    response_model=schemas.ContributionRead,
-    status_code=201,
-)
-def commit_ebx(
-    initiative_id: str,
-    data: schemas.ContributionCreate,
+def create_tiv(
+    data: schemas.InitiativeCreate,
     db: Session = Depends(get_db),
     user: BenefactorAccount = Depends(get_current_benefactor),
 ):
-    if data.initiative_id != initiative_id:
-        raise HTTPException(status_code=400, detail="Initiative id mismatch")
+    if crud.get_tiv(db, data.id):
+        raise HTTPException(status_code=409, detail="Initiative already exists")
+    return crud.create_tiv(db, data)
+
+
+@router.post("/{tiv_id}/approve", response_model=schemas.InitiativeRead)
+def approve_tiv(
+    tiv_id: str,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only: clear a tiv to enter elections."""
     try:
-        return crud.commit_ebx(db, initiative_id, user.id, data.amount_ebx)
+        return crud.approve_tiv(db, tiv_id, staff)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/{tiv_id}/commit", response_model=schemas.VoteP1Read, status_code=201)
+def commit_ebx(
+    tiv_id: str,
+    data: schemas.VoteP1Create,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Commit EBX to this tiv in its mission's phase-1 election."""
+    tiv = crud.get_tiv(db, tiv_id)
+    if tiv is None or tiv.mission_id is None:
+        raise HTTPException(status_code=404, detail="Initiative is not in an active mission")
+    try:
+        return crud.commit_p1_ebx(db, user.id, tiv.mission_id, tiv_id, data.ebx_committed)
     except ValueError as e:
         msg = str(e)
-        # 404 for a genuinely missing initiative; a closed election is a 409
-        # conflict (the phase-1 window is over). NOW #1 (pass 40).
-        code = 404 if "not found" in msg.lower() else 409
-        raise HTTPException(status_code=code, detail=msg)
-
-
-@router.post(
-    "/{initiative_id}/vote",
-    response_model=schemas.VoteRead,
-    status_code=201,
-)
-def cast_vote(
-    initiative_id: str,
-    data: schemas.VoteCreate,
-    db: Session = Depends(get_db),
-    user: BenefactorAccount = Depends(get_current_benefactor),
-):
-    """Cast (or update) a benefactor's org-election vote for an initiative."""
-    init = crud.get_initiative(db, initiative_id)
-    if init is None:
-        raise HTTPException(status_code=404, detail="Initiative not found")
-    try:
-        return crud.cast_vote(db, initiative_id, user.id, data.org_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-@router.get(
-    "/{initiative_id}/vote/tally",
-    response_model=dict,
-)
-def vote_tally(initiative_id: str, db: Session = Depends(get_db)):
-    """Return org_id -> vote count for an initiative (public)."""
-    return crud.get_vote_tally(db, initiative_id)
-
-
-@router.post(
-    "/{initiative_id}/rate",
-    response_model=schemas.InitiativeRatingRead,
-    status_code=201,
-)
-def rate_initiative_endpoint(
-    initiative_id: str,
-    data: schemas.InitiativeRatingCreate,
-    db: Session = Depends(get_db),
-    user: BenefactorAccount = Depends(get_current_benefactor),
-):
-    """build-seq 4 — upsert a benefactor rating and side-effect into the watchlist.
-
-    Body: `{stars: 0..5}`. The rating rollup (`rating_avg`, `rating_count`) is
-    recomputed server-side so the table stays single-sourced. Side-effect
-    per Jax: the initiative is auto-added to the benefactor's watchlist if
-    not already present.
-    """
-    try:
-        return crud.rate_initiative(db, user.id, initiative_id, data.stars)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
+        raise HTTPException(status_code=404 if "not found" in msg.lower() else 409, detail=msg)

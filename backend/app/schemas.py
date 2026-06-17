@@ -1,12 +1,19 @@
-"""Pydantic v2 request/response schemas for the Earthbucks API."""
+"""PROPOSAL: Pydantic v2 request/response schemas for the v2 (mission-centric)
+API. Parallel to schemas.py; nothing imports it until cutover.
+
+Naming mirrors models_v2: ben / tiv / org. `*Create` = request bodies,
+`*Read` = responses (ConfigDict(from_attributes=True) so they read straight off
+ORM objects). Valence and post-vote values are helpful | neutral | harmful.
+"""
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
-
 import json as _json
+from datetime import datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+Valence = Literal["helpful", "neutral", "harmful"]
 
 
 # ---------------------------------------------------------------------------
@@ -31,182 +38,88 @@ class CauseRead(CauseBase):
 
 
 # ---------------------------------------------------------------------------
-# Organization
+# Mission (the spine)
 # ---------------------------------------------------------------------------
-class OrganizationBase(BaseModel):
-    name: str
-    description: Optional[str] = None
-    mission_statement: Optional[str] = None
-    website_link: Optional[str] = None
-    verified: bool = False
-    founded_year: Optional[int] = None
+class MissionBase(BaseModel):
+    cause_id: str
+    cycle_num: int
+    current_phase: str = "pre"  # pre | initiative | budget | credit | resolution
 
 
-class OrganizationCreate(OrganizationBase):
+class MissionCreate(MissionBase):
     id: str
-    cause_ids: list[str] = Field(default_factory=list)
 
 
-class OrganizationRead(OrganizationBase):
+class MissionRead(MissionBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    score: float = 0.0
-    logo_url: Optional[str] = None
-    date_approved: Optional[datetime] = None
-    causes: list[CauseRead] = []
+    started_at: Optional[datetime] = None
+    winning_tiv_id: Optional[str] = None
+    winning_org_id: Optional[str] = None
+    budget: int = 0
+    spent: int = 0
+    credit_value: float = 1.0
+    updated_at: datetime
 
 
 # ---------------------------------------------------------------------------
-# Initiative
+# Initiative (tiv)
 # ---------------------------------------------------------------------------
 class InitiativeBase(BaseModel):
     title: str
     description: Optional[str] = None
     emoji: Optional[str] = None
-    proposed_by: str = "benefactor"  # benefactor | org
-    cycle_num: int = 0
-    status: str = "suggested"
+    cause_id: str
+    status: str = "suggested"  # suggested | in_election | won | lost
 
 
 class InitiativeCreate(InitiativeBase):
     id: str
-    cause_id: str
-    proposer_benefactor_id: Optional[int] = None
+    mission_id: Optional[str] = None
+    proposer_ben_id: Optional[int] = None
     proposer_org_id: Optional[str] = None
 
 
 class InitiativeRead(InitiativeBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    index: Optional[int] = None
-    cause_id: str
-    rating: float = 0.0
-    # build-seq 4 — denormalised rating rollup served to the table.
+    mission_id: Optional[str] = None
+    proposer_ben_id: Optional[int] = None
+    proposer_org_id: Optional[str] = None
+    proposed_at: datetime
     rating_avg: float = 0.0
     rating_count: int = 0
     logo_url: Optional[str] = None
-    ebx_committed: int = 0
-    pool_value: int = 0
-    election_open: Optional[datetime] = None
-    election_close: Optional[datetime] = None
-    winning_org_id: Optional[str] = None
+    approved: bool = False
 
 
 # ---------------------------------------------------------------------------
-# Mission
+# Organization
 # ---------------------------------------------------------------------------
-class MissionMetricBase(BaseModel):
+class OrganizationBase(BaseModel):
     name: str
-    target_value: float = 0.0
-    current_value: float = 0.0
-    unit: Optional[str] = None
-
-
-class MissionMetricCreate(MissionMetricBase):
-    pass
-
-
-class MissionMetricRead(MissionMetricBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    mission_id: str
-
-
-class MissionBase(BaseModel):
-    title: str
     description: Optional[str] = None
-    community_members: int = 0
-    credit_value: float = 1.0
-    budget: int = 0
-    spent: int = 0
-    status: str = "active"
+    website_link: Optional[str] = None
+    founded_year: Optional[int] = None
+    verified: bool = False
 
 
-class MissionCreate(MissionBase):
+class OrganizationCreate(OrganizationBase):
     id: str
-    initiative_id: str
-    org_id: str
-    metrics: list[MissionMetricCreate] = Field(default_factory=list)
+    founding_member_id: Optional[int] = None
 
 
-class MissionRead(MissionBase):
+class OrganizationRead(OrganizationBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    initiative_id: str
-    org_id: str
-    started_at: Optional[datetime] = None
-    updated_at: datetime
-    metrics: list[MissionMetricRead] = Field(default_factory=list)
+    founding_member_id: Optional[int] = None
+    joined_at: Optional[datetime] = None
+    score: float = 0.0
+    logo_url: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
-# Posts
-# ---------------------------------------------------------------------------
-class PostBase(BaseModel):
-    type: str = "editorial"
-    title: Optional[str] = None
-    body: str
-    author_type: str = "earthbux"
-    author_label: Optional[str] = None
-    cause_id: Optional[str] = None
-    initiative_id: Optional[str] = None
-    mission_id: Optional[str] = None
-    opinion_type: Optional[str] = None
-
-
-class PostCreate(PostBase):
-    id: str
-
-
-class PostRead(PostBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: str
-    likes: int = 0
-    created_at: datetime
-
-
-# ---------------------------------------------------------------------------
-# Reviews
-# ---------------------------------------------------------------------------
-class ReviewBase(BaseModel):
-    rating: int = Field(ge=1, le=5)
-    body: Optional[str] = None
-
-
-class ReviewCreate(ReviewBase):
-    organization_id: str
-
-
-class ReviewRead(ReviewBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    organization_id: str
-    benefactor_id: Optional[int] = None
-    created_at: datetime
-
-
-# ---------------------------------------------------------------------------
-# Votes (org election — one per benefactor per initiative)
-# ---------------------------------------------------------------------------
-class VoteCreate(BaseModel):
-    # org_id is only set during the org-election phase; omit for initiative-only (soft) votes.
-    org_id: Optional[str] = None
-    # Fractional vote share across multiple initiatives. Minimum 0.1.
-    share: float = Field(default=1.0, ge=0.1, le=1.0)
-
-
-class VoteRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    benefactor_id: int
-    initiative_id: str
-    org_id: Optional[str] = None
-    share: float = 1.0
-    created_at: datetime
-
-
-# ---------------------------------------------------------------------------
-# Benefactor account & auth
+# Benefactor account & auth (role = the employee category)
 # ---------------------------------------------------------------------------
 class BenefactorCreate(BaseModel):
     email: EmailStr
@@ -220,76 +133,25 @@ class BenefactorRead(BaseModel):
     email: EmailStr
     handle: str
     is_active: bool
+    role: str = "benefactor"  # benefactor | employee | admin
     vvv: bool = False
     created_at: datetime
-    # build-seq 4 — surface the watchlist so the profile page can render
-    # without a second round-trip. JSON-encoded string at rest; we serialise
-    # to a list on the way out (see crud.serialize_watchlist).
-    watched_initiative_ids: list[str] = Field(default_factory=list)
+    watched_tiv_ids: list[str] = Field(default_factory=list)
 
-    @field_validator("watched_initiative_ids", mode="before")
+    @field_validator("watched_tiv_ids", mode="before")
     @classmethod
     def _parse_watched(cls, v: object) -> list[str]:
-        """Coerce DB Text (None or JSON string) → list[str]."""
         if v is None:
             return []
         if isinstance(v, list):
             return [str(x) for x in v]
         try:
-            parsed = _json.loads(v)
+            parsed = _json.loads(v)  # type: ignore[arg-type]
             if isinstance(parsed, list):
                 return [str(x) for x in parsed]
         except (TypeError, ValueError):
             pass
         return []
-
-
-# ---------------------------------------------------------------------------
-# Cause-scoped votes (build-seq 3)
-# ---------------------------------------------------------------------------
-class CauseVoteShares(BaseModel):
-    """Full shares map a benefactor PUTs for a cause.
-
-    Map of initiative_id -> share (>= 0.1). Sum must be <= 1.0. The server
-    deletes any prior soft-vote rows not represented in the map; committed
-    rows (vote.committed=True) are immutable and rejected here.
-    """
-    cause_id: str
-    shares: dict[str, float]
-
-
-class CauseVoteTallyEntry(BaseModel):
-    initiative_id: str
-    raw_share: float        # sum of share values across all benefactors
-    weighted_share: float   # vote-weight formula applied server-side
-    voter_count: int
-
-
-class CauseVoteTally(BaseModel):
-    cause_id: str
-    size_factor: float
-    pool_total_ebx: int
-    entries: list[CauseVoteTallyEntry] = Field(default_factory=list)
-
-
-class CauseVoteCommit(BaseModel):
-    cause_id: str
-
-
-# ---------------------------------------------------------------------------
-# Initiative ratings (build-seq 4)
-# ---------------------------------------------------------------------------
-class InitiativeRatingCreate(BaseModel):
-    stars: int = Field(ge=0, le=5)
-
-
-class InitiativeRatingRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    benefactor_id: int
-    initiative_id: str
-    stars: int
-    created_at: datetime
 
 
 class Token(BaseModel):
@@ -298,80 +160,215 @@ class Token(BaseModel):
 
 
 class TokenPayload(BaseModel):
-    sub: Optional[str] = None  # benefactor id as string
+    sub: Optional[str] = None  # ben id as string
     exp: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
-# Contributions
-# ---------------------------------------------------------------------------
-class ContributionCreate(BaseModel):
-    initiative_id: str
-    amount_ebx: int = Field(gt=0)
-
-
-class ContributionRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    benefactor_id: int
-    initiative_id: str
-    amount_ebx: int
-    created_at: datetime
-
-
-# ---------------------------------------------------------------------------
-# Memberships
+# Membership
 # ---------------------------------------------------------------------------
 class MembershipRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    benefactor_id: int
-    organization_id: str
-    role: str
+    ben_id: int
+    org_id: str
+    role: str  # community | rep | executive | beneficiary
     joined_at: datetime
 
 
 # ---------------------------------------------------------------------------
-# OrgRegistration (pass 34, build-seq 2)
+# Mission candidacy (org's bid to run a mission)
 # ---------------------------------------------------------------------------
-class OrgRegistrationBase(BaseModel):
-    kind: str = "nomination"  # nomination | registration
-    org_name: str
-    website: str
-    justification: str
-    member_name: Optional[str] = None
-    member_position: Optional[str] = None
-    # At least one initiative the org is believed fit to accomplish.
-    initiative_ids: list[str] = Field(min_length=1)
-
-    @field_validator("kind")
-    @classmethod
-    def _kind_known(cls, v: str) -> str:
-        if v not in ("nomination", "registration"):
-            raise ValueError("kind must be 'nomination' or 'registration'")
-        return v
+class MissionCandidacyCreate(BaseModel):
+    mission_id: str
+    org_id: str
+    mission_statement: Optional[str] = None
 
 
-class OrgRegistrationCreate(OrgRegistrationBase):
-    pass
-
-
-class OrgRegistrationRead(OrgRegistrationBase):
+class MissionCandidacyRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
-    status: str = "pending"
+    mission_id: str
+    org_id: str
+    mission_statement: Optional[str] = None
+    status: str = "pending"  # pending | approved | withdrawn | won | lost
     submitted_by_id: Optional[int] = None
-    organization_id: Optional[str] = None
-    created_at: Optional[datetime] = None
+    approved_by_id: Optional[int] = None
+    p2_vote_tally: int = 0
+    created_at: datetime
 
-    @field_validator("initiative_ids", mode="before")
-    @classmethod
-    def _coerce_initiative_ids(cls, v):
-        if v is None:
-            return []
-        if isinstance(v, str):
-            try:
-                return _json.loads(v)
-            except Exception:
-                return []
-        return v
+
+# ---------------------------------------------------------------------------
+# VoteP1 (tiv election — split shares; carries committed EBX)
+# ---------------------------------------------------------------------------
+class VoteP1Create(BaseModel):
+    tiv_id: str
+    share: float = Field(default=1.0, ge=0.1, le=1.0)
+    ebx_committed: int = Field(default=0, ge=0)
+    valence: Valence = "helpful"
+
+
+class VoteP1Shares(BaseModel):
+    """Full shares map a ben PUTs for a mission's phase-1 election.
+
+    initiative shares must each be >= 0.1 and sum to <= 1.0 (validated server-side).
+    """
+    mission_id: str
+    shares: dict[str, float]
+    ebx: int = 0   # total EBX committed, split across the slate by share (replace)
+
+
+class VoteP1Read(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    ben_id: int
+    mission_id: str
+    tiv_id: str
+    share: float = 1.0
+    ebx_committed: float = 0   # holdings x share (continuous — not rounded)
+    valence: Valence = "helpful"
+    committed: bool = False
+    created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# VoteP2 (org election — 1 org, buy extra votes; harmful = block)
+# ---------------------------------------------------------------------------
+class VoteP2Create(BaseModel):
+    org_id: str
+    votes: int = Field(default=1, ge=1)
+    ebx_spent: int = Field(default=0, ge=0)
+    valence: Valence = "helpful"
+
+
+class VoteP2Read(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    ben_id: int
+    mission_id: str
+    org_id: str
+    votes: int = 1
+    ebx_spent: int = 0
+    valence: Valence = "helpful"
+    committed: bool = False
+    created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Pool (derived money rollup)
+# ---------------------------------------------------------------------------
+class PoolRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    mission_id: str
+    phase1_total_ebx: int = 0
+    phase2_total_ebx: int = 0
+    pool_from_winners: int = 0
+    pool_from_losers: int = 0
+    total_locked: int = 0
+    updated_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# CreditCoin
+# ---------------------------------------------------------------------------
+class CreditCoinRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    owner_id: int
+    mission_id: str
+    amount_ebx: int
+    value: float = 1.0
+    issued_at: datetime
+    redeemed: bool = False
+
+
+# ---------------------------------------------------------------------------
+# Posts & post votes
+# ---------------------------------------------------------------------------
+class PostBase(BaseModel):
+    category: str = "editorial"  # case|context|analysis|evaluation|org_update|editorial|headline
+    title: Optional[str] = None
+    body: str
+    author_type: str = "earthbux"  # ben | org | earthbux
+    mission_id: Optional[str] = None
+    tiv_id: Optional[str] = None
+    cause_id: Optional[str] = None
+
+
+class PostCreate(PostBase):
+    id: str
+    ben_author_id: Optional[int] = None
+    org_author_id: Optional[str] = None
+
+
+class PostRead(PostBase):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    ben_author_id: Optional[int] = None
+    org_author_id: Optional[str] = None
+    helpful_count: int = 0
+    neutral_count: int = 0
+    harmful_count: int = 0
+    created_at: datetime
+
+
+class PostVoteCreate(BaseModel):
+    value: Valence
+
+
+class PostVoteRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    post_id: str
+    ben_id: int
+    value: Valence
+    created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Query (employee-only data tool)
+# ---------------------------------------------------------------------------
+class QueryCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    entity: Optional[str] = None
+    filters: Optional[str] = None  # JSON string
+    sort: Optional[str] = None
+    sql: Optional[str] = None
+    shared: bool = False
+
+
+class QueryRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    description: Optional[str] = None
+    entity: Optional[str] = None
+    filters: Optional[str] = None
+    sort: Optional[str] = None
+    sql: Optional[str] = None
+    created_by_id: Optional[int] = None
+    shared: bool = False
+    created_at: datetime
+    last_run_at: Optional[datetime] = None
+
+
+# ---------------------------------------------------------------------------
+# Transaction (the ledger — read-only out of the API)
+# ---------------------------------------------------------------------------
+class TransactionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    type: str  # vote | transfer
+    ben_id: Optional[int] = None
+    mission_id: Optional[str] = None
+    phase: Optional[str] = None
+    action: Optional[str] = None
+    target: Optional[str] = None
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    bucket: Optional[str] = None  # pool|org|earthbux|evaluation|credit|refund
+    counterparty_org_id: Optional[str] = None
+    amount_ebx: int = 0
+    note: Optional[str] = None
+    created_at: datetime

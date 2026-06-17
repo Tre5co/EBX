@@ -1,53 +1,98 @@
-"""Cause-scoped initiative-election vote endpoints (build-seq 3, Pass 16).
+"""Phase-1 (tiv) + phase-2 (org) voting endpoints — v2."""
+from typing import Optional
 
-These are the soft-vote share allocator routes the cause.html phase-1 widget
-talks to. They are distinct from the existing `/initiatives/{id}/vote` route,
-which is the hard org-election vote (one vote per benefactor per mission).
-"""
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
 from ..auth import get_current_benefactor
 from ..config import get_settings
 from ..database import get_db
-from ..models import BenefactorAccount
-
+from ..models import BenefactorAccount, VoteP2
 
 router = APIRouter(tags=["votes"])
 settings = get_settings()
 
 
-@router.put("/benefactors/me/votes", response_model=schemas.CauseVoteTally)
-def put_my_cause_votes(
-    body: schemas.CauseVoteShares,
+# ----- phase 1 (initiative election) -----
+@router.put("/missions/{mission_id}/p1/votes", response_model=dict)
+def put_p1_shares(
+    mission_id: str,
+    body: schemas.VoteP1Shares,
     db: Session = Depends(get_db),
     user: BenefactorAccount = Depends(get_current_benefactor),
 ):
-    """Replace the benefactor's soft shares for a single cause.
-
-    Body: `{cause_id, shares: {init_id: share}}`. Server validates the 0.1
-    floor and the sum<=1.0 cap. Committed rows cannot be rewritten.
-    """
+    """Replace the ben's soft phase-1 shares for this mission, then return the
+    running weighted tally."""
     try:
-        crud.replace_cause_votes(db, user.id, body.cause_id, body.shares)
+        crud.replace_p1_shares(db, user.id, mission_id, body.shares, ebx_total=body.ebx)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return crud.get_cause_vote_tally(db, body.cause_id, settings.size_factor)
+    return crud.p1_tally(db, mission_id, settings.size_factor)
 
 
-@router.get("/causes/{cause_id}/votes", response_model=schemas.CauseVoteTally)
-def get_cause_votes(cause_id: str, db: Session = Depends(get_db)):
-    """Public: running tally for a cause with the vote-weight formula applied."""
-    return crud.get_cause_vote_tally(db, cause_id, settings.size_factor)
-
-
-@router.post("/votes/commit")
-def commit_my_cause_votes(
-    body: schemas.CauseVoteCommit,
+@router.post("/missions/{mission_id}/p1/commit", response_model=dict)
+def commit_p1(
+    mission_id: str,
     db: Session = Depends(get_db),
     user: BenefactorAccount = Depends(get_current_benefactor),
 ):
-    """Lock the benefactor's current shares for the named cause."""
-    count = crud.commit_cause_votes(db, user.id, body.cause_id)
-    return {"cause_id": body.cause_id, "locked": count}
+    return {"mission_id": mission_id, "locked": crud.commit_p1(db, user.id, mission_id)}
+
+
+@router.get("/missions/{mission_id}/p1/tally", response_model=dict)
+def p1_tally(mission_id: str, db: Session = Depends(get_db)):
+    return crud.p1_tally(db, mission_id, settings.size_factor)
+
+
+@router.get("/missions/{mission_id}/p1/mine", response_model=list[schemas.VoteP1Read])
+def my_p1(
+    mission_id: str,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """The signed-in ben's own phase-1 shares for this mission."""
+    return crud.get_p1_votes(db, user.id, mission_id)
+
+
+# ----- phase 2 (org election) -----
+@router.put("/missions/{mission_id}/p2/vote", response_model=schemas.VoteP2Read)
+def cast_p2(
+    mission_id: str,
+    body: schemas.VoteP2Create,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Vote for a single org (votes>1 = bought extra; valence='harmful' = block)."""
+    try:
+        return crud.cast_p2(db, user.id, mission_id, body.org_id,
+                            votes=body.votes, ebx_spent=body.ebx_spent, valence=body.valence)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/missions/{mission_id}/p2/commit", response_model=dict)
+def commit_p2(
+    mission_id: str,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    return {"mission_id": mission_id, "locked": crud.commit_p2(db, user.id, mission_id)}
+
+
+@router.get("/missions/{mission_id}/p2/tally", response_model=dict)
+def p2_tally(mission_id: str, db: Session = Depends(get_db)):
+    return crud.p2_tally(db, mission_id)
+
+
+@router.get("/missions/{mission_id}/p2/mine", response_model=Optional[schemas.VoteP2Read])
+def my_p2(
+    mission_id: str,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """The signed-in ben's own phase-2 org vote for this mission (or null)."""
+    return db.scalar(
+        select(VoteP2).where(VoteP2.ben_id == user.id, VoteP2.mission_id == mission_id)
+    )

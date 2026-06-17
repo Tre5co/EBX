@@ -684,12 +684,9 @@
       // face is the local benefactor's own vote (share) and their committed
       // EBX (which adds weight via EBX.voteWeight). The EBX pool stays the
       // money stat and grows by the local commitment so the demo reflects it.
+      // DECONSTRUCTED (v2): personal vote state is server-side. The homepage
+      // cards show no personal vote until wired to /missions/{id}/p1.
       let shares = {}, myCommit = 0;
-      try {
-        shares = (JSON.parse(localStorage.getItem('ebx_vote_shares') || '{}'))[c.id] || {};
-        const committed = (JSON.parse(localStorage.getItem('ebx_vote_committed') || '{}'))[c.id];
-        if (committed) myCommit = committed.ebx || 0;
-      } catch (e) { shares = {}; }
       const basePool = inits.reduce((s,i) => s + (i.committed_ebx||i.ebx_committed||0), 0);
       const pool = basePool + myCommit;
       const rows = inits.map(i => {
@@ -1071,16 +1068,8 @@
   const VOTE_COMMIT_KEY    = 'ebx_vote_committed';   // { causeId: { shares, at } }
   const ORG_VOTE_KEY       = 'ebx_org_votes';        // { causeId: {org_id, tiv_id, votes, at} } (pass 35)
 
-  function _loadCauseShares(causeId) {
-    try { return (JSON.parse(localStorage.getItem(VOTE_SHARES_KEY) || '{}'))[causeId] || {}; }
-    catch(e) { return {}; }
-  }
-  function _saveCauseShares(causeId, shares) {
-    let all = {};
-    try { all = JSON.parse(localStorage.getItem(VOTE_SHARES_KEY) || '{}'); } catch(e) {}
-    all[causeId] = shares;
-    localStorage.setItem(VOTE_SHARES_KEY, JSON.stringify(all));
-  }
+  function _loadCauseShares(causeId) { return {}; /* DECONSTRUCTED (v2) */ }
+  function _saveCauseShares(causeId, shares) { /* DECONSTRUCTED (v2): PUT /missions/{id}/p1/votes */ }
   // Step 1a — committing EBX. Shared store with the cause-page widget:
   // ebx_vote_committed[causeId] = { shares, at, ebx }. Committing EBX from
   // the entity card adds weight to the benefactor's initiative vote.
@@ -1088,18 +1077,8 @@
   // pool (phase-1 carry-over + phase-2 commits) never mixes with tiv weight.
   const ORG_COMMIT_KEY = 'ebx_org_committed';      // { causeId: { at, ebx } }
   function _commitKeyFor(kind) { return kind === 'org' ? ORG_COMMIT_KEY : VOTE_COMMIT_KEY; }
-  function _loadCauseCommit(causeId, kind) {
-    try { return (JSON.parse(localStorage.getItem(_commitKeyFor(kind)) || '{}'))[causeId] || null; }
-    catch(e) { return null; }
-  }
-  function _saveCauseCommitEbx(causeId, ebx, kind) {
-    let all = {};
-    try { all = JSON.parse(localStorage.getItem(_commitKeyFor(kind)) || '{}'); } catch(e) {}
-    const entry = { at: Date.now(), ebx: Math.max(0, Math.round(Number(ebx) || 0)) };
-    if (kind !== 'org') entry.shares = { ..._loadCauseShares(causeId) };
-    all[causeId] = entry;
-    localStorage.setItem(_commitKeyFor(kind), JSON.stringify(all));
-  }
+  function _loadCauseCommit(causeId, kind) { return null; /* DECONSTRUCTED (v2) */ }
+  function _saveCauseCommitEbx(causeId, ebx, kind) { /* DECONSTRUCTED (v2): commit -> backend */ }
   function entityCommitEbx(btn) {
     const causeId = btn && btn.getAttribute('data-cause-id');
     const kind = (btn && btn.getAttribute('data-kind')) || 'tiv';
@@ -1134,24 +1113,8 @@
   // pass 35: ebx_org_votes entries are objects ({org_id, tiv_id, votes, at}).
   // _loadOrgVote returns the org id (normalizing the old plain-string shape);
   // _saveOrgVote writes the object shape used by cause.html's phase-2 widget.
-  function _loadOrgVote(causeId) {
-    try {
-      const v = (JSON.parse(localStorage.getItem(ORG_VOTE_KEY) || '{}'))[causeId] || null;
-      return v && typeof v === 'object' ? (v.org_id || null) : v;
-    }
-    catch(e) { return null; }
-  }
-  function _saveOrgVote(causeId, orgId) {
-    let all = {};
-    try { all = JSON.parse(localStorage.getItem(ORG_VOTE_KEY) || '{}'); } catch(e) {}
-    if (orgId == null) delete all[causeId];
-    else {
-      const prev = all[causeId];
-      const votes = prev && typeof prev === 'object' && prev.org_id === orgId ? (prev.votes || 1) : 1;
-      all[causeId] = { org_id: orgId, votes, at: Date.now() };
-    }
-    localStorage.setItem(ORG_VOTE_KEY, JSON.stringify(all));
-  }
+  function _loadOrgVote(causeId) { return null; /* DECONSTRUCTED (v2) */ }
+  function _saveOrgVote(causeId, orgId) { /* DECONSTRUCTED (v2): PUT /missions/{id}/p2/vote */ }
 
   // Cast a tiv vote from the entity card. First vote: stores share=1.0 for
   // this init on this cause. Subsequent vote on the SAME init: prompts to

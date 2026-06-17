@@ -1241,10 +1241,10 @@
         .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
 
       const _ls = k => { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch(e) { return {}; } };
-      const tivShares  = _ls('ebx_vote_shares');     // { causeId: { initId: share } }
-      const tivCommits = _ls('ebx_vote_committed');  // { causeId: { shares, at, ebx } }
-      const orgVotes   = _ls('ebx_org_votes');       // { causeId: {org_id, tiv_id, votes} } (pass 35; was plain orgId)
-      const orgCommits = _ls('ebx_org_committed');   // { causeId: { at, ebx } }
+      // DECONSTRUCTED (v2): wallet + choices come from the backend now —
+      // GET /benefactors/me/credit-coins + the mission vote records. Empty
+      // until the profile page is wired to v2.
+      const tivShares = {}, tivCommits = {}, orgVotes = {}, orgCommits = {};
       const inits = EBX.config.initiatives   || [];
       const orgs  = EBX.config.organizations || [];
       const initById = {}; inits.forEach(i => { initById[String(i.id)] = i; });

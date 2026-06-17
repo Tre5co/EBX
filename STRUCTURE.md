@@ -223,19 +223,28 @@ Vote occurs on the final day of its causes active period
         Just the cause name, and cycle number, or the mission title and organizaiton name if applicable.                ____________
         __________________________|Brief header|__________________________
         |Phase 1 area                                                    |
-        - [ ] **Phase 1** Top card, below the header
+        - [ ] **Phase 1** Bottom section
             - [ ] **when Active**
-            Note that the leaders and my votes sections will be wider than they appear below.
-            _____________________________________________________________________
-            | _________  _________   _______________|Discussion|_________________|
-            ||Leaders  ||My votes | ||vote|Most_helpful/trending_case_____<>|post|
-            ||         ||         | ||vote|Most_helpful/trending_context__<>|post|
-            ||_________||_________| ||vote|Most_helpful/trending_analysis_<>|post|
-            ||pool size||My commit|_|Search for an initiative____________________|
-            | Display area for an initiative. Default to top vote. If none leader|
-            | Slider vote bars (or just 'vote'), with new selected tiv option.   |
-            |         discussion                                                 |
-            |__|view initiatives|__|commit ebx|__________________________________|
+                        "Organization voting begins when the initiative is elected"
+             __________________________________________________________________________________
+            |    | ____________  ______________________________________________________________|
+            | 1. ||Leaders     || Selected post                                           |   ||
+            |ini-||            ||                                                         | a || a: 3-way toggle between leading case, context, and analysis for this mission.
+            |tia-|| List up to ||_________________________________________________________|___||
+            |tive||   10 and   | _____________________________________________________________ |
+            |ele-|| each ebx   || Slider voting. Top row: uncommitted                         ||
+            |cti-|| share      ||                                                             ||
+            |on -||            ||                                                             ||
+            |    ||            ||                                                             ||
+            |sta-||            ||                                                             ||
+            |rt  ||            ||                                                             ||
+            |date||            ||                                                             ||
+            | -  ||            ||Bottom Row: Selected tiv "split vote" if not yet committed   ||
+            |end ||____________||_____________________________________________________________||
+            |date| _____  _____  ______________________  _________  ___________________________|
+            |    ||Pool ||My   ||Purchase xxxebx <rate>|||Convert||| Selected tiv title & link||
+            | *  ||_____||comit||______________________||_________||__________________________|| * Make text sideways
+            |____|_____________________________________________________________________________|
             - [ ] **When Recap** Discussion locks after vote
             Show how the people decided on the tiv
             _____________________________________________________________________
@@ -245,7 +254,7 @@ Vote occurs on the final day of its causes active period
             ||3rd______||_________| |____________________________________________|
             ||pool size||My commit|_|See election details__v_____________________|
             |_______Election details dropdown-backlog____________________________|
-        - [ ] **Phase 2** Below phase 1 card.
+        - [ ] **Phase 2** Above phase 1 card.
         When an initiative wins an election, the mission page template is created. This populates phase 2 in cause.html with a discussion of the initiative and the potential organizations to run it. It must include a discussion option. Posts to a wall, comments, images, ratings, I don't know and I'm open to suggestions. There are definitely 2 main categories - posts meant to educate about the initiative, and posts meant to educate, advertise, or criticize organizations.    
             - [ ] **Pre** Display 1-line "This phase is not yet active"
             - [ ] **When Active** Similar to phase 1 when active
@@ -269,7 +278,7 @@ Vote occurs on the final day of its causes active period
             ||_________||_________| |____________________________________________|
             ||pool size||My commit|_|See election details__v_____________________|
             |_______Election details dropdown-backlog____________________________|
-        - [ ] **Phase 3** Budget phase
+        - [ ] **Phase 3** Budget phase - Above phase 2
         Once the mission begins, all committed money is locked. Organization learns how they can earn the full pool. 
             - [ ] **Pre** Display 1-line "This phase is not yet active"
             - [ ] **when active**
@@ -289,10 +298,11 @@ Vote occurs on the final day of its causes active period
             |           /           \  __________  /            \
             |      /                                                \
             - [ ] **Recap**
-        - [ ] **Phase 4** Evaluation phase
+        - [ ] **Phase 4** Evaluation phase - Above phase 3
         After phase 3, 1/16 of the credits are released to the benefactors who provided the best contributions, and for the weeks after that, the money is released to a combination of the organizaion and the benefactors. 
             - [ ] **Pre** Display 1-line "This phase is not yet active"
             - [ ] **Progress reports** The missions 7-12 step progress report is prominent on the mission page. This consists of a benefactor-moderated comparison of the organization's progress reporting and Earthbucks parallel report.
+        - [ ] **Phase 5** Resolution just below header.
         - [ ] **items**
             - [ ] **Ring Mini** A mini *cause annulus* is displayed next to each mission (if phase 1, it's empty). This will resemble the missions credit coin.
         - [ ] **Admin side** Admins have the full table. 

@@ -52,13 +52,14 @@ interface EBXConfig {
   initiatives: Initiative[];
   organizations: Organization[];
   feed: FeedPost[];
+  missions: any[];
 }
 
 const config: EBXConfig = {
   dataRoot: '/data/',
   apiBase: '',  // empty means same origin — works when FastAPI hosts the static files
   version: '0.4.0',
-  cycleStart: new Date('2026-01-01T00:00:00'),
+  cycleStart: new Date('2026-06-15T00:00:00'),  // mission GENESIS (atm0) — aligns the annulus with the backend mission timeline
   causeLengthDays: 49,         // 7 weeks per cause
   decisionIntervalDays: 7,     // one decision per week
   useApi: true,
@@ -66,6 +67,7 @@ const config: EBXConfig = {
   initiatives: [],
   organizations: [],
   feed: [],
+  missions: [],
 };
 
 
@@ -107,19 +109,17 @@ async function loadCauses(): Promise<Cause[]> {
 
 async function loadInitiatives(): Promise<Initiative[]> {
   const data = config.useApi
-    ? await fetchAPI<Initiative[]>('/initiatives')
-    : await fetchJSON<Initiative[]>('causes/initiatives.json');
+    ? await fetchAPI<any[]>('/initiatives')
+    : await fetchJSON<any[]>('causes/initiatives.json');
   if (data) {
-    // API returns ebx_committed; legacy JSON uses committed_ebx. Normalize.
-    config.initiatives = data.map((i: any) => {
-      const causeIndex = i.cause_index ??
-        (config.causes.find(c => c.id === i.cause_id)?.index ?? 0);
-      return {
-        ...i,
-        cause_index: causeIndex,
-        committed_ebx: i.committed_ebx ?? i.ebx_committed ?? 0,
-      } as Initiative;
-    });
+    // v2 InitiativeRead: cause_id + mission_id + status (no per-tiv EBX — the
+    // pool is mission-level now). Derive cause_index for display; committed_ebx
+    // stays 0 until per-mission pool data is attached onto candidates.
+    config.initiatives = data.map((i: any) => ({
+      ...i,
+      cause_index: config.causes.find(c => c.id === i.cause_id)?.index ?? 0,
+      committed_ebx: 0,
+    } as Initiative));
   }
   return config.initiatives;
 }
@@ -129,13 +129,15 @@ async function loadOrganizations(): Promise<Organization[]> {
     ? await fetchAPI<any[]>('/organizations')
     : await fetchJSON<Organization[]>('causes/orgs.json');
   if (data) {
+    // v2 OrganizationRead has no `causes` (org↔cause is derived through mission
+    // candidacies now); left empty until candidacy data is wired.
     config.organizations = data.map((o: any) => ({
       id: o.id,
       name: o.name,
-      causes: o.causes ?? [],
+      causes: [],
       verified: o.verified ?? false,
       description: o.description,
-      founded: o.founded ?? o.founded_year,
+      founded: o.founded_year,
     }));
   }
   return config.organizations;
@@ -143,37 +145,47 @@ async function loadOrganizations(): Promise<Organization[]> {
 
 async function loadFeed(): Promise<FeedPost[]> {
   const data = config.useApi
-    ? await fetchAPI<FeedPost[]>('/posts?limit=50')
+    ? await fetchAPI<any[]>('/posts?limit=50')
     : await fetchJSON<FeedPost[]>('causes/feed.json');
-  if (data) config.feed = data;
+  if (data) {
+    // v2 PostRead: category + helpful/neutral/harmful + author_type. Map onto
+    // the legacy FeedPost shape the feed cards still render.
+    config.feed = data.map((p: any) => ({
+      ...p,
+      type: p.type ?? p.category ?? 'editorial',
+      author: p.author ?? p.author_type ?? 'Earthbux',
+      likes: p.likes ?? p.helpful_count ?? 0,
+      cause_index: p.cause_index ?? (config.causes.find(c => c.id === p.cause_id)?.index ?? 0),
+    }));
+  }
   return config.feed;
+}
+
+async function loadMissions(): Promise<any[]> {
+  if (!config.useApi) return config.missions;
+  const data = await fetchAPI<any[]>('/missions');
+  if (data) {
+    // The mission spine: phase, winners, cycle. Annotate cause_index for the
+    // annulus + cause-page lookups.
+    config.missions = data.map((m: any) => ({
+      ...m,
+      cause_index: config.causes.find(c => c.id === m.cause_id)?.index ?? 0,
+    }));
+  }
+  return config.missions;
 }
 
 async function loadAll(): Promise<void> {
   // Causes must come first so the initiatives loader can fill cause_index.
   await loadCauses();
-  await Promise.all([loadInitiatives(), loadOrganizations(), loadFeed()]);
-  // build-seq 6 (pass 35): the API serves winning_org_id; the UI renders the
-  // ORG NAME (init.winning_org). Resolve it once both lists are loaded.
-  const orgNameById: Record<string, string> = {};
-  config.organizations.forEach(o => { orgNameById[String(o.id)] = o.name; });
-  config.initiatives.forEach((i: any) => {
-    if (!i.winning_org && i.winning_org_id) {
-      i.winning_org = orgNameById[String(i.winning_org_id)] ?? null;
-    }
-  });
-  // Pass 36: per-account stores must be active BEFORE any page reads them —
-  // loadAll is awaited by every page, so switch here (build-seq 2)…
+  await Promise.all([loadInitiatives(), loadOrganizations(), loadFeed(), loadMissions()]);
+  // v2: winners + phase state are SERVER-authoritative; the client no longer
+  // resolves winning_org from the initiative list. (Deconstructed.)
   try {
     const me = await Auth.fetchMe();
     Accounts.activate(me ? me.handle : null);
   } catch (_e) { Accounts.activate(null); }
-  // …then finalize any local election whose vote day has passed and apply
-  // the phase shifts to the in-memory initiative list (build-seq 4 / 0a).
-  try {
-    LocalElections.runRollover();
-    LocalElections.applyOverrides();
-  } catch (_e) { /* never block page render on rollover */ }
+  // v2: no client-side election rollover — scheduler.py advances phases.
 }
 
 
@@ -313,103 +325,14 @@ const Cycle = {
        annulus, top card) sees the phase shift immediately.
    ───────────────────────────────────────── */
 const LocalElections = {
-  KEY: 'ebx_local_elections',
-  EPOCH_KEY: 'ebx_vote_epoch',
-  SHARES_KEY: 'ebx_vote_shares',
-  COMMIT_KEY: 'ebx_vote_committed',
-
-  _read(k: string): any {
-    try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; }
-  },
-  _write(k: string, v: unknown): void {
-    localStorage.setItem(k, JSON.stringify(v));
-  },
-
-  records(): Record<string, any> { return LocalElections._read(LocalElections.KEY); },
-  recordFor(causeId: string): any | null { return LocalElections.records()[causeId] || null; },
-
-  /** Stamp the decision date the cause's current slate is aimed at.
-      Call whenever shares are saved; no-op if an epoch already exists. */
-  touchEpoch(causeId: string, causeIndex: number): void {
-    const ep = LocalElections._read(LocalElections.EPOCH_KEY);
-    if (ep[causeId]) return;
-    ep[causeId] = Cycle.nextDecisionDate(causeIndex).toISOString();
-    LocalElections._write(LocalElections.EPOCH_KEY, ep);
-  },
-
-  /** Finalize every local election whose decision date has passed. */
-  runRollover(): void {
-    const sharesAll = LocalElections._read(LocalElections.SHARES_KEY);
-    const commitsAll = LocalElections._read(LocalElections.COMMIT_KEY);
-    const epochs = LocalElections._read(LocalElections.EPOCH_KEY);
-    const recs = LocalElections.records();
-    let dirty = false;
-    config.causes.forEach(cause => {
-      const shares = sharesAll[cause.id];
-      const votedIds = shares
-        ? Object.keys(shares).filter(k => (Number(shares[k]) || 0) > 0) : [];
-      if (!votedIds.length) return;
-      let epochIso: string = epochs[cause.id];
-      if (!epochIso) {
-        // Legacy slate without an epoch — it targets the cause's next
-        // decision. On the vote day itself nextDecisionDate is already
-        // <= now, so day-of finalization still fires (Jax's Jun 11 case).
-        epochIso = Cycle.nextDecisionDate(cause.index).toISOString();
-        epochs[cause.id] = epochIso;
-        dirty = true;
-      }
-      if (new Date(epochIso).getTime() > Date.now()) return; // still open
-      const candidates = config.initiatives.filter(i =>
-        (i.cause_id === cause.id || i.cause_index === cause.index) &&
-        (!i.status || ['suggested', 'debate'].includes(i.status)));
-      const committed = commitsAll[cause.id] || null;
-      const myEbx = committed && committed.ebx ? Number(committed.ebx) : 0;
-      const weight = (i: any) => {
-        const base = Number((i as any).committed_ebx ?? (i as any).ebx_committed ?? 0);
-        const s = Number(shares[i.id] || 0);
-        return base + (s > 0 ? Math.max(s, myEbx * s) : 0);
-      };
-      const stillLive = candidates.filter(i => votedIds.includes(String(i.id)));
-      if (candidates.length && stillLive.length) {
-        const winner = candidates.slice().sort((a, b) => weight(b) - weight(a))[0];
-        recs[cause.id] = {
-          winner_id: winner.id,
-          closed_at: epochIso,
-          shares,
-          ebx: myEbx,
-          at: Date.now(),
-        };
-      }
-      // Votes RESET on vote day regardless (INSTRUCTIONS build-seq 4).
-      delete sharesAll[cause.id];
-      delete commitsAll[cause.id];
-      delete epochs[cause.id];
-      dirty = true;
-    });
-    if (dirty) {
-      LocalElections._write(LocalElections.SHARES_KEY, sharesAll);
-      LocalElections._write(LocalElections.COMMIT_KEY, commitsAll);
-      LocalElections._write(LocalElections.EPOCH_KEY, epochs);
-      LocalElections._write(LocalElections.KEY, recs);
-    }
-  },
-
-  /** Promote locally-elected winners in the in-memory initiative list. */
-  applyOverrides(): void {
-    const recs = LocalElections.records();
-    Object.keys(recs).forEach(causeId => {
-      const rec = recs[causeId];
-      const init: any = config.initiatives.find(i => String(i.id) === String(rec.winner_id));
-      if (!init) return;
-      if (!init.status || ['suggested', 'debate'].includes(init.status)) {
-        init.status = 'org_vote';
-        init.election_close = rec.closed_at;
-        init.election_open = new Date(
-          new Date(rec.closed_at).getTime() - 7 * MS_PER_DAY).toISOString();
-        init.winning_org = init.winning_org || null; // org race just opened
-      }
-    });
-  },
+  // DECONSTRUCTED (v2): phase transitions are server-side (scheduler.py +
+  // the /missions/{id}/p1|p2 tallies). Kept as no-op stubs so any lingering
+  // call sites don't throw while the pages are rebuilt.
+  records(): Record<string, any> { return {}; },
+  recordFor(_causeId: string): any | null { return null; },
+  touchEpoch(_causeId: string, _causeIndex: number): void {},
+  runRollover(): void {},
+  applyOverrides(): void {},
 };
 
 
@@ -421,9 +344,9 @@ const LocalElections = {
    under the previous account's namespace and the next account's stash is
    restored. Server-side data was already per-benefactor.
    ───────────────────────────────────────── */
+// v2: vote/election keys removed — votes live on the server now. Only the
+// remaining demo-local features stay account-scoped during the rebuild.
 const ACCOUNT_SCOPED_KEYS = [
-  'ebx_vote_shares', 'ebx_vote_committed', 'ebx_vote_epoch',
-  'ebx_local_elections', 'ebx_org_votes', 'ebx_org_committed',
   'ebx_org_regs', 'ebx_org_tasks', 'ebx_post_votes', 'ebx_local_posts',
   'ebx_profile', 'ebx_watchlist',
 ];
@@ -489,85 +412,12 @@ const Votes = {
   RANK_COLORS,
   OTHER_COLOR,
   rankColor,
-
-  /**
-   * Synthesize a stable vote distribution for (causeIndex, cycleNum, orgs).
-   * Bucket anything < 5% into a single gray "Other" slice.
-   */
-  forCause(causeIndex: number, cycleNum: number, orgs: Organization[]): VoteShare[] {
-    if (!orgs.length) return [];
-
-    // Generate raw weights, deterministic per (cause, cycle, org).
-    const weights = orgs.map((o, i) => {
-      const seed = causeIndex * 1009 + cycleNum * 31 + i * 17 + hashString(o.id);
-      // Skewed so a few orgs dominate; rest are tail.
-      return Math.pow(pseudoRandom(seed) + 0.05, 2.4);
-    });
-    const total = weights.reduce((a, b) => a + b, 0) || 1;
-
-    const shares = orgs
-      .map((o, i) => ({
-        org_id: o.id,
-        org_name: o.name,
-        pct: (weights[i] / total) * 100,
-      }))
-      .sort((a, b) => b.pct - a.pct);
-
-    const main = shares.filter(s => s.pct >= 5);
-    const tail = shares.filter(s => s.pct < 5);
-    const result: VoteShare[] = main.map((s, idx) => ({
-      ...s,
-      rank: idx,
-      isOther: false,
-      color: idx === 0
-        ? (config.causes[causeIndex]?.color ?? '#888')
-        : fadeToWhite(
-            config.causes[causeIndex]?.color ?? '#888',
-            Math.min(0.92, idx / Math.max(2, main.length - 1))
-          ),
-    }));
-    if (tail.length) {
-      result.push({
-        org_id: 'other',
-        org_name: `Other (${tail.length})`,
-        pct: tail.reduce((a, b) => a + b.pct, 0),
-        rank: -1,
-        isOther: true,
-        color: OTHER_COLOR,
-      });
-    }
-    return result;
-  },
-
-  /** Pick the orgs that will appear in a given cause's race. */
-  orgsForCause(causeIndex: number): Organization[] {
-    const all = config.organizations;
-    if (!all.length) return [];
-    // Prefer orgs explicitly mapped to this cause; fall back to all of them
-    // (the data may not yet associate every org with every cause).
-    const tagged = all.filter(o => (o.causes || []).includes(causeIndex));
-    return tagged.length ? tagged : all;
-  },
-
-  /**
-   * Rank a cause's initiatives for a SPECIFIC cycle.
-   * Real EBX commitments always win; ties (e.g. all-zero seed data) are broken
-   * deterministically per-cycle so consecutive cycles surface different leaders.
-   * This is why the top card's "This week" (cycleNum) and "Newest" (cycleNum+1)
-   * panes no longer collapse onto the same initiative when commit data is empty.
-   * Replace the tie-breaker with a real per-cycle winning-initiative tally once
-   * the backend records which initiative won each cycle.
-   */
-  initiativesForCause(causeIndex: number, cycleNum: number, inits: Initiative[]): Initiative[] {
-    return [...inits].sort((a, b) => {
-      const ca = a.committed_ebx || 0;
-      const cb = b.committed_ebx || 0;
-      if (cb !== ca) return cb - ca;
-      const sa = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(a.id));
-      const sb = pseudoRandom(causeIndex * 1009 + cycleNum * 31 + hashString(b.id));
-      return sb - sa;
-    });
-  },
+  // DECONSTRUCTED (v2): org standings + initiative ranking come from the
+  // backend tallies (/missions/{id}/p2/tally and /p1/tally), not a synthetic
+  // distribution. These return empty / passthrough until the pages are wired.
+  forCause(_causeIndex: number, _cycleNum: number, _orgs: Organization[]): VoteShare[] { return []; },
+  orgsForCause(_causeIndex: number): Organization[] { return []; },
+  initiativesForCause(_causeIndex: number, _cycleNum: number, inits: Initiative[]): Initiative[] { return [...inits]; },
 };
 
 function hashString(s: string): number {
@@ -2124,7 +1974,7 @@ function missionStrip(): string {
 const EBX = {
   config,
   fetchJSON, fetchAPI,
-  loadCauses, loadInitiatives, loadOrganizations, loadFeed, loadAll,
+  loadCauses, loadInitiatives, loadOrganizations, loadFeed, loadMissions, loadAll,
   Cycle, Annulus, Votes, LocalElections, Accounts,
   initFooter, initPage,
   getParam, buildURL,

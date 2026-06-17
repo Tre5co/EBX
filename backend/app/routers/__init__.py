@@ -1,1 +1,1 @@
-"""Route modules for the Earthbucks API."""
+"""v2 (mission-centric) API routers. Parallel to routers/; wired by main."""

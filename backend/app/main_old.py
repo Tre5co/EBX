@@ -1,8 +1,13 @@
-"""Earthbucks FastAPI entrypoint — v2 (mission-centric).
+"""Earthbucks FastAPI entrypoint.
 
-Parallel to main.py; becomes main.py at cutover. Wires the routers package
-against the v2 models/schemas/crud. Run from backend/:
+Run locally from the backend/ directory:
     uvicorn app.main:app --reload --port 8000
+
+This server does double duty:
+  - Routes under /causes, /initiatives, /organizations, /missions, /posts,
+    /auth -> JSON API.
+  - /, /index.html, /cause.html, etc. and /resources/* and /data/* are served
+    as static files from the project root.
 """
 from pathlib import Path
 
@@ -16,13 +21,11 @@ from .routers import (
     admin,
     auth,
     benefactors,
-    candidacies,
     causes,
     initiatives,
     missions,
     organizations,
     posts,
-    transactions,
     votes,
 )
 
@@ -33,8 +36,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 app = FastAPI(
     title="Earthbucks API",
-    version="0.2.0",
-    description="Mission-centric backend + static host for the Earthbucks platform.",
+    version="0.1.0",
+    description="Backend + static host for the Earthbucks platform.",
 )
 
 app.add_middleware(
@@ -48,7 +51,7 @@ app.add_middleware(
 
 @app.get("/api", tags=["health"])
 def api_root() -> JSONResponse:
-    return JSONResponse({"name": "Earthbucks API", "version": "0.2.0", "status": "ok"})
+    return JSONResponse({"name": "Earthbucks API", "version": "0.1.0", "status": "ok"})
 
 
 @app.get("/health", tags=["health"])
@@ -62,11 +65,11 @@ app.include_router(causes.router)
 app.include_router(organizations.router)
 app.include_router(initiatives.router)
 app.include_router(missions.router)
-app.include_router(candidacies.router)
-app.include_router(votes.router)
 app.include_router(posts.router)
+# build-seq 3 & 4 (Pass 16) — cause-scoped votes + watchlist endpoints.
+app.include_router(votes.router)
 app.include_router(benefactors.router)
-app.include_router(transactions.router)
+# build-seq 1 — admin votes console (/admin/votes, summaries, checks, CSV).
 app.include_router(admin.router)
 
 
@@ -88,12 +91,10 @@ def root_page() -> FileResponse:
 
 _HTML_PAGES = ("index", "cause", "mission", "profile", "about", "admin")
 
-
 def _make_handler(page: str):
     def handler() -> FileResponse:
         return _html(page)
     return handler
-
 
 for _page in _HTML_PAGES:
     app.add_api_route(f"/{_page}", _make_handler(_page), include_in_schema=False)
