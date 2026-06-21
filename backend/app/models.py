@@ -408,6 +408,10 @@ class Post(Base):
     mission_id: Mapped[Optional[str]] = mapped_column(ForeignKey("missions.id"), nullable=True)
     tiv_id: Mapped[Optional[str]] = mapped_column(ForeignKey("initiatives.id"), nullable=True)
     cause_id: Mapped[Optional[str]] = mapped_column(ForeignKey("causes.id"), nullable=True)
+    # Target ORG for evaluation / org-scoped posts (distinct from org_author_id).
+    org_id: Mapped[Optional[str]] = mapped_column(ForeignKey("organizations.id"), nullable=True)
+    # case → for|against ; evaluation → positive|negative ; else null.
+    stance: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     neutral_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

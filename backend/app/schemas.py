@@ -91,6 +91,7 @@ class InitiativeRead(InitiativeBase):
     rating_count: int = 0
     logo_url: Optional[str] = None
     approved: bool = False
+    ebx_committed: float = 0   # aggregate committed EBX across all phase-1 votes
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +294,8 @@ class PostBase(BaseModel):
     mission_id: Optional[str] = None
     tiv_id: Optional[str] = None
     cause_id: Optional[str] = None
+    org_id: Optional[str] = None     # target org (evaluation / org-scoped posts)
+    stance: Optional[str] = None     # case: for|against · evaluation: positive|negative
 
 
 class PostCreate(PostBase):

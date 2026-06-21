@@ -52,7 +52,11 @@
       config.initiatives = data.map((i) => ({
         ...i,
         cause_index: config.causes.find((c) => c.id === i.cause_id)?.index ?? 0,
-        committed_ebx: 0
+        // Mirror the backend's committed-EBX aggregate (ebx_committed) onto the
+        // committed_ebx field the homepage cards read. Was hardcoded 0, which
+        // zeroed every leaderboard. 10 EBX = 1 vote.
+        committed_ebx: i.ebx_committed ?? i.committed_ebx ?? 0,
+        ebx_committed: i.ebx_committed ?? i.committed_ebx ?? 0
       }));
     }
     return config.initiatives;
@@ -326,7 +330,7 @@
         const startAngle = i * anglePerSeg - Math.PI / 2;
         const endAngle = startAngle + anglePerSeg;
         const innerPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        innerPath.setAttribute("d", annularSectorPath(cx, cy, midR, innerR, startAngle, endAngle));
+        innerPath.setAttribute("d", chevronSectorPath(cx, cy, midR, innerR, startAngle, endAngle));
         innerPath.setAttribute("fill", cause.color);
         innerPath.setAttribute("fill-opacity", "0.92");
         innerPath.setAttribute("stroke", "#0f1a14");
@@ -435,6 +439,7 @@
       const { _cx: cx, _cy: cy, _outerR: outerR, _midR: midR } = Annulus;
       const n = 7;
       const anglePerSeg = 2 * Math.PI / n;
+      const nextIndex = (state.causeIndex + 1) % n;
       Annulus._segments.forEach((seg, i) => {
         seg.labelGroup.setAttribute(
           "transform",
@@ -444,12 +449,28 @@
           seg.innerPath.setAttribute("stroke", "#ffffff");
           seg.innerPath.setAttribute("stroke-width", "3");
           seg.innerPath.setAttribute("filter", "drop-shadow(0 0 8px rgba(255,255,200,0.55))");
+        } else if (i === nextIndex) {
+          // Upcoming cause — glow in its own color (layered colored halo).
+          const col = config.causes[i] ? config.causes[i].color : "#ffffff";
+          seg.innerPath.setAttribute("stroke", col);
+          seg.innerPath.setAttribute("stroke-width", "2");
+          seg.innerPath.setAttribute("filter", `drop-shadow(0 0 4px ${col}) drop-shadow(0 0 11px ${col})`);
         } else {
           seg.innerPath.setAttribute("stroke", "#0f1a14");
           seg.innerPath.setAttribute("stroke-width", "1.5");
           seg.innerPath.removeAttribute("filter");
         }
       });
+      // Raise the active + upcoming sectors above their neighbors so the glow
+      // halos aren't painted over by adjacent chevrons. Only reorder when the
+      // active cause changes (not every animation frame).
+      if (Annulus._lastHiCause !== state.causeIndex) {
+        Annulus._lastHiCause = state.causeIndex;
+        [nextIndex, state.causeIndex].forEach(hi => {
+          const seg = Annulus._segments[hi];
+          if (seg && group) { group.appendChild(seg.innerPath); group.appendChild(seg.labelGroup); }
+        });
+      }
       if (Annulus._nameEl) {
         const cause = config.causes[state.causeIndex];
         if (cause) Annulus._nameEl.textContent = cause.name;
@@ -462,6 +483,32 @@
       if (Annulus._rafId !== null) cancelAnimationFrame(Annulus._rafId);
     }
   };
+  // Curved-chevron sector (build-seq: arrow wheel). Each sector is two
+  // parallelograms mirrored across the mid-radius spine, giving a 90° tip at
+  // the a1 (clockwise) end and a 90° notch at the a0 end. The 45° edges come
+  // from offsetting the inner/outer arcs by `al` = ringThickness/2 ÷ midRadius,
+  // so the slanted edges rise one radial half-thickness over an equal tangential
+  // run (≈45°). Tips point clockwise — opposite the wheel's rotation.
+  function chevronSectorPath(cx, cy, rOuter, rInner, a0, a1) {
+    const rMid = (rOuter + rInner) / 2;
+    const al = (rOuter - rInner) / (rOuter + rInner); // angular offset ≈ 45° edges
+    const P = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    const A = P(rMid, a1);        // tip (points toward a1)
+    const B = P(rOuter, a1 - al); // outer front
+    const C = P(rOuter, a0);      // outer back
+    const D = P(rMid, a0 + al);   // back notch (on the spine)
+    const E = P(rInner, a0);      // inner back
+    const F = P(rInner, a1 - al); // inner front
+    return [
+      `M ${A[0]} ${A[1]}`,
+      `L ${B[0]} ${B[1]}`,
+      `A ${rOuter} ${rOuter} 0 0 0 ${C[0]} ${C[1]}`,
+      `L ${D[0]} ${D[1]}`,
+      `L ${E[0]} ${E[1]}`,
+      `A ${rInner} ${rInner} 0 0 1 ${F[0]} ${F[1]}`,
+      "Z"
+    ].join(" ");
+  }
   function annularSectorPath(cx, cy, rOuter, rInner, a0, a1) {
     const x1 = cx + rOuter * Math.cos(a0);
     const y1 = cy + rOuter * Math.sin(a0);
@@ -588,13 +635,15 @@
   }
   var formatNumber = (n) => Number(n).toLocaleString();
   var formatEBX = (n) => `${formatNumber(n)} EBX`;
-  var EBX_PER_VOTE = 1;
+  var EBX_PER_VOTE = 10;   // 10 EBX = 1 vote (≈ $1), matching the backend p1 tally
   function voteWeight(baseVotes, committedEbx) {
     return Math.max(baseVotes || 0, (committedEbx || 0) / EBX_PER_VOTE);
   }
+  // Votes are fractional now (10 EBX = 1 vote, 1 EBX = 0.1 vote). Show a fixed
+  // 1-decimal precision so leaderboards line up and never look like raw ints.
   var formatVotes = (n) => {
-    const v = Math.round(Number(n) || 0);
-    return `${formatNumber(v)} vote${v === 1 ? "" : "s"}`;
+    const v = Number(n) || 0;
+    return `${v.toFixed(1)} vote${v === 1 ? "" : "s"}`;
   };
   var formatPercent = (v, d = 1) => `${Number(v).toFixed(d)}%`;
   var formatDate = (iso) => new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -702,11 +751,24 @@
       editorial: "Editorial",
       opinion: "Opinion",
       org_update: "Org Update",
-      headline: "Headline"
+      headline: "Headline",
+      case: "Case",
+      context: "Context",
+      analysis: "Analysis",
+      evaluation: "Feedback"
     };
-    const label = typeLabel[post.type] ?? post.type;
+    // Show the post's actual type, plus its stance where one applies:
+    // case -> for|against ; evaluation(feedback) -> positive|negative.
+    const baseLabel = typeLabel[post.type] ?? post.type;
+    const label = baseLabel + (post.stance ? " \xB7 " + post.stance : "");
+    // build-seq 11: discussion posts open in their cause's p1 viewer (with the
+    // voting dialog); editorial/headline news stays on en.html.
+    var _isDiscussion = ["case", "context", "analysis", "evaluation"].indexOf(post.type) >= 0;
+    var _href = (cause && _isDiscussion)
+      ? ("cause.html?id=" + cause.id + "&post=" + post.id)
+      : ("en.html?id=" + post.id);
     return `
-    <a href="en.html?id=${post.id}" class="ebx-feed-card"
+    <a href="${_href}" class="ebx-feed-card"
        style="text-decoration:none;color:inherit;display:flex;flex-direction:column;
               gap:8px;padding:16px;border-radius:10px;
               background:rgba(15,26,20,0.5);border:1px solid rgba(255,255,255,0.07);
@@ -1321,14 +1383,35 @@
     </a>
   `;
   }
+  // Card action footer (build-seq: two-button cards). Vote → the cause-page
+  // p1/p2 voting area (caller supplies d.voteHref). Research → opens the
+  // matching entity's expanded table row via the page's idxResearch() hook.
+  function _electionCardFooter(d) {
+    const voteHref = d.voteHref || d.href || "#";
+    const cid = String(d.causeId || "").replace(/'/g, "");
+    const base = "flex:1;display:block;text-align:center;font-family:var(--font-mono);font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:5px 6px;border-radius:5px;cursor:pointer;text-decoration:none;box-sizing:border-box;transition:filter 0.15s,background 0.15s;";
+    const vote = '<a href="' + voteHref + '" class="rc-vote" style="' + base + "background:" + d.color + ";color:#0f1a14;border:1px solid " + d.color + ';">Vote</a>';
+    const research = '<button type="button" class="rc-research" onclick="if(window.idxResearch)idxResearch(\'' + cid + "');return false;\" style=\"" + base + "background:transparent;color:" + d.color + ";border:1px solid " + d.color + ';">Discuss</button>';
+    return '<div style="display:flex;gap:6px;padding:7px 10px 9px;border-top:1px solid rgba(255,255,255,0.06);">' + vote + research + "</div>";
+  }
+  // Vote window shown in a card's corner: the full election phase ending on the
+  // decision/close date — "<open> - <close>". Phase 1 (initiative vote) runs 7
+  // weeks; phase 2 (org vote) runs 8 weeks.
+  function formatVoteWindow(closeDate, weeks) {
+    const close = new Date(closeDate);
+    const open = new Date(close.getTime() - (weeks || 7) * 7 * MS_PER_DAY);
+    return formatShortDate(open) + " - " + formatShortDate(close);
+  }
   function electionCardFace(d) {
     const ranks = ["1.", "2.", "3."];
     const rowsHtml = d.rows.slice(0, 3).map((r, i) => '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 12px;font-family:var(--font-mono);font-size:0.6rem;color:rgba(245,240,232,0.8);"><span style="color:rgba(245,240,232,0.4);width:14px;flex-shrink:0;">' + ranks[i] + '</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + r.name + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (r.votes > 0 ? formatVotes(r.votes) : "--") + "</span></div>").join("");
     const body = d.rows.length ? rowsHtml : '<div style="padding:10px 12px;font-size:0.68rem;color:rgba(245,240,232,0.35);font-style:italic;">No votes yet.</div>';
-    const glow = d.glow ? "box-shadow:0 0 14px rgba(255,255,255,0.28),0 0 4px rgba(255,255,255,0.5);" : "";
-    return '<div class="race-card" data-cause-id="' + d.causeId + '" style="--rc-color:' + d.color + ";display:block;text-decoration:none;cursor:pointer;width:100%;box-sizing:border-box;background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);border-radius:10px;overflow:hidden;transition:background 0.2s;" + glow + '"><div style="padding:8px 12px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--rc-color);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><a href="' + d.href + '" style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;word-break:break-word;">' + d.headerLeft + '</a><span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.55);white-space:nowrap;flex-shrink:0;">' + d.headerRight + "</span></div>" + body + '<div style="border-top:1px solid rgba(255,255,255,0.06);padding:6px 12px 8px;display:flex;flex-direction:column;gap:3px;"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My choice</span> ' + (d.myChoice ? d.myChoice : '<span style="opacity:0.45;font-style:italic;">no vote yet</span>') + '</span><span style="flex-shrink:0;">' + ((d.myChoiceEbx ?? 0) > 0 ? formatEBX(d.myChoiceEbx) : "--") + '</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatEBX(d.myCommit) : "--") + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:rgba(245,240,232,0.4);font-weight:400;font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatEBX(d.pool) : "--") + "</span></div></div></div>";
+    const glow = d.glowColor
+      ? "box-shadow:0 0 16px " + d.glowColor + ",0 0 5px " + d.glowColor + ";"
+      : (d.glow ? "box-shadow:0 0 14px rgba(255,255,255,0.28),0 0 4px rgba(255,255,255,0.5);" : "");
+    return '<div class="race-card" data-cause-id="' + d.causeId + '" style="--rc-color:' + d.color + ";display:block;text-decoration:none;cursor:pointer;width:100%;box-sizing:border-box;background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);border-radius:10px;overflow:hidden;transition:background 0.2s;" + glow + '"><div style="padding:8px 12px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--rc-color);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><a href="' + d.href + '" style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;word-break:break-word;">' + d.headerLeft + '</a><span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.55);white-space:nowrap;flex-shrink:0;">' + d.headerRight + "</span></div>" + body + '<div style="border-top:1px solid rgba(255,255,255,0.06);padding:6px 12px 8px;display:flex;flex-direction:column;gap:3px;"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My choice</span> ' + (d.myChoice ? d.myChoice : '<span style="opacity:0.45;font-style:italic;">no vote yet</span>') + '</span><span style="flex-shrink:0;">' + ((d.myChoiceEbx ?? 0) > 0 ? formatEBX(d.myChoiceEbx) : "--") + '</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatEBX(d.myCommit) : "--") + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:rgba(245,240,232,0.4);font-weight:400;font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatEBX(d.pool) : "--") + "</span></div></div>" + _electionCardFooter(d) + "</div>";
   }
-  function sideCard(causeIndex) {
+  function sideCard(causeIndex, opts) {
     const cause = config.causes.find((c) => c.index === causeIndex);
     if (!cause) return "";
     const cycleNum = Cycle.currentCycleNum();
@@ -1354,20 +1437,24 @@
     const SYNTH_TURNOUT = 200;
     const rows = orgShares.filter((sh) => !sh.isOther).map((sh) => ({ name: sh.org_name, votes: Math.round(sh.pct / 100 * SYNTH_TURNOUT), ebx: Math.round(sh.pct / 100 * pool) }));
     const myRow = myChoice ? rows.find((r) => r.name === myChoice) : null;
+    // Org vote day = 8 weeks after the tiv vote day (phase 2 runs the 8 weeks
+    // following the initiative vote), so the org window opens where tiv closes.
     const orgVoteDay = new Date(
-      Cycle.nextDecisionDate(causeIndex).getTime() + config.decisionIntervalDays * MS_PER_DAY
+      Cycle.nextDecisionDate(causeIndex).getTime() + 8 * config.decisionIntervalDays * MS_PER_DAY
     );
     return electionCardFace({
       causeId: cause.id,
       color: cause.color,
       headerLeft: mission ? mission.title : cause.name,
-      headerRight: formatShortDate(orgVoteDay),
+      headerRight: formatVoteWindow(orgVoteDay, 8),
       rows,
       myChoice,
       myChoiceEbx: myRow ? myRow.ebx : 0,
       myCommit,
       pool,
-      href: "cause.html?id=" + cause.id
+      href: "cause.html?id=" + cause.id,
+      voteHref: "cause.html?id=" + cause.id + "&vote=2#phase-recap-2",
+      glowColor: opts && opts.glowColor ? opts.glowColor : null
     });
   }
   function upcomingCauseBanner(activeIndex) {
@@ -1389,7 +1476,7 @@
     const title = `<span style="font-size:0.8rem;color:rgba(245,240,232,0.88);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;">${topInit ? (topInit.emoji ? topInit.emoji + " " : "") + topInit.title : "No initiative yet"}</span>`;
     const orgStr = orgLeader ? `<span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.42);white-space:nowrap;flex-shrink:0;">${orgLeader.org_name} ${orgLeader.pct.toFixed(0)}%</span>` : "";
     const poolStr = pool > 0 ? `<span style="font-family:var(--font-mono);font-size:0.56rem;color:rgba(245,240,232,0.38);white-space:nowrap;flex-shrink:0;">$${formatNumber(pool)}</span>` : "";
-    const btn = `<span style="font-family:var(--font-mono);font-size:0.56rem;font-weight:700;padding:3px 9px;border-radius:4px;background:${cause.color};color:#0f1a14;white-space:nowrap;flex-shrink:0;">${formatShortDate(decision)} \xB7 ${daysUntil}d</span>`;
+    const btn = `<span style="font-family:var(--font-mono);font-size:0.56rem;font-weight:700;padding:3px 9px;border-radius:4px;background:${cause.color};color:#0f1a14;white-space:nowrap;flex-shrink:0;">${formatShortDate(decision)} \xB7 ${daysUntil}d</span>`
     return `<a href="cause.html?id=${cause.id}" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:8px;background:rgba(15,26,20,0.78);border:1.5px solid ${cause.color};text-decoration:none;color:rgba(245,240,232,0.95);width:100%;box-sizing:border-box;overflow:hidden;">` + dot + label + title + orgStr + poolStr + btn + "</a>";
   }
   function topCardHeader(activeIndex) {
@@ -1508,6 +1595,7 @@
     formatPercent,
     formatDate,
     formatShortDate,
+    formatVoteWindow,
     timeAgo,
     tokenChip,
     creditBadge,

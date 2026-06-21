@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux — Cause</title>
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
 
@@ -1497,13 +1498,13 @@
             ? `<div class="p1-disc__row" style="grid-template-columns:1fr auto;">
                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                    <span style="font-family:var(--font-mono);font-size:0.58rem;text-transform:uppercase;
-                                letter-spacing:0.1em;opacity:0.6;">Most helpful evaluation</span>
+                                letter-spacing:0.1em;opacity:0.6;">Most helpful feedback</span>
                    ${best.title || best.body.slice(0, 70)}</span>
                  <a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;"
                     href="en.html?id=${best.id}">go</a>
                </div>`
             : `<div class="p1-disc__row" style="grid-template-columns:1fr;opacity:0.55;">
-                 <span>No evaluation posts were featured for this election.</span></div>`;
+                 <span>No feedback posts were featured for this election.</span></div>`;
         } catch (e) { evalHtml = ''; }
         p2Html = `
           <div class="p1-grid" style="margin-top:4px;">
@@ -1768,7 +1769,7 @@
             _v2TallyWeights[e.tiv_id] = Math.max(0, e.votes);
             const el = document.querySelector('.election-card__row[data-tally-id="' + e.tiv_id + '"] .election-card__tally');
             if (el) el.textContent = e.voter_count + ' voter' + (e.voter_count === 1 ? '' : 's') +
-                                     ' · ' + e.votes + ' votes';
+                                     ' · ' + (Number(e.votes) || 0).toFixed(1) + ' votes';
           });
           try { renderAnnulus(); renderLeadingPanel(); } catch (e) {}
         }
@@ -2041,59 +2042,81 @@
                   onclick="p1ClearSearch()">Clear search</button>
         </div>`;
     }
-    // build-seq 7: "Selected post" box with the STRUCTURE 3-way toggle (a)
-    // between the leading case / context / analysis post for this mission.
-    let _p1CaseTab = 'case';
-    function p1SetCaseTab(tab) {
-      _p1CaseTab = tab;
+    // build-seq 11: p1 post viewer. Toggles between MISSION-wide posts (default)
+    // and posts about the selected initiative. Composing happens on index.html
+    // (the "Post about this" link opens that row); here a post is read-only +
+    // clickable to expand with the helpful/neutral/wrong voting dialog. Org-
+    // specific posts are surfaced by the p2 area.
+    function p1MissionPosts(cause) {
+      return p1Posts(cause).filter(x => !x.initiative_id && !x.tiv_id && !x.org_id);
+    }
+    function p1TivPosts(cause, tivId) {
+      if (!tivId) return [];
+      return p1Posts(cause).filter(x => (x.initiative_id === tivId || x.tiv_id === tivId));
+    }
+    let _p1PostScope = 'mission';   // 'mission' | 'tiv' — default mission-wide
+    let _p1OpenPostId = null;
+    function p1SetPostScope(s) {
+      _p1PostScope = s === 'tiv' ? 'tiv' : 'mission';
+      _p1OpenPostId = null;
       const cause = _p1Cause(); if (cause) _rerenderElectionCard(cause);
     }
-    window.p1SetCaseTab = p1SetCaseTab;
-    function p1SelectedPostHTML(cause) {
+    function p1TogglePost(id) {
+      _p1OpenPostId = (_p1OpenPostId === id) ? null : id;
+      const cause = _p1Cause(); if (cause) _rerenderElectionCard(cause);
+    }
+    window.p1SetPostScope = p1SetPostScope;
+    window.p1TogglePost = p1TogglePost;
+    function p1SelectedPostHTML(cause, disp) {
       const myVotes = p1PostVotes();
-      const tabs = P1_CATS.map(c => `
-        <button class="p1-casetab ${_p1CaseTab === c.value ? 'active' : ''}"
-                onclick="p1SetCaseTab('${c.value}')">${c.label}</button>`).join('');
-      const post = p1Featured(cause, _p1CaseTab);
-      const mine = post ? myVotes[post.id] : null;
-      const body = post ? `
-        <div style="font-size:0.86rem;font-weight:600;margin-bottom:4px;">
-          ${post.title || (post.body || '').slice(0, 80)}</div>
-        <div style="font-size:0.78rem;opacity:0.78;line-height:1.45;">${(post.body || '').slice(0, 280)}</div>
-        <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-          <span class="p1-disc__votes" style="display:flex;gap:3px;">
-            <button class="${mine === 'helpful' ? 'voted' : ''}" title="Helpful" onclick="p1VotePost('${post.id}','helpful')">✓</button>
-            <button class="${mine === 'neutral' ? 'voted' : ''}" title="Neutral" onclick="p1VotePost('${post.id}','neutral')">~</button>
-            <button class="${mine === 'wrong' ? 'voted' : ''}" title="Wrong" onclick="p1VotePost('${post.id}','wrong')">✗</button>
-          </span>
-          <a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;"
-             href="en.html?id=${post.id}">go</a>
-          <button class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;"
-                  onclick="p1OpenCompose('${_p1CaseTab}')">post</button>
-        </div>`
-        : `<div style="font-size:0.78rem;opacity:0.55;">No ${_p1CaseTab} post featured yet —
-             <a class="election-card__withdraw-btn" href="index.html"
-                style="padding:2px 8px;font-size:0.62rem;text-decoration:none;">be the first →</a></div>`;
-      return `
-        <div class="p1-box">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-            <div class="p1-box__label" style="margin-bottom:0;">Selected post</div>
-            <div class="p1-casetabs">${tabs}</div>
-          </div>
-          <div style="margin-top:8px;">${body}</div>
-          <div id="p1-compose" style="display:none;margin:8px 0 2px;">
-            <textarea id="p1-compose-body" rows="2" placeholder="Write your post…"
-                      style="width:100%;padding:6px 8px;font-size:0.78rem;color:inherit;resize:vertical;
-                             background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);
-                             border-radius:var(--radius-sm);"></textarea>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
-              <button class="election-card__commit-btn" style="padding:4px 12px;font-size:0.66rem;" onclick="p1SubmitPost()">Post</button>
-              <button class="election-card__withdraw-btn" style="padding:4px 10px;font-size:0.66rem;"
-                      onclick="document.getElementById('p1-compose').style.display='none'">Cancel</button>
-              <span id="p1-compose-cat-label" style="display:none;"></span>
-              <span id="p1-compose-msg" style="font-family:var(--font-mono);font-size:0.62rem;opacity:0.7;"></span>
+      const tivId = (disp && disp.id) || window._p1SelectedId || null;
+      const scope = _p1PostScope;
+      const score = x => (x.helpful_count || 0) + (x.likes || 0);
+      const list = (scope === 'tiv' ? p1TivPosts(cause, tivId) : p1MissionPosts(cause))
+        .sort((a, b) => score(b) - score(a) || new Date(b.created_at) - new Date(a.created_at));
+      const toggle = `
+        <div class="p1-casetabs">
+          <button class="p1-casetab ${scope === 'mission' ? 'active' : ''}" onclick="p1SetPostScope('mission')">Mission</button>
+          <button class="p1-casetab ${scope === 'tiv' ? 'active' : ''}" onclick="p1SetPostScope('tiv')">${tivId ? 'This initiative' : 'Initiative'}</button>
+        </div>`;
+      const rowFor = (p) => {
+        const open = _p1OpenPostId === p.id;
+        const mine = myVotes[p.id];
+        const _rawCat = (p.type || p.category || '').toString().toLowerCase();
+        const cat = (_rawCat === 'evaluation' ? 'feedback' : _rawCat).toUpperCase();
+        const stanceTag = p.stance ? ' · ' + p.stance : '';
+        const head = `<div class="p1-disc__row" style="grid-template-columns:auto 1fr auto;cursor:pointer;"
+             onclick="p1TogglePost('${p.id}')">
+            <span style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.08em;opacity:0.6;white-space:nowrap;">${cat}${stanceTag}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title || (p.body || '').slice(0, 70)}</span>
+            <span style="opacity:0.6;font-size:0.62rem;white-space:nowrap;">${score(p)} ✓</span>
+          </div>`;
+        const detail = open ? `<div style="padding:4px 8px 10px;border:1px solid rgba(255,255,255,0.08);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);">
+            <div style="font-size:0.8rem;opacity:0.85;line-height:1.5;">${(p.body || '')}</div>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap;">
+              <span class="p1-disc__votes" style="display:flex;gap:4px;">
+                <button class="${mine === 'helpful' ? 'voted' : ''}" onclick="p1VotePost('${p.id}','helpful')">✓ helpful</button>
+                <button class="${mine === 'neutral' ? 'voted' : ''}" onclick="p1VotePost('${p.id}','neutral')">~ neutral</button>
+                <button class="${mine === 'wrong' ? 'voted' : ''}" onclick="p1VotePost('${p.id}','wrong')">✗ wrong</button>
+              </span>
+              <a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;" href="en.html?id=${p.id}">open →</a>
             </div>
+          </div>` : '';
+        return head + detail;
+      };
+      const rows = list.length
+        ? list.map(rowFor).join('')
+        : `<div style="font-size:0.78rem;opacity:0.55;padding:6px 0;">No ${scope === 'tiv' ? 'initiative' : 'mission'} posts yet.</div>`;
+      const postHref = tivId ? ('index.html?init=' + tivId) : 'index.html';
+      return `
+        <div class="p1-box" id="p1-post-viewer">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <div class="p1-box__label" style="margin-bottom:0;">Discussion</div>
+            ${toggle}
           </div>
+          <div style="margin-top:8px;">${rows}</div>
+          <a class="election-card__commit-btn" href="${postHref}"
+             style="margin-top:10px;display:inline-block;padding:5px 14px;font-size:0.68rem;text-decoration:none;">+ Post about this</a>
         </div>`;
     }
     window.p1SelectedPostHTML = p1SelectedPostHTML;
@@ -2342,13 +2365,38 @@
       const _basePool    = _phase1.reduce((t, i) => t + _ebxOf(i), 0);
       const _myCommitEbx = _myEbxCommit;
       // Leaders box — top 10 by committed EBX (STRUCTURE: "List up to 10").
-      const _leadersHtml = _phase1.slice(0, 10).map((i, idx) => `
+      // Bookmarked ("watched") initiatives are surfaced here: the #1 leader
+      // always shows; bookmarks that fall outside the natural top fill the
+      // remaining slots from the bottom (up to 9), displacing lower leaders.
+      // Bookmarks already on the leaderboard keep their place (no extra line).
+      const _watchedTivs = (() => {
+        try { return new Set(JSON.parse(localStorage.getItem('ebx_watched_initiatives') || '[]')); }
+        catch (e) { return new Set(); }
+      })();
+      const _LEAD_CAP = 10;
+      const _leaderRow = (i, rank) => `
         <div class="p1-box__row" onclick="p1Select('${i.id}')">
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            ${idx + 1}. ${i.emoji || '🌱'} ${i.title}</span>
+            ${rank}. ${_watchedTivs.has(i.id) ? '<span style="color:var(--clr-honey);">★</span> ' : ''}${i.emoji || '🌱'} ${i.title}</span>
           <span style="opacity:0.6;font-family:var(--font-mono);font-size:0.66rem;">
             ${_ebxOf(i).toLocaleString()}</span>
-        </div>`).join('') || '<div style="font-size:0.74rem;opacity:0.5;">No proposals yet.</div>';
+        </div>`;
+      let _leadersHtml;
+      if (!_phase1.length) {
+        _leadersHtml = '<div style="font-size:0.74rem;opacity:0.5;">No proposals yet.</div>';
+      } else {
+        const _rankOf = new Map(_phase1.map((i, idx) => [i.id, idx + 1]));
+        const _leader = _phase1[0];               // #1 always shows
+        // Bookmarks (excluding the leader) get surfaced at the bottom.
+        const _bookmarks  = _phase1.filter(i => _watchedTivs.has(i.id) && i.id !== _leader.id);
+        const _bmIds      = new Set(_bookmarks.map(i => i.id));
+        // Natural leaders after #1, minus any that are bookmarked.
+        const _restLead   = _phase1.slice(1).filter(i => !_bmIds.has(i.id));
+        const _bmShown    = _bookmarks.slice(0, _LEAD_CAP - 1);     // up to 9
+        const _midShown   = _restLead.slice(0, _LEAD_CAP - 1 - _bmShown.length);
+        const _finalRows  = [_leader].concat(_midShown).concat(_bmShown);
+        _leadersHtml = _finalRows.map(i => _leaderRow(i, _rankOf.get(i.id))).join('');
+      }
 
       block.innerHTML = `
         <div class="phase-recap__num">Phase 1</div>
@@ -2368,8 +2416,7 @@
               </div>
             </div>
             <div>
-              ${p1SelectedPostHTML(cause)}
-              <div class="p1-box" style="margin-top:var(--sp-sm);">
+              <div class="p1-box">
                 <div class="p1-box__label">Slider voting</div>
                 <div id="p1-rows">${rows}</div>
               </div>
@@ -2393,6 +2440,9 @@
                 ? '✓ Committed ' + new Date(committed.at).toLocaleDateString('en-US',{month:'short',day:'numeric'})
                 : 'Not yet committed'}
             </div>
+          </div>
+          <div class="p1-discussion-full" style="margin-top:var(--sp-md);">
+            ${p1SelectedPostHTML(cause, _disp)}
           </div>
         </div>`;
     }
@@ -2772,6 +2822,38 @@
       } catch (e) {}
     })();
 
+    // ?vote=1|2 deep-link from the home-page cards / annulus-center "Vote"
+    // actions — scrolls to the requested phase's voting area. (The URL also
+    // carries a #phase-recap-N hash, but content renders async, so we scroll
+    // here once the page is built.)
+    (function () {
+      const v = EBX.getParam ? EBX.getParam('vote') : null;
+      if (v !== '1' && v !== '2') return;
+      try {
+        const el = document.getElementById('phase-recap-' + v);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {}
+    })();
+
+    // build-seq 11: ?post=<id> deep-link — opens a post in the p1 viewer with
+    // its voting dialog (clicked from the index feed or elsewhere).
+    (function () {
+      const postId = EBX.getParam ? EBX.getParam('post') : null;
+      if (!postId) return;
+      try {
+        const all = (EBX.config.feed || []).concat(p1LocalPosts());
+        const p = all.find(x => x.id === postId);
+        if (!p) return;
+        const tivId = p.initiative_id || p.tiv_id || null;
+        if (tivId) { window._p1SelectedId = tivId; _p1PostScope = 'tiv'; }
+        else { _p1PostScope = 'mission'; }
+        _p1OpenPostId = postId;
+        _rerenderElectionCard(cause);
+        const el = document.getElementById('p1-post-viewer');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (e) {}
+    })();
+
     /* ── 4. Phase progress bar ── */
     const winStart  = EBX.Cycle.windowStart(cause.index, cycleNum);
     const winEnd    = new Date(winStart.getTime() + CAUSE_DAYS * MS_DAY);
@@ -2795,10 +2877,14 @@
        EBX (1:1 weight, Jax Step-1 feedback) onto any backend ebx_committed so
        the pie + leading cards react to your own commit. */
     function localVoteWeight(init) { return 0; /* DECONSTRUCTED (v2): weighting in p1_tally */ }
+    // initWeight is measured in VOTES (10 EBX = 1 vote). Prefer the server p1
+    // tally (already vote-weighted across all benefactors); fall back to the
+    // committed-EBX aggregate / 10 before the tally fetch lands. These are the
+    // same quantity — never add them, or the leaderboard double-counts.
     function initWeight(init) {
-      // v2: weight from the server phase-1 tally (weighted share); reflects real
-      // committed votes across all benefactors, so the annulus persists on reload.
-      return (_v2TallyWeights[init.id] || 0) + (init.ebx_committed || 0);
+      const tallyVotes = _v2TallyWeights[init.id];
+      if (tallyVotes != null) return tallyVotes;
+      return (Number(init.ebx_committed || init.committed_ebx || 0)) / 10;
     }
     function voteShare(init) {
       // build-seq 3 (pass 34): shares are CURRENT-election only.
@@ -2997,6 +3083,20 @@
               stroke-linecap="round" stroke-linejoin="round" fill="none"
               filter="url(#glow)"/>`;
 
+      // Election date for this cause's mission, anchored at the bottom of the
+      // inner circle so it shows in the middle of the annulus across all states.
+      let electionLabel = '';
+      try {
+        const _ed = fmtDate(new Date(_causeDecisionMs(cause)));
+        electionLabel = `
+        <text x="${cx}" y="${cy + 44}" text-anchor="middle" dominant-baseline="middle"
+              font-family="DM Mono,monospace" font-size="8" letter-spacing="0.1em"
+              fill="rgba(245,240,232,0.42)">ELECTION</text>
+        <text x="${cx}" y="${cy + 56}" text-anchor="middle" dominant-baseline="middle"
+              font-family="DM Mono,monospace" font-size="10" font-weight="700"
+              fill="${color}">${_ed}</text>`;
+      } catch (e) {}
+
       return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
         <defs>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -3010,6 +3110,7 @@
         ${labels}
         <circle cx="${cx}" cy="${cy}" r="${innerR - 2}" fill="rgba(15,26,20,0.95)" />
         ${centerContent}
+        ${electionLabel}
       </svg>`;
     }
 
@@ -3152,7 +3253,7 @@
               </div>
               <div class="init-card__meta">
                 <span class="init-card__pct">${pct}% of pool</span>
-                <span>${Math.round(initWeight(init) * 10).toLocaleString()} EBX</span>
+                <span>${(EBX.formatVotes ? EBX.formatVotes(initWeight(init)) : initWeight(init).toFixed(1) + ' votes')}</span>
               </div>
               <div class="init-card__meta" style="margin-top:4px;">
                 <span>${init.rating > 0 ? '★ ' + init.rating.toFixed(1) : ''}</span>
@@ -3318,7 +3419,11 @@
     // new selectMission flow so clicks behave instead of throwing.
     window.selectInitByAnnulus = function(idx) {
       const init = electionInits[idx];
-      if (init) selectMission(init.id);
+      if (!init) return;
+      // Open the clicked initiative in the Phase-1 area (selected initiative +
+      // discussion). Fall back to the mission selector if p1 isn't mounted.
+      if (typeof window.p1Select === 'function') window.p1Select(init.id);
+      else selectMission(init.id);
     };
     window.jumpToRow = function(initId) { selectMission(initId); };
 

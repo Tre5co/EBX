@@ -979,8 +979,15 @@ function feedCard(post: FeedPost): string {
     opinion:    'Opinion',
     org_update: 'Org Update',
     headline:   'Headline',
+    case:       'Case',
+    context:    'Context',
+    analysis:   'Analysis',
+    evaluation: 'Feedback',
   };
-  const label = typeLabel[post.type] ?? post.type;
+  // Show the post's actual type, plus its stance where one applies:
+  // case -> for|against ; evaluation(feedback) -> positive|negative.
+  const baseLabel = typeLabel[post.type] ?? post.type;
+  const label = baseLabel + (post.stance ? ' · ' + post.stance : '');
   return `
     <a href="en.html?id=${post.id}" class="ebx-feed-card"
        style="text-decoration:none;color:inherit;display:flex;flex-direction:column;

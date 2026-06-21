@@ -50,3 +50,13 @@ def my_memberships(
     user: BenefactorAccount = Depends(get_current_benefactor),
 ):
     return crud.list_memberships(db, ben_id=user.id)
+
+
+@router.get("/p1-votes", response_model=list[schemas.VoteP1Read])
+def my_p1_votes(
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Every phase-1 vote row this benefactor holds, across all missions —
+    feeds the homepage election cards and the profile choices table."""
+    return crud.get_all_p1_votes(db, user.id)

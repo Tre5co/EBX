@@ -108,7 +108,7 @@ Vote occurs on the final day of its causes active period
             **`is_test` column.** Lets us test without using real ebx.
             **`cyclestart` config endpoint** I want to run simulations and this will be necessary to understand. I will need to read the code.
 - [ ] **Home page** (index.html)
-    - ✅ **annulus 1** - recolor - roygbiv
+    - ✅ **annulus 1**
         - [ ] **Maximize annulus size for screen**
         - [ ] **Center of Annulus** More refinements soon
             - ✅ **glowy circle** Inner circle of "cause annulus* glows to represent the NEXT cause

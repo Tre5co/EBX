@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Earthbux favicon: a mini 7-segment cause-annulus (roygbiv) ring behind "EBX". -->
+  <rect width="64" height="64" rx="12" fill="#0f1a14"/>
+  <g transform="rotate(-90 32 32)" fill="none" stroke-width="11">
+    <!-- C = 2·π·23 ≈ 144.51 ; per-segment ≈ 20.64 ; gap ≈ 2.4 -->
+    <circle cx="32" cy="32" r="23" stroke="#e23b3b" stroke-dasharray="18.24 126.27" stroke-dashoffset="0"/>
+    <circle cx="32" cy="32" r="23" stroke="#e8862e" stroke-dasharray="18.24 126.27" stroke-dashoffset="-20.64"/>
+    <circle cx="32" cy="32" r="23" stroke="#e8c84c" stroke-dasharray="18.24 126.27" stroke-dashoffset="-41.29"/>
+    <circle cx="32" cy="32" r="23" stroke="#4e9a4e" stroke-dasharray="18.24 126.27" stroke-dashoffset="-61.93"/>
+    <circle cx="32" cy="32" r="23" stroke="#3b7fe2" stroke-dasharray="18.24 126.27" stroke-dashoffset="-82.58"/>
+    <circle cx="32" cy="32" r="23" stroke="#5a4ee2" stroke-dasharray="18.24 126.27" stroke-dashoffset="-103.22"/>
+    <circle cx="32" cy="32" r="23" stroke="#b14ee2" stroke-dasharray="18.24 126.27" stroke-dashoffset="-123.87"/>
+  </g>
+  <circle cx="32" cy="32" r="15.5" fill="#0f1a14"/>
+  <text x="32" y="33" text-anchor="middle" dominant-baseline="central"
+        font-family="'DM Mono','SF Mono',Menlo,Consolas,monospace" font-weight="700"
+        font-size="13.5" letter-spacing="-0.5" fill="#f5f0e8">EBX</text>
+</svg>

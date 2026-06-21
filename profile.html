@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux — Your Profile</title>
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
 
@@ -815,6 +816,28 @@
     await EBX.loadAll();
     const causes = EBX.config.causes;
 
+    // build-seq 9: load the signed-in ben's phase-1 votes once and group them
+    // by cause so the choices table + wallet reflect real current votes.
+    window._myP1ByCause = {};
+    async function loadMyChoices() {
+      window._myP1ByCause = {};
+      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn() && EBX.Auth.fetchAuthed)) return;
+      const causeOf = {};
+      (EBX.config.missions || []).forEach(m => { causeOf[m.id] = m.cause_id; });
+      try {
+        const r = await EBX.Auth.fetchAuthed('/benefactors/me/p1-votes');
+        if (r && r.ok) {
+          (await r.json()).forEach(v => {
+            const cid = causeOf[v.mission_id];
+            if (!cid) return;
+            const e = window._myP1ByCause[cid] || (window._myP1ByCause[cid] = { shares: {}, ebx: 0 });
+            e.shares[v.tiv_id] = v.share;
+            e.ebx += (v.ebx_committed || 0);
+          });
+        }
+      } catch (e) {}
+    }
+
     // Shared nav: home mark + user badge on every page
     await EBX.initPage();
 
@@ -843,6 +866,7 @@
         amount:      extras.amount      ?? 20,
         type:        extras.type        ?? 'benefactor',
       };
+      await loadMyChoices();   // build-seq 9: seed choices table + wallet
       renderProfile(profile);
       return;
     }
@@ -1241,10 +1265,14 @@
         .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
 
       const _ls = k => { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch(e) { return {}; } };
-      // DECONSTRUCTED (v2): wallet + choices come from the backend now —
-      // GET /benefactors/me/credit-coins + the mission vote records. Empty
-      // until the profile page is wired to v2.
+      // build-seq 9: phase-1 choices come from the loaded vote state (grouped
+      // by cause in window._myP1ByCause). Org votes (p2) stay empty for now.
+      const _mineByCause = window._myP1ByCause || {};
       const tivShares = {}, tivCommits = {}, orgVotes = {}, orgCommits = {};
+      Object.keys(_mineByCause).forEach(cid => {
+        tivShares[cid]  = _mineByCause[cid].shares || {};
+        tivCommits[cid] = { ebx: Math.round(_mineByCause[cid].ebx || 0) };
+      });
       const inits = EBX.config.initiatives   || [];
       const orgs  = EBX.config.organizations || [];
       const initById = {}; inits.forEach(i => { initById[String(i.id)] = i; });

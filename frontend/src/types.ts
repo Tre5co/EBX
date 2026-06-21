@@ -48,6 +48,8 @@ export interface FeedPost {
   likes: number;
   initiative_id: string | null;
   opinion_type?: 'org' | 'initiative' | string;
+  // case -> 'for' | 'against' ; evaluation(feedback) -> 'positive' | 'negative'
+  stance?: 'for' | 'against' | 'positive' | 'negative' | string | null;
 }
 
 // Cycle model: seven causes, each running a 7-week debate + simultaneous org

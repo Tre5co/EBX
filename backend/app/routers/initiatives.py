@@ -21,8 +21,13 @@ def list_tivs(
     approved_only: bool = False,
     db: Session = Depends(get_db),
 ):
-    return crud.list_tivs(db, cause_id=cause_id, mission_id=mission_id,
+    tivs = crud.list_tivs(db, cause_id=cause_id, mission_id=mission_id,
                           status_filter=status, approved_only=approved_only)
+    # Attach the committed-EBX aggregate so the cards/leaderboards rank by pool.
+    sums = crud.p1_ebx_by_tiv(db, [t.id for t in tivs])
+    for t in tivs:
+        t.ebx_committed = sums.get(t.id, 0.0)
+    return tivs
 
 
 @router.get("/{tiv_id}", response_model=schemas.InitiativeRead)
@@ -30,6 +35,7 @@ def get_tiv(tiv_id: str, db: Session = Depends(get_db)):
     tiv = crud.get_tiv(db, tiv_id)
     if tiv is None:
         raise HTTPException(status_code=404, detail="Initiative not found")
+    tiv.ebx_committed = crud.p1_ebx_by_tiv(db, [tiv.id]).get(tiv.id, 0.0)
     return tiv
 
 

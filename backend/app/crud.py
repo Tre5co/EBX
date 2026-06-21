@@ -194,6 +194,18 @@ def get_tiv(db: Session, tiv_id: str) -> Optional[models.Initiative]:
     return db.get(models.Initiative, tiv_id)
 
 
+def p1_ebx_by_tiv(db: Session, tiv_ids: Optional[list[str]] = None) -> dict[str, float]:
+    """Total committed EBX per initiative, summed across all phase-1 vote rows.
+
+    This is the public pool aggregate the homepage cards + cause-page leaderboards
+    rank by (10 EBX = 1 vote). Pass tiv_ids to scope the sum."""
+    q = select(models.VoteP1.tiv_id, sqlfunc.sum(models.VoteP1.ebx_committed))
+    if tiv_ids:
+        q = q.where(models.VoteP1.tiv_id.in_(tiv_ids))
+    q = q.group_by(models.VoteP1.tiv_id)
+    return {tid: float(total or 0) for tid, total in db.execute(q).all()}
+
+
 def create_tiv(db: Session, data: schemas.InitiativeCreate) -> models.Initiative:
     tiv = models.Initiative(**data.model_dump())
     db.add(tiv)
@@ -443,6 +455,16 @@ def get_p1_votes(db: Session, ben_id: int, mission_id: str) -> Sequence[models.V
             models.VoteP1.ben_id == ben_id,
             models.VoteP1.mission_id == mission_id,
         )
+    ).all()
+
+
+def get_all_p1_votes(db: Session, ben_id: int) -> Sequence[models.VoteP1]:
+    """Every phase-1 vote row this benefactor holds, across all missions.
+
+    Powers the homepage election cards and the profile choices table with a
+    single round-trip instead of one /p1/mine call per mission."""
+    return db.scalars(
+        select(models.VoteP1).where(models.VoteP1.ben_id == ben_id)
     ).all()
 
 
@@ -935,6 +957,10 @@ def create_post(
             raise PermissionError("editorial/headline posts require an employee account")
         require_staff(author)
     post = models.Post(**data.model_dump())
+    # Attribute ben-authored posts to the signed-in account so the profile
+    # "my posts" history + helpful-post rewards can find them.
+    if author is not None and post.author_type == "ben" and post.ben_author_id is None:
+        post.ben_author_id = author.id
     db.add(post)
     db.commit()
     db.refresh(post)
