@@ -21,6 +21,20 @@ class Settings(BaseSettings):
     # size_factor targets an ideal pool size. Override via SIZE_FACTOR env var.
     size_factor: float = 1.0
 
+    # -- Org experience (Build Phase 2) --------------------------------------
+    # Fuzzy-name duplicate detection threshold for org self-registration
+    # (difflib ratio, 0..1 - higher = stricter match required to warn).
+    org_dup_threshold: float = 0.82
+    # Guaranteed-to-pool rates (placeholders - tune later). An unclaimed /
+    # merely-nominated mission guarantees this fraction to the pool; a real
+    # representative CLAIMING the mission bumps it.
+    pool_rate_unclaimed: float = 0.20
+    pool_rate_claimed: float = 0.35
+    # Version tag recorded with each click-through legal acceptance.
+    attestation_version: str = "draft-2026-07"
+    # Scaffolding cap: max EBX a ben can put on an UNAPPROVED org (10 = 1 vote).
+    unapproved_org_ebx_cap: int = 10
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

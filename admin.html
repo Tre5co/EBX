@@ -79,6 +79,7 @@
     <div id="entities"></div>
     <div class="group">Views</div>
     <div class="item special" data-view="ledger">Ledger · transactions</div>
+    <div class="item special" data-view="mission">Search by mission</div>
   </nav>
   <main id="main">
     <div class="msg">Select a table or view from the left.</div>
@@ -251,6 +252,85 @@ function renderGrid(rows) {
 }
 
 document.querySelector('[data-view="ledger"]').onclick = selectLedger;
+
+// ---------- search by mission (missions → users → posts/votes/transactions) ----------
+// Built entirely on the existing /admin/query/run console: every relevant table
+// (votes_p1, votes_p2, posts, transactions) carries mission_id, so we filter by
+// it and tab between phases. A vote's LIVE state lives in votes_p1/votes_p2; the
+// "transactions" tab is the audit ledger (type='vote' rows = vote mutations,
+// type='transfer' rows = EBX moving into a bucket). Optional ben_id narrows to a
+// single user.
+let _missionList = null;
+async function _loadMissions() {
+  if (_missionList) return _missionList;
+  try {
+    _missionList = await api("/admin/query/run", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entity: "missions", filters: null, limit: 500 }),
+    });
+  } catch (e) { _missionList = []; }
+  return _missionList;
+}
+
+async function selectMissionView() {
+  current = { kind: "mission", tab: "votes_p1" };
+  setActive((i) => i.dataset.view === "mission");
+  $("#main").innerHTML = `<div class="msg">Loading missions…</div>`;
+  const missions = await _loadMissions();
+  const opts = missions.map((m) =>
+    `<option value="${m.id}">${m.id}${m.cause_id ? " · " + m.cause_id : ""}${m.current_phase ? " · " + m.current_phase : ""}</option>`
+  ).join("");
+  $("#main").innerHTML = `
+    <div class="toolbar">
+      <span class="title">Search by mission</span>
+      <select id="m-mission">${opts || '<option value="">no missions</option>'}</select>
+      <span id="m-tabs">
+        <button data-tab="votes_p1" class="primary">P1 votes</button>
+        <button data-tab="votes_p2">P2 votes</button>
+        <button data-tab="posts">Posts</button>
+        <button data-tab="transactions">Transactions</button>
+      </span>
+      <input id="m-ben" placeholder="ben_id (optional)" size="12" />
+      <input id="m-limit" type="number" value="200" min="1" max="500" style="width:74px" title="limit" />
+      <button class="primary" id="m-run">Run</button>
+      <span class="count" id="rowcount"></span>
+    </div>
+    <div id="m-summary" class="msg" style="padding:6px 0;text-align:left;"></div>
+    <div id="grid"><div class="msg">Pick a mission and a tab.</div></div>`;
+  const tabs = $("#m-tabs");
+  tabs.querySelectorAll("button").forEach((b) => b.onclick = () => {
+    current.tab = b.dataset.tab;
+    tabs.querySelectorAll("button").forEach((x) => x.classList.toggle("primary", x === b));
+    runMissionView();
+  });
+  $("#m-run").onclick = runMissionView;
+  $("#m-mission").onchange = runMissionView;
+  $("#m-ben").addEventListener("keydown", (e) => { if (e.key === "Enter") runMissionView(); });
+  if (missions.length) runMissionView();
+}
+
+async function runMissionView() {
+  const mission = $("#m-mission").value.trim();
+  const ben = $("#m-ben").value.trim();
+  const tab = (current && current.tab) || "votes_p1";
+  if (!mission) { $("#grid").innerHTML = `<div class="msg">No mission selected.</div>`; return; }
+  const idKey = tab === "posts" ? "ben_author_id" : "ben_id";
+  const filters = { mission_id: mission };
+  if (ben) filters[idKey] = ben;
+  const limit = parseInt($("#m-limit").value) || 200;
+  $("#grid").innerHTML = `<div class="msg">Running…</div>`;
+  try {
+    const rows = await api("/admin/query/run", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entity: tab, filters, limit }),
+    });
+    const users = new Set(rows.map((r) => r[idKey]).filter((v) => v != null));
+    $("#m-summary").textContent =
+      `${tab} · mission ${mission}${ben ? " · ben " + ben : ""} — ${rows.length} rows, ${users.size} distinct user(s)`;
+    renderGrid(rows);
+  } catch (err) { $("#grid").innerHTML = `<div class="msg warn">${err.message}</div>`; }
+}
+document.querySelector('[data-view="mission"]').onclick = selectMissionView;
 
 // ---------- start ----------
 if (token) { hideLogin(); boot(); } else { showLogin(); }

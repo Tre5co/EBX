@@ -46,6 +46,19 @@ def p1_tally(mission_id: str, db: Session = Depends(get_db)):
     return crud.p1_tally(db, mission_id, settings.size_factor)
 
 
+@router.post("/missions/{mission_id}/p1/withdraw", response_model=dict)
+def withdraw_p1(
+    mission_id: str,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Phase-2 withdrawal: pull back this ben's phase-1 commitment minus the send."""
+    try:
+        return crud.withdraw_p1(db, user.id, mission_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/missions/{mission_id}/p1/mine", response_model=list[schemas.VoteP1Read])
 def my_p1(
     mission_id: str,
@@ -67,7 +80,8 @@ def cast_p2(
     """Vote for a single org (votes>1 = bought extra; valence='harmful' = block)."""
     try:
         return crud.cast_p2(db, user.id, mission_id, body.org_id,
-                            votes=body.votes, ebx_spent=body.ebx_spent, valence=body.valence)
+                            votes=body.votes, ebx_spent=body.ebx_spent, valence=body.valence,
+                            unapproved_ebx_cap=settings.unapproved_org_ebx_cap)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

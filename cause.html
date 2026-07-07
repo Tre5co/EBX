@@ -74,7 +74,7 @@
       max-width: 100%;
     }
 
-    /* ── Hero: dark band matching index.html ── */
+    /* ── Hero: dark band matching main.html ── */
     .cause-hero {
       background: #0f1a14;
       color: var(--clr-parchment);
@@ -956,6 +956,15 @@
       display: flex; justify-content: space-between; align-items: baseline;
       gap: var(--sp-md); flex-wrap: wrap;
     }
+    /* P1 header: title + commit/purchase/pool row inline; decision pill in corner. */
+    .p1-header-main {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: 10px 14px; flex: 1; min-width: 0;
+    }
+    .election-card__topbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    }
+    .p1-buystack { display: flex; flex-direction: column; gap: 4px; }
     .election-card__remaining {
       font-family: var(--font-mono); font-size: 0.7rem;
       padding: 4px 10px; border-radius: 999px;
@@ -984,6 +993,11 @@
       color: var(--clr-parchment);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
+    /* Initiative title as a link to its expanded row on the home-page table. */
+    a.election-card__row-link {
+      display: block; text-decoration: none; color: var(--clr-parchment); cursor: pointer;
+    }
+    a.election-card__row-link:hover { color: var(--cause-color); text-decoration: underline; }
     .election-card__row-sub {
       font-family: var(--font-mono); font-size: 0.62rem;
       color: rgba(245,240,232,0.5);
@@ -1160,14 +1174,14 @@
 
         <!-- LEFT: Leading Initiatives (top by EBX committed) -->
         <div class="cause-hero__col cause-hero__col--left">
-          <div class="col-eyebrow">Leading Initiatives</div>
+          <div class="col-eyebrow" id="lhs-eyebrow">Leading Initiatives</div>
           <div id="leading-initiatives-panel">
             <!-- Populated by JS -->
           </div>
-          <!-- build-seq 7: phase-1 entry points relocated here from the election bar. -->
-          <div class="cause-lhs-actions">
+          <!-- phase-1 entry points; swapped for org actions in phase 2. -->
+          <div class="cause-lhs-actions" id="lhs-actions">
             <button class="cause-lhs-actions__primary" onclick="openProposeModal()">+ Propose an initiative</button>
-            <a class="cause-lhs-actions__link" href="index.html">View initiatives →</a>
+            <a class="cause-lhs-actions__link" href="main.html">View initiatives →</a>
           </div>
         </div>
 
@@ -1232,7 +1246,10 @@
       <div class="phase-recap" id="phase-recap-2" data-phase="2">
         <div class="phase-recap__num">Phase 2</div>
         <div class="phase-recap__body">
-          <div class="phase-recap__title">New-Initiative · org election card</div>
+          <div class="election-card__header">
+            <div class="phase-recap__title">New-Initiative · org election card</div>
+            <div class="election-card__remaining" id="phase-recap-2-date" style="display:none;">Org decision <b>—</b></div>
+          </div>
           <div class="phase-recap__sub" id="phase-recap-2-sub">—</div>
         </div>
       </div>
@@ -1309,6 +1326,9 @@
     let _v2Committed = null;   // this ben's committed EBX state (read-back from /p1/mine)
     let _v2TallyWeights = {};  // tiv_id -> server weighted share (drives the annulus)
     let _v2Purchased = 0;      // extra EBX bought/converted beyond the base 10 for this mission
+    // org election (phase 2): standings from /p2/tally + competing orgs from /candidacies
+    let _v2OrgTally = {};      // org_id -> { net_votes, voter_count }
+    let _v2OrgCandidates = []; // [{ org_id, status, mission_statement }]
     if (!causeId) {
       document.getElementById('cause-annulus-mount').innerHTML =
         '<div style="color:rgba(245,240,232,0.5);padding:40px;text-align:center;">No cause specified.</div>';
@@ -1330,7 +1350,7 @@
       const all  = (EBX.config.initiatives || []);
       const mine = all.filter(i => i.cause_id === _orgRegCauseId);
       // elected tivs first; else any tiv with committed EBX; else all cause tivs
-      let opts = mine.filter(i => ['org_vote', 'active'].includes(i.status));
+      let opts = mine.filter(i => i.status === 'active');
       if (!opts.length) opts = mine.filter(i => (i.committed_ebx || 0) > 0);
       if (!opts.length) opts = mine;
       document.getElementById('orgreg-init-list').innerHTML = opts.length
@@ -1338,6 +1358,7 @@
              <input type="checkbox" class="orgreg-init-cb" value="${i.id}" /> ${i.emoji || ''} ${i.title}</label>`).join('')
         : '<div style="font-size:0.78rem;opacity:0.6;">No initiatives found for this cause yet.</div>';
       orgRegSetKind('nomination');
+      _orgRegPickedId = null; _orgRegForce = false;
       document.getElementById('orgreg-msg').textContent = '';
       document.getElementById('orgreg-modal-bg').classList.add('open');
     };
@@ -1353,6 +1374,15 @@
       document.getElementById('orgreg-kind-nomination').className   = 'btn btn-sm ' + (kind === 'nomination'   ? 'btn-forest' : 'btn-ghost');
       document.getElementById('orgreg-kind-registration').className = 'btn btn-sm ' + (kind === 'registration' ? 'btn-forest' : 'btn-ghost');
     };
+    // Wired to the real Build-Phase-2 endpoint: POST /organizations/register.
+    // A nomination creates the org (no membership); a registration makes the
+    // signed-in ben the founding executive. Each selected initiative becomes a
+    // candidacy for that initiative's mission. Fuzzy duplicate matches surface
+    // as "did you mean an existing org?" before anything is created.
+    let _orgRegPickedId = null;   // an existing org picked from the dup matches
+    let _orgRegForce = false;     // create anyway despite matches
+    window.orgRegUseMatch = function (orgId) { _orgRegPickedId = orgId; window.submitOrgReg(); };
+    window.orgRegForceCreate = function () { _orgRegForce = true; window.submitOrgReg(); };
     window.submitOrgReg = async function () {
       const msg   = document.getElementById('orgreg-msg');
       const name  = document.getElementById('orgreg-name').value.trim();
@@ -1364,38 +1394,75 @@
       if (!name || !site || !just) { msg.style.color = '#f87171'; msg.textContent = 'Name, website, and justification are required.'; return; }
       if (_orgRegKind === 'registration' && (!mName || !mPos)) { msg.style.color = '#f87171'; msg.textContent = 'Member name and position are required to register.'; return; }
       if (!initIds.length) { msg.style.color = '#f87171'; msg.textContent = 'Select at least 1 initiative the organization is fit to accomplish.'; return; }
-      const payload = {
-        kind: _orgRegKind, org_name: name, website: site, justification: just,
-        member_name:     _orgRegKind === 'registration' ? mName : null,
-        member_position: _orgRegKind === 'registration' ? mPos  : null,
-        initiative_ids:  initIds,
-      };
+
+      // Selected initiatives -> their missions (an org registers per tiv, and
+      // each tiv's election lives on a mission).
+      const allInits = (EBX.config.initiatives || []);
+      const missionIds = [];
+      initIds.forEach(id => {
+        const ini = allInits.find(i => i.id === id);
+        const m = ini && ini.mission_id ? ini.mission_id : (_v2Mission(_orgRegCauseId) || {}).id;
+        if (m && !missionIds.includes(m)) missionIds.push(m);
+      });
+
       msg.style.color = 'inherit'; msg.textContent = 'Submitting…';
-      let ok = false;
-      if (EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn()) {
-        try {
-          const res = await EBX.Auth.fetchAuthed('/organizations/registrations', {
-            method: 'POST', body: JSON.stringify(payload),
-          });
-          ok = !!(res && res.ok);
-        } catch (e) { ok = false; }
-      }
-      if (!ok) {
-        // local-only fallback (not signed in / API down) — replayable later
+      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn())) {
+        // local-only fallback (not signed in) — replayable later
         try {
           const stash = JSON.parse(localStorage.getItem('ebx_org_regs') || '[]');
-          stash.push(Object.assign({}, payload, { cause_id: _orgRegCauseId, at: Date.now() }));
+          stash.push({ kind: _orgRegKind, org_name: name, website: site, justification: just,
+                       initiative_ids: initIds, cause_id: _orgRegCauseId, at: Date.now() });
           localStorage.setItem('ebx_org_regs', JSON.stringify(stash));
-          ok = 'local';
-        } catch (e) {}
+          msg.style.color = '#34d399';
+          msg.textContent = '✓ Saved locally — sign in to submit it for real.';
+          setTimeout(window.closeOrgRegModal, 1500);
+        } catch (e) { msg.style.color = '#f87171'; msg.textContent = 'Could not save — try again.'; }
+        return;
       }
-      if (ok) {
+
+      try {
+        const payload = {
+          name, website_link: site, kind: _orgRegKind,
+          mission_id: missionIds[0] || null,
+          mission_statement: just,
+          member_name:     _orgRegKind === 'registration' ? mName : null,
+          member_position: _orgRegKind === 'registration' ? mPos  : null,
+          org_id: _orgRegPickedId || null,
+          force: _orgRegForce,
+        };
+        const res = await EBX.Auth.fetchAuthed('/organizations/register', {
+          method: 'POST', body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { msg.style.color = '#f87171'; msg.textContent = data.detail || ('Could not submit (HTTP ' + res.status + ').'); return; }
+        if (!data.created && !data.org && (data.matches || []).length) {
+          // "Did you mean an existing org?" — pick one, or create anyway.
+          msg.style.color = 'inherit';
+          msg.innerHTML = 'Similar organizations already exist — an org is never duplicated:<br/>' +
+            data.matches.map(mt =>
+              `<button class="btn btn-ghost btn-sm" style="margin:4px 4px 0 0;"
+                       onclick="orgRegUseMatch('${mt.org_id}')">Use “${mt.name}”</button>`).join('') +
+            `<button class="btn btn-forest btn-sm" style="margin:4px 0 0 0;"
+                     onclick="orgRegForceCreate()">Mine is different — create it</button>`;
+          return;
+        }
+        const orgId = data.org ? data.org.id : _orgRegPickedId;
+        // Remaining initiatives -> extra candidacies (one bid per mission).
+        for (let i = 1; i < missionIds.length; i++) {
+          try {
+            await EBX.Auth.fetchAuthed('/candidacies', { method: 'POST',
+              body: JSON.stringify({ mission_id: missionIds[i], org_id: orgId, mission_statement: just }) });
+          } catch (e) {}
+        }
+        _orgRegPickedId = null; _orgRegForce = false;
         msg.style.color = '#34d399';
-        msg.textContent = ok === 'local'
-          ? '✓ Saved locally — will reach EN review once you sign in.'
-          : '✓ Submitted for EN review.';
-        setTimeout(window.closeOrgRegModal, 1200);
-      } else {
+        msg.textContent = _orgRegKind === 'registration'
+          ? '✓ Registered. Your org is now a candidate — claim the mission from its mission page to take authority.'
+          : '✓ Nominated. The org now shows in this election (capped until approved).';
+        try { await _v2LoadMine(_orgRegCauseId); } catch (e) {}
+        try { syncOrgTally(_orgRegCauseId); } catch (e) {}
+        setTimeout(window.closeOrgRegModal, 1800);
+      } catch (e) {
         msg.style.color = '#f87171'; msg.textContent = 'Could not submit — try again.';
       }
     };
@@ -1407,6 +1474,20 @@
     // Mission-targeting state: which mission (initiative ref) drives the recap blocks.
     // null = use the cause's own leading initiative (default).
     let _missionRefId = null;
+    // Persist the displayed mission per-cause so a reload sticks to it
+    // (instructions §2) instead of snapping back to the default leader.
+    const SEL_MISSION_KEY = 'ebx_cause_mission';
+    function _saveSelMission(causeId, initId) {
+      try {
+        const m = JSON.parse(localStorage.getItem(SEL_MISSION_KEY) || '{}');
+        if (initId) m[causeId] = initId; else delete m[causeId];
+        localStorage.setItem(SEL_MISSION_KEY, JSON.stringify(m));
+      } catch (e) {}
+    }
+    function _loadSelMission(causeId) {
+      try { return (JSON.parse(localStorage.getItem(SEL_MISSION_KEY) || '{}'))[causeId] || null; }
+      catch (e) { return null; }
+    }
 
     // build-seq 2a — Pass-17: delegate to EBX.Cycle.nextDecisionDate which
     // already handles all 7 causes correctly (returns end-of-week, not
@@ -1414,12 +1495,59 @@
     // The previous hand-rolled formula returned the START of the cause's
     // active week, so the currently-active cause always showed a date 7 days
     // in the past. (Jax: "Only 1 of the causes is updating.")
-    function _causeDecisionMs(cause) {
-      // v2: real phase-1 election date = mission window open (started_at) + 7 weeks.
-      const m = _v2Mission(cause.id);
-      if (m && m.started_at) return new Date(m.started_at).getTime() + 49 * 86400000;
-      return EBX.Cycle.nextDecisionDate(cause.index).getTime();
+    // ── Mission-dependent dates ──────────────────────────────────────────────
+    // PROGRAM week 0 = mission.started_at (when the mission opens). UX week 0 =
+    // the initiative election = start + 7 weeks. The org election is start + 8
+    // weeks; credit release defaults to start + 16 weeks. Every date is derived
+    // from the SPECIFIC mission, not the cause's annulus position.
+    const _WK_MS = 7 * 86400000;
+    function _missionStartMs(m) { return (m && m.started_at) ? new Date(m.started_at).getTime() : Date.now(); }
+    function _missionP1Ms(m)     { return _missionStartMs(m) + 7 * _WK_MS; }    // initiative election (UX wk 0)
+    function _missionP2Ms(m)     { return _missionP1Ms(m) + 8 * _WK_MS; }       // org election = 8 wks AFTER the tiv election (UX wk 8)
+    function _missionCreditMs(m) { return _missionP1Ms(m) + 16 * _WK_MS; }      // credit release ≈ UX week 16
+
+    // The mission a cause currently DISPLAYS. A spotlighted mission (via the RHS
+    // cards / _missionRefId) wins; otherwise the cause's in-flight mission.
+    function _displayMission(cause) {
+      if (_missionRefId) {
+        const ini = (EBX.config.initiatives || []).find(i => i.id === _missionRefId);
+        if (ini && ini.mission_id) {
+          const m = (EBX.config.missions || []).find(mm => mm.id === ini.mission_id);
+          if (m) return m;
+        }
+      }
+      return _v2Mission(cause.id);
     }
+    // Phase number (1-5) of a mission, from the mission itself.
+    function _missionPhaseNum(m) {
+      if (!m) return 1;
+      if (m.current_phase === 'resolution') return 5;
+      if (m.current_phase === 'credit') return 4;
+      if (m.current_phase === 'budget') return 3;
+      if (m.winning_tiv_id) return 2;            // initiative elected, org race open
+      return 1;
+    }
+    function _causePhaseNum(cause) { return _missionPhaseNum(_displayMission(cause)); }
+
+    // UPCOMING phase-1 decision for the cause's live election (start + 7 weeks).
+    function _causeDecisionMs(cause) { return _missionP1Ms(_v2Mission(cause.id)); }
+    // Retrospective / display dates for the cause's display mission.
+    function _missionElectionMs(cause)     { return _missionP1Ms(_displayMission(cause)); }
+    function _missionOrgElectionMs(cause)  { return _missionP2Ms(_displayMission(cause)); }
+    function _missionCreditReleaseMs(cause){ return _missionCreditMs(_displayMission(cause)); }
+
+    // Status vocabulary is just suggested | active | resolved. Legacy/backend values
+    // are collapsed onto that set IN PLACE (idempotent): a winning tiv is 'active'
+    // through phases 2-4 and 'resolved' at the end; everything else (including a
+    // losing tiv, which is rolled into next cycle) stays 'suggested'. The mission's
+    // current_phase + winners — not the tiv status — tell P1 from P2 from P3.
+    function _normInitStatus(i) {
+      if (!i) return i;
+      if (i.status === 'won' || i.status === 'org_vote') i.status = 'active';
+      else if (i.status === 'in_election' || i.status === 'debate' || i.status === 'lost') i.status = 'suggested';
+      return i;
+    }
+    function _normCauseInits(list) { (list || []).forEach(_normInitStatus); return list; }
 
     function renderPhaseRecaps(cause, opts) {
       if (!cause) return;
@@ -1428,8 +1556,8 @@
       const WEEK_MS = 7 * MS_DAY;
       const decisionMs = _causeDecisionMs(cause);
       const decisionDate = new Date(decisionMs);
-      const causeInitsLocal = (EBX.config.initiatives || []).filter(i =>
-        i.cause_id === cause.id || i.cause_index === cause.index);
+      const causeInitsLocal = _normCauseInits((EBX.config.initiatives || []).filter(i =>
+        i.cause_id === cause.id || i.cause_index === cause.index));
       // Allow the right-mission cards to retarget the recaps to a specific mission.
       let leader = null;
       if (opts.missionRef && opts.missionRef.id) {
@@ -1460,14 +1588,14 @@
       // phases it hasn't reached collapse to the STRUCTURE.md "Pre" one-liner.
       const _stForPhase = (opts.missionRef && opts.missionRef.status)
         || (leader && leader.status) || 'suggested';
-      const _curPhase = _stForPhase === 'resolved' ? 5
-                      : _stForPhase === 'active'   ? 4
-                      : _stForPhase === 'org_vote' ? 2
-                      : 1;
+      // 'active' status alone spans phases 2-4, so read the phase from the mission.
+      const _curPhase = (_stForPhase === 'resolved') ? 5
+                      : (_stForPhase === 'suggested') ? 1
+                      : _causePhaseNum(cause);
       const _preLine = '<span style="opacity:0.55;">This phase is not yet active.</span>';
       // build-seq 2 (pass 34): when phase 2 is active for this cause, surface
       // the org registration/nomination entry point inside the phase-2 area.
-      const p2Active = causeInitsLocal.some(i => i.status === 'org_vote');
+      const p2Active = _causePhaseNum(cause) >= 2;
       // build-seq 4 (pass 35): ORG VOTING in the phase-2 area. 1 vote → 1
       // organization; additional votes can be bought for increasing prices
       // (10 × 2^(n-1) EBX — autonomous choice, flagged in backlog). Votes go
@@ -1501,7 +1629,7 @@
                                 letter-spacing:0.1em;opacity:0.6;">Most helpful feedback</span>
                    ${best.title || best.body.slice(0, 70)}</span>
                  <a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;"
-                    href="en.html?id=${best.id}">go</a>
+                    href="cause.html?id=${cause.id}&post=${best.id}">go</a>
                </div>`
             : `<div class="p1-disc__row" style="grid-template-columns:1fr;opacity:0.55;">
                  <span>No feedback posts were featured for this election.</span></div>`;
@@ -1551,37 +1679,105 @@
             </div>
           </div>`;
       } else if (p2Active) {
-        const p2Tiv = (opts.missionRef && opts.missionRef.status === 'org_vote')
+        const p2Tiv = (opts.missionRef && opts.missionRef.status === 'active')
           ? opts.missionRef
-          : causeInitsLocal.find(i => i.status === 'org_vote');
+          : causeInitsLocal.find(i => i.status === 'active');
         const orgShares = (typeof causeOrgShares === 'function') ? causeOrgShares() : [];
         const myOrgVote = loadOrgVote(cause.id);
-        const orgRows = orgShares.filter(sh => !sh.isOther).slice(0, 5).map((sh, idx) => {
+
+        // ── Pool accounting (totals, NOT benefactor-specific) ───────────────
+        // The winning mission's pool is the phase-1 money that moved on. It
+        // splits three ways:
+        //   sent   — guaranteed / irrevocable (the 20% floor + purchased-vote
+        //            surcharges); can never be pulled back.
+        //   Limbo  — still withdrawable while the org race is open.
+        //   wdrawn — already pulled back by benefactors.
+        // total fund = sent + Limbo (the live pool an org can win); and
+        // money in = sent + Limbo + wdrawn (every committed EBX accounted for).
+        const _p2Pool    = (p2Tiv && (p2Tiv.ebx_committed || 0)) || 0;
+        const _wdrawn    = (p2Tiv && (p2Tiv.ebx_withdrawn || 0)) || 0;  // synthetic: 0 until tracked
+        const _sent      = Math.round(0.2 * _p2Pool);                   // guaranteed floor
+        const _limbo     = Math.max(0, _p2Pool - _sent - _wdrawn);      // withdrawable remainder
+        const _totalFund = _sent + _limbo;                             // current live pool
+        const _ebx = n => Number(n || 0).toLocaleString() + ' EBX';
+
+        // My vote + my commitment (my_commit includes my phase-1 'sent' share).
+        const _myOrg = myOrgVote && (EBX.config.organizations || []).find(o => o.id === myOrgVote.org_id);
+        const _myCommitObj = (typeof loadCommitted === 'function') ? loadCommitted(cause.id) : null;
+        const _myCommit = _myCommitObj && _myCommitObj.ebx ? Number(_myCommitObj.ebx) : 0;
+
+        // Leading org in the LIVE race (elected at the org-decision date above).
+        const _leadOrg = orgShares.filter(sh => !sh.isOther)[0] || null;
+        const _myPickLeading = myOrgVote && _leadOrg && _leadOrg.org_id === myOrgVote.org_id;
+        // Org leaderboard (left column) — each row casts a vote (1 vote, 1 org).
+        const _votedCount = myOrgVote ? (myOrgVote.votes || 1) : 0;
+        const _nextPrice = myOrgVote ? 10 * Math.pow(2, (myOrgVote.votes || 1) - 1) : null;
+        const _p2id = p2Tiv ? p2Tiv.id : '';
+        const orgRows = orgShares.filter(sh => !sh.isOther).slice(0, 6).map((sh, idx) => {
           const mine = myOrgVote && myOrgVote.org_id === sh.org_id;
-          return `<div class="p1-disc__row" style="grid-template-columns:1fr auto auto;">
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${mine ? 'color:var(--cause-color);font-weight:600;' : ''}">
-              ${idx + 1}. ${sh.org_name}</span>
-            <span style="font-family:var(--font-mono);font-size:0.66rem;opacity:0.65;">${sh.pct.toFixed(0)}%</span>
+          const flag = sh.approved === false
+            ? ` <span style="font-family:var(--font-mono);font-size:0.56rem;color:#e0a341;border:1px solid rgba(224,163,65,0.5);border-radius:3px;padding:0 4px;">not approved</span>`
+            : '';
+          return `<div class="p1-box__row" style="cursor:default;gap:8px;${mine ? 'color:var(--cause-color);font-weight:600;' : ''}">
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${idx + 1}. ${sh.org_name}${flag}</span>
+            <span style="font-family:var(--font-mono);font-size:0.66rem;opacity:0.7;">${sh.pct.toFixed(0)}%</span>
             ${mine
-              ? `<span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--cause-color);">✓ my vote${myOrgVote.votes > 1 ? ' ×' + myOrgVote.votes : ''}</span>`
-              : `<button class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;"
-                   onclick="orgVoteFor('${cause.id}','${p2Tiv ? p2Tiv.id : ''}','${sh.org_id}')">vote</button>`}
+              ? `<span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--cause-color);">✓ my vote${_votedCount > 1 ? ' ×' + _votedCount : ''}</span>`
+              : `<button class="election-card__withdraw-btn" style="padding:2px 9px;font-size:0.6rem;"
+                   onclick="orgVoteFor('${cause.id}','${_p2id}','${sh.org_id}')">vote</button>`}
           </div>`;
         }).join('') || '<div style="font-size:0.74rem;opacity:0.5;">No organizations competing yet.</div>';
-        const nextPrice = myOrgVote ? 10 * Math.pow(2, (myOrgVote.votes || 1) - 1) : null;
-        p2Html += `
-          <div style="margin-top:10px;">
-            <div class="p1-box__label">Organization election · 1 vote, 1 organization</div>
-            ${orgRows}
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center;">
-              ${myOrgVote
-                ? `<button class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;"
-                     onclick="orgBuyVote('${cause.id}')">Buy another vote — ${nextPrice} EBX</button>
-                   <button class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;"
-                     onclick="orgWithdrawVote('${cause.id}')">Withdraw vote</button>`
-                : `<span style="font-family:var(--font-mono);font-size:0.62rem;opacity:0.6;">Cast your vote — 100% sent if your organization wins, 20% if not.</span>`}
-              <button class="btn btn-ghost btn-sm" onclick="openOrgRegModal('${cause.id}')">Register / Nominate an organization →</button>
+
+        p2Html = `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+            <div class="p1-chip" style="flex:0 0 auto;">Total fund<b>${_ebx(_totalFund)}</b></div>
+          </div>
+          <div class="p1-grid">
+            <div>
+              <div class="p1-box">
+                <div class="p1-box__label">Leaderboards · org race (elected ${fmtDate(orgVoteDate)})</div>
+                ${orgRows}
+              </div>
             </div>
+            <div>
+              <!-- Row A — my vote / my commit / vote (benefactor-specific) -->
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;">
+                <div class="p1-chip" style="flex:1;">My vote<b>${_myOrg ? _myOrg.name : '—'}${_myPickLeading ? ' · ✓ leading' : ''}</b></div>
+                <div class="p1-chip" style="flex:1;">My commit<b>${_ebx(_myCommit)}</b></div>
+                ${myOrgVote
+                  ? `<button class="election-card__commit-btn" style="flex:0 0 auto;" onclick="orgBuyVote('${cause.id}')">Buy vote · ${_nextPrice} EBX</button>
+                     <button class="election-card__withdraw-btn" style="flex:0 0 auto;" onclick="orgWithdrawVote('${cause.id}')">Unvote</button>`
+                  : `<button class="election-card__commit-btn" style="flex:0 0 auto;" onclick="alert('Pick an organization from the leaderboard to cast your vote.')">Vote</button>`}
+              </div>
+              <!-- Row B — pool totals (NOT benefactor-specific) + actions (scaffolding) -->
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin-top:8px;">
+                <div class="p1-chip" style="flex:1;">Sent<b>${_ebx(_sent)}</b></div>
+                <div class="p1-chip" style="flex:1;">Limbo<b>${_ebx(_limbo)}</b></div>
+                <div class="p1-chip" style="flex:1;">Withdrawn<b>${_ebx(_wdrawn)}</b></div>
+                <div class="p1-buystack">
+                  <button class="election-card__withdraw-btn" style="padding:5px 12px;font-size:0.62rem;"
+                          onclick="withdrawPhase2Money('${cause.id}')">Withdraw</button>
+                  <button class="election-card__commit-btn" style="padding:5px 12px;font-size:0.62rem;"
+                          onclick="buyEbx('${cause.id}')">Purchase</button>
+                </div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:0.56rem;opacity:0.5;margin-top:6px;line-height:1.4;">
+                Totals are pool-wide · total fund = sent + Limbo · money in = sent + Limbo + withdrawn.
+              </div>
+              <div style="margin-top:8px;font-size:0.62rem;line-height:1.5;border:1px solid rgba(224,163,65,0.4);background:rgba(224,163,65,0.08);border-radius:6px;padding:7px 10px;color:var(--clr-cream,rgba(245,240,232,0.92));">
+                Leading organizations will be <b>approved or rejected soon</b>. Until an org is approved
+                it's capped at <b>1 vote (10 EBX)</b>; if an org is rejected, every EBX committed to it is
+                <b>returned</b> to its backers.
+              </div>
+              <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button class="btn btn-ghost btn-sm" onclick="openOrgRegModal('${cause.id}')">Register / Nominate an organization →</button>
+                <a class="btn btn-ghost btn-sm" style="text-decoration:none;"
+                   href="mission.html?mission=${(_v2Mission(cause.id) || {}).id || ''}&cause=${cause.id}">Mission hub →</a>
+              </div>
+            </div>
+          </div>
+          <div class="p1-discussion-full" style="margin-top:var(--sp-md);">
+            ${(typeof p1SelectedPostHTML === 'function') ? p1SelectedPostHTML(cause, p2Tiv) : ''}
           </div>`;
       }
       // build-seq 7: render each phase block either active (rich body) or as a
@@ -1614,6 +1810,26 @@
         }
       };
       _renderPhaseBlock(2, (p2Active || !!p2RecapRef), p2Html);
+      // Date-of-election label in the top-right of the p2 area header, mirroring
+      // the p1 area's "Decision <date>" pill. Shown only when phase 2 is live or
+      // in recap (the "Pre" stub already carries the date inline in its sub).
+      (function () {
+        const _p2DateEl = document.getElementById('phase-recap-2-date');
+        if (!_p2DateEl) return;
+        const _p2live = (p2Active || !!p2RecapRef);
+        _p2DateEl.innerHTML = 'Org decision <b>' + fmtDate(orgVoteDate) + '</b>';
+        _p2DateEl.style.display = _p2live ? '' : 'none';
+      })();
+      // Header title for the p2 area = "<winning_tiv> · Organization Election"
+      // when the org race is live or in recap (mockup top row).
+      (function () {
+        if (!(p2Active || p2RecapRef)) return;
+        const _tEl = document.querySelector('#phase-recap-2 .phase-recap__title');
+        const _wt = p2RecapRef || leader;
+        if (_tEl && _wt && _wt.title) {
+          _tEl.textContent = (_wt.emoji ? _wt.emoji + ' ' : '') + _wt.title + ' · Organization Election';
+        }
+      })();
       _renderPhaseBlock(3, _curPhase >= 3,
         `Budget locked, mission underway. Release window opens <b>${fmtDate(releaseDate)}</b>.`);
       _renderPhaseBlock(4, _curPhase >= 4,
@@ -1634,7 +1850,7 @@
     // build-seq 3 (Pass 16) — these helpers now read/write the backend when a
     // benefactor is signed in and fall back to localStorage when they aren't.
     // The localStorage shape is unchanged so existing votes survive the swap,
-    // and the homepage entity-card vote helpers (index.html, build-seq 1a)
+    // and the homepage entity-card vote helpers (main.html, build-seq 1a)
     // continue to read the same key. The fetch-side helpers below
     // (`syncCauseTally`, `syncMyShares`, `commitCauseVote`) drive the
     // live tally + Commit button against the API.
@@ -1652,12 +1868,28 @@
     // v2: preload this ben's own votes for the cause's mission (server read-back).
     async function _v2LoadMine(cid) {
       _v2Shares = {}; _v2OrgVote = null; _v2Committed = null; _v2TallyWeights = {}; _v2Purchased = 0;
+      _v2OrgTally = {}; _v2OrgCandidates = [];
       const m = _v2Mission(cid);
       if (!m) return;
       // Public: the weighted phase-1 tally drives the annulus + leaders.
       try {
         const r = await fetch('/missions/' + m.id + '/p1/tally');
         if (r && r.ok) { const t = await r.json(); (t.entries || []).forEach(e => { _v2TallyWeights[e.tiv_id] = Math.max(0, e.votes); }); }
+      } catch (e) {}
+      // Public: phase-2 org standings + the orgs competing for this mission.
+      try {
+        const r = await fetch('/missions/' + m.id + '/p2/tally');
+        if (r && r.ok) { const t = await r.json(); (t.entries || []).forEach(e => { _v2OrgTally[e.org_id] = { net_votes: e.net_votes, voter_count: e.voter_count }; }); }
+      } catch (e) {}
+      try {
+        const r = await fetch('/candidacies?mission_id=' + m.id);
+        if (r && r.ok) {
+          const rows = await r.json();
+          // Scaffolding: include PENDING (unapproved) candidacies so registered
+          // orgs show up in the race — flagged "not approved" + capped at 1 vote.
+          _v2OrgCandidates = (rows || []).filter(c => ['pending', 'approved', 'won', 'lost'].includes(c.status));
+          if (!_v2OrgCandidates.length) _v2OrgCandidates = rows || [];
+        }
       } catch (e) {}
       if (!_v2LoggedIn()) return;
       try {
@@ -1722,32 +1954,88 @@
     async function orgVoteFor(causeId, tivId, orgId) {
       const _m = _v2Mission(causeId);
       if (_m && _v2LoggedIn()) {
-        try { await EBX.Auth.fetchAuthed('/missions/' + _m.id + '/p2/vote',
-              { method: 'PUT', body: JSON.stringify({ org_id: orgId, votes: 1, ebx_spent: 0, valence: 'helpful' }) }); } catch (e) {}
+        try {
+          const res = await EBX.Auth.fetchAuthed('/missions/' + _m.id + '/p2/vote',
+                { method: 'PUT', body: JSON.stringify({ org_id: orgId, votes: 1, ebx_spent: 0, valence: 'helpful' }) });
+          if (res && !res.ok) {
+            // Surface the election rules (no candidacy / no mission statement /
+            // unapproved cap) instead of pretending the vote landed.
+            const data = await res.json().catch(() => ({}));
+            alert(data.detail || ('Vote failed (HTTP ' + res.status + ')'));
+            return;
+          }
+        } catch (e) {}
       }
       _v2OrgVote = { org_id: orgId, votes: 1, at: Date.now() };
       renderPhaseRecaps(cause, _missionRefId ? { missionRef: causeInits.find(i => i.id === _missionRefId) } : {});
-      try { renderAnnulus(); } catch (e) {}
+      try { renderAnnulus(); renderLeadingPanel(); } catch (e) {}
+      syncOrgTally(causeId);
     }
     window.orgVoteFor = orgVoteFor;
-    function orgBuyVote(causeId) {
+    // One vote per benefactor; no split. Extra votes are BOUGHT at a rising
+    // price (10 x 2^(n-1) EBX) — spent outright, never committed.
+    async function orgBuyVote(causeId) {
       const v = loadOrgVote(causeId);
       if (!v) return;
+      // Scaffolding cap: an UNAPPROVED org accepts at most 1 vote (10 EBX). Extra
+      // votes can only be bought once the org is approved.
+      const _cand = (_v2OrgCandidates || []).find(c => String(c.org_id) === String(v.org_id));
+      if (_cand && _cand.status === 'pending') {
+        alert('This organization isn\'t approved yet — it\'s capped at 1 vote (10 EBX) until approval.');
+        return;
+      }
       const price = 10 * Math.pow(2, (v.votes || 1) - 1);
-      if (!confirm('Buy 1 additional vote for ' + price + ' EBX? (simulated — pilot money)')) return;
+      if (!confirm('Buy 1 additional vote for ' + price + ' EBX? (simulated - pilot money)')) return;
       v.votes = (v.votes || 1) + 1;
       v.spent = (v.spent || 0) + price;
-      saveOrgVote(causeId, v);
+      const _m = _v2Mission(causeId);
+      if (_m && _v2LoggedIn()) {
+        try {
+          const res = await EBX.Auth.fetchAuthed('/missions/' + _m.id + '/p2/vote',
+                { method: 'PUT', body: JSON.stringify({ org_id: v.org_id, votes: v.votes, ebx_spent: v.spent, valence: 'helpful' }) });
+          if (res && !res.ok) {
+            const data = await res.json().catch(() => ({}));
+            alert(data.detail || ('Purchase failed (HTTP ' + res.status + ')'));
+            return;
+          }
+        } catch (e) {}
+      }
+      _v2OrgVote = v;
       renderPhaseRecaps(cause, _missionRefId ? { missionRef: causeInits.find(i => i.id === _missionRefId) } : {});
-      try { renderAnnulus(); } catch (e) {}
+      try { renderAnnulus(); renderLeadingPanel(); } catch (e) {}
+      syncOrgTally(causeId);
     }
     window.orgBuyVote = orgBuyVote;
-    function orgWithdrawVote(causeId) {
-      saveOrgVote(causeId, null);
+    async function orgWithdrawVote(causeId) {
+      const _m = _v2Mission(causeId);
+      if (_m && _v2LoggedIn()) {
+        try { await EBX.Auth.fetchAuthed('/missions/' + _m.id + '/p2/vote',
+              { method: 'PUT', body: JSON.stringify({ org_id: (_v2OrgVote && _v2OrgVote.org_id) || '', votes: 1, ebx_spent: 0, valence: 'neutral' }) }); } catch (e) {}
+      }
+      _v2OrgVote = null;
       renderPhaseRecaps(cause, _missionRefId ? { missionRef: causeInits.find(i => i.id === _missionRefId) } : {});
-      try { renderAnnulus(); } catch (e) {}
+      try { renderAnnulus(); renderLeadingPanel(); } catch (e) {}
+      syncOrgTally(causeId);
     }
     window.orgWithdrawVote = orgWithdrawVote;
+
+    // Phase-2 money withdrawal: pull back this ben's phase-1 commitment minus the
+    // 10-20% send. Backed by POST /missions/{id}/p1/withdraw (crud.withdraw_p1).
+    window.withdrawPhase2Money = async function (causeId) {
+      const _m = _v2Mission(causeId);
+      if (!_m) return;
+      if (!_v2LoggedIn()) { alert('Sign in to withdraw your committed EBX.'); return; }
+      if (!confirm('Withdraw your committed EBX for this mission? The 10–20% send stays in the pool.')) return;
+      try {
+        const res = await EBX.Auth.fetchAuthed('/missions/' + _m.id + '/p1/withdraw', { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) { alert('Withdrawal failed: ' + (data.detail || ('HTTP ' + res.status))); return; }
+        alert('Withdrew ' + (data.refunded_ebx ?? 0) + ' EBX. Kept ' + (data.send_kept_ebx ?? 0) + ' EBX as the send.');
+        try { await _v2LoadMine(causeId); } catch (e) {}
+        const c = EBX.config.causes.find(x => x.id === causeId);
+        if (c) { renderPhaseRecaps(c, _missionRefId ? { missionRef: causeInits.find(i => i.id === _missionRefId) } : {}); try { renderAnnulus(); renderLeadingPanel(); } catch (e) {} }
+      } catch (e) { alert('Withdrawal error: ' + e.message); }
+    };
 
     // Push the current shares map to the backend. Best-effort; ignored when
     // not signed in or when the API is unreachable.
@@ -1822,7 +2110,13 @@
     function renderPhase1Recap(block, cause, missionRef) {
       if (!block) return;
       const title = missionRef.emoji ? (missionRef.emoji + ' ' + missionRef.title) : missionRef.title;
-      const when  = (missionRef.election_close || missionRef.election_open) ? fmtDate(new Date(missionRef.election_close || missionRef.election_open)) : '—';
+      // Retrospective election date: prefer the mission's recorded date, else the
+      // cause's elected-mission anchor (started_at). Shown in the corner like the
+      // live widget's upcoming "Decision <date>".
+      let _whenMs = (missionRef.election_close || missionRef.election_open)
+        ? new Date(missionRef.election_close || missionRef.election_open).getTime()
+        : _missionElectionMs(cause);
+      const when = _whenMs ? fmtDate(new Date(_whenMs)) : '—';
       const poolN = missionRef.ebx_committed || missionRef.pool_value || 0;
       const poolS = poolN ? (poolN.toLocaleString() + ' EBX in pool') : '';
 
@@ -1851,8 +2145,15 @@
           const loseFrac = loseShare / sumShares;
           const ebxOnWinner = myEbx * winFrac;
           const won = winShare > 0;
-          // 20% of EBX behind the winner is sent; 10% of the rest.
-          const contributed = 0.2 * ebxOnWinner + 0.1 * (myEbx * loseFrac);
+          // Money in = money out. Every committed EBX lands in one of two
+          // buckets (STRUCTURE Phase 1 / README §6):
+          //   c  pool minimum SENT — 20% of EBX behind the winner, 10% behind
+          //      the rest (irrevocable).
+          //   a+b committed to a mission — the remainder (the winner's 80% stays
+          //      in the pool; loser shares roll forward at 90%).
+          // The two sum to the whole commitment, so nothing is unaccounted for.
+          const sentMin   = 0.2 * ebxOnWinner + 0.1 * (myEbx * loseFrac);
+          const toMission = Math.max(0, myEbx - sentMin);
           const shareLine = won
             ? `You committed <b style="color:var(--cause-color)">${(winFrac*100).toFixed(0)}%</b> of your vote` +
               (myEbx > 0 ? ` (<b>${Math.round(ebxOnWinner).toLocaleString()} EBX</b>)` : '') +
@@ -1862,8 +2163,10 @@
             ? `<span style="color:var(--cause-color);font-weight:700;">✓ Your vote won.</span>`
             : `<span style="opacity:0.75;">✗ Your vote didn't win this election.</span>`;
           const contribLine = myEbx > 0
-            ? `Resulting contribution: <b style="color:var(--cause-color)">${contributed.toFixed(1)} EBX</b>
-               <span style="opacity:0.6;">(20% of EBX behind the winner, 10% behind the rest)</span>`
+            ? `Your <b>${myEbx.toLocaleString()} EBX</b> →
+               <b style="color:var(--cause-color)">${toMission.toFixed(1)} EBX</b> committed to the mission
+               + <b style="color:var(--cause-color)">${sentMin.toFixed(1)} EBX</b> to the pool minimum
+               <span style="opacity:0.6;">(20% sent behind the winner, 10% behind the rest)</span>`
             : `<span style="opacity:0.6;">No EBX was committed with this vote.</span>`;
           myHtml = `
           <div class="election-card__row" style="display:block;border-style:dashed;">
@@ -1881,19 +2184,42 @@
         }
       } catch (e) { myHtml = ''; }
 
+      // Most-supported initiative (the benefactor's top share) — this is what the
+      // recap's "My vote" shows, NOT the amount sent to the winner (instructions §3).
+      let _topPickName = null, _topPickEbx = 0;
+      try {
+        const _c = loadCommitted(cause.id);
+        const _sh = (_lerecMine && _lerecMine.shares) || (_c && _c.shares) || loadShares(cause.id) || {};
+        let _bId = null, _b = 0;
+        Object.keys(_sh).forEach(id => { const s = Number(_sh[id]) || 0; if (s > _b) { _b = s; _bId = id; } });
+        if (_bId) {
+          const _ini = (EBX.config.initiatives || []).find(i => i.id === _bId);
+          _topPickName = _ini ? ((_ini.emoji ? _ini.emoji + ' ' : '') + _ini.title) : null;
+          _topPickEbx = _ini ? (_ini.ebx_committed || 0) : 0;   // for "% of pool" the pick held at close
+        }
+      } catch (e) {}
+
       // build-seq 2 (pass 35): STRUCTURE Phase-1 recap layout — Winner/2nd/3rd
       // + My votes on the left, most-helpful Case + winner description right.
       // 2nd/3rd are the strongest unelected tivs of this cause by committed
       // EBX (per-election history rows don't exist yet — presumptive).
+      // The full slate that ran in THIS election (everyone but the winner), so no
+      // initiative disappears once it's decided. Losers are auto-carried into the
+      // cause's NEXT-cycle election (status back to 'suggested', new mission_id),
+      // so we DON'T scope by mission_id — that would hide them. Instead show the
+      // cause's also-rans (suggested/debate/lost) and exclude other elections'
+      // winners (org_vote/won/active/resolved).
       const _cInits = (EBX.config.initiatives || [])
-        .filter(i => (i.cause_id === cause.id || i.cause_index === cause.index) && i.id !== missionRef.id)
+        .filter(i => (i.cause_id === cause.id || i.cause_index === cause.index)
+          && i.id !== missionRef.id
+          && !['active', 'resolved'].includes(i.status))
         .sort((a, b) => (b.ebx_committed || 0) - (a.ebx_committed || 0));
       const _podium = [
         `<div class="p1-box__row" style="cursor:default;color:var(--cause-color);font-weight:600;">
            <span>✓ ${title}</span>
            <span style="font-family:var(--font-mono);font-size:0.66rem;">won</span>
          </div>`,
-        ..._cInits.slice(0, 2).map((i, idx) => `
+        ..._cInits.map((i, idx) => `
          <div class="p1-box__row" style="cursor:default;opacity:0.75;">
            <span>${idx + 2}. ${i.emoji || '🌱'} ${i.title}</span>
            <span style="font-family:var(--font-mono);font-size:0.66rem;">${(i.ebx_committed || 0).toLocaleString()}</span>
@@ -1914,45 +2240,91 @@
                  ${best.title || best.body.slice(0, 70)}
                </span>
                <a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;"
-                  href="en.html?id=${best.id}">go</a>
+                  href="cause.html?id=${cause.id}&post=${best.id}">go</a>
              </div>`
           : `<div class="p1-disc__row" style="grid-template-columns:1fr;opacity:0.55;">
                <span>No case posts were featured for this election.</span></div>`;
       } catch (e) { _caseHtml = ''; }
 
+      // Pool accounting — money in = money out (STRUCTURE Phase 1 / README §6).
+      //   in  = every EBX committed across this cause's election (winner + rest)
+      //   out = committed to a mission (a+b) + pool minimum sent (c)
+      // where c = 20% of the winner's EBX + 10% of the rest, and a+b is the
+      // remainder. to-mission is derived by subtraction so the two ALWAYS sum to
+      // the pool exactly, even after rounding.
+      const _winnerEbx = poolN || 0;
+      const _losersEbx = _cInits.reduce((t, i) => t + (i.ebx_committed || 0), 0);
+      const _poolTotal = _winnerEbx + _losersEbx;
+      const _sentMinAgg = Math.round(0.2 * _winnerEbx + 0.1 * _losersEbx);
+      const _toMissionAgg = Math.max(0, _poolTotal - _sentMinAgg);
+
+      // My commitment as a share of the whole pool (mockup: "its % of total").
+      const _myPctOfTotal = _poolTotal > 0 ? (_myEbxRecap / _poolTotal * 100) : 0;
+      const _cycNum = (missionRef.cycle_num != null) ? (missionRef.cycle_num + 1)
+                    : ((EBX.Cycle && EBX.Cycle.currentCycleNum) ? (EBX.Cycle.currentCycleNum() + 1) : 1);
+      const _cycleLabel = 'cycle ' + _cycNum;
+      // Also-rans — ONLY 2nd/3rd/4th. Losers roll 90% of their committed votes
+      // into the cause's next-cycle election (README §6 loser carryover).
+      const _losersRows = _cInits.length
+        ? _cInits.slice(0, 3).map((i, idx) => `
+            <div class="p1-box__row" style="cursor:default;opacity:0.8;">
+              <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${idx + 2}. ${i.emoji || '🌱'} ${i.title}</span>
+              <span style="font-family:var(--font-mono);font-size:0.66rem;">${(i.ebx_committed || 0).toLocaleString()}</span>
+            </div>`).join('')
+        : '<div style="font-size:0.74rem;opacity:0.5;">No other initiatives ran this cycle.</div>';
+      // Posts RECAP — READ-ONLY. Once Phase 2 begins, all posting moves to the
+      // p2 area (instructions: "No posting in recaps areas").
+      const _pvotes = (typeof p1PostVotes === 'function') ? p1PostVotes() : {};
+      // Posts area → 3 rows, one per P1 category (case / context / analysis),
+      // each showing that category's leading post with date + voting.
+      const _catRow = (catKey, label) => {
+        let best = null;
+        try { best = (typeof p1Featured === 'function') ? p1Featured(cause, catKey) : null; } catch (e) {}
+        if (!best) {
+          return `<div class="p1-disc__row" style="grid-template-columns:auto 1fr;opacity:0.5;border-left:3px solid var(--cause-color);">
+            <span style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.08em;">${label}</span>
+            <span style="font-size:0.74rem;">No ${label.toLowerCase()} posts yet.</span></div>`;
+        }
+        const mine = _pvotes[best.id];
+        const when2 = best.created_at ? new Date(best.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+        return `<div class="p1-disc__row" style="grid-template-columns:auto 1fr auto;border-left:3px solid var(--cause-color);">
+          <span class="p1-disc__votes" style="display:flex;gap:3px;">
+            <button class="${mine==='helpful'?'voted':''}" title="Helpful" onclick="p1VotePost('${best.id}','helpful')">✓</button>
+            <button class="${mine==='neutral'?'voted':''}" title="Neutral" onclick="p1VotePost('${best.id}','neutral')">~</button>
+            <button class="${mine==='wrong'?'voted':''}" title="Wrong" onclick="p1VotePost('${best.id}','wrong')">✗</button>
+          </span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            <span style="font-family:var(--font-mono);font-size:0.56rem;letter-spacing:0.08em;opacity:0.6;">${label}${when2?' · '+when2:''}</span>
+            ${best.title || (best.body||'').slice(0,70)}</span>
+          <span style="opacity:0.6;font-size:0.62rem;white-space:nowrap;">${(best.helpful_count||0)+(best.likes||0)} ✓</span>
+        </div>`;
+      };
+      const _recapPostsHtml = _catRow('case', 'Case') + _catRow('context', 'Context') + _catRow('analysis', 'Analysis');
+
+      // Minimal recap (instructions §3): "<Cause> <N>: Initiative Election" header
+      // (number only); WINNER; my most-supported initiative + % of pool; 2nd–4th;
+      // posts. "Phase 1 / Recap" sits in the lhs column, not inside.
       block.innerHTML = `
-        <div class="phase-recap__num">Phase 1</div>
+        <div class="phase-recap__num">Phase 1<br>Recap</div>
         <div class="phase-recap__body election-card election-card--recap">
-          <div class="election-card__header">
-            <div>
-              <div class="phase-recap__title">Initiative Election · Recap</div>
-              <div class="phase-recap__sub" style="font-size:0.7rem;">Voting closed — elected ${when}.</div>
-            </div>
+          <div class="election-card__header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div class="phase-recap__title">${cause.name} ${_cycNum}: Initiative Election</div>
+            <div class="election-card__remaining" style="font-size:0.62rem;opacity:0.8;white-space:nowrap;">Elected <b>${when}</b></div>
           </div>
           <div class="p1-grid">
             <div>
-              <div class="p1-box">
-                <div class="p1-box__label">Results</div>
-                ${_podium}
+              <div class="p1-box__row" style="cursor:default;color:var(--cause-color);font-weight:700;font-size:0.95rem;">
+                <span>✓ ${title}</span><span style="font-family:var(--font-mono);font-size:0.66rem;">WINNER</span>
               </div>
-              ${myHtml}
-              <div style="display:flex;gap:8px;margin-top:var(--sp-sm);">
-                <div class="p1-chip">Pool size<b>${poolN ? poolN.toLocaleString() + ' EBX' : '—'}</b></div>
-                <div class="p1-chip">My commit<b>${_myEbxRecap.toLocaleString()} EBX</b></div>
+              <div style="font-family:var(--font-mono);font-size:0.66rem;opacity:0.8;margin:8px 0 2px;">
+                My vote: <b style="color:var(--cause-color);">${_topPickName || '—'}</b>${(_topPickEbx > 0 && _poolTotal > 0) ? ' · ' + (_topPickEbx / _poolTotal * 100).toFixed(0) + '%' : ''}
+              </div>
+              <div class="p1-box" style="margin-top:var(--sp-sm);">
+                ${_losersRows}
               </div>
             </div>
             <div>
-              <div class="p1-box__label">Discussion · locked</div>
-              ${_caseHtml}
-              <div class="p1-box" style="margin-top:var(--sp-sm);">
-                <div class="p1-box__label">Winning initiative</div>
-                <div style="font-size:0.9rem;font-weight:600;color:var(--cause-color);">${title}</div>
-                <div style="font-size:0.78rem;opacity:0.75;line-height:1.45;margin-top:4px;">
-                  ${missionRef.description || 'No description recorded.'}</div>
-              </div>
-              <button class="election-card__withdraw-btn" disabled
-                      style="margin-top:8px;opacity:0.55;" title="Backlog">
-                See election details ▾</button>
+              ${_recapPostsHtml}
             </div>
           </div>
         </div>`;
@@ -1966,7 +2338,7 @@
       { value: 'context',  label: 'context'  },
       { value: 'analysis', label: 'analysis' },
     ];
-    const P1_LOCAL_POSTS = 'ebx_local_posts';   // shared with index.html board
+    const P1_LOCAL_POSTS = 'ebx_local_posts';   // shared with main.html board
     const P1_POST_VOTES  = 'ebx_post_votes';
     function p1LocalPosts() {
       try { return JSON.parse(localStorage.getItem(P1_LOCAL_POSTS) || '[]'); }
@@ -2043,7 +2415,7 @@
         </div>`;
     }
     // build-seq 11: p1 post viewer. Toggles between MISSION-wide posts (default)
-    // and posts about the selected initiative. Composing happens on index.html
+    // and posts about the selected initiative. Composing happens on main.html
     // (the "Post about this" link opens that row); here a post is read-only +
     // clickable to expand with the helpful/neutral/wrong voting dialog. Org-
     // specific posts are surfaced by the p2 area.
@@ -2099,7 +2471,7 @@
                 <button class="${mine === 'neutral' ? 'voted' : ''}" onclick="p1VotePost('${p.id}','neutral')">~ neutral</button>
                 <button class="${mine === 'wrong' ? 'voted' : ''}" onclick="p1VotePost('${p.id}','wrong')">✗ wrong</button>
               </span>
-              <a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;" href="en.html?id=${p.id}">open →</a>
+              <a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;" href="cause.html?id=${cause.id}&post=${p.id}">open →</a>
             </div>
           </div>` : '';
         return head + detail;
@@ -2107,7 +2479,7 @@
       const rows = list.length
         ? list.map(rowFor).join('')
         : `<div style="font-size:0.78rem;opacity:0.55;padding:6px 0;">No ${scope === 'tiv' ? 'initiative' : 'mission'} posts yet.</div>`;
-      const postHref = tivId ? ('index.html?init=' + tivId) : 'index.html';
+      const postHref = tivId ? ('main.html?init=' + tivId) : 'main.html';
       return `
         <div class="p1-box" id="p1-post-viewer">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
@@ -2179,7 +2551,10 @@
       votes[postId] = votes[postId] === val ? undefined : val;
       if (votes[postId] === undefined) delete votes[postId];
       localStorage.setItem(P1_POST_VOTES, JSON.stringify(votes));
-      const cause = _p1Cause(); if (cause) _rerenderElectionCard(cause);
+      // Re-render the WHOLE phase area so votes update in both the Phase-1 recap
+      // and the Phase-2 discussion (the old path only refreshed phase-recap-1).
+      const cause = _p1Cause();
+      if (cause) renderPhaseRecaps(cause, _missionRefId ? { missionRef: causeInits.find(i => i.id === _missionRefId) } : {});
     }
     window.p1VotePost = p1VotePost;
     function _p1Cause() {
@@ -2215,13 +2590,25 @@
     function renderElectionCard(cause, inits, decisionDate, missionRef) {
       const block = document.getElementById('phase-recap-1');
       if (!block) return;
-      // Vote-fix (b): if a selected mission's initiative election already happened
-      // (org_vote/active/resolved), render the Phase-1 recap, not the live widget.
-      if (missionRef && ['org_vote','active','resolved'].includes(missionRef.status)) {
+      // Always record the cause id so post-vote / reply re-renders work even when
+      // only the recap rendered (the live-widget path used to be the only setter,
+      // so voting on a recap page silently no-opped).
+      window._p1CauseId = cause.id;
+      // If a selected mission's initiative election already happened (the tiv is
+      // 'active' or 'resolved'), render the Phase-1 recap, not the live widget.
+      if (missionRef && ['active','resolved'].includes(missionRef.status)) {
         return renderPhase1Recap(block, cause, missionRef);
       }
       // v2 date-state: a mission whose window hasn't opened shows "opens <date>".
       const _vm = _v2Mission(cause.id);
+      // Rollover: once the scheduler has run finalize_p1 the mission carries a
+      // winning_tiv_id — the authoritative "election decided" signal — so the
+      // default cause view flips to the Phase-1 recap instead of a now-empty widget.
+      if (!missionRef && _vm && _vm.winning_tiv_id) {
+        const _winner = inits.find(i => i.id === _vm.winning_tiv_id)
+                     || inits.find(i => ['active','resolved'].includes(i.status));
+        if (_winner) return renderPhase1Recap(block, cause, _winner);
+      }
       if (!missionRef && _vm && _vm.current_phase === 'pre' && _vm.started_at) {
         block.innerHTML = `
           <div class="phase-recap__num">Phase 1</div>
@@ -2311,7 +2698,8 @@
           + `${ratingDisp ? ' · ★ ' + Number(ratingDisp).toFixed(1) : ''}`;
         return `<div class="election-card__row" data-tally-id="${init.id}">
           <div>
-            <div class="election-card__row-title">${init.emoji||'🌱'} ${init.title}</div>
+            <a class="election-card__row-title election-card__row-link" href="main.html?init=${init.id}"
+               title="View ${init.title} on the home page">${init.emoji||'🌱'} ${init.title} ↗</a>
             <div class="election-card__row-sub">${subline}</div>
           </div>
           <input type="range" min="0" max="${committable}" step="1" value="${alloc}"
@@ -2322,7 +2710,8 @@
         </div>`;
       };
 
-      // Top row of the slider area — the live Uncommitted share.
+      // Bottom row of the slider area — the live Uncommitted share, now also
+      // carrying the "Withdraw all" control.
       const uncommittedRow = `
         <div class="election-card__row election-card__uncommitted">
           <div>
@@ -2331,14 +2720,19 @@
           </div>
           <div class="p1-uncommitted-track"><div class="p1-uncommitted-fill" id="p1-uncommitted-fill"
                style="width:${committable ? (uncommittedEbx/committable*100).toFixed(0) : 0}%;"></div></div>
-          <div class="election-card__share" id="p1-uncommitted-val">${uncommittedEbx} EBX</div>
+          <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;">
+            <div class="election-card__share" id="p1-uncommitted-val">${uncommittedEbx} EBX</div>
+            <button class="election-card__withdraw-btn" onclick="withdrawVote('${cause.id}')"
+                    ${sumShares <= 0 ? 'disabled' : ''}>Withdraw all</button>
+          </div>
         </div>`;
 
       // Bottom row — the selected initiative's "split vote" control if not yet voted.
       const selectedRow = (_disp && !_myVotedIds.has(_disp.id))
         ? `<div class="election-card__row" data-tally-id="${_disp.id}" style="grid-template-columns:1fr auto;border-style:dashed;">
              <div>
-               <div class="election-card__row-title">${_disp.emoji||'🌱'} ${_disp.title}</div>
+               <a class="election-card__row-title election-card__row-link" href="main.html?init=${_disp.id}"
+                  title="View ${_disp.title} on the home page">${_disp.emoji||'🌱'} ${_disp.title} ↗</a>
                <div class="election-card__row-sub">Selected initiative — assign part of your vote.</div>
              </div>
              <button class="election-card__commit-btn" style="padding:6px 14px;font-size:0.7rem;"
@@ -2348,15 +2742,12 @@
         : '';
 
       const votedRows = _myIds.map(id => _phase1.find(x => x.id === id)).filter(Boolean).map(sliderRow).join('');
+      // Slider order (Jax): selected initiative on top, then voted rows, with the
+      // Uncommitted row at the bottom.
       const rows = sliderMode
-        ? (uncommittedRow + votedRows + selectedRow)
+        ? (selectedRow + votedRows + uncommittedRow)
         : (selectedRow || `<div style="font-size:0.72rem;opacity:0.5;padding:6px 0 2px;">
              No votes yet — pick a leader or an initiative to start allocating your EBX.</div>`);
-
-      const remainText = sliderMode ? `${uncommittedEbx} EBX uncommitted` : 'No vote yet';
-      const headerSub  = sliderMode
-        ? `Drag to allocate your vote; the rest stays Uncommitted. Decision <b>${fmtDate(decisionDate)}</b>.`
-        : `Pick an initiative to start your vote. Decision <b>${fmtDate(decisionDate)}</b>.`;
 
       // After paint, hydrate the tally line from the backend (fire-and-forget).
       try { setTimeout(() => syncCauseTally(cause.id), 0); } catch (e) {}
@@ -2402,11 +2793,28 @@
         <div class="phase-recap__num">Phase 1</div>
         <div class="phase-recap__body election-card">
           <div class="election-card__header">
-            <div>
+            <div class="p1-header-main">
               <div class="phase-recap__title">Initiative Election</div>
-              <div class="phase-recap__sub" style="font-size:0.7rem;">${headerSub}</div>
+              <div class="election-card__topbar">
+                <div class="p1-chip" style="flex:0 0 auto;">Pool size<b>${_basePool.toLocaleString()} EBX</b></div>
+                <div class="p1-chip" style="flex:0 0 auto;">My commit<b>${committable.toLocaleString()} EBX</b></div>
+                <div class="p1-chip" style="flex:0 0 auto;">EBX purchased<b>${_purchased.toLocaleString()}</b></div>
+                <div class="p1-buystack">
+                  <button class="election-card__commit-btn" style="padding:5px 12px;font-size:0.62rem;"
+                          onclick="buyEbx('${cause.id}')">Purchase EBX</button>
+                  <button class="election-card__withdraw-btn" style="padding:5px 12px;font-size:0.62rem;"
+                          onclick="convertEbx('${cause.id}')">⇄ Convert</button>
+                </div>
+                <button class="election-card__commit-btn" id="vote-commit-btn"
+                        onclick="commitVote('${cause.id}')" ${sumShares <= 0 ? 'disabled' : ''}>Commit</button>
+                <div class="election-card__status ${committed ? 'committed' : ''}" id="vote-status">
+                  ${committed
+                    ? '✓ Committed ' + new Date(committed.at).toLocaleDateString('en-US',{month:'short',day:'numeric'})
+                    : 'Not yet committed'}
+                </div>
+              </div>
             </div>
-            <div class="election-card__remaining" id="vote-remaining">${remainText}</div>
+            <div class="election-card__remaining" id="vote-decision">Decision <b>${fmtDate(decisionDate)}</b></div>
           </div>
           <div class="p1-grid">
             <div>
@@ -2417,28 +2825,9 @@
             </div>
             <div>
               <div class="p1-box">
-                <div class="p1-box__label">Slider voting</div>
+                <div class="p1-box__label">Drag to allocate your vote; the rest stays Uncommitted</div>
                 <div id="p1-rows">${rows}</div>
               </div>
-            </div>
-          </div>
-          <div class="election-card__bottombar">
-            <div class="p1-chip" style="flex:0 0 auto;">Pool size<b>${_basePool.toLocaleString()} EBX</b></div>
-            <div class="p1-chip" style="flex:0 0 auto;">My commit<b>${committable.toLocaleString()} EBX</b></div>
-            <div class="p1-chip" style="flex:0 0 auto;">EBX purchased<b>${_purchased.toLocaleString()}</b></div>
-            <button class="election-card__commit-btn" style="padding:6px 12px;font-size:0.66rem;"
-                    onclick="buyEbx('${cause.id}')">Purchase EBX</button>
-            <button class="election-card__withdraw-btn" onclick="convertEbx('${cause.id}')">⇄ Convert</button>
-            <button class="election-card__commit-btn" id="vote-commit-btn"
-                    onclick="commitVote('${cause.id}')" ${sumShares <= 0 ? 'disabled' : ''}>Commit</button>
-            ${_disp ? `<a class="election-card__sellink" href="index.html#${_disp.id}"
-                 title="${_disp.title}">▸ ${_disp.emoji||'🌱'} ${_disp.title}</a>` : ''}
-            <button class="election-card__withdraw-btn" onclick="withdrawVote('${cause.id}')"
-                    ${sumShares <= 0 ? 'disabled' : ''}>Withdraw all</button>
-            <div class="election-card__status ${committed ? 'committed' : ''}" id="vote-status">
-              ${committed
-                ? '✓ Committed ' + new Date(committed.at).toLocaleDateString('en-US',{month:'short',day:'numeric'})
-                : 'Not yet committed'}
             </div>
           </div>
           <div class="p1-discussion-full" style="margin-top:var(--sp-md);">
@@ -2479,8 +2868,6 @@
       if (fill) fill.style.width = (uncEbx / committable * 100).toFixed(0) + '%';
       const uncVal = document.getElementById('p1-uncommitted-val');
       if (uncVal) uncVal.textContent = uncEbx + ' EBX';
-      const remEl = document.getElementById('vote-remaining');
-      if (remEl) remEl.textContent = uncEbx + ' EBX uncommitted';
       const commitBtn = document.getElementById('vote-commit-btn');
       if (commitBtn) commitBtn.disabled = sum <= 0;
       try { refreshCauseRace(); } catch (e) {}
@@ -2684,7 +3071,7 @@
     // ── Propose-initiative dialog (build-seq 2a) ──────────────────────────
     // The modal markup at #propose-modal-bg was already in place; this pass
     // wires up its open/close handlers and submitProposal → POST /initiatives
-    // (mirroring the index.html implementation). Both pages now use the same
+    // (mirroring the main.html implementation). Both pages now use the same
     // payload shape so a single backend handler covers both flows.
     function _slugForInitiative(title) {
       const base = (title || '')
@@ -2788,7 +3175,7 @@
     /* ── 3. Topbar cause tabs: 7 mission-blocks across the bar ── */
     const tabsEl = document.getElementById('cause-tabs');
     const MS_DAY = EBX.Cycle.MS_PER_DAY;
-    const CAUSE_DAYS = EBX.config.causeLengthDays || 14;
+    const CAUSE_DAYS = EBX.config.causeLengthDays || 49;
     const cycleNum = EBX.Cycle.currentCycleNum();
     const state    = EBX.Cycle.now();
 
@@ -2808,7 +3195,20 @@
     }
 
     if (!cause) return;
-    renderPhaseRecaps(cause);
+
+    // Stick to the last-displayed mission for this cause across reloads
+    // (instructions §2): restore from ?mission= or localStorage BEFORE the
+    // first render so the page doesn't snap back to the default leader.
+    (function () {
+      const want = (EBX.getParam && EBX.getParam('mission')) || _loadSelMission(cause.id);
+      if (!want) return;
+      const ini = (EBX.config.initiatives || []).find(i => i.id === want &&
+        (i.cause_id === cause.id || i.cause_index === cause.index));
+      if (ini) _missionRefId = want;
+    })();
+    renderPhaseRecaps(cause, _missionRefId
+      ? { missionRef: (EBX.config.initiatives || []).find(i => i.id === _missionRefId) }
+      : {});
 
     // build-seq 2 (pass 35): ?add=<initId> from the home page's re-balance /
     // split links — same effect as the widget's own '+ Add' control.
@@ -2863,15 +3263,15 @@
     document.getElementById('phase-bar-fill').style.width = phasePct.toFixed(1) + '%';
 
     /* ── 5. Initiatives for this cause ── */
-    const causeInits = initiatives
-      .filter(i => i.cause_index === cause.index || i.cause_id === cause.id)
+    const causeInits = _normCauseInits(initiatives
+      .filter(i => i.cause_index === cause.index || i.cause_id === cause.id))
       .sort((a, b) => (b.ebx_committed || 0) - (a.ebx_committed || 0));
 
     // build-seq 3 (pass 34): the CURRENT phase-1 election = tivs not yet
     // elected. Past elections' tivs (org_vote/active/resolved) keep their
     // committed EBX but must NOT appear in the annulus pie or its share math.
     const electionInits = causeInits.filter(i =>
-      !['org_vote', 'active', 'resolved'].includes(i.status));
+      !['active', 'resolved'].includes(i.status));
 
     /* Vote weight per init — folds the local benefactor's vote + committed
        EBX (1:1 weight, Jax Step-1 feedback) onto any backend ebx_committed so
@@ -2934,11 +3334,7 @@
           paths += `<path d="${d}" fill="${sh.color || color}" fill-opacity="${sh.isOther ? 0.35 : 0.8}"
                       stroke="rgba(15,26,20,0.8)" stroke-width="1.5">
                       <title>${sh.org_name} — ${sh.pct.toFixed(0)}%</title></path>`;
-          if (angle > 0.18 && !sh.isOther) {
-            labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-                         font-family="DM Mono,monospace" font-size="11" font-weight="700"
-                         fill="rgba(245,240,232,0.9)" pointer-events="none">${idx + 1}</text>`;
-          }
+          // Numeric slice labels removed (Jax): keep the annulus clean.
           oa = oaEnd;
         });
         const lead = orgShares[0];
@@ -3016,13 +3412,61 @@
                       stroke="rgba(15,26,20,0.8)" stroke-width="1.5"
                       class="cause-slice" data-init-idx="${idx}"
                       onclick="selectInitByAnnulus(${idx})" />`;
-          if (labelVisible) {
-            labels += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle"
-                         font-family="DM Mono,monospace" font-size="11" font-weight="700"
-                         fill="rgba(245,240,232,0.9)" pointer-events="none">${idx + 1}</text>`;
-          }
+          // Numeric slice labels removed (Jax): keep the annulus clean.
           startAngle = endAngle;
         });
+      }
+
+      // ── Annulus center (readability pass): standardized stack, larger type.
+      //   Phase 1 (initiative election): today / "<Cause> Decision:" / decision date
+      //   Phase 2 (org election):        today / mission title / Phase x / decision date
+      {
+        // Phase-aware annulus center (Jax "Middle Cause" spec):
+        //   P1  <Cause> Decision:        / tiv_election_date
+        //   P2  initiative acronym/logo  / org_election_date
+        //   P3  Budget                   / credit_release_date (default week 16)
+        //   P4  Credit                   (commentary awards · convert credits)
+        //   P5  Resolution               (success or failure; may take years)
+        const _today = fmtDate(new Date());
+        const _esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const _clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+        const _fmt = ms => { try { return fmtDate(new Date(ms)); } catch (e) { return ''; } };
+        // Default an initiative logo to an acronym of its title.
+        const _acronym = t => {
+          t = String(t || '').trim(); if (!t) return '—';
+          const w = t.replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
+          return (w.length > 1 ? w.map(x => x[0]).join('') : t).toUpperCase().slice(0, 6);
+        };
+        const MUTED = 'rgba(245,240,232,0.55)';
+        const INK = 'rgba(245,240,232,0.95)';
+        const T = (y, sz, fill, text, weight) =>
+          `<text x="${cx}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-family="DM Mono,monospace" font-size="${sz}" ${weight ? 'font-weight="' + weight + '"' : ''} letter-spacing="0.04em" fill="${fill}">${text}</text>`;
+
+        // Mission-dependent: the center reflects the cause's DISPLAY mission (a
+        // spotlighted mission if one is selected, else the in-flight mission), with
+        // every date derived from THAT mission's started_at (+7 wk P1, +8 wk P2…).
+        const _m = _displayMission(cause);
+        const _ph = _missionPhaseNum(_m);
+        const _winTiv = (_m && _m.winning_tiv_id) ? causeInits.find(i => i.id === _m.winning_tiv_id) : null;
+        let _sub = '', _line2 = '', _line3 = '';
+        if (_ph === 1)      { _line2 = _clip(cause.name, 12) + ' Decision:'; _line3 = _fmt(_missionP1Ms(_m)); }
+        else if (_ph === 2) { _sub = 'Phase 2 · Org Election'; _line2 = _winTiv ? _acronym(_winTiv.title) : cause.name; _line3 = _fmt(_missionP2Ms(_m)); }
+        else if (_ph === 3) { _sub = 'Phase 3 · Budget';       _line2 = 'Budget';     _line3 = _fmt(_missionCreditMs(_m)); }
+        else if (_ph === 4) { _sub = 'Phase 4 · Credit';       _line2 = 'Credit'; }
+        else                { _sub = 'Phase 5 · Resolution';   _line2 = 'Resolution'; }
+
+        if (_sub) {
+          centerContent =
+            T(cy - 34, 9.5, MUTED, _esc(_today), 700) +
+            T(cy - 15, 13, INK, _esc(_clip(_line2, 18)), 700) +
+            T(cy + 2, 9.5, MUTED, _esc(_sub)) +
+            (_line3 ? T(cy + 24, 14.5, color, _esc(_line3), 700) : '');
+        } else {
+          centerContent =
+            T(cy - 24, 9.5, MUTED, _esc(_today), 700) +
+            T(cy - 2, 11, INK, _esc(_line2), 700) +
+            (_line3 ? T(cy + 22, 16, color, _esc(_line3), 700) : '');
+        }
       }
 
       // ── Outer ring (build-seq 3, pass 35 REDO): back to the 7-sector
@@ -3051,7 +3495,7 @@
       // Uses global elapsed time so the marker is identical regardless of which cause is selected.
       // cycleFraction = 0 → 12 o'clock (start of cycle), advances clockwise to 1 (full rotation).
       const cycleWindowMs = (EBX.config.causeLengthDays || 49) * 86400000;
-      const cycleStartMs  = EBX.config.cycleStart ? EBX.config.cycleStart.getTime() : new Date('2026-01-01').getTime();
+      const cycleStartMs  = EBX.config.cycleStart ? EBX.config.cycleStart.getTime() : new Date('2026-04-28T12:00:00').getTime();
       const cycleFraction = ((Date.now() - cycleStartMs) % cycleWindowMs) / cycleWindowMs;
       const markerAngle = -Math.PI / 2 + cycleFraction * Math.PI * 2;
       const markerR = ringOuter + 6;
@@ -3083,20 +3527,8 @@
               stroke-linecap="round" stroke-linejoin="round" fill="none"
               filter="url(#glow)"/>`;
 
-      // Election date for this cause's mission, anchored at the bottom of the
-      // inner circle so it shows in the middle of the annulus across all states.
-      let electionLabel = '';
-      try {
-        const _ed = fmtDate(new Date(_causeDecisionMs(cause)));
-        electionLabel = `
-        <text x="${cx}" y="${cy + 44}" text-anchor="middle" dominant-baseline="middle"
-              font-family="DM Mono,monospace" font-size="8" letter-spacing="0.1em"
-              fill="rgba(245,240,232,0.42)">ELECTION</text>
-        <text x="${cx}" y="${cy + 56}" text-anchor="middle" dominant-baseline="middle"
-              font-family="DM Mono,monospace" font-size="10" font-weight="700"
-              fill="${color}">${_ed}</text>`;
-      } catch (e) {}
-
+      // Decision date now lives in the standardized annulus center (above), so
+      // the separate bottom-anchored election label has been removed.
       return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
         <defs>
           <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -3110,7 +3542,6 @@
         ${labels}
         <circle cx="${cx}" cy="${cy}" r="${innerR - 2}" fill="rgba(15,26,20,0.95)" />
         ${centerContent}
-        ${electionLabel}
       </svg>`;
     }
 
@@ -3118,33 +3549,74 @@
     // votes (ebx_org_votes, one vote per benefactor + bought extras) are
     // tallied on top of the synthetic Votes.forCause distribution so the pie
     // reacts to the benefactor's own vote until the backend tallies org votes.
+    // Org vote-share for the phase-2 race, built from the REAL backend tally
+    // (/p2/tally net votes) + the orgs competing for the mission (/candidacies).
+    // One vote per ben; bought extras already counted in net_votes. Signed-out
+    // demo folds the local ballot in so the pie still reacts.
     function causeOrgShares() {
-      const orgs = (EBX.Votes && EBX.Votes.orgsForCause) ? EBX.Votes.orgsForCause(cause.index) : [];
-      if (!orgs.length || !EBX.Votes.forCause) return [];
-      const shares = EBX.Votes.forCause(cause.index, EBX.Cycle.currentCycleNum(), orgs);
+      const orgsById = {};
+      (EBX.config.organizations || []).forEach(o => { orgsById[String(o.id)] = o; });
+      // Approval state per org (scaffolding): pending candidacies show but are
+      // flagged "not approved" and capped at 1 vote until staff clear them.
+      const _candStatus = {};
+      (_v2OrgCandidates || []).forEach(c => { _candStatus[String(c.org_id)] = c.status; });
+      const ids = [];
+      (_v2OrgCandidates || []).forEach(c => { const id = String(c.org_id); if (!ids.includes(id)) ids.push(id); });
+      Object.keys(_v2OrgTally || {}).forEach(id => { id = String(id); if (!ids.includes(id)) ids.push(id); });
+      // Reflect the benefactor's own ballot immediately (optimistic) — logged in
+      // or out, and even before any candidacy/tally rows exist — so the P2 area
+      // visibly updates the moment they vote.
+      const optimistic = (_v2OrgVote && _v2OrgVote.org_id) ? _v2OrgVote : null;
+      if (optimistic && !ids.includes(String(optimistic.org_id))) ids.push(String(optimistic.org_id));
+      if (!ids.length) return [];
+      const _addOpt = optimistic && !_v2LoggedIn();   // logged-in counts come from the backend tally
+      let rows = ids.map(id => {
+        let votes = Math.max(0, (_v2OrgTally[id] && _v2OrgTally[id].net_votes) || 0);
+        if (_addOpt && String(optimistic.org_id) === id) votes += Math.max(1, Number(optimistic.votes) || 1);
+        const org = orgsById[id];
+        return { org_id: id, org_name: org ? org.name : ('Org ' + id), votes, isOther: false,
+                 approved: _candStatus[id] !== 'pending' };
+      });
+      const total = rows.reduce((t, r) => t + r.votes, 0);
+      rows.forEach(r => { r.pct = total > 0 ? (r.votes / total) * 100 : 0; });
+      rows.sort((a, b) => b.votes - a.votes || a.org_name.localeCompare(b.org_name));
+      rows.forEach((r, idx) => { r.color = (EBX.Votes && EBX.Votes.rankColor) ? EBX.Votes.rankColor(idx) : CAUSE_COLOR; });
+      return rows;
+    }
+    async function syncOrgTally(causeId) {
+      const m = _v2Mission(causeId);
+      if (!m) return;
       try {
-        const mine = null; // DECONSTRUCTED (v2): org vote -> GET /missions/{id}/p2/tally
-        if (mine && mine.org_id) {
-          // Fold my votes in: synthetic pcts ≈ community votes out of 100;
-          // each of my votes adds 1 "vote" to the chosen org, then renormalize.
-          const myN = Math.max(1, Number(mine.votes) || 1);
-          const bumped = shares.map(sh => ({ ...sh,
-            pct: sh.pct + (sh.org_id === mine.org_id ? myN : 0) }));
-          const tot = bumped.reduce((t, x) => t + x.pct, 0) || 1;
-          bumped.forEach(x => { x.pct = (x.pct / tot) * 100; });
-          bumped.sort((a, b) => (a.isOther ? 1 : 0) - (b.isOther ? 1 : 0) || b.pct - a.pct);
-          return bumped;
+        const r = await fetch('/missions/' + m.id + '/p2/tally');
+        if (r && r.ok) {
+          const t = await r.json();
+          _v2OrgTally = {};
+          (t.entries || []).forEach(e => { _v2OrgTally[e.org_id] = { net_votes: e.net_votes, voter_count: e.voter_count }; });
         }
       } catch (e) {}
-      return shares;
+      // Competing orgs can change too (new registrations / approvals).
+      try {
+        const r = await fetch('/candidacies?mission_id=' + m.id);
+        if (r && r.ok) { _v2OrgCandidates = (await r.json()) || []; }
+      } catch (e) {}
+      // BUG FIX ("P2 Area doesn't update"): the fresh tally has to re-render the
+      // phase-2 AREA itself, not just the annulus + left panel. For a signed-in
+      // ben causeOrgShares() reads _v2OrgTally exclusively (no optimistic add),
+      // so without this re-render the standings/vote widget never moved.
+      try {
+        const c = (EBX.config.causes || []).find(x => x.id === causeId);
+        if (c) renderPhaseRecaps(c, _missionRefId ? { missionRef: causeInits.find(i => i.id === _missionRefId) } : {});
+      } catch (e) {}
+      try { renderAnnulus(); renderLeadingPanel(); } catch (e) {}
     }
+    window.syncOrgTally = syncOrgTally;
 
     function renderAnnulus() {
       // build-seq 3 (pass 35): inner pie follows the SELECTED mission's phase.
       // Phase 2 (org_vote) → orgs with votes; phase 1 → initiative election.
       let orgShares = null;
       const sel = _missionRefId ? causeInits.find(i => i.id === _missionRefId) : null;
-      if (sel && sel.status === 'org_vote') orgShares = causeOrgShares();
+      if (sel && sel.status === 'active') orgShares = causeOrgShares();
       document.getElementById('cause-annulus-mount').innerHTML =
         buildAnnulusSVG(electionInits, CAUSE_COLOR, orgShares);
     }
@@ -3158,20 +3630,18 @@
       const el = document.getElementById('mission-overview');
       if (!el || !cause) return;
       const active = causeInits.find(i => i.status === 'active');
-      const upcoming = causeInits.find(i => ['debate','org_vote','suggested'].includes(i.status));
+      const upcoming = causeInits.find(i => i.status === 'suggested' || !i.status);
       const init = missionRef || active || upcoming || causeInits[0] || null;
 
       let phaseNum, phaseLabel;
       if (missionRef) {
         // Mission-relative phase from status (matches right-panel card labels).
-        const map = {
-          suggested: [1, 'Initiative Election'],
-          debate:    [1, 'Initiative Election'],
-          org_vote:  [2, 'Org Election'],
-          active:    [3, 'Mission Underway'],
-          resolved:  [4, 'Resolution'],
-        };
-        const pair = map[missionRef.status] || [1, 'Initiative Election'];
+        // 'active' spans phases 2-4 — read the real phase from the mission.
+        const _phaseLabels = { 1: 'Initiative Election', 2: 'Org Election', 3: 'Budget', 4: 'Credit Release', 5: 'Resolution' };
+        let pair;
+        if (missionRef.status === 'resolved') pair = [5, _phaseLabels[5]];
+        else if (missionRef.status === 'active') { const ph = _causePhaseNum(cause); pair = [ph, _phaseLabels[ph] || 'Mission Underway']; }
+        else pair = [1, _phaseLabels[1]];
         phaseNum = pair[0]; phaseLabel = pair[1];
       } else {
         // Bug A: when unselected, the live Phase-1 election widget is what's on
@@ -3228,9 +3698,75 @@
     /* ── 7. Leading Initiatives (left panel) — build-seq 4 (pass 34):
        pages through ALL current-election initiatives that have received
        votes (3 per page, ranked by weight). Each card links to its entry
-       on the home page (index.html?init=<id>). ── */
+       on the home page (main.html?init=<id>). ── */
     let _leadingPage = 0;
+    // Selected mission currently in PHASE 2 (org election), or null.
+    function _selectedP2Mission() {
+      const sel = _missionRefId ? causeInits.find(i => i.id === _missionRefId) : null;
+      return (sel && sel.status === 'active') ? sel : null;
+    }
+    // Phase-2 analogue of the Leading-Initiatives panel: competing organizations
+    // ranked by net votes, paginated 3 per page. One vote (no split); the
+    // benefactor's own org card carries the buy-another-vote control.
+    function renderOrgLeadingPanel() {
+      const shares = (typeof causeOrgShares === 'function') ? causeOrgShares() : [];
+      const PER = 3;
+      const totalPages = Math.max(1, Math.ceil(shares.length / PER));
+      if (_leadingPage > totalPages - 1) _leadingPage = totalPages - 1;
+      const pageOrgs = shares.slice(_leadingPage * PER, _leadingPage * PER + PER);
+      const topVotes = shares.length ? Math.max(1, shares[0].votes) : 1;
+      const myVote = (typeof loadOrgVote === 'function') ? loadOrgVote(cause.id) : null;
+      const p2Tiv = _selectedP2Mission();
+      const tid = p2Tiv ? p2Tiv.id : '';
+      const cards = pageOrgs.length
+        ? pageOrgs.map((sh, i) => {
+            const rank = _leadingPage * PER + i + 1;
+            const barW = topVotes > 0 ? Math.round((sh.votes / topVotes) * 100) : 0;
+            const mine = myVote && myVote.org_id === sh.org_id;
+            const nextPrice = mine ? 10 * Math.pow(2, (myVote.votes || 1) - 1) : 0;
+            const ctrl = mine
+              ? `<span style="color:var(--cause-color);font-family:var(--font-mono);font-size:0.62rem;">✓ voted${myVote.votes > 1 ? ' ×' + myVote.votes : ''}</span>
+                 <button class="election-card__withdraw-btn" style="padding:3px 9px;font-size:0.6rem;"
+                   onclick="event.stopPropagation();orgBuyVote('${cause.id}')">+1 · ${nextPrice} EBX</button>`
+              : `<button class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;"
+                   onclick="event.stopPropagation();orgVoteFor('${cause.id}','${tid}','${sh.org_id}')">vote</button>`;
+            return `
+            <div class="init-card" onclick="p2JumpSelect('${tid}')">
+              <div class="init-card__rank">#${rank}${rank === 1 ? ' leading' : ''}</div>
+              <div class="init-card__title">🏛️ ${sh.org_name}</div>
+              <div class="init-card__bar-wrap"><div class="init-card__bar" style="width:${barW}%"></div></div>
+              <div class="init-card__meta">
+                <span class="init-card__pct">${Math.round(sh.pct)}% of votes</span>
+                <span>${sh.votes} vote${sh.votes === 1 ? '' : 's'}</span>
+              </div>
+              <div class="init-card__meta" style="margin-top:5px;display:flex;gap:6px;align-items:center;justify-content:flex-end;">
+                ${ctrl}
+              </div>
+            </div>`;
+          }).join('')
+        : `<div style="color:rgba(245,240,232,0.35);font-size:0.8rem;padding:12px 0;">No organizations competing yet.</div>`;
+      const pager = shares.length > PER ? `<div class="mission-pager">
+        <button class="mission-pager__btn" ${_leadingPage > 0 ? '' : 'disabled'} onclick="leadingPage(-1)">‹ top</button>
+        <span class="mission-pager__label">page ${_leadingPage + 1} / ${totalPages}</span>
+        <button class="mission-pager__btn" ${_leadingPage < totalPages - 1 ? '' : 'disabled'} onclick="leadingPage(1)">more ›</button>
+      </div>` : '';
+      document.getElementById('leading-initiatives-panel').innerHTML = cards + pager;
+    }
+    // Swap the left-column eyebrow + action buttons to match the active phase.
+    function renderLhsChrome() {
+      const eb = document.getElementById('lhs-eyebrow');
+      const act = document.getElementById('lhs-actions');
+      const p2 = _selectedP2Mission();
+      if (eb) eb.textContent = p2 ? 'Competing Organizations' : 'Leading Initiatives';
+      if (act) act.innerHTML = p2
+        ? `<button class="cause-lhs-actions__primary" onclick="openOrgRegModal('${cause.id}')">+ Register / Nominate an organization</button>
+           <a class="cause-lhs-actions__link" href="main.html">View organizations →</a>`
+        : `<button class="cause-lhs-actions__primary" onclick="openProposeModal()">+ Propose an initiative</button>
+           <a class="cause-lhs-actions__link" href="main.html?cause=${cause.id}">View initiatives →</a>`;
+    }
     function renderLeadingPanel() {
+      renderLhsChrome();
+      if (_selectedP2Mission()) { renderOrgLeadingPanel(); return; }
       const voted = electionInits
         .filter(i => initWeight(i) > 0)
         .sort((a, b) => initWeight(b) - initWeight(a));
@@ -3245,7 +3781,7 @@
             const pct = Math.round(voteShare(init) * 100);
             const barW = topShare > 0 ? Math.round((voteShare(init) / topShare) * 100) : 0;
             return `
-            <div class="init-card" onclick="jumpToRow('${init.id}')">
+            <div class="init-card" onclick="p1JumpSelect('${init.id}')">
               <div class="init-card__rank">#${rank}${rank === 1 ? ' leading' : ''}</div>
               <div class="init-card__title">${init.emoji || '🌱'} ${init.title}</div>
               <div class="init-card__bar-wrap">
@@ -3257,7 +3793,7 @@
               </div>
               <div class="init-card__meta" style="margin-top:4px;">
                 <span>${init.rating > 0 ? '★ ' + init.rating.toFixed(1) : ''}</span>
-                <a href="index.html?init=${init.id}" onclick="event.stopPropagation()"
+                <a href="main.html?init=${init.id}" onclick="event.stopPropagation()"
                    style="color:rgba(245,240,232,0.55);text-decoration:none;">Home page entry →</a>
               </div>
             </div>`;
@@ -3317,51 +3853,86 @@
     // cards that used to top page 2 onward).
     let _missionPage = 0;
     const MISSIONS_PER_PAGE = 3;
-    function missionListChrono() {
-      const rank = { org_vote: 0, active: 1, resolved: 2 };
+    // Page 1 (index 0) is the cause's live snapshot: the mission in phase 1 on
+    // top, the mission in phase 2 in the middle, and the most recent mission
+    // before the phase-2 one on the bottom. Pages 2+ continue back through the
+    // remaining previous missions, newest first.
+    function _phase1MissionCard() {
+      // Only tivs whose election is still live (not won/lost, not advanced).
+      const p1 = causeInits.filter(i => !['active', 'resolved'].includes(i.status));
+      if (!p1.length) return null;
+      return p1.slice().sort((a, b) => initWeight(b) - initWeight(a))[0];
+    }
+    function _phase2MissionCard() {
+      // The elected initiative now driving the mission (status 'active').
+      return causeInits.find(i => i.status === 'active') || null;
+    }
+    function _prevMissions() {
+      // Exclude the mission already shown as the phase-2 card, else the single
+      // active mission renders twice (middle + bottom). Previous = resolved, plus
+      // active missions past the org race (phase 3+).
+      const p2 = _phase2MissionCard();
+      const p2id = p2 ? p2.id : null;
       return causeInits
-        .filter(i => ['org_vote', 'active', 'resolved'].includes(i.status))
-        .sort((a, b) => (rank[a.status] - rank[b.status])
-          || (new Date(b.election_open || 0) - new Date(a.election_open || 0)));
+        .filter(i => ['active', 'resolved'].includes(i.status) && i.id !== p2id)
+        .sort((a, b) => new Date(b.election_open || 0) - new Date(a.election_open || 0));
     }
     function missionPageSlice(page) {
-      const list = missionListChrono();
-      const totalPages = Math.max(1, Math.ceil(list.length / MISSIONS_PER_PAGE));
+      const prev = _prevMissions();
+      const olderPrev = prev.slice(1);   // prev[0] is shown on page 1's bottom slot
+      const totalPages = Math.max(1, 1 + Math.ceil(olderPrev.length / MISSIONS_PER_PAGE));
+      if (page <= 0) {
+        return {
+          cards: [
+            { init: _phase1MissionCard(), pos: 'top',    eyebrow: 'Phase 1 · initiative election' },
+            { init: _phase2MissionCard(), pos: 'middle', eyebrow: 'Phase 2 · org election' },
+            { init: prev[0] || null,      pos: 'bottom', eyebrow: prev[0] ? (_MISSION_EYEBROW[prev[0].status] || 'Previous mission') : 'Previous mission' },
+          ],
+          canPrev: false,
+          canNext: totalPages > 1,
+          totalPages,
+        };
+      }
+      const start = (page - 1) * MISSIONS_PER_PAGE;
+      const slice = olderPrev.slice(start, start + MISSIONS_PER_PAGE);
       return {
-        slice: list.slice(page * MISSIONS_PER_PAGE, (page + 1) * MISSIONS_PER_PAGE),
-        canPrev: page > 0,
+        cards: slice.map((m, i) => ({ init: m, pos: _MISSION_POS[i] || 'bottom', eyebrow: _MISSION_EYEBROW[m.status] || 'Mission' })),
+        canPrev: true,
         canNext: page < totalPages - 1,
         totalPages,
       };
     }
 
     const _MISSION_EYEBROW = {
-      org_vote: 'Phase 2 · org election',
-      active:   'Phase 3 · active mission',
-      resolved: 'Phase 4 · credit release',
+      active:   'Active mission',
+      resolved: 'Resolved mission',
     };
     const _MISSION_POS = ['top', 'middle', 'bottom'];
     function _missionBadge(init) {
       if (!init) return '';
-      if (init.status === 'org_vote') {
-        const cycleOrgs = (EBX.config.organizations || []).filter(o =>
-          (o.cause_ids || []).includes(cause.id) ||
-          (o.causes || []).some(c => c.id === cause.id));
-        return cycleOrgs.length
-          ? `<div class="mission-card__badge mission-card__badge--upcoming">${cycleOrgs[0].name} leading</div>`
-          : '';
-      }
-      if (init.status === 'active')   return `<div class="mission-card__badge mission-card__badge--active">● Live</div>`;
+      if (init.status === 'suggested' || !init.status)
+        return `<div class="mission-card__badge mission-card__badge--upcoming">Election open</div>`;
       if (init.status === 'resolved') return `<div class="mission-card__badge mission-card__badge--resolved">Recent</div>`;
+      if (init.status === 'active') {
+        // Phase 2 (org race) vs phase 3+ (mission live) comes from the mission.
+        const m = (EBX.config.missions || []).find(mm => mm.id === init.mission_id);
+        if (m && m.winning_tiv_id && !m.winning_org_id && m.current_phase === 'initiative') {
+          const cycleOrgs = (EBX.config.organizations || []).filter(o =>
+            (o.cause_ids || []).includes(cause.id) ||
+            (o.causes || []).some(c => c.id === cause.id));
+          return cycleOrgs.length
+            ? `<div class="mission-card__badge mission-card__badge--upcoming">${cycleOrgs[0].name} leading</div>`
+            : `<div class="mission-card__badge mission-card__badge--upcoming">Org election open</div>`;
+        }
+        return `<div class="mission-card__badge mission-card__badge--active">● Live</div>`;
+      }
       return '';
     }
 
     function renderRightPanel() {
       const pg = missionPageSlice(_missionPage);
-      const cards = pg.slice.length
-        ? pg.slice.map((m, i) =>
-            buildMissionCard(_MISSION_POS[i] || 'bottom', _MISSION_EYEBROW[m.status] || 'Mission', m, _missionBadge(m))
-          ).join('')
+      const cards = pg.cards.some(c => c.init)
+        ? pg.cards.map(c => buildMissionCard(c.pos, c.eyebrow, c.init, _missionBadge(c.init))).join('')
         : buildMissionCard('top', 'Missions', null, '');
       const pager = `<div class="mission-pager">
         <button class="mission-pager__btn" ${pg.canPrev ? '' : 'disabled'} onclick="missionPage(-1)">‹ newer</button>
@@ -3369,7 +3940,6 @@
         <button class="mission-pager__btn" ${pg.canNext ? '' : 'disabled'} onclick="missionPage(1)">older ›</button>
       </div>`;
       document.getElementById('right-mission-panel').innerHTML = cards + pager;
-      // Re-highlight the targeted card if any
       highlightTargetedCard();
     }
 
@@ -3391,12 +3961,15 @@
       const target = causeInits.find(i => i.id === initId);
       if (!target) return;
       _missionRefId = initId;
+      _saveSelMission(cause.id, initId);   // stick to this mission on reload
+      _leadingPage = 0;   // reset paging when the left column swaps phases
       renderMissionHeader(target);
       renderPhaseRecaps(cause, { missionRef: target });
       highlightTargetedCard();
-      // build-seq 3 (pass 35): the annulus now subscribes — its inner pie
-      // toggles to the org race when the selected mission is in phase 2.
+      // The annulus AND the left column subscribe: the inner pie + the left
+      // cards both switch to the org race when the selected mission is phase 2.
       try { renderAnnulus(); } catch (e) {}
+      try { renderLeadingPanel(); } catch (e) {}
       if (opts.scroll !== false) {
         (document.getElementById('mission-header') ||
          document.getElementById('phase-recap-1'))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3427,6 +4000,20 @@
     };
     window.jumpToRow = function(initId) { selectMission(initId); };
 
+    // LHS election cards: scroll to the on-page election phase area with the
+    // clicked entity selected. Initiatives open the Phase-1 voting area; orgs
+    // focus the mission's Phase-2 area (org selection itself is not active yet).
+    window.p1JumpSelect = function(initId) {
+      if (typeof window.p1Select === 'function') window.p1Select(initId);
+      const el = document.getElementById('phase-recap-1');
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    window.p2JumpSelect = function(missionId) {
+      try { selectMission(missionId); } catch (e) {}
+      const el = document.getElementById('phase-recap-2') || document.getElementById('phase-recap-1');
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
     /* ── 9. Table + search ── */
     let currentSearch = '';
     let selectedInitId = null;
@@ -3450,12 +4037,10 @@
           : (init.cycle_num !== undefined ? `Cycle ${init.cycle_num + 1}` : '—');
         const orgName = init.winning_org || init.proposed_by || '—';
         const statusClass = {
-          active: 'status-active', debate: 'status-debate',
-          org_vote: 'status-debate', resolved: 'status-resolved', suggested: 'status-suggested'
+          active: 'status-active', resolved: 'status-resolved', suggested: 'status-suggested'
         }[init.status] || 'status-suggested';
         const statusLabel = {
-          active: 'Active', debate: 'In Debate', org_vote: 'Org Vote',
-          resolved: 'Resolved', suggested: 'Suggested'
+          active: 'Active', resolved: 'Resolved', suggested: 'Suggested'
         }[init.status] || init.status;
 
         const isSelected = init.id === selectedInitId;
@@ -3521,7 +4106,7 @@
 
       document.getElementById('init-selected-actions').innerHTML = `
         <button class="btn btn-forest btn-sm" onclick="commitEbxToInit('${init.id}')">⬆ Commit EBX — cast your vote</button>
-        <a class="btn btn-ghost btn-sm" href="en.html?initiative=${init.id}" style="text-decoration:none;">
+        <a class="btn btn-ghost btn-sm" href="main.html?init=${init.id}" style="text-decoration:none;">
           Contribute to discussion →
         </a>
         ${init.status === 'active' || init.status === 'resolved'

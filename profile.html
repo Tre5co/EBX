@@ -542,7 +542,7 @@
       letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--clr-ink-light); margin-bottom: var(--sp-md);
     }
-    /* ── EN strip on profile (moved from index.html, pass 12) ── */
+    /* ── EN strip on profile (moved from main.html, pass 12) ── */
     .profile-en-strip { margin-bottom: var(--sp-2xl); }
     .profile-en-strip__header {
       display: flex; align-items: baseline; justify-content: space-between;
@@ -802,6 +802,10 @@
   </style>
 </head>
 <body>
+  <div role="alert" style="margin:0;padding:11px 16px;text-align:center;background:#e8a84c;color:#1a1206;font-size:0.9rem;line-height:1.4;">
+    <strong style="letter-spacing:0.04em;">WARNING:</strong> profile page isn't developed yet —
+    <a href="main.html" style="color:#1a1206;font-weight:700;text-decoration:underline;">go home</a>
+  </div>
   <a href="index.html" class="ebx-home-mark">EBX</a>
 
   <!-- JS decides whether to show onboarding or profile -->
@@ -857,6 +861,8 @@
       let extras = {};
       try { extras = JSON.parse(localStorage.getItem('ebx_profile') || '{}'); } catch(e) {}
       const profile = {
+        id:          apiUser.id,
+        role:        apiUser.role || 'benefactor',
         handle:      apiUser.handle,
         email:       apiUser.email,
         joined:      apiUser.created_at,
@@ -1252,6 +1258,76 @@
        (they were referenced but missing — gear was dead before this pass).
        ───────────────────────────────────────── */
 
+    // Admin mode: the profile page rendered AS the admin data console. Browses the
+    // same whitelisted tables admin.html does, via the staff-gated /admin endpoints.
+    async function renderAdminConsole(root, p) {
+      if (!root) return;
+      const esc = (v) => (v == null ? '' : String(v)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
+      root.innerHTML = `
+        <div style="max-width:1100px;margin:0 auto;padding:var(--sp-xl,24px) var(--sp-lg,16px);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:var(--sp-md,12px);">
+            <div>
+              <div class="profile-feed-eyebrow" style="margin:0;">Admin · Data Console</div>
+              <div style="font-size:0.8rem;color:var(--clr-ink-light,#777);">Signed in as @${esc(p.handle)} · ${esc(p.role)}</div>
+            </div>
+            <button class="pf-orgmode" style="width:auto;padding:8px 14px;" onclick="switchProfileMode('benefactor')">Exit admin mode</button>
+          </div>
+          <div id="admin-entities" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--sp-md,12px);"></div>
+          <div id="admin-grid" style="overflow:auto;border:1px solid var(--clr-border,#e3ddd0);border-radius:8px;
+               background:var(--clr-paper,#fdfbf6);min-height:120px;font-size:12.5px;">
+            <div style="padding:16px;color:var(--clr-ink-light,#888);">Select a table to browse.</div>
+          </div>
+        </div>`;
+
+      const grid = root.querySelector('#admin-grid');
+      const renderGrid = (rows) => {
+        if (!Array.isArray(rows) || !rows.length) {
+          grid.innerHTML = `<div style="padding:16px;color:var(--clr-ink-light,#888);">No rows.</div>`;
+          return;
+        }
+        const cols = Object.keys(rows[0]);
+        grid.innerHTML = `<table style="border-collapse:collapse;width:100%;">
+          <thead><tr>${cols.map(c => `<th style="text-align:left;padding:7px 10px;border-bottom:2px solid var(--clr-border,#e3ddd0);
+            position:sticky;top:0;background:var(--clr-paper,#fdfbf6);white-space:nowrap;">${esc(c)}</th>`).join('')}</tr></thead>
+          <tbody>${rows.map(r => `<tr>${cols.map(c => `<td style="padding:6px 10px;border-bottom:1px solid var(--clr-border,#efeadd);
+            white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;">${esc(r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>`;
+      };
+
+      const loadEntity = async (name) => {
+        grid.innerHTML = `<div style="padding:16px;color:var(--clr-ink-light,#888);">Loading ${esc(name)}…</div>`;
+        root.querySelectorAll('[data-entity]').forEach(b =>
+          b.style.fontWeight = (b.dataset.entity === name ? '700' : '400'));
+        try {
+          const res = await EBX.Auth.fetchAuthed('/admin/query/run', {
+            method: 'POST', body: JSON.stringify({ entity: name, limit: 200 }),
+          });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          renderGrid(await res.json());
+        } catch (e) {
+          grid.innerHTML = `<div style="padding:16px;color:#c0392b;">Couldn't load ${esc(name)} (${esc(e.message)}).</div>`;
+        }
+      };
+
+      try {
+        const res = await EBX.Auth.fetchAuthed('/admin/query/entities');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const entities = await res.json();
+        const box = root.querySelector('#admin-entities');
+        box.innerHTML = entities.map(name =>
+          `<button class="btn btn-ghost btn-sm" data-entity="${esc(name)}"
+             style="border:1px solid var(--clr-border,#e3ddd0);border-radius:6px;padding:5px 10px;cursor:pointer;">${esc(name)}</button>`
+        ).join('');
+        box.querySelectorAll('[data-entity]').forEach(b =>
+          b.addEventListener('click', () => loadEntity(b.dataset.entity)));
+        if (entities.length) loadEntity(entities[0]);
+      } catch (e) {
+        root.querySelector('#admin-entities').innerHTML =
+          `<div style="color:#c0392b;">Couldn't load tables (${esc(e.message)}). Staff sign-in required.</div>`;
+      }
+    }
+
     function renderProfile(p) {
       document.title = `Earthbux — @${p.handle}`;
       const root = document.getElementById('app-root');
@@ -1260,6 +1336,15 @@
       // instead of navigating away. The two faces resemble each other.
       window._lastProfileData = p;
       const orgMode = window._profileMode === 'org';
+      const isStaff = ['employee', 'admin'].includes(p.role);
+
+      // Admin mode (staff only): the profile page BECOMES the admin data console —
+      // the same /admin endpoints admin.html uses, rendered inline. Non-staff can
+      // never reach it (the toggle is hidden and the server gates every call).
+      if (window._profileMode === 'admin' && isStaff) {
+        renderAdminConsole(document.getElementById('app-root'), p);
+        return;
+      }
 
       const initials = (p.display || p.handle || '?')
         .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
@@ -1354,49 +1439,85 @@
               </div>
             </div>`).join('')
         : `<div style="color:var(--clr-ink-light);font-size:0.82rem;padding:var(--sp-lg) 0;">
-             No posts yet. <a href="en.html" style="color:var(--clr-moss);">Join the discussion →</a>
+             No posts yet. <a href="main.html" style="color:var(--clr-moss);">Browse the missions →</a>
            </div>`;
 
-      /* ── build-seq 5 (pass 35): org-mode face content ── */
+      /* ── build-seq 5 (pass 35) → Build Phase 2 (B): org-mode face content.
+         Backed by REAL Membership rows + the org profile bundle now
+         (window._orgModeData, loaded by switchProfileMode('org')). ── */
       let initiativeCoinsHTML = '', tasklistCardHTML = '';
       if (orgMode) {
-        // Initiative Coins — every initiative this account has registered an
-        // org for (local ebx_org_regs) or voted-as-org on (tiv_id), proxy
-        // until real OrgAccount membership rows exist.
-        let _regs = [];
-        try { _regs = JSON.parse(localStorage.getItem('ebx_org_regs') || '[]'); } catch (e) { _regs = []; }
-        const _tivIds = new Set();
-        (Array.isArray(_regs) ? _regs : []).forEach(r =>
-          (r && r.initiative_ids || []).forEach(id => _tivIds.add(String(id))));
-        Object.values(orgVotes || {}).forEach(v => {
-          if (v && v.tiv_id) _tivIds.add(String(v.tiv_id));
-        });
-        const _regTivs = [..._tivIds].map(id => initById[id]).filter(Boolean);
-        initiativeCoinsHTML = _regTivs.length
-          ? _regTivs.map(i => {
-              const c = causes.find(x => x.index === i.cause_index || x.id === i.cause_id);
-              return `<a class="coin-chip" href="cause.html?id=${c ? c.id : ''}" title="${i.title}">
-                ${EBX.creditBadge(c ? [{ causeIndex: c.index, amount: i.ebx_committed || 0 }] : [], 40)}
-                <div class="coin-chip__name">${i.emoji || '🌱'} ${i.title}</div>
-                <div class="coin-chip__ebx">${EBX.formatEBX(i.ebx_committed || 0)}</div>
-              </a>`;
-            }).join('')
-          : `<div class="coin-chip coin-chip--empty">No initiative coins yet.<br/>Register your organization for a mission to mint one.</div>`;
-        let _done = {};
-        try { _done = JSON.parse(localStorage.getItem('ebx_org_tasks') || '{}'); } catch (e) { _done = {}; }
-        const _tasks = [
-          'Build your mission page',
-          'Submit a budget (phase 3)',
-          'Post a progress update',
-          'Respond to benefactor questions',
-          'Confirm beneficiary outreach',
-        ];
-        tasklistCardHTML = `
+        const od = window._orgModeData || null;
+        const myMems = (od && od.memberships) || [];
+        const selOrg = od && od.org;
+        const myRole = (myMems.find(m => od && m.org_id === od.selectedOrgId) || {}).role || 'community';
+        const isOperator = ['rep', 'executive'].includes(myRole);
+
+        if (!myMems.length) {
+          // Honest empty state: org access flows through Membership rows.
+          initiativeCoinsHTML = `<div class="coin-chip coin-chip--empty">No org memberships yet.<br/>
+            Register your organization (or claim a mission) to unlock org mode.</div>`;
+          tasklistCardHTML = `
+                <div class="choices-col-card">
+                  <div class="choices-col-header"><div class="choices-col-title">Your organization</div></div>
+                  <div style="font-size:0.82rem;line-height:1.6;padding:6px 0;color:var(--clr-ink-light);">
+                    You aren't a member of any organization. Organizations can self-register at any time —
+                    no gate — and claiming a mission makes you its representative.
+                  </div>
+                  <a class="btn btn-forest btn-sm" style="text-decoration:none;" href="mission.html">Register / claim →</a>
+                </div>`;
+        } else {
+          // Initiative coins = the org's mission candidacies (its bids/wins).
+          const cands = (od && od.candidacies) || [];
+          initiativeCoinsHTML = cands.length
+            ? cands.map(c => {
+                const cs = causes.find(x => (c.mission_id || '').startsWith((x.id || '').slice(0, 3)));
+                return `<a class="coin-chip" href="mission.html?mission=${c.mission_id}" title="${c.mission_id}">
+                  ${EBX.creditBadge(cs ? [{ causeIndex: cs.index, amount: c.p2_vote_tally || 0 }] : [], 40)}
+                  <div class="coin-chip__name">${c.mission_id}</div>
+                  <div class="coin-chip__ebx">${c.status === 'pending' ? 'not approved' : c.status}</div>
+                </a>`;
+              }).join('')
+            : `<div class="coin-chip coin-chip--empty">No mission candidacies yet.<br/>Register for a mission to mint one.</div>`;
+
+          let _done = {};
+          try { _done = JSON.parse(localStorage.getItem('ebx_org_tasks') || '{}'); } catch (e) { _done = {}; }
+          const _tasks = [
+            'Build your mission page',
+            'Submit a budget (phase 3)',
+            'Post a progress update',
+            'Respond to benefactor questions',
+            'Confirm beneficiary outreach',
+          ];
+          const orgPicker = myMems.length > 1
+            ? `<select style="font:inherit;font-size:0.78rem;border:1px solid var(--clr-border);border-radius:6px;padding:4px 8px;max-width:100%;"
+                       onchange="setOrgModeOrg(this.value)">
+                 ${myMems.map(m => `<option value="${m.org_id}" ${od.selectedOrgId === m.org_id ? 'selected' : ''}>${m.org_id}</option>`).join('')}
+               </select>`
+            : '';
+          const memberRows = ((od && od.members) || []).map(m =>
+            `<div style="display:flex;gap:8px;align-items:center;font-size:0.78rem;padding:3px 0;">
+               <span style="font-weight:600;">@${m.handle || m.ben_id}</span>
+               <span style="font-family:var(--font-mono);font-size:0.58rem;border:1px solid var(--clr-border);border-radius:4px;padding:1px 6px;">${m.role}</span>
+             </div>`).join('');
+          tasklistCardHTML = `
                 <div class="choices-col-card">
                   <div class="choices-col-header">
-                    <div class="choices-col-title">Tasklist</div>
+                    <div class="choices-col-title">${selOrg ? selOrg.name : (od ? od.selectedOrgId : 'Organization')}</div>
+                    ${orgPicker}
                   </div>
-                  <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0;">
+                  <div style="font-size:0.72rem;color:var(--clr-ink-light);margin-bottom:6px;">
+                    Your role: <b>${myRole}</b>${selOrg && selOrg.verified ? ' · ✓ EN-verified' : ''}
+                    · <a href="org.html?id=${od ? od.selectedOrgId : ''}" style="color:var(--clr-moss);">public page →</a>
+                  </div>
+                  ${myRole === 'beneficiary' ? `
+                  <div style="border:1px solid rgba(74,124,89,0.4);background:rgba(74,124,89,0.06);border-radius:8px;padding:8px 10px;font-size:0.76rem;line-height:1.5;margin-bottom:8px;">
+                    <b>Beneficiary voice</b> — you speak for those the mission serves. Your statement is
+                    surfaced at the start of every Phase-2 election this org enters. <i>(scaffold)</i>
+                  </div>` : ''}
+                  ${isOperator ? '' : `<div style="font-size:0.7rem;color:var(--clr-ink-light);margin-bottom:6px;">
+                    Only <b>rep</b> / <b>executive</b> members may edit the mission page and budget.</div>`}
+                  <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0;${isOperator ? '' : 'opacity:0.55;pointer-events:none;'}">
                     ${_tasks.map((t, i) => `
                       <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;cursor:pointer;
                                     ${_done[i] ? 'opacity:0.5;text-decoration:line-through;' : ''}">
@@ -1404,7 +1525,11 @@
                         ${t}
                       </label>`).join('')}
                   </div>
+                  ${memberRows ? `<div style="border-top:1px dashed var(--clr-border);margin-top:8px;padding-top:8px;">
+                    <div style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--clr-ink-light);margin-bottom:4px;">Members</div>
+                    ${memberRows}</div>` : ''}
                 </div>`;
+        }
       }
 
       root.innerHTML = `
@@ -1481,12 +1606,17 @@
                   ? `<button class="pf-orgmode" onclick="switchProfileMode('benefactor')">
                        Switch to Benefactor mode
                      </button>`
-                  : `<button class="pf-orgmode" ${hasCoin ? '' : 'disabled'}
-                        title="${hasCoin ? 'Open organization mode' : 'Hold a credit coin to unlock org mode for that mission'}"
-                        ${hasCoin ? `onclick="switchProfileMode('org')"` : ''}>
+                  : `<button class="pf-orgmode"
+                        title="Open organization mode — backed by your org memberships"
+                        onclick="switchProfileMode('org')">
                   Switch to Organization mode
-                  ${hasCoin ? '' : '<span class="pf-orgmode__lock">🔒 needs a credit coin</span>'}
                 </button>`}
+                ${isStaff
+                  ? `<button class="pf-orgmode" style="margin-top:8px;" onclick="switchProfileMode('admin')"
+                        title="Open the admin data console (staff only)">
+                       Switch to admin mode
+                     </button>`
+                  : ''}
               </aside>
 
             </div>
@@ -1535,11 +1665,46 @@
         </div>`;
 
       /* ── window helpers ── */
-      // build-seq 5 (pass 35): in-place mode switch — stays on profile.html.
-      window.switchProfileMode = function (mode) {
-        window._profileMode = mode === 'org' ? 'org' : 'benefactor';
+      // build-seq 5 (pass 35) → Build Phase 2 (B): in-place mode switch backed
+      // by real Membership rows. Entering org mode loads /benefactors/me/
+      // memberships + the selected org's public profile bundle.
+      async function loadOrgModeData() {
+        const prev = window._orgModeData || {};
+        const d = { memberships: [], selectedOrgId: prev.selectedOrgId || null,
+                    org: null, candidacies: [], members: [], posts: [] };
+        try {
+          if (EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn()) {
+            const r = await EBX.Auth.fetchAuthed('/benefactors/me/memberships');
+            if (r && r.ok) d.memberships = await r.json();
+          }
+        } catch (e) {}
+        if (d.memberships.length && !d.memberships.some(m => m.org_id === d.selectedOrgId)) {
+          // prefer an org this ben OPERATES (rep/executive) as the default face
+          const op = d.memberships.find(m => ['rep', 'executive'].includes(m.role));
+          d.selectedOrgId = (op || d.memberships[0]).org_id;
+        }
+        if (d.selectedOrgId) {
+          try {
+            const pr = await fetch('/organizations/' + encodeURIComponent(d.selectedOrgId) + '/profile');
+            if (pr.ok) {
+              const p = await pr.json();
+              d.org = p.org; d.candidacies = p.candidacies || [];
+              d.members = p.members || []; d.posts = p.posts || [];
+            }
+          } catch (e) {}
+        }
+        window._orgModeData = d;
+      }
+      window.switchProfileMode = async function (mode) {
+        window._profileMode = (mode === 'org' || mode === 'admin') ? mode : 'benefactor';
+        if (window._profileMode === 'org') { try { await loadOrgModeData(); } catch (e) {} }
         renderProfile(window._lastProfileData);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      window.setOrgModeOrg = async function (orgId) {
+        window._orgModeData = Object.assign(window._orgModeData || {}, { selectedOrgId: orgId });
+        try { await loadOrgModeData(); } catch (e) {}
+        renderProfile(window._lastProfileData);
       };
       window.toggleOrgTask = function (idx) {
         let done = {};
@@ -1582,7 +1747,7 @@
       const cycleState = EBX.Cycle.now();
       const idx = cycleState.activeCauseIndex;
       const winStart = EBX.Cycle.windowStart(idx, cycleState.cycleNum);
-      const winEnd = new Date(winStart.getTime() + (EBX.config.causeLengthDays || 14) * EBX.Cycle.MS_PER_DAY);
+      const winEnd = new Date(winStart.getTime() + (EBX.config.causeLengthDays || 49) * EBX.Cycle.MS_PER_DAY);
       return winEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 

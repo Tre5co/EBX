@@ -23,10 +23,11 @@ from . import models
 WEEK = timedelta(days=7)
 ROTATION_WEEKS = 7
 
-# Week 0 of the mission timeline — atm0 opens here; each later week opens the
-# next cause's mission. (The frontend cycle display is aligned to this during
-# the frontend rebuild.)
-GENESIS = datetime(2026, 6, 15)
+# PROGRAM week 0 of the mission timeline — atm0 opens here; each later week opens
+# the next cause's mission. The initiative election is 7 weeks later (UX week 0).
+# Aligned to the seeded data (atm0 started_at = 2026-04-28 12:00); the frontend
+# cycleStart matches this exactly.
+GENESIS = datetime(2026, 4, 28, 12, 0, 0)
 
 # cause_id -> (rotation index, 3-letter mission-id prefix).
 CAUSE_PREFIX: dict[str, tuple[int, str]] = {

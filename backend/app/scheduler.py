@@ -7,11 +7,16 @@ function). Each call (a) loads any newly-opened mission for the week, then
 operations. The cosmetic "which phase is it" math for the UI lives in the
 frontend; this module fires the consequential state changes.
 
-Timeline (anchored on mission.started_at = the day the cause's window opens):
-    pre        --(now >= started_at)----------------> phase-1 voting opens
-    initiative --(now >= started_at + 7 weeks)-------> finalize_p1 (tiv elected)
-    initiative --(now >= started_at + 8 weeks)-------> finalize_p2 (org elected) -> budget
-    budget     --(now >= started_at + 33 weeks)------> distribute -> resolution
+Timeline (anchored on mission.started_at = PROGRAM week 0 = the day the mission
+first opens; the initiative election is UX week 0, seven weeks later):
+    pre        --(now >= started_at)------------------> phase-1 voting opens
+    initiative --(now >= started_at + 7 weeks)--------> finalize_p1 (tiv elected = UX wk 0)
+    initiative --(now >= started_at + 8 weeks)--------> finalize_p2 (org elected) -> budget
+    budget     --(now >= started_at + 33 weeks)-------> distribute -> resolution
+
+A mission opens, runs a ~7-week debate/voting window, then elects its initiative at
++7 weeks and its organization at +8 weeks. finalize_p1/p2 are no-ops until there's
+a vote signal, so an empty mission simply stays open until votes arrive.
 """
 from __future__ import annotations
 
@@ -24,8 +29,8 @@ from sqlalchemy.orm import Session
 from . import bootstrap, crud, models
 
 WEEK = timedelta(days=7)
-P1_ELECTION_OFFSET = 7 * WEEK    # tiv election ~7 weeks after the window opens
-P2_ELECTION_OFFSET = 8 * WEEK    # org election the following week
+P1_ELECTION_OFFSET = 7 * WEEK    # tiv election 7 weeks after the mission opens (UX week 0)
+P2_ELECTION_OFFSET = 15 * WEEK   # org election 8 weeks AFTER the tiv election (UX week 8)
 RESOLVE_OFFSET = 33 * WEEK       # resolution: 33 weeks after the window opens
 
 

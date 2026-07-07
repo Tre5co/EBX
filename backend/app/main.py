@@ -85,8 +85,9 @@ def _html(name: str) -> FileResponse:
 def root_page() -> FileResponse:
     return _html("index")
 
-
-_HTML_PAGES = ("index", "cause", "mission", "profile", "about", "admin")
+# index.html = public landing page (served at "/"); main.html = the home/missions app page.
+# org.html = the PUBLIC organization page (distinct from profile.html's org mode).
+_HTML_PAGES = ("index", "main", "cause", "mission", "profile", "admin", "org")
 
 
 def _make_handler(page: str):

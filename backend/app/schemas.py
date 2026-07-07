@@ -59,6 +59,7 @@ class MissionRead(MissionBase):
     budget: int = 0
     spent: int = 0
     credit_value: float = 1.0
+    guaranteed_pool_rate: Optional[float] = None  # NULL = unclaimed default
     updated_at: datetime
 
 
@@ -70,7 +71,7 @@ class InitiativeBase(BaseModel):
     description: Optional[str] = None
     emoji: Optional[str] = None
     cause_id: str
-    status: str = "suggested"  # suggested | in_election | won | lost
+    status: str = "suggested"  # suggested | active | resolved (elected tiv -> active; -> resolved at distribution)
 
 
 class InitiativeCreate(InitiativeBase):
@@ -168,6 +169,17 @@ class TokenPayload(BaseModel):
 # ---------------------------------------------------------------------------
 # Membership
 # ---------------------------------------------------------------------------
+OrgRole = Literal["community", "rep", "executive", "beneficiary"]
+
+
+class MembershipCreate(BaseModel):
+    """Invite/add a member to an org. Identify the ben by id OR handle/email."""
+    ben_id: Optional[int] = None
+    handle: Optional[str] = None
+    email: Optional[str] = None
+    role: OrgRole = "community"
+
+
 class MembershipRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -175,6 +187,11 @@ class MembershipRead(BaseModel):
     org_id: str
     role: str  # community | rep | executive | beneficiary
     joined_at: datetime
+
+
+class MembershipDetail(MembershipRead):
+    """Membership row enriched with the member's handle (org members list)."""
+    handle: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +214,67 @@ class MissionCandidacyRead(BaseModel):
     approved_by_id: Optional[int] = None
     p2_vote_tally: int = 0
     created_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Org self-registration / nomination (public application) — Build Phase 2 (A)
+# ---------------------------------------------------------------------------
+class OrganizationRegister(BaseModel):
+    """Public org application. kind='registration' = a real member registers
+    (founding executive membership); kind='nomination' = a benefactor puts an
+    org forward (no membership created). Pass org_id to use an existing org
+    (picked from a duplicate match) instead of creating a new one; pass
+    force=True to create despite fuzzy matches."""
+    name: str = Field(min_length=2, max_length=120)
+    description: Optional[str] = None
+    website_link: Optional[str] = None
+    founded_year: Optional[int] = None
+    logo_url: Optional[str] = None
+    kind: Literal["registration", "nomination"] = "registration"
+    org_id: Optional[str] = None          # use existing org instead of creating
+    mission_id: Optional[str] = None      # also enter this mission's org race
+    mission_statement: Optional[str] = None
+    member_name: Optional[str] = None     # registration attestation details
+    member_position: Optional[str] = None
+    force: bool = False
+
+
+class OrgMatch(BaseModel):
+    org_id: str
+    name: str
+    score: float                          # 0..1 fuzzy similarity
+
+
+class OrgRegisterResult(BaseModel):
+    created: bool                         # False = duplicates found, nothing written
+    org: Optional[OrganizationRead] = None
+    membership: Optional[MembershipRead] = None
+    candidacy: Optional[MissionCandidacyRead] = None
+    matches: list[OrgMatch] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+# Org claim (THE gate) — click-through legal acceptance — Build Phase 2 (D)
+# ---------------------------------------------------------------------------
+class OrgClaimCreate(BaseModel):
+    org_id: str
+    kind: Literal["claim", "register"] = "claim"
+    attestation_version: Optional[str] = None   # defaults to settings.attestation_version
+    member_name: Optional[str] = None
+    member_position: Optional[str] = None
+
+
+class OrgClaimRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    mission_id: str
+    org_id: str
+    ben_id: int
+    kind: str
+    attestation_version: str
+    member_name: Optional[str] = None
+    member_position: Optional[str] = None
+    accepted_at: datetime
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +374,8 @@ class PostBase(BaseModel):
     cause_id: Optional[str] = None
     org_id: Optional[str] = None     # target org (evaluation / org-scoped posts)
     stance: Optional[str] = None     # case: for|against · evaluation: positive|negative
+    parent_id: Optional[str] = None  # set for a comment (reply to another post)
+    image_url: Optional[str] = None  # attached image (data URL or path)
 
 
 class PostCreate(PostBase):

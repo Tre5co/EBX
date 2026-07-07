@@ -160,6 +160,38 @@ through 2026-07-27).
 
 ## 5. The money model
 
+### At a glance — money in = money out
+
+Benefactors commit EBX and vote in Phase 1; their combined commitments form the
+mission **pool** (money *in*). After Phase 1, **every committed EBX lands in
+exactly one of two buckets** (money *out*) — nothing is unaccounted for:
+
+| Bucket | What it is | Size |
+|---|---|---|
+| **a + b — committed to a mission** | Stays committed to a mission's pool — the winning mission, with or without an org registered to it. Loser commitments roll forward to the cause's next-cycle initiative. | the remainder |
+| **c — pool minimum (sent)** | The irrevocable send, taken the moment Phase 1 resolves. | **20%** if your initiative won, **10%** if it lost |
+
+So for any benefactor `commitment = (committed to mission) + (pool minimum)`, and
+across everyone `pool = Σ committed-to-mission + Σ pool-minimum`. (a and b are
+tracked separately only for org attribution; for the money math they combine.)
+
+Phase 2 applies the same shape to the org race: **100%** of your commitment is
+sent if your organization wins, **20%** if not.
+
+### Votes by phase
+
+| Phase | Elects | Vote rule | Send rate (win / lose) | Tally fires |
+|---|---|---|---|---|
+| **1 — Initiative** | which initiative the mission runs | split one vote across initiatives; weight = committed EBX (10 EBX = 1 vote) | 20% / 10% | first day of the cause's active week |
+| **2 — Organization** | which org runs it | 1 vote = 1 org; extra votes at rising prices | 100% / 20% | 8 weeks after the initiative election |
+
+> **Auxiliary** (refines *where the committed-to-mission bucket ends up* — does
+> not change money-in = money-out): the resolution-time EN/org/reward split (the
+> 32nds table below), the 10% loser **commitment-fund** skim, amplified
+> `size_factor` vote weighting, and the Phase-3 distrust withdrawal.
+
+### Resolution split
+
 At resolution, the mission **pool** (all committed EBX — nothing is refunded; the
 remainder is held for the credit-release phase) is allocated in **32nds**:
 
@@ -177,6 +209,22 @@ remainder is held for the credit-release phase) is allocated in **32nds**:
 | **Flexible remainder** | **9/32** | released in credit phase → org or back to benefactors |
 | **Total** | **32/32** | |
 
+### Post rewards (refined) — which post wins, decided by which vote, paid when
+
+Each discussion category is judged by a different phase's post-votes, so the
+rewards release on a staggered timeline rather than all at the case-post moment:
+
+| Category | Scope | Judged by | Reward |
+|---|---|---|---|
+| **Context** | cause-specific | Phase-1 post-votes | the EBX post reward (paid at P1 close) |
+| **Analysis** | initiative-specific | Phase-2 post-votes | the EBX post reward (paid at P2 close) |
+| **Evaluation** | mission outcome | Phase-3 post-votes | the EBX post reward (paid in P3) |
+| **Case** | the winning argument | Phase-1 post-votes | **no cash** — an upgraded org membership (e.g. veto rights, a communication line, early Earthbux information) |
+
+This restages the "advance" releases (which previously all rode the case-post
+moment) onto each category's own phase close. The 32nds split above is unchanged
+in size — only *who wins each reward slice and when it releases* is refined here.
+
 - EN only takes its cut when the pool clears `POOL_THRESHOLD` ($100).
 - **Budgeting range** (`mission_budget_range`): the org's **minimum** is a
   concrete figure (its guaranteed 10/32 of today's pool); the **maximum** is
@@ -185,19 +233,68 @@ remainder is held for the credit-release phase) is allocated in **32nds**:
 - **Send rates** (phase-1 20%/10% win/lose, phase-2 100%/20% win/lose) define
   each benefactor's irrevocable-vs-returnable split at credit release — they are
   **not** a refund at resolution.
+- **Loser carryover & commitment fund**: when an initiative loses, its backers'
+  commitments are **not** spent here — they roll into the cause's next-cycle
+  election at 90%, and a 10% skim is booked to the global `commitment_fund`
+  bucket. See [§6](#6-voting--the-election-algorithm).
 - Every slice is written to the `transactions` ledger; `pools` is a derived cache.
 
 ---
 
-## 6. Voting
+## 6. Voting & the election algorithm
 
-| | Phase 1 — initiatives (`VoteP1`) | Phase 2 — organizations (`VoteP2`) |
-|---|---|---|
-| Rows | one per `(ben, tiv)` — split allowed | one per `(ben, mission)` |
-| Shape | `share` (≥0.1, sum ≤1.0) + `ebx_committed` | one org + `votes` (1 + bought) + `ebx_spent` |
-| Valence | helpful = for, harmful = against | helpful = support, harmful = block |
-| Tally | `p1_tally` — weighted: `1 + b_ebx / (pool_excl · n · size_factor)`, signed by valence | `p2_tally` — net votes (blocks subtract) |
-| Election | `finalize_p1` picks the top weighted tiv | `finalize_p2` picks the top net-vote org |
+All vote logic lives in `crud.py`; the scheduler (`scheduler.run_due`) decides
+*when* to call it, the routers expose it. Money is **never refunded** — a vote's
+"send rate" only sets the irrevocable-vs-returnable split computed later at credit
+release.
+
+**Constants** (`crud.py`): `EBX_PER_VOTE = 10` (10 EBX = 1 vote), `BASE_VOTE_EBX
+= 10` (a vote carries weight even with no EBX bought), `SHARE_FLOOR = 0.1`,
+`SHARE_SUM_CAP = 1.0`, `VALENCE_SIGN = {helpful:+1, neutral:0, harmful:−1}`,
+send rates `P1 20/10` and `P2 100/20` (win/lose).
+
+### Phase 1 — initiative election (`VoteP1`, one row per `(ben, tiv)`)
+
+- **Cast / re-slate** (`replace_p1_shares`): a benefactor spreads `share` across
+  several initiatives (continuous sliders, no 0.1 floor enforced on input; shares
+  sum to ≤ 1.0). Each row's `ebx_committed = ebx_total · share`. The slate is
+  editable any time before finalization; every change writes a vote `Transaction`.
+  A no-EBX vote still holds `BASE_VOTE_EBX` of weight.
+- **Commit** (`commit_p1_ebx`, `commit_p1`): locks EBX onto a tiv; allowed only
+  while the mission is `pre`/`initiative`.
+- **Tally** (`p1_tally`): per tiv, `votes = Σ (ebx_committed / EBX_PER_VOTE) ·
+  sign(valence)`; harmful subtracts, neutral is 0. `weighted_share` is each tiv's
+  positive share of the total. (The amplified weight `1 + b_ebx /
+  (pool_excl · n · size_factor)` is documented here and scaffolded via
+  `size_factor`; the live tally is currently the EBX-weighted form above.)
+- **Finalize** (`finalize_p1`, fired by the scheduler on the **first day of the
+  cause's active period**): elects the top `weighted_share` tiv (no-op if there's
+  no positive signal yet, so an empty mission stays open). The winner → `active`,
+  `mission.winning_tiv_id` is set, and the org race opens. **Status vocabulary is
+  just `suggested | active | resolved`** (losers stay `suggested`; the winner is
+  `active` through phases 2-4, then `resolved` at `distribute_mission`). The phase
+  a tiv is in comes from its mission, not its status.
+- **Loser carryover** (`_carry_losers_forward`): every non-winning initiative is
+  **re-listed automatically into its cause's next-cycle mission** (`status` back to
+  `suggested`, created on demand), carrying each backer's commitment forward at
+  `1 − COMMITMENT_FUND_SKIM` (**90%**). The **10% skim** is booked to a global
+  `commitment_fund` ledger bucket. The 80% locked behind a *winning* vote stays in
+  the won mission and is untouched. (Rates are placeholders — tune later.)
+
+### Phase 2 — organization election (`VoteP2`, one row per `(ben, mission)`)
+
+- **Cast** (`cast_p2`): 1 vote for 1 org; extra votes bought at rising prices;
+  `helpful` supports, `harmful` blocks.
+- **Tally** (`p2_tally`): net votes (`Σ votes · sign(valence)`; blocks subtract).
+- **Finalize** (`finalize_p2`, fired **8 weeks after the initiative election** = 15
+  weeks after the mission opens): elects the top net-vote org, sets `winning_org_id`, advances the mission to
+  `budget`. No-op without a positive signal.
+- **Phase-2 withdrawal** (`withdraw_p1`, `POST /missions/{id}/p1/withdraw`): while
+  the org race is open (after the tiv is elected, before `budget`), a benefactor
+  can pull back their phase-1 commitment **minus the send** (20% if they backed the
+  winning tiv, 10% otherwise). The refund is booked to the `refund` bucket; the
+  send stays in the pool. (Phase-3 "org loses → 80% withdrawable with a distrust
+  acknowledgment" is **deferred** — see `docs/mission_lifecycle.md`.)
 
 ---
 

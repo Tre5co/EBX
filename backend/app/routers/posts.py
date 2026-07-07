@@ -18,11 +18,20 @@ def list_posts(
     tiv_id: Optional[str] = None,
     cause_id: Optional[str] = None,
     category: Optional[str] = None,
+    parent_id: Optional[str] = None,
+    roots_only: bool = False,
     limit: int = 50,
     db: Session = Depends(get_db),
 ):
     return crud.list_posts(db, mission_id=mission_id, tiv_id=tiv_id,
-                           cause_id=cause_id, category=category, limit=limit)
+                           cause_id=cause_id, category=category,
+                           parent_id=parent_id, roots_only=roots_only, limit=limit)
+
+
+@router.get("/{post_id}/comments", response_model=list[schemas.PostRead])
+def list_comments(post_id: str, limit: int = 100, db: Session = Depends(get_db)):
+    """Threaded replies to a post (oldest first)."""
+    return crud.list_posts(db, parent_id=post_id, limit=limit)
 
 
 @router.post("", response_model=schemas.PostRead, status_code=201)

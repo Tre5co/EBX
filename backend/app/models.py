@@ -92,6 +92,9 @@ class Mission(Base):
     budget: Mapped[int] = mapped_column(Integer, default=0)
     spent: Mapped[int] = mapped_column(Integer, default=0)
     credit_value: Mapped[float] = mapped_column(Float, default=1.0)
+    # Guaranteed-to-pool rate. NULL = unclaimed default (settings.pool_rate_unclaimed);
+    # set to the claimed rate when a representative claims the mission (org_claims).
+    guaranteed_pool_rate: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
@@ -123,6 +126,9 @@ class Mission(Base):
     )
     posts: Mapped[list["Post"]] = relationship(
         back_populates="mission", foreign_keys="Post.mission_id"
+    )
+    claims: Mapped[list["OrgClaim"]] = relationship(
+        back_populates="mission", cascade="all, delete-orphan"
     )
 
 
@@ -291,6 +297,35 @@ class MissionCandidacy(Base):
 
 
 # ===========================================================================
+# OrgClaim — THE gate. A real representative's click-through acceptance of the
+# legal agreement for one (mission, org). Recording a claim grants the org
+# authority over the mission's budget/sequence and bumps the mission's
+# guaranteed-to-pool rate. kind: 'claim' (nominated org claims) | 'register'
+# (self-registration path). Attestation text version + timestamp + ben are the
+# litigation basis.
+# ===========================================================================
+class OrgClaim(Base):
+    __tablename__ = "org_claims"
+    __table_args__ = (
+        UniqueConstraint("mission_id", "org_id", name="uq_claim_mission_org"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    mission_id: Mapped[str] = mapped_column(ForeignKey("missions.id"), nullable=False)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False)
+    ben_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String, default="claim", nullable=False)  # claim | register
+    attestation_version: Mapped[str] = mapped_column(String, nullable=False)
+    member_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    member_position: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    accepted_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    mission: Mapped["Mission"] = relationship(back_populates="claims")
+    org: Mapped["Organization"] = relationship()
+    ben: Mapped["BenefactorAccount"] = relationship()
+
+
+# ===========================================================================
 # VoteP1 — TIV election. Split-vote economy: a ben can spread share across
 # several tivs (>=0.1 each, sum <=1.0); one row per (ben, tiv). Committed EBX
 # lives here. `valence` is the hook for the voting redesign:
@@ -412,6 +447,10 @@ class Post(Base):
     org_id: Mapped[Optional[str]] = mapped_column(ForeignKey("organizations.id"), nullable=True)
     # case → for|against ; evaluation → positive|negative ; else null.
     stance: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # Threaded discussion: a comment points at its parent post (null = top-level).
+    parent_id: Mapped[Optional[str]] = mapped_column(ForeignKey("posts.id"), nullable=True)
+    # Attached image — a data URL or stored path.
+    image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     neutral_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

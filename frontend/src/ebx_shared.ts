@@ -59,7 +59,7 @@ const config: EBXConfig = {
   dataRoot: '/data/',
   apiBase: '',  // empty means same origin — works when FastAPI hosts the static files
   version: '0.4.0',
-  cycleStart: new Date('2026-06-15T00:00:00'),  // mission GENESIS (atm0) — aligns the annulus with the backend mission timeline
+  cycleStart: new Date('2026-04-28T12:00:00'),  // mission GENESIS (atm0 open / program week 0) — matches backend bootstrap.GENESIS + seeded started_at
   causeLengthDays: 49,         // 7 weeks per cause
   decisionIntervalDays: 7,     // one decision per week
   useApi: true,
@@ -115,8 +115,18 @@ async function loadInitiatives(): Promise<Initiative[]> {
     // v2 InitiativeRead: cause_id + mission_id + status (no per-tiv EBX — the
     // pool is mission-level now). Derive cause_index for display; committed_ebx
     // stays 0 until per-mission pool data is attached onto candidates.
+    // Status vocabulary is suggested | active | resolved. Collapse any legacy
+    // values (won/org_vote -> active, lost/in_election/debate -> suggested) so no
+    // user-facing page surfaces the old vocabulary. (The /admin data console reads
+    // the DB directly and still shows raw values — run seed/normalize_statuses.py
+    // to clean those at the source.)
+    const _normStatus = (s: any) =>
+      s === 'won' || s === 'org_vote' ? 'active'
+      : (s === 'lost' || s === 'in_election' || s === 'debate' ? 'suggested'
+      : (s || 'suggested'));
     config.initiatives = data.map((i: any) => ({
       ...i,
+      status: _normStatus(i.status),
       cause_index: config.causes.find(c => c.id === i.cause_id)?.index ?? 0,
       committed_ebx: 0,
     } as Initiative));

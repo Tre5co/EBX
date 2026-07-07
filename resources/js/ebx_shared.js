@@ -6,8 +6,8 @@
     apiBase: "",
     // empty means same origin — works when FastAPI hosts the static files
     version: "0.4.0",
-    cycleStart: /* @__PURE__ */ new Date("2026-06-15T00:00:00"),
-    // mission GENESIS (atm0) — aligns the annulus with the backend mission timeline
+    cycleStart: /* @__PURE__ */ new Date("2026-04-28T12:00:00"),
+    // mission GENESIS (atm0 open / program week 0) — matches backend bootstrap.GENESIS + seeded started_at
     causeLengthDays: 49,
     // 7 weeks per cause
     decisionIntervalDays: 7,
@@ -49,8 +49,10 @@
   async function loadInitiatives() {
     const data = config.useApi ? await fetchAPI("/initiatives") : await fetchJSON("causes/initiatives.json");
     if (data) {
+      const _normStatus = (s) => s === "won" || s === "org_vote" ? "active" : (s === "lost" || s === "in_election" || s === "debate" ? "suggested" : (s || "suggested"));
       config.initiatives = data.map((i) => ({
         ...i,
+        status: _normStatus(i.status),
         cause_index: config.causes.find((c) => c.id === i.cause_id)?.index ?? 0,
         // Mirror the backend's committed-EBX aggregate (ebx_committed) onto the
         // committed_ebx field the homepage cards read. Was hardcoded 0, which
@@ -535,7 +537,7 @@
       <div class="container">
         <div class="ebx-footer__grid">
           <div class="ebx-footer__col">
-            <a href="index.html" class="ebx-footer__logo" style="text-decoration:none;color:inherit;">Earthbux</a>
+            <a href="main.html" class="ebx-footer__logo" style="text-decoration:none;color:inherit;">Earthbux</a>
             <div class="ebx-footer__tagline">Collective action, measured in impact.</div>
             <p>A civic news and charity platform. Every earthbuck tells a story.</p>
           </div>
@@ -1389,10 +1391,10 @@
   function _electionCardFooter(d) {
     const voteHref = d.voteHref || d.href || "#";
     const cid = String(d.causeId || "").replace(/'/g, "");
-    const base = "flex:1;display:block;text-align:center;font-family:var(--font-mono);font-size:0.56rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:5px 6px;border-radius:5px;cursor:pointer;text-decoration:none;box-sizing:border-box;transition:filter 0.15s,background 0.15s;";
+    const base = "flex:1;display:block;text-align:center;font-family:var(--font-mono);font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 6px;border-radius:6px;cursor:pointer;text-decoration:none;box-sizing:border-box;transition:filter 0.15s,background 0.15s;";
     const vote = '<a href="' + voteHref + '" class="rc-vote" style="' + base + "background:" + d.color + ";color:#0f1a14;border:1px solid " + d.color + ';">Vote</a>';
     const research = '<button type="button" class="rc-research" onclick="if(window.idxResearch)idxResearch(\'' + cid + "');return false;\" style=\"" + base + "background:transparent;color:" + d.color + ";border:1px solid " + d.color + ';">Discuss</button>';
-    return '<div style="display:flex;gap:6px;padding:7px 10px 9px;border-top:1px solid rgba(255,255,255,0.06);">' + vote + research + "</div>";
+    return '<div style="display:flex;gap:7px;padding:9px 12px 11px;border-top:1px solid rgba(255,255,255,0.07);">' + vote + research + "</div>";
   }
   // Vote window shown in a card's corner: the full election phase ending on the
   // decision/close date — "<open> - <close>". Phase 1 (initiative vote) runs 7
@@ -1403,13 +1405,28 @@
     return formatShortDate(open) + " - " + formatShortDate(close);
   }
   function electionCardFace(d) {
-    const ranks = ["1.", "2.", "3."];
-    const rowsHtml = d.rows.slice(0, 3).map((r, i) => '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:4px 12px;font-family:var(--font-mono);font-size:0.6rem;color:rgba(245,240,232,0.8);"><span style="color:rgba(245,240,232,0.4);width:14px;flex-shrink:0;">' + ranks[i] + '</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + r.name + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (r.votes > 0 ? formatVotes(r.votes) : "--") + "</span></div>").join("");
-    const body = d.rows.length ? rowsHtml : '<div style="padding:10px 12px;font-size:0.68rem;color:rgba(245,240,232,0.35);font-style:italic;">No votes yet.</div>';
+    // build-seq (readability pass): dark card, leader-only row spilling to 2
+    // lines, larger type, high-contrast light text, dates emphasized. The card
+    // body is no longer clickable — only the header link and the footer
+    // Vote / Discuss buttons carry actions.
+    const CARD_BG = "rgba(15,26,20,0.85)";       // dark card background
+    const INK = "rgba(245,240,232,0.95)";        // light primary text (high contrast)
+    const INK_MUTED = "rgba(245,240,232,0.62)";  // light secondary text
+    const leader = d.rows && d.rows.length ? d.rows[0] : null;
+    const _num = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    // My choice's rank + vote count within the field, so it reads like the
+    // leader row ("<rank>. <name> - <votes>"). Matched by name in d.rows.
+    const _myIdx = (d.myChoice && d.rows) ? d.rows.findIndex(r => r.name === d.myChoice) : -1;
+    const _myRank = _myIdx >= 0 ? _myIdx + 1 : null;
+    const _myVotes = _myIdx >= 0 ? Number(d.rows[_myIdx].votes || 0) : 0;
+    // Leader row: "1. <leader> - <votes>" (name spills to 2 lines; votes pinned).
+    const body = leader
+      ? '<div style="display:flex;align-items:flex-start;gap:6px;padding:9px 14px;font-family:var(--font-mono);font-size:0.82rem;color:' + INK + ';"><span style="flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600;line-height:1.3;word-break:break-word;">1. ' + leader.name + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (leader.votes > 0 ? _num(leader.votes) : "--") + "</span></div>"
+      : '<div style="padding:12px 14px;font-size:0.82rem;color:rgba(245,240,232,0.4);font-style:italic;">No votes yet.</div>';
     const glow = d.glowColor
       ? "box-shadow:0 0 16px " + d.glowColor + ",0 0 5px " + d.glowColor + ";"
       : (d.glow ? "box-shadow:0 0 14px rgba(255,255,255,0.28),0 0 4px rgba(255,255,255,0.5);" : "");
-    return '<div class="race-card" data-cause-id="' + d.causeId + '" style="--rc-color:' + d.color + ";display:block;text-decoration:none;cursor:pointer;width:100%;box-sizing:border-box;background:rgba(15,26,20,0.72);border:1px solid var(--rc-color);border-radius:10px;overflow:hidden;transition:background 0.2s;" + glow + '"><div style="padding:8px 12px;background:rgba(0,0,0,0.18);border-bottom:1px solid var(--rc-color);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><a href="' + d.href + '" style="font-family:var(--font-mono);font-size:0.58rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;word-break:break-word;">' + d.headerLeft + '</a><span style="font-family:var(--font-mono);font-size:0.54rem;color:rgba(245,240,232,0.55);white-space:nowrap;flex-shrink:0;">' + d.headerRight + "</span></div>" + body + '<div style="border-top:1px solid rgba(255,255,255,0.06);padding:6px 12px 8px;display:flex;flex-direction:column;gap:3px;"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My choice</span> ' + (d.myChoice ? d.myChoice : '<span style="opacity:0.45;font-style:italic;">no vote yet</span>') + '</span><span style="flex-shrink:0;">' + ((d.myChoiceEbx ?? 0) > 0 ? formatEBX(d.myChoiceEbx) : "--") + '</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.58rem;color:rgba(245,240,232,0.82);"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:rgba(245,240,232,0.4);font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatEBX(d.myCommit) : "--") + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:rgba(245,240,232,0.4);font-weight:400;font-size:0.46rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatEBX(d.pool) : "--") + "</span></div></div>" + _electionCardFooter(d) + "</div>";
+    return '<div class="race-card" data-cause-id="' + d.causeId + '" style="--rc-color:' + d.color + ";display:block;text-decoration:none;width:100%;box-sizing:border-box;background:" + CARD_BG + ";border:1.5px solid var(--rc-color);border-radius:10px;overflow:hidden;color:" + INK + ";" + glow + '"><div style="padding:10px 14px;background:rgba(0,0,0,0.22);border-bottom:1.5px solid var(--rc-color);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><a href="' + d.href + '" style="font-family:var(--font-mono);font-size:0.74rem;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;word-break:break-word;">' + d.headerLeft + '</a><span style="font-family:var(--font-mono);font-size:0.72rem;color:' + INK + ';font-weight:700;white-space:nowrap;flex-shrink:0;background:rgba(255,255,255,0.08);padding:3px 8px;border-radius:5px;">' + d.headerRight + "</span></div>" + body + '<div style="border-top:1px solid rgba(255,255,255,0.07);padding:8px 14px 9px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.74rem;color:' + INK + ';"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (d.myChoice ? (_myRank ? _myRank + '. ' : '') + d.myChoice : '<span style="opacity:0.5;font-style:italic;">no vote yet</span>') + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (d.myChoice ? _num(_myVotes) : "--") + '</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.74rem;color:' + INK + ';"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:' + INK_MUTED + ';font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatEBX(d.myCommit) : "--") + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:' + INK_MUTED + ';font-weight:400;font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatEBX(d.pool) : "--") + "</span></div></div>" + _electionCardFooter(d) + "</div>";
   }
   function sideCard(causeIndex, opts) {
     const cause = config.causes.find((c) => c.index === causeIndex);
@@ -1500,13 +1517,19 @@
     let orgVoteDay;
     let shares;
     if (face === "front") {
+      // Tiv mode (initiatives): the UPCOMING organization (p2) election — the
+      // next org vote to close, shown with the upcoming/near date so the
+      // initiative-mode card points forward to the vote that's coming up.
       missionTiv = all.filter((i) => ["org_vote", "active"].includes(i.status)).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0] || null;
       orgVoteDay = new Date(winStart.getTime() + wk);
       shares = Votes.forCause(activeIndex, cycleNum, orgs);
     } else {
-      missionTiv = all.filter((i) => ["suggested", "debate"].includes(i.status)).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0] || null;
+      // Org mode (active missions): the JUST-ELECTED initiative now heading to
+      // its organization vote — shown with the farther-out date (its org
+      // election is ~7-8 weeks out, the cause's next active window).
+      missionTiv = all.filter((i) => ["org_vote", "active"].includes(i.status)).sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0] || null;
       orgVoteDay = new Date(winStart.getTime() + config.causeLengthDays * MS_PER_DAY + wk);
-      shares = Votes.forCause(activeIndex, cycleNum + 1, orgs);
+      shares = Votes.forCause(activeIndex, cycleNum, orgs);
     }
     const phase1Pool = missionTiv ? missionTiv.committed_ebx || 0 : 0;
     let myChoice = null;
@@ -1522,11 +1545,7 @@
       if (committed) myCommit = committed.ebx || 0;
     } catch (_e) {
     }
-    if (face === "back") {
-      myChoice = null;
-      myCommit = 0;
-    }
-    const pool = phase1Pool + (face === "front" ? myCommit : 0);
+    const pool = phase1Pool + myCommit;
     const SYNTH_TURNOUT = 200;
     const rows = shares.filter((sh) => !sh.isOther).map((sh) => ({ name: sh.org_name, votes: Math.round(sh.pct / 100 * SYNTH_TURNOUT), ebx: Math.round(sh.pct / 100 * pool) }));
     const myRow = myChoice ? rows.find((r) => r.name === myChoice) : null;

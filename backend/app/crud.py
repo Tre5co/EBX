@@ -22,7 +22,10 @@ Conventions
 from __future__ import annotations
 
 import json
+import re
+import uuid
 from datetime import datetime
+from difflib import SequenceMatcher
 from typing import Optional, Sequence
 
 from sqlalchemy import func as sqlfunc, select
@@ -49,6 +52,14 @@ P1_SEND_WIN = 0.20           # your tiv won
 P1_SEND_LOSE = 0.10          # your tiv lost
 P2_SEND_WIN = 1.00           # your org won
 P2_SEND_LOSE = 0.20          # your org lost
+
+# Loser carryover (Jax pass): a losing initiative re-enters its cause's NEXT-cycle
+# election automatically, carrying each backer's commitment forward at (1 - skim).
+# The skim is booked to a single global "commitment fund" ledger bucket. These are
+# placeholder rates — tune later. (The 80% locked behind a winning vote stays in
+# the won mission and is untouched by this path.)
+COMMITMENT_FUND_SKIM = 0.10          # 10% of a loser's commitment → commitment fund
+COMMITMENT_FUND_BUCKET = "commitment_fund"
 
 # Pool allocation, expressed in 32nds of the mission pool. The four top-level
 # slices — EN_CUT + ORG_GUARANTEED + ORG_ADVANCE + REMAINDER — sum to 32/32.
@@ -286,6 +297,130 @@ def org_cause_ids(db: Session, org_id: str) -> list[str]:
     return list(rows)
 
 
+# ── Org self-registration / nomination (public application) — Phase 2 (A) ──
+def _norm_org_name(name: str) -> str:
+    return re.sub(r"[^a-z0-9 ]+", "", (name or "").lower()).strip()
+
+
+def fuzzy_org_matches(db: Session, name: str, threshold: float = 0.82) -> list[dict]:
+    """Fuzzy name matching against existing orgs — the 'did you mean an existing
+    org?' guard. An org is a single entity and is never duplicated."""
+    target = _norm_org_name(name)
+    if not target:
+        return []
+    out: list[dict] = []
+    for org in db.scalars(select(models.Organization)).all():
+        cand = _norm_org_name(org.name)
+        score = SequenceMatcher(None, target, cand).ratio()
+        # containment counts too ("Rainforest Trust" vs "The Rainforest Trust Fund")
+        if target and cand and (target in cand or cand in target):
+            score = max(score, 0.9)
+        if score >= threshold:
+            out.append({"org_id": org.id, "name": org.name, "score": round(score, 3)})
+    out.sort(key=lambda m: -m["score"])
+    return out[:5]
+
+
+def _gen_org_id(db: Session, name: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", (name or "org").lower()).strip("-")[:28] or "org"
+    oid = slug
+    while db.get(models.Organization, oid) is not None:
+        oid = f"{slug}-{uuid.uuid4().hex[:5]}"
+    return oid
+
+
+def register_org(
+    db: Session,
+    data: schemas.OrganizationRegister,
+    actor: models.BenefactorAccount,
+    dup_threshold: float = 0.82,
+) -> dict:
+    """Public org application/registration (no staff gate — 'organizations can
+    self-register at any time'). Returns an OrgRegisterResult-shaped dict.
+
+    kind='registration': the actor is a real member — they become
+      founding_member_id (when creating) and get an executive Membership.
+    kind='nomination': a benefactor puts the org forward — no membership.
+    Duplicate guard: unless force or an explicit org_id is given, fuzzy name
+    matches are returned instead of creating anything.
+    """
+    org: Optional[models.Organization] = None
+    created = False
+    if data.org_id:
+        org = db.get(models.Organization, data.org_id)
+        if org is None:
+            raise ValueError("Organization not found")
+    else:
+        matches = fuzzy_org_matches(db, data.name, threshold=dup_threshold)
+        if matches and not data.force:
+            return {"created": False, "org": None, "membership": None,
+                    "candidacy": None, "matches": matches}
+        org = models.Organization(
+            id=_gen_org_id(db, data.name),
+            name=data.name.strip(),
+            description=data.description,
+            website_link=data.website_link,
+            founded_year=data.founded_year,
+            logo_url=data.logo_url,
+            founding_member_id=actor.id if data.kind == "registration" else None,
+            joined_at=datetime.utcnow(),
+        )
+        db.add(org)
+        db.flush()
+        created = True
+
+    membership = None
+    if data.kind == "registration":
+        # The registering member operates the org: executive when founding,
+        # rep when joining an existing org via registration.
+        role = "executive" if created else "rep"
+        existing = db.scalar(
+            select(models.Membership).where(
+                models.Membership.ben_id == actor.id,
+                models.Membership.org_id == org.id,
+            )
+        )
+        if existing:
+            # never demote an existing executive
+            if existing.role not in ("executive",):
+                existing.role = role
+            membership = existing
+        else:
+            membership = models.Membership(ben_id=actor.id, org_id=org.id, role=role)
+            db.add(membership)
+
+    candidacy = None
+    if data.mission_id:
+        if db.get(models.Mission, data.mission_id) is None:
+            raise ValueError("Mission not found")
+        candidacy = db.scalar(
+            select(models.MissionCandidacy).where(
+                models.MissionCandidacy.mission_id == data.mission_id,
+                models.MissionCandidacy.org_id == org.id,
+            )
+        )
+        if candidacy is None:
+            candidacy = models.MissionCandidacy(
+                mission_id=data.mission_id,
+                org_id=org.id,
+                mission_statement=data.mission_statement,
+                submitted_by_id=actor.id,
+                status="pending",
+            )
+            db.add(candidacy)
+        elif data.mission_statement and not candidacy.mission_statement:
+            candidacy.mission_statement = data.mission_statement
+
+    db.commit()
+    db.refresh(org)
+    if membership is not None:
+        db.refresh(membership)
+    if candidacy is not None:
+        db.refresh(candidacy)
+    return {"created": created, "org": org, "membership": membership,
+            "candidacy": candidacy, "matches": []}
+
+
 # ===========================================================================
 # Benefactor accounts (ben) — role carries the employee category
 # ===========================================================================
@@ -378,6 +513,218 @@ def list_memberships(
     if org_id is not None:
         stmt = stmt.where(models.Membership.org_id == org_id)
     return db.scalars(stmt).all()
+
+
+ORG_ROLES = ("community", "rep", "executive", "beneficiary")
+# Roles that carry org authority (may edit the mission page/budget, add members).
+ORG_OPERATOR_ROLES = ("rep", "executive")
+
+
+def get_membership(db: Session, ben_id: int, org_id: str) -> Optional[models.Membership]:
+    return db.scalar(
+        select(models.Membership).where(
+            models.Membership.ben_id == ben_id,
+            models.Membership.org_id == org_id,
+        )
+    )
+
+
+def _require_org_operator(db: Session, actor: models.BenefactorAccount, org_id: str) -> None:
+    """Org authority flows through Membership roles, not the account role.
+    Staff pass for administration."""
+    if getattr(actor, "is_staff", False):
+        return
+    m = get_membership(db, actor.id, org_id)
+    if m is None or m.role not in ORG_OPERATOR_ROLES:
+        raise PermissionError("Requires a rep/executive membership of this organization")
+
+
+def create_membership(
+    db: Session,
+    org_id: str,
+    data: schemas.MembershipCreate,
+    actor: models.BenefactorAccount,
+) -> models.Membership:
+    """Invite/add a member (or change a member's role). Permission model:
+      * anyone may join an org as 'community' (self-service follow);
+      * rep/executive members (or staff) may add anyone at any role.
+    The target ben is identified by ben_id, handle, or email."""
+    if db.get(models.Organization, org_id) is None:
+        raise ValueError("Organization not found")
+    if data.role not in ORG_ROLES:
+        raise ValueError(f"role must be one of {ORG_ROLES}")
+
+    target: Optional[models.BenefactorAccount] = None
+    if data.ben_id is not None:
+        target = db.get(models.BenefactorAccount, data.ben_id)
+    elif data.handle:
+        target = get_ben_by_handle(db, data.handle)
+    elif data.email:
+        target = get_ben_by_email(db, data.email)
+    else:
+        target = actor  # no target given = self
+    if target is None:
+        raise ValueError("Benefactor not found")
+
+    self_community = target.id == actor.id and data.role == "community"
+    if not self_community:
+        _require_org_operator(db, actor, org_id)
+    return add_membership(db, target.id, org_id, role=data.role)
+
+
+def list_org_members(db: Session, org_id: str) -> list[dict]:
+    """Org members list enriched with handles (MembershipDetail shape)."""
+    rows = db.execute(
+        select(models.Membership, models.BenefactorAccount.handle)
+        .join(models.BenefactorAccount, models.BenefactorAccount.id == models.Membership.ben_id)
+        .where(models.Membership.org_id == org_id)
+        .order_by(models.Membership.joined_at.asc())
+    ).all()
+    return [
+        {"id": m.id, "ben_id": m.ben_id, "org_id": m.org_id, "role": m.role,
+         "joined_at": m.joined_at, "handle": handle}
+        for m, handle in rows
+    ]
+
+
+# ===========================================================================
+# Org claims — THE gate (click-through legal agreement) — Phase 2 (D)
+# ===========================================================================
+# A nominated (not self-registered) org has until the start of Phase 4
+# (credit release) to claim. Phases before that keep the window open.
+_CLAIMABLE_PHASES = ("pre", "initiative", "budget")
+
+
+def get_claim(db: Session, mission_id: str, org_id: str) -> Optional[models.OrgClaim]:
+    return db.scalar(
+        select(models.OrgClaim).where(
+            models.OrgClaim.mission_id == mission_id,
+            models.OrgClaim.org_id == org_id,
+        )
+    )
+
+
+def list_claims(
+    db: Session,
+    mission_id: Optional[str] = None,
+    org_id: Optional[str] = None,
+) -> Sequence[models.OrgClaim]:
+    stmt = select(models.OrgClaim)
+    if mission_id:
+        stmt = stmt.where(models.OrgClaim.mission_id == mission_id)
+    if org_id:
+        stmt = stmt.where(models.OrgClaim.org_id == org_id)
+    return db.scalars(stmt.order_by(models.OrgClaim.accepted_at.desc())).all()
+
+
+def claim_mission(
+    db: Session,
+    mission_id: str,
+    ben: models.BenefactorAccount,
+    data: schemas.OrgClaimCreate,
+    attestation_version: str = "draft",
+    claimed_rate: float = 0.35,
+) -> models.OrgClaim:
+    """Record the click-through acceptance and grant the org authority over the
+    mission's budget/sequence. Claiming:
+      * verifies the actor is a rep/executive member of the org — or creates
+        that ('rep') membership as part of claiming;
+      * ensures a candidacy row exists (a claim implies a bid);
+      * records the acceptance (attestation version + timestamp + ben);
+      * bumps the mission's guaranteed-to-pool rate to the claimed rate.
+    """
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    org = db.get(models.Organization, data.org_id)
+    if org is None:
+        raise ValueError("Organization not found")
+    if mission.current_phase not in _CLAIMABLE_PHASES:
+        raise ValueError(
+            "The claim window for this mission has closed (claims are open until the start of Phase 4)"
+        )
+    if get_claim(db, mission_id, data.org_id) is not None:
+        raise ValueError("This mission has already been claimed for this organization")
+
+    # Membership: verify rep/executive, or create the rep membership now.
+    m = get_membership(db, ben.id, data.org_id)
+    if m is None:
+        m = models.Membership(ben_id=ben.id, org_id=data.org_id, role="rep")
+        db.add(m)
+    elif m.role not in ORG_OPERATOR_ROLES:
+        m.role = "rep"
+
+    # A claim implies a candidacy (the org is bidding to run the mission).
+    cand = db.scalar(
+        select(models.MissionCandidacy).where(
+            models.MissionCandidacy.mission_id == mission_id,
+            models.MissionCandidacy.org_id == data.org_id,
+        )
+    )
+    if cand is None:
+        db.add(models.MissionCandidacy(
+            mission_id=mission_id, org_id=data.org_id,
+            submitted_by_id=ben.id, status="pending",
+        ))
+
+    claim = models.OrgClaim(
+        mission_id=mission_id,
+        org_id=data.org_id,
+        ben_id=ben.id,
+        kind=data.kind,
+        attestation_version=data.attestation_version or attestation_version,
+        member_name=data.member_name,
+        member_position=data.member_position,
+    )
+    db.add(claim)
+    # Guaranteed-to-pool rate bumps when a real representative shows up.
+    mission.guaranteed_pool_rate = claimed_rate
+    db.commit()
+    db.refresh(claim)
+    return claim
+
+
+def org_state(
+    db: Session,
+    mission_id: str,
+    org_id: str,
+    unclaimed_rate: float = 0.20,
+) -> dict:
+    """The mission page's three booleans for one (mission, org):
+    nominate → (register / claim) → elect. Plus supporting detail."""
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    if db.get(models.Organization, org_id) is None:
+        raise ValueError("Organization not found")
+    cand = db.scalar(
+        select(models.MissionCandidacy).where(
+            models.MissionCandidacy.mission_id == mission_id,
+            models.MissionCandidacy.org_id == org_id,
+        )
+    )
+    claim = get_claim(db, mission_id, org_id)
+    operators = [
+        m for m in list_memberships(db, org_id=org_id) if m.role in ORG_OPERATOR_ROLES
+    ]
+    return {
+        "mission_id": mission_id,
+        "org_id": org_id,
+        # the three booleans
+        "nominated": cand is not None,
+        "claimed": claim is not None,
+        "elected": mission.winning_org_id == org_id,
+        # supporting detail
+        "registered": bool(operators),   # a real person operates this org
+        "has_mission_statement": bool(cand and (cand.mission_statement or "").strip()),
+        "candidacy_status": cand.status if cand else None,
+        "approved": bool(cand and cand.status in ("approved", "won")),
+        "claim_window_open": mission.current_phase in _CLAIMABLE_PHASES,
+        "guaranteed_pool_rate": (
+            mission.guaranteed_pool_rate
+            if mission.guaranteed_pool_rate is not None else unclaimed_rate
+        ),
+    }
 
 
 # ===========================================================================
@@ -587,6 +934,45 @@ def commit_p1_ebx(
     return row
 
 
+def withdraw_p1(db: Session, ben_id: int, mission_id: str) -> dict:
+    """Phase-2 withdrawal: a benefactor pulls back their phase-1 commitment in a
+    mission, **minus the send** (the irrevocable donation slice). The send is
+    20% if they backed the winning tiv, 10% otherwise; the rest is refunded.
+
+    Allowed only during phase 2 — i.e. an initiative has been elected
+    (`winning_tiv_id`) but the org race is still open (no `winning_org_id`, phase
+    not yet `budget`). Once budgeting begins the pool locks. Returns the total
+    refunded and the EBX left as the send.
+    """
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    if not mission.winning_tiv_id or mission.winning_org_id or mission.current_phase != "initiative":
+        raise ValueError("Withdrawal is only open during phase 2 (after the initiative is elected, before budgeting)")
+
+    refunded = 0.0
+    kept = 0.0
+    for row in get_p1_votes(db, ben_id, mission_id):
+        committed = float(row.ebx_committed or 0)
+        if committed <= 0:
+            continue
+        send_rate = P1_SEND_WIN if row.tiv_id == mission.winning_tiv_id else P1_SEND_LOSE
+        keep = committed * send_rate          # the send stays in the pool
+        give_back = committed - keep
+        row.ebx_committed = keep
+        refunded += give_back
+        kept += keep
+        if give_back > 0:
+            db.add(models.Transaction(
+                type="transfer", bucket="refund", ben_id=ben_id, mission_id=mission_id,
+                phase="p2", target=row.tiv_id, amount_ebx=int(round(give_back)),
+                note=f"phase-2 withdrawal — kept {send_rate:.0%} send",
+            ))
+    db.commit()
+    recompute_pool(db, mission_id)
+    return {"mission_id": mission_id, "refunded_ebx": round(refunded, 2), "send_kept_ebx": round(kept, 2)}
+
+
 def commit_p1(db: Session, ben_id: int, mission_id: str) -> int:
     """Lock the ben's phase-1 slate for a mission. Returns rows committed."""
     rows = db.scalars(
@@ -615,9 +1001,17 @@ def cast_p2(
     votes: int = 1,
     ebx_spent: int = 0,
     valence: str = "helpful",
+    unapproved_ebx_cap: int = 10,
 ) -> models.VoteP2:
     """Upsert a ben's single org vote for a mission. votes>1 = bought extra
-    votes; valence='harmful' = block the org. Sets vvv on first p2 vote."""
+    votes; valence='harmful' = block the org. Sets vvv on first p2 vote.
+
+    Election rules (Phase 2 polish):
+      * the org must be a CANDIDATE for this mission (nominated/registered);
+      * a candidacy must carry a mission statement to receive votes;
+      * an UNAPPROVED (pending) org is capped at 1 vote / `unapproved_ebx_cap`
+        EBX per ben — if the org is later rejected, that money is returned.
+    """
     _valence_ok(valence)
     if votes < 1:
         raise ValueError("votes must be >= 1")
@@ -626,6 +1020,20 @@ def cast_p2(
         raise ValueError("Mission not found")
     if db.get(models.Organization, org_id) is None:
         raise ValueError("Organization not found")
+    cand = db.scalar(
+        select(models.MissionCandidacy).where(
+            models.MissionCandidacy.mission_id == mission_id,
+            models.MissionCandidacy.org_id == org_id,
+        )
+    )
+    if cand is None:
+        raise ValueError("This organization is not a candidate for this mission — nominate or register it first")
+    if not (cand.mission_statement or "").strip():
+        raise ValueError("This organization must submit a mission statement before it can receive votes")
+    if cand.status == "pending" and (votes > 1 or ebx_spent > unapproved_ebx_cap):
+        raise ValueError(
+            f"This organization isn't approved yet — it's capped at 1 vote ({unapproved_ebx_cap} EBX) until approval"
+        )
 
     row = db.scalar(
         select(models.VoteP2).where(
@@ -724,9 +1132,44 @@ def p2_tally(db: Session, mission_id: str) -> dict:
     return {"mission_id": mission_id, "entries": entries}
 
 
+def _carry_losers_forward(db: Session, mission: models.Mission, losers: list[models.Initiative]) -> None:
+    """Roll losing initiatives into their cause's NEXT-cycle election.
+
+    Each loser is re-listed (status 'suggested') under the cause's cycle+1 mission
+    (created if it doesn't exist yet). Every backer's phase-1 commitment moves with
+    it at (1 - COMMITMENT_FUND_SKIM); the skim is booked to the global commitment
+    fund as a `transfer` to bucket 'commitment_fund'. Idempotent per finalize call.
+    """
+    from . import bootstrap  # local import avoids a module-load cycle
+
+    next_cycle = (mission.cycle_num or 0) + 1
+    next_mid = bootstrap.mission_id(mission.cause_id, next_cycle)
+    if db.get(models.Mission, next_mid) is None:
+        bootstrap.ensure_mission(db, mission.cause_id, next_cycle)
+
+    for tiv in losers:
+        tiv.mission_id = next_mid
+        tiv.status = "suggested"   # re-listed as a fresh candidate next cycle
+        for v in db.scalars(select(models.VoteP1).where(models.VoteP1.tiv_id == tiv.id)).all():
+            committed = float(v.ebx_committed or 0)
+            skim = committed * COMMITMENT_FUND_SKIM
+            v.ebx_committed = committed - skim          # 90% carries to next cycle
+            v.mission_id = next_mid
+            v.committed = False                          # carried, but adjustable next cycle
+            if skim > 0:
+                db.add(models.Transaction(
+                    type="transfer", bucket=COMMITMENT_FUND_BUCKET,
+                    ben_id=v.ben_id, mission_id=mission.id, phase="p1",
+                    target=tiv.id, amount_ebx=int(round(skim)),
+                    note=f"loser carryover skim {COMMITMENT_FUND_SKIM:.0%} {mission.id}->{next_mid}",
+                ))
+
+
 def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
-    """Elect the leading phase-1 tiv. Sets mission.winning_tiv_id and marks the
-    tiv won (others lost). Returns the winning tiv id, or None if no signal."""
+    """Elect the leading phase-1 tiv. Sets mission.winning_tiv_id, marks the
+    winner 'active', and rolls every losing initiative (with 90% of its committed
+    EBX) into the cause's next-cycle election — skimming 10% to the commitment
+    fund. Returns the winning tiv id, or None if there's no vote signal yet."""
     mission = db.get(models.Mission, mission_id)
     if mission is None:
         raise ValueError("Mission not found")
@@ -736,8 +1179,24 @@ def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
     winner_id = tally["entries"][0]["tiv_id"]
     mission.winning_tiv_id = winner_id
     mission.current_phase = "initiative"
-    for tiv in db.scalars(select(models.Initiative).where(models.Initiative.mission_id == mission_id)).all():
-        tiv.status = "won" if tiv.id == winner_id else "lost"
+    # Status vocabulary is just suggested | active | resolved. The elected tiv
+    # becomes 'active' (its mission is now in flight through phases 2-4); losing
+    # tivs stay 'suggested' and roll into the next cycle (below).
+    # IMPORTANT: attach the winner to this mission explicitly. A vote references a
+    # tiv_id, but that tiv's own mission_id can be unset/drifted; without this the
+    # winner would never be marked active and phase-2 would appear "skipped".
+    winner = db.get(models.Initiative, winner_id)
+    if winner is not None:
+        winner.mission_id = mission_id
+        winner.status = "active"
+    losers = [
+        t for t in db.scalars(
+            select(models.Initiative).where(models.Initiative.mission_id == mission_id)
+        ).all()
+        if t.id != winner_id
+    ]
+    if losers:
+        _carry_losers_forward(db, mission, losers)
     db.commit()
     return winner_id
 
@@ -910,6 +1369,10 @@ def distribute_mission(db: Session, mission_id: str) -> dict:
 
     mission.current_phase = "resolution"
     mission.budget = alloc.get("org_mission", 0) + alloc.get("org_advance", 0)
+    # The winning initiative reaches its terminal status. (suggested|active|resolved)
+    win_tiv = db.get(models.Initiative, mission.winning_tiv_id)
+    if win_tiv is not None:
+        win_tiv.status = "resolved"
     db.commit()
     recompute_pool(db, mission_id)
     return {
@@ -929,6 +1392,8 @@ def list_posts(
     tiv_id: Optional[str] = None,
     cause_id: Optional[str] = None,
     category: Optional[str] = None,
+    parent_id: Optional[str] = None,
+    roots_only: bool = False,
     limit: int = 50,
 ) -> Sequence[models.Post]:
     stmt = select(models.Post)
@@ -940,7 +1405,24 @@ def list_posts(
         stmt = stmt.where(models.Post.cause_id == cause_id)
     if category:
         stmt = stmt.where(models.Post.category == category)
+    # parent_id set → that post's comments (oldest first, thread order).
+    if parent_id:
+        stmt = stmt.where(models.Post.parent_id == parent_id)
+        return db.scalars(stmt.order_by(models.Post.created_at.asc()).limit(limit)).all()
+    # roots_only → exclude comments from a feed so threads don't double-list.
+    if roots_only:
+        stmt = stmt.where(models.Post.parent_id.is_(None))
     return db.scalars(stmt.order_by(models.Post.created_at.desc()).limit(limit)).all()
+
+
+def list_org_posts(db: Session, org_id: str, limit: int = 50) -> Sequence[models.Post]:
+    """Posts AUTHORED by an org (org_update etc.) — the org page feed."""
+    return db.scalars(
+        select(models.Post)
+        .where(models.Post.org_author_id == org_id)
+        .order_by(models.Post.created_at.desc())
+        .limit(limit)
+    ).all()
 
 
 # Categories only staff may author.
@@ -1157,3 +1639,5 @@ def run_query(
         stmt = stmt.where(getattr(model, key) == val)
     rows = db.scalars(stmt.limit(min(limit, 500))).all()
     return [{c.name: getattr(r, c.name) for c in model.__table__.columns} for r in rows]
+
+# end of crud.py (build phase 2)

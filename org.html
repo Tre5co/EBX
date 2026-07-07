@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earthbux — Organization</title>
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
+  <style>
+    /* The PUBLIC organization page — distinct from the authenticated org-mode
+       view on profile.html. This is the anchor an org grows into; budget, plan
+       and progress reports live on mission.html, not here. */
+    .page-skeleton {
+      min-height: calc(100vh - var(--nav-height, 64px));
+      display: flex; flex-direction: column; align-items: center;
+      padding: var(--sp-2xl, 48px) var(--sp-lg, 20px); gap: 18px;
+    }
+    .og-card {
+      max-width: 760px; width: 100%;
+      background: var(--clr-paper, #fdfbf6);
+      border: 1px solid var(--clr-border, #e3ddd0);
+      border-radius: var(--radius-lg, 16px);
+      padding: var(--sp-xl, 28px) var(--sp-2xl, 36px);
+      box-shadow: 0 12px 40px rgba(20,26,22,0.08);
+    }
+    .og-eyebrow {
+      font-family: var(--font-mono, monospace); font-size: 0.7rem;
+      text-transform: uppercase; letter-spacing: 0.16em;
+      color: var(--clr-moss, #4a7c59); margin-bottom: 10px;
+    }
+    .og-head { display: flex; gap: 16px; align-items: center; }
+    .og-logo {
+      width: 64px; height: 64px; border-radius: 14px; flex: 0 0 auto;
+      background: var(--clr-surface, #eee9dc); display: flex; align-items: center;
+      justify-content: center; font-size: 1.6rem; overflow: hidden;
+      border: 1px solid var(--clr-border, #e3ddd0);
+    }
+    .og-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .og-title { font-family: var(--font-display, serif); font-size: 1.8rem; color: var(--clr-ink, #1a2620); margin: 0; }
+    .og-sub { font-size: 0.8rem; color: var(--clr-ink-light, #6b756d); margin-top: 4px; }
+    .og-body { font-size: 0.92rem; line-height: 1.7; color: var(--clr-ink-light, #4b574f); margin-top: 12px; }
+    .og-chip {
+      display:inline-block; font-family: var(--font-mono, monospace); font-size: 0.64rem;
+      border: 1px solid var(--clr-border, #d8d2c4); border-radius: 999px;
+      padding: 3px 12px; margin: 8px 6px 0 0; color: var(--clr-ink-light, #4b574f);
+    }
+    .og-chip--verified { color: var(--clr-moss, #4a7c59); border-color: rgba(74,124,89,0.5); font-weight: 600; }
+    .og-row {
+      display: flex; align-items: center; gap: 10px; padding: 9px 4px;
+      border-bottom: 1px dashed var(--clr-border, #e7e1d3); font-size: 0.85rem;
+    }
+    .og-row:last-child { border-bottom: none; }
+    .og-pill {
+      font-family: var(--font-mono, monospace); font-size: 0.58rem; border-radius: 4px;
+      padding: 2px 7px; white-space: nowrap;
+      color: var(--clr-ink-light, #6b756d); border: 1px solid var(--clr-border, #d8d2c4);
+    }
+    .og-pill--won { color: #fff; background: var(--clr-moss, #4a7c59); border: none; }
+    .og-pill--pending { color: #a06b10; border-color: rgba(160,107,16,0.45); }
+    .og-pill--approved { color: var(--clr-moss, #4a7c59); border-color: rgba(74,124,89,0.45); }
+    .og-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .og-btn {
+      font: inherit; cursor: pointer; font-weight: 600; font-size: 0.82rem;
+      background: var(--clr-moss, #4a7c59); color: #fff; border: none;
+      border-radius: 8px; padding: 9px 15px; text-decoration: none; display: inline-block;
+    }
+    .og-btn.secondary { background: #fff; color: var(--clr-earth, #4a7c59);
+      border: 1px solid var(--clr-border, #d8d2c4); }
+    .og-post { padding: 10px 4px; border-bottom: 1px dashed var(--clr-border, #e7e1d3); }
+    .og-post:last-child { border-bottom: none; }
+    .og-post__title { font-weight: 600; font-size: 0.86rem; color: var(--clr-ink, #1a2620); }
+    .og-post__body { font-size: 0.8rem; color: var(--clr-ink-light, #4b574f); line-height: 1.55; margin-top: 3px; }
+    .og-post__meta { font-family: var(--font-mono, monospace); font-size: 0.6rem; color: var(--clr-ink-light, #8b958d); margin-top: 4px; }
+    .og-empty { font-size: 0.82rem; opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="ebx-home-mark">EBX</a>
+
+  <div class="page-skeleton">
+    <div class="og-card">
+      <div class="og-eyebrow">Organization</div>
+      <div class="og-head">
+        <div class="og-logo" id="og-logo">🏛️</div>
+        <div>
+          <h1 class="og-title" id="og-name">…</h1>
+          <div class="og-sub" id="og-sub"></div>
+        </div>
+      </div>
+      <div class="og-body" id="og-desc"></div>
+      <div id="og-chips"></div>
+      <div class="og-actions" id="og-actions"></div>
+    </div>
+
+    <div class="og-card">
+      <div class="og-eyebrow">Missions &amp; candidacies</div>
+      <div id="og-candidacies"><span class="og-empty">Loading…</span></div>
+    </div>
+
+    <div class="og-card">
+      <div class="og-eyebrow">Members</div>
+      <div id="og-members"><span class="og-empty">Loading…</span></div>
+    </div>
+
+    <div class="og-card">
+      <div class="og-eyebrow">Updates from this organization</div>
+      <div id="og-posts"><span class="og-empty">Loading…</span></div>
+    </div>
+  </div>
+
+  <div id="ebx-footer-mount"></div>
+
+  <script src="resources/js/ebx_shared.js"></script>
+  <script>
+  (async function () {
+    const OID = EBX.getParam('id');
+    try { await EBX.loadCauses(); } catch (e) {}
+    try { await EBX.initPage(); } catch (e) {}
+
+    const $ = id => document.getElementById(id);
+    if (!OID) { $('og-name').textContent = 'No organization specified.'; return; }
+
+    let data = null;
+    try {
+      const r = await fetch('/organizations/' + encodeURIComponent(OID) + '/profile');
+      if (r.ok) data = await r.json();
+    } catch (e) {}
+    if (!data) { $('og-name').textContent = 'Organization not found.'; return; }
+
+    const org = data.org || {};
+    document.title = 'Earthbux — ' + (org.name || 'Organization');
+    $('og-name').textContent = org.name || OID;
+    if (org.logo_url) $('og-logo').innerHTML = '<img src="' + org.logo_url + '" alt="" />';
+
+    const subBits = [];
+    if (org.founded_year) subBits.push('founded ' + org.founded_year);
+    if (org.joined_at) subBits.push('on Earthbux since ' + new Date(org.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+    if (org.website_link) subBits.push('<a href="' + org.website_link + '" target="_blank" rel="noopener" style="color:var(--clr-moss,#4a7c59);">' + org.website_link.replace(/^https?:\/\//, '') + '</a>');
+    $('og-sub').innerHTML = subBits.join(' · ');
+    $('og-desc').textContent = org.description || 'No description yet.';
+
+    // chips: verified / score / derived causes
+    const chips = [];
+    chips.push(org.verified
+      ? '<span class="og-chip og-chip--verified">✓ EN-verified</span>'
+      : '<span class="og-chip">not yet verified — EN verifies during budgeting</span>');
+    if (org.score) chips.push('<span class="og-chip">score ' + Number(org.score).toFixed(1) + '</span>');
+    (data.cause_ids || []).forEach(cid => {
+      const c = (EBX.config.causes || []).find(x => x.id === cid);
+      chips.push('<span class="og-chip" style="border-color:' + ((c && c.color) || '#ccc') + ';">' + ((c && (c.emoji + ' ' + c.name)) || cid) + '</span>');
+    });
+    $('og-chips').innerHTML = chips.join('');
+
+    // actions: claim entry point ("is this your organization?")
+    const liveCand = (data.candidacies || []).find(c => ['pending', 'approved'].includes(c.status));
+    $('og-actions').innerHTML =
+      (liveCand ? '<a class="og-btn" href="mission.html?mission=' + liveCand.mission_id + '">Mission hub →</a>' : '') +
+      '<a class="og-btn secondary" href="' + (liveCand ? 'mission.html?mission=' + liveCand.mission_id : 'main.html') + '">' +
+      'Is this your organization? Register / claim →</a>';
+
+    // candidacies
+    const candBox = $('og-candidacies');
+    if (!(data.candidacies || []).length) {
+      candBox.innerHTML = '<span class="og-empty">No mission candidacies yet — this org can be nominated for any Phase-2 mission.</span>';
+    } else {
+      candBox.innerHTML = data.candidacies.map(c => {
+        const pill = { pending: 'og-pill--pending', approved: 'og-pill--approved', won: 'og-pill--won' }[c.status] || '';
+        return '<div class="og-row">' +
+          '<a href="mission.html?mission=' + c.mission_id + '" style="font-weight:600;color:var(--clr-ink,#1a2620);text-decoration:none;">' + c.mission_id + '</a>' +
+          '<span class="og-pill ' + pill + '">' + (c.status === 'pending' ? 'not approved' : c.status) + '</span>' +
+          '<span style="flex:1;font-size:0.76rem;color:var(--clr-ink-light,#6b756d);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+            ((c.mission_statement || '').trim() || 'no mission statement yet') + '</span>' +
+          '<span style="font-family:var(--font-mono,monospace);font-size:0.66rem;">' + (c.p2_vote_tally || 0) + ' votes</span>' +
+        '</div>';
+      }).join('');
+    }
+
+    // members (roles: community | rep | executive | beneficiary)
+    const memBox = $('og-members');
+    if (!(data.members || []).length) {
+      memBox.innerHTML = '<span class="og-empty">No members yet. A representative claiming a mission becomes one.</span>';
+    } else {
+      memBox.innerHTML = data.members.map(m =>
+        '<div class="og-row">' +
+          '<span style="font-weight:600;">@' + (m.handle || m.ben_id) + '</span>' +
+          '<span class="og-pill' + (m.role === 'beneficiary' ? ' og-pill--approved' : '') + '">' + m.role + '</span>' +
+          (m.role === 'beneficiary'
+            ? '<span style="font-size:0.74rem;opacity:0.7;">the beneficiary voice — speaks at the start of Phase 2</span>'
+            : '') +
+        '</div>').join('');
+    }
+
+    // org-authored posts
+    const postBox = $('og-posts');
+    if (!(data.posts || []).length) {
+      postBox.innerHTML = '<span class="og-empty">No updates yet. Progress reports land during the mission.</span>';
+    } else {
+      postBox.innerHTML = data.posts.map(p =>
+        '<div class="og-post">' +
+          (p.title ? '<div class="og-post__title">' + p.title + '</div>' : '') +
+          '<div class="og-post__body">' + (p.body || '').slice(0, 240) + ((p.body || '').length > 240 ? '…' : '') + '</div>' +
+          '<div class="og-post__meta">' + p.category + (p.mission_id ? ' · ' + p.mission_id : '') +
+            ' · ' + new Date(p.created_at).toLocaleDateString() + '</div>' +
+        '</div>').join('');
+    }
+  })();
+  </script>
+</body>
+</html>
