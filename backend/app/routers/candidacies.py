@@ -47,3 +47,18 @@ def approve_candidacy(
         return crud.approve_candidacy(db, candidacy_id, staff)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/candidacies/{candidacy_id}/reject", response_model=schemas.MissionCandidacyRead)
+def reject_candidacy(
+    candidacy_id: int,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only: reject an org's bid — all EBX committed to it is refunded
+    to its backers and their vote rows are freed."""
+    try:
+        return crud.reject_candidacy(db, candidacy_id, staff)
+    except ValueError as e:
+        msg = str(e)
+        raise HTTPException(status_code=404 if "not found" in msg.lower() else 409, detail=msg)

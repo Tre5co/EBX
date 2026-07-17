@@ -60,6 +60,7 @@ class MissionRead(MissionBase):
     spent: int = 0
     credit_value: float = 1.0
     guaranteed_pool_rate: Optional[float] = None  # NULL = unclaimed default
+    projected_end_at: Optional[datetime] = None   # projected mission length (§1d)
     updated_at: datetime
 
 
@@ -275,6 +276,41 @@ class OrgClaimRead(BaseModel):
     member_name: Optional[str] = None
     member_position: Optional[str] = None
     accepted_at: datetime
+
+
+# ---------------------------------------------------------------------------
+# Mission steps (release-phase structure, §1d) — each step carries a
+# guaranteed and a potential pool (no maximums); resolving one is a RESOLUTION.
+# ---------------------------------------------------------------------------
+class MissionStepCreate(BaseModel):
+    title: str = Field(min_length=2, max_length=160)
+    description: Optional[str] = None
+    order_num: int = 0
+    guaranteed_ebx: int = Field(default=0, ge=0)
+    potential_ebx: int = Field(default=0, ge=0)   # open-ended, no maximum
+    starts_at: Optional[datetime] = None
+    due_at: Optional[datetime] = None
+
+
+class MissionStepRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    mission_id: str
+    title: str
+    description: Optional[str] = None
+    order_num: int = 0
+    guaranteed_ebx: int = 0
+    potential_ebx: int = 0
+    starts_at: Optional[datetime] = None
+    due_at: Optional[datetime] = None
+    status: str = "planned"   # planned | active | resolved
+    resolved_at: Optional[datetime] = None
+    created_by_id: Optional[int] = None
+    created_at: datetime
+
+
+class ProjectedEndSet(BaseModel):
+    projected_end_at: datetime
 
 
 # ---------------------------------------------------------------------------

@@ -1250,16 +1250,26 @@
       const shares = (EBX.Votes.forCause(activeIndex, cycleNum, EBX.Votes.orgsForCause(activeIndex)) || []).filter(s => !s.isOther);
       const orgLeader = shares[0] || null;
       const pool = elected ? (elected.committed_ebx || 0) : 0;
-      const orgVoteDay = new Date(EBX.Cycle.nextDecisionDate(activeIndex).getTime() + 8 * wk);
-
-      const upIdx = (activeIndex + 1) % n;
-      const upCause = EBX.config.causes.find(c => c.index === upIdx) || null;
-      const upElected = upCause ? (_initiativesForCause(upIdx)
-        .filter(i => ['org_vote', 'active'].includes(i.status))
-        .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0))[0] || null) : null;
-      const upShares = upCause ? (EBX.Votes.forCause(upIdx, cycleNum, EBX.Votes.orgsForCause(upIdx)) || []).filter(s => !s.isOther) : [];
-      const upLeader = upShares[0] || null;
-      const upVoteDay = upCause ? new Date(EBX.Cycle.nextDecisionDate(upIdx).getTime() + 8 * wk) : null;
+      // §0a (2026-07-09): the two cards are CONSECUTIVE CYCLES of the ACTIVE
+      // cause. LHS = the current-cycle mission (its initiative was elected this
+      // week; its org race just opened). RHS = the PREVIOUS-cycle mission of
+      // the same cause — the one whose org election CLOSES this week, because
+      // org close = p1 decision + 7 weeks and this cause was last active
+      // exactly 7 weeks ago. Early in the program that slot ("for-1") predates
+      // genesis: it doesn't exist, and the card says so honestly.
+      const thisWeekDecision = EBX.Cycle.nextDecisionDate(activeIndex);
+      const orgVoteDay = new Date(thisWeekDecision.getTime() + 7 * wk);
+      const _causeMissions = (EBX.config.missions || []).filter(m => m.cause_id === cause.id);
+      // The LHS mission = this cause's latest DECIDED mission (p1 winner set).
+      // The RHS slot is one cycle EARLIER than that (for0 → "for-1").
+      const _lhsMission = _causeMissions
+        .filter(m => m.winning_tiv_id)
+        .sort((x, y) => y.cycle_num - x.cycle_num)[0] || null;
+      const _prevCycleNum = _lhsMission ? _lhsMission.cycle_num - 1 : cycleNum - 1;
+      const _prevMission = _causeMissions.find(m => m.cycle_num === _prevCycleNum) || null;
+      const _prefix = _causeMissions.length
+        ? String(_causeMissions[0].id).replace(/-?\d+$/, '') : cause.id.slice(0, 3);
+      const _prevSlotId = _prefix + _prevCycleNum;
 
       const leftCard =
         '<div class="topcard-sub" style="--sc:' + col + ';">' +
@@ -1275,20 +1285,41 @@
           '<a class="topcard-full__cta" href="cause.html?id=' + cause.id + '&vote=2#phase-recap-2" style="background:' + col + ';">Go to org vote &rarr;</a>' +
         '</div>';
 
-      const upCol = upCause ? upCause.color : col;
-      const rightCard = upCause ?
-        '<div class="topcard-sub" style="--sc:' + upCol + ';">' +
-          '<div class="topcard-sub__head" style="color:' + upCol + ';">' +
-            '<span class="topcard-full__dot" style="background:' + upCol + ';box-shadow:0 0 6px ' + upCol + ';"></span>Upcoming Organization Election' +
-          '</div>' +
-          '<div class="tc-stats-grid">' +
-            _tcStat('Cause', upCause.name, upCol) +
-            _tcStat('Elected initiative', upElected ? ((upElected.emoji ? upElected.emoji + ' ' : '') + upElected.title) : '—') +
-            _tcStat('Leading org', upLeader ? upLeader.org_name + ' · ' + upLeader.pct.toFixed(0) + '%' : 'No orgs yet') +
-            _tcStat('Vote closes', upVoteDay ? _fmtFullDate(upVoteDay) : '—', upCol) +
-          '</div>' +
-          '<a class="topcard-full__cta" href="cause.html?id=' + upCause.id + '&vote=2#phase-recap-2" style="background:' + upCol + ';">Preview &rarr;</a>' +
-        '</div>' : '';
+      let rightCard;
+      if (_prevMission && _prevMission.winning_tiv_id) {
+        const rcTiv = (EBX.config.initiatives || []).find(i => i.id === _prevMission.winning_tiv_id) || null;
+        const _done = !!_prevMission.winning_org_id;
+        const _winOrg = _done ? ((EBX.config.organizations || []).find(o => o.id === _prevMission.winning_org_id) || null) : null;
+        rightCard =
+          '<div class="topcard-sub" style="--sc:' + col + ';">' +
+            '<div class="topcard-sub__head" style="color:' + col + ';">' +
+              '<span class="topcard-full__dot" style="background:' + col + ';box-shadow:0 0 6px ' + col + ';"></span>' +
+              'This Week&rsquo;s Org Election · ' + _prevMission.id +
+            '</div>' +
+            '<div class="tc-stats-grid">' +
+              _tcStat('Elected initiative', rcTiv ? ((rcTiv.emoji ? rcTiv.emoji + ' ' : '') + rcTiv.title) : _prevMission.winning_tiv_id, col) +
+              _tcStat('Mission', _prevMission.id + ' · cycle ' + (_prevMission.cycle_num + 1)) +
+              (_done
+                ? _tcStat('Elected org', _winOrg ? _winOrg.name : _prevMission.winning_org_id, col)
+                : _tcStat('Org vote closes', _fmtFullDate(thisWeekDecision), col)) +
+            '</div>' +
+            '<a class="topcard-full__cta" href="cause.html?id=' + cause.id + '&vote=2#phase-recap-2" style="background:' + col + ';">' +
+              (_done ? 'See the result &rarr;' : 'Go to org vote &rarr;') + '</a>' +
+          '</div>';
+      } else {
+        rightCard =
+          '<div class="topcard-sub" style="--sc:' + col + ';">' +
+            '<div class="topcard-sub__head" style="color:' + col + ';">' +
+              '<span class="topcard-full__dot" style="background:' + col + ';box-shadow:0 0 6px ' + col + ';"></span>' +
+              'This Week&rsquo;s Org Election · ' + _prevSlotId +
+            '</div>' +
+            '<div class="tc-empty" style="padding:10px 0;line-height:1.55;">' +
+              'This slot belongs to ' + cause.name + '&rsquo;s previous cycle (<span class="mono">' + _prevSlotId + '</span>), ' +
+              'whose org vote would close this week &mdash; but it predates the program, so there is no race to show. ' +
+              cause.name + '&rsquo;s first org election closes <b>' + _fmtFullDate(orgVoteDay) + '</b>.' +
+            '</div>' +
+          '</div>';
+      }
 
       return '' +
       '<div class="topcard-full topcard-full--org" style="--tc-color:' + col + ';">' +
@@ -2319,8 +2350,8 @@
   window.idxRenderDefaultInfo = idxRenderDefaultInfo;
 
   // ── build-seq 1 (pass 35): discussion board ──
-  // Post categories per docs/posts.md. Context/Analysis are shared; Case is
-  // tiv-vote-specific, Evaluation is org-vote-specific.
+  // Post categories per README §5 (discussion model). Context/Analysis are
+  // shared; Case is tiv-vote-specific, Evaluation is org-vote-specific.
   const IDX_POST_CATS = {
     tiv: [
       { value: 'case',     label: 'Case — why I voted for this initiative' },

@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     attestation_version: str = "draft-2026-07"
     # Scaffolding cap: max EBX a ben can put on an UNAPPROVED org (10 = 1 vote).
     unapproved_org_ebx_cap: int = 10
+    # -- Money, S/S/S & Resolutions (build seq 1) -----------------------------
+    # Each landed RESOLUTION (resolved suggestion or mission step) bumps the
+    # mission's credit-coin value by this much.
+    resolution_value_bump: float = 0.02
+    # Global coin value = 1 + net_platform_flow / coin_value_scale (placeholder).
+    coin_value_scale: float = 100000.0
 
     @property
     def cors_origins_list(self) -> list[str]:

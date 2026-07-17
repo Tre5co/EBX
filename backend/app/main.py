@@ -56,6 +56,19 @@ def health() -> JSONResponse:
     return JSONResponse({"status": "ok"})
 
 
+@app.get("/coin-value", tags=["health"])
+def coin_value() -> JSONResponse:
+    """Global credit-coin value — moved by commits/withdrawals platform-wide.
+    Per-mission values ride on mission.credit_value (moved by resolutions)."""
+    from .database import SessionLocal
+    from . import crud as _crud
+    db = SessionLocal()
+    try:
+        return JSONResponse(_crud.global_coin_value(db, scale=settings.coin_value_scale))
+    finally:
+        db.close()
+
+
 # JSON API routers
 app.include_router(auth.router)
 app.include_router(causes.router)
@@ -86,8 +99,9 @@ def root_page() -> FileResponse:
     return _html("index")
 
 # index.html = public landing page (served at "/"); main.html = the home/missions app page.
-# org.html = the PUBLIC organization page (distinct from profile.html's org mode).
-_HTML_PAGES = ("index", "main", "cause", "mission", "profile", "admin", "org")
+# Orgs have NO page of their own (restructure 2026-07-10): their public face is
+# the org panel on mission.html (?org=), their admin lives behind admin.html.
+_HTML_PAGES = ("index", "main", "cause", "mission", "profile", "admin")
 
 
 def _make_handler(page: str):

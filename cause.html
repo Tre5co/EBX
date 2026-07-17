@@ -1291,7 +1291,7 @@
       <div class="propose-modal__title">Organization — Nominate or Register</div>
       <div style="display:flex;gap:6px;margin-bottom:10px;">
         <button id="orgreg-kind-nomination" class="btn btn-forest btn-sm" onclick="orgRegSetKind('nomination')">Nominate</button>
-        <button id="orgreg-kind-registration" class="btn btn-ghost btn-sm" onclick="orgRegSetKind('registration')">Register (I'm a member)</button>
+        <button id="orgreg-kind-registration" class="btn btn-ghost btn-sm" onclick="orgRegSetKind('registration')">Register (I'm a member) →</button>
       </div>
       <label>Organization name *</label>
       <input type="text" id="orgreg-name" placeholder="e.g. River Cleanup Collective" />
@@ -1369,10 +1369,18 @@
       if (e.target === document.getElementById('orgreg-modal-bg')) closeOrgRegModal();
     };
     window.orgRegSetKind = function (kind) {
+      if (kind === 'registration') {
+        // The registration EXPERIENCE lives behind the admin.html org door
+        // (org-experience restructure 2026-07-10). Nomination stays here —
+        // it's a community act, not an org one.
+        const m = _v2Mission(_orgRegCauseId);
+        location.href = 'admin.html?register=1' + (m && m.id ? '&mission=' + m.id : '');
+        return;
+      }
       _orgRegKind = kind;
-      document.getElementById('orgreg-member-fields').style.display = kind === 'registration' ? '' : 'none';
-      document.getElementById('orgreg-kind-nomination').className   = 'btn btn-sm ' + (kind === 'nomination'   ? 'btn-forest' : 'btn-ghost');
-      document.getElementById('orgreg-kind-registration').className = 'btn btn-sm ' + (kind === 'registration' ? 'btn-forest' : 'btn-ghost');
+      document.getElementById('orgreg-member-fields').style.display = 'none';
+      document.getElementById('orgreg-kind-nomination').className = 'btn btn-sm btn-forest';
+      document.getElementById('orgreg-kind-registration').className = 'btn btn-sm btn-ghost';
     };
     // Wired to the real Build-Phase-2 endpoint: POST /organizations/register.
     // A nomination creates the org (no membership); a registration makes the
@@ -1608,8 +1616,18 @@
       // mission is past phase 2 (active/resolved) it has a linked winning
       // org — render the STRUCTURE "When Recap" layout: results + my vote
       // left, most-helpful evaluation + winning org statement right.
-      const p2RecapRef = opts.missionRef && ['active', 'resolved'].includes(opts.missionRef.status)
-        ? opts.missionRef : null;
+      // §1 fix (2026-07-07): RECAP only when the org election has CONCLUDED for
+      // the selected mission (winner recorded / phase past the org race).
+      // 'active' alone spans phases 2-4, so a LIVE org race was misrendering as
+      // a finished recap with "Organization (record missing)".
+      const _refMission = opts.missionRef && opts.missionRef.mission_id
+        ? (EBX.config.missions || []).find(mm => mm.id === opts.missionRef.mission_id) : null;
+      const _refOrgDone = !!(opts.missionRef && (
+        opts.missionRef.status === 'resolved' ||
+        (_refMission && (_refMission.winning_org_id ||
+          ['budget', 'credit', 'resolution'].includes(_refMission.current_phase))) ||
+        (!_refMission && opts.missionRef.winning_org)));
+      const p2RecapRef = _refOrgDone ? opts.missionRef : null;
       if (p2RecapRef) {
         const winnerName = p2RecapRef.winning_org || 'Organization (record missing)';
         // Runner-ups from the synthetic distribution — presumptive until
@@ -1769,6 +1787,15 @@
                 it's capped at <b>1 vote (10 EBX)</b>; if an org is rejected, every EBX committed to it is
                 <b>returned</b> to its backers.
               </div>
+              <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <select id="p2-any-org" style="font:inherit;font-size:0.72rem;background:transparent;color:inherit;
+                        border:1px solid rgba(245,240,232,0.25);border-radius:6px;padding:4px 8px;max-width:230px;">
+                  ${(EBX.config.organizations || []).map(o => `<option value="${o.id}">${o.name}</option>`).join('')}
+                </select>
+                <button class="election-card__withdraw-btn" style="padding:4px 12px;font-size:0.62rem;"
+                        onclick="orgVoteFor('${cause.id}','${_p2id}',document.getElementById('p2-any-org').value)">Vote</button>
+                <span style="font-family:var(--font-mono);font-size:0.56rem;opacity:0.5;">any org can run — a first vote nominates it into the race</span>
+              </div>
               <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <button class="btn btn-ghost btn-sm" onclick="openOrgRegModal('${cause.id}')">Register / Nominate an organization →</button>
                 <a class="btn btn-ghost btn-sm" style="text-decoration:none;"
@@ -1782,11 +1809,13 @@
       }
       // build-seq 7: render each phase block either active (rich body) or as a
       // single-line "Phase x · Title · Date" pre stub.
+      // §1 (2026-07-09): phase 5 is GONE — the fifth block is Suggestions:
+      // the mission's S/S/S pipeline (context suggestions → resolutions).
       const _PHASE_TITLES = {
         2: ['New-Initiative', 'New-Initiative · org election card'],
         3: ['New-Mission',    'New-Mission · budget discussion'],
         4: ['Credit-Release', 'Credit-Release · mission plan'],
-        5: ['Resolution',     'Resolution'],
+        5: ['Suggestions',    'Suggestions · services, supplies & support'],
       };
       const _phaseDate = {
         2: orgVoteDate,
@@ -1836,8 +1865,118 @@
         leader && leader.status === 'resolved'
           ? `Resolved. Credits released in stages; benefactors posted evaluations of mission impact.`
           : `Credits release in stages; benefactors evaluate the mission's impact and post resolutions.`);
-      _renderPhaseBlock(5, _curPhase >= 5,
-        `Mission resolved. Final credit distribution and impact summary recorded.`);
+      // Suggestions live from the org race onward (a mission is in flight).
+      const _sugMission = _displayMission(cause);
+      const _sugLive = !!(_sugMission && (p2Active || p2RecapRef));
+      _renderPhaseBlock(5, _sugLive,
+        `<div id="sss-area" style="font-size:0.78rem;opacity:0.6;">Loading suggestions…</div>`);
+      if (_sugLive) renderSuggestions(_sugMission.id);
+    }
+
+    // ── §1b/§1 vocabulary: the Suggestions area ─────────────────────────────
+    // Context posts tagged service|supply|support are SUGGESTIONS; benefactors
+    // approve them with helpful votes; the org/EBX resolving one turns it into
+    // a RESOLUTION (category flips server-side and the mission's credit-coin
+    // value moves).
+    const _SSS_META = {
+      service: ['🛠', 'Service — something we can send people to DO'],
+      supply:  ['📦', 'Supply — WHAT the people need to do it'],
+      support: ['🤝', 'Support — assurance the issue is being resolved honestly'],
+    };
+    async function renderSuggestions(missionId) {
+      const box = document.getElementById('sss-area');
+      if (!box) return;
+      let ctx = [], res = [];
+      try {
+        const r = await fetch('/posts?mission_id=' + missionId + '&category=context&limit=50');
+        if (r.ok) ctx = (await r.json()).filter(p => ['service','supply','support'].includes(p.stance));
+      } catch (e) {}
+      try {
+        const r = await fetch('/posts?mission_id=' + missionId + '&category=resolution&limit=50');
+        if (r.ok) res = await r.json();
+      } catch (e) {}
+      const row = (p, resolved) => {
+        const meta = _SSS_META[p.stance] || ['💡', p.stance || 'suggestion'];
+        const score = (p.helpful_count || 0) - (p.harmful_count || 0);
+        return `<div class="p1-box__row" style="cursor:default;gap:8px;${resolved ? 'opacity:0.85;' : ''}">
+          <span title="${meta[1]}" style="flex:0 0 auto;">${meta[0]}</span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            ${resolved ? '✓ ' : ''}${p.title || (p.body || '').slice(0, 60)}
+            <span style="font-family:var(--font-mono);font-size:0.56rem;opacity:0.55;text-transform:uppercase;margin-left:4px;">${p.stance || ''}</span>
+          </span>
+          <span style="font-family:var(--font-mono);font-size:0.62rem;opacity:0.7;">${score >= 0 ? '+' : ''}${score}</span>
+          ${resolved
+            ? '<span style="font-family:var(--font-mono);font-size:0.56rem;color:#5abd6c;border:1px solid rgba(90,189,108,0.5);border-radius:3px;padding:0 5px;">resolution</span>'
+            : `<button class="election-card__withdraw-btn" style="padding:2px 8px;font-size:0.58rem;"
+                 onclick="sssApprove('${p.id}','${missionId}')">approve</button>`}
+        </div>`;
+      };
+      const sugHtml = ctx.length
+        ? ctx.sort((a, b) => ((b.helpful_count||0)-(b.harmful_count||0)) - ((a.helpful_count||0)-(a.harmful_count||0))).map(p => row(p, false)).join('')
+        : '<div style="font-size:0.74rem;opacity:0.5;">No suggestions yet — make the first one.</div>';
+      const resHtml = res.length
+        ? res.map(p => row(p, true)).join('')
+        : '<div style="font-size:0.74rem;opacity:0.5;">No resolutions yet. Resolutions are the winning suggestions the org achieves — each one moves the credit-coin value.</div>';
+      box.style.opacity = '';
+      box.innerHTML = `
+        <div class="p1-grid">
+          <div>
+            <div class="p1-box">
+              <div class="p1-box__label">Suggestions · approve with a vote</div>
+              ${sugHtml}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;">
+              <select id="sss-kind" style="font:inherit;font-size:0.7rem;background:transparent;color:inherit;border:1px solid rgba(245,240,232,0.25);border-radius:6px;padding:4px 6px;">
+                <option value="service">🛠 Service — send people to DO</option>
+                <option value="supply">📦 Supply — what they need</option>
+                <option value="support">🤝 Support — honest resolution</option>
+              </select>
+              <input id="sss-text" placeholder="Suggest a service, supply, or support…"
+                     style="flex:1;min-width:160px;font:inherit;font-size:0.74rem;background:transparent;color:inherit;border:1px solid rgba(245,240,232,0.25);border-radius:6px;padding:5px 8px;" />
+              <button class="election-card__commit-btn" style="padding:4px 12px;font-size:0.62rem;"
+                      onclick="sssSuggest('${missionId}')">Suggest</button>
+            </div>
+            <div id="sss-msg" style="font-family:var(--font-mono);font-size:0.58rem;opacity:0.6;margin-top:5px;"></div>
+          </div>
+          <div>
+            <div class="p1-box">
+              <div class="p1-box__label">Resolutions · each moves the coin value</div>
+              ${resHtml}
+            </div>
+            <div style="font-family:var(--font-mono);font-size:0.56rem;opacity:0.5;margin-top:6px;line-height:1.5;">
+              Cost analysis is context too — the pipeline: suggest → community approves → the
+              organization achieves it → resolution lands → credit-coin value rises.
+            </div>
+          </div>
+        </div>`;
+    }
+    window.sssApprove = async function (postId, missionId) {
+      if (!_v2LoggedIn()) { alert('Sign in to approve suggestions.'); return; }
+      try {
+        const r = await EBX.Auth.fetchAuthed('/posts/' + postId + '/react',
+          { method: 'POST', body: JSON.stringify({ value: 'helpful' }) });
+        if (r && !r.ok) { const d = await r.json().catch(() => ({})); alert(d.detail || 'Could not vote.'); return; }
+      } catch (e) {}
+      renderSuggestions(missionId);
+    };
+    window.sssSuggest = async function (missionId) {
+      const msg = document.getElementById('sss-msg');
+      const kind = document.getElementById('sss-kind').value;
+      const text = (document.getElementById('sss-text').value || '').trim();
+      if (!text) { msg.textContent = 'Write the suggestion first.'; return; }
+      if (!_v2LoggedIn()) { msg.textContent = 'Sign in to suggest.'; return; }
+      msg.textContent = 'Posting…';
+      try {
+        const r = await EBX.Auth.fetchAuthed('/posts', { method: 'POST', body: JSON.stringify({
+          id: 'sss-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
+          category: 'context', stance: kind, body: text,
+          author_type: 'ben', mission_id: missionId, cause_id: causeId,
+        }) });
+        if (r && !r.ok) { const d = await r.json().catch(() => ({})); msg.textContent = d.detail || ('Failed (HTTP ' + r.status + ')'); return; }
+        document.getElementById('sss-text').value = '';
+        msg.textContent = '';
+        renderSuggestions(missionId);
+      } catch (e) { msg.textContent = 'Network error — try again.'; }
     }
 
     // ── Phase-1 election widget (build-seq 2a) ──
@@ -2331,7 +2470,7 @@
     }
 
     // ── build-seq 2 (pass 35): STRUCTURE Phase-1 helpers ──
-    // Discussion categories for the tiv vote (docs/posts.md): Case / Context /
+    // Discussion categories for the tiv vote (README §5): Case / Context /
     // Analysis. Featured = most helpful post per category for this cause.
     const P1_CATS = [
       { value: 'case',     label: 'case'     },

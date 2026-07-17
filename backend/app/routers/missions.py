@@ -100,3 +100,63 @@ def mission_org_state(mission_id: str, org_id: str, db: Session = Depends(get_db
         return crud.org_state(db, mission_id, org_id, unclaimed_rate=settings.pool_rate_unclaimed)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+# ── Release-phase structure (§1d): steps + projected mission length ─────────
+@router.get("/{mission_id}/steps", response_model=list[schemas.MissionStepRead])
+def mission_steps(mission_id: str, db: Session = Depends(get_db)):
+    if crud.get_mission(db, mission_id) is None:
+        raise HTTPException(status_code=404, detail="Mission not found")
+    return crud.list_steps(db, mission_id)
+
+
+@router.post("/{mission_id}/steps", response_model=schemas.MissionStepRead, status_code=201)
+def create_mission_step(
+    mission_id: str,
+    data: schemas.MissionStepCreate,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Add a step (org members of the mission's org, or staff). Pools are
+    finalized by the end of the budgeting phase — locked after that."""
+    try:
+        return crud.create_step(db, mission_id, data, user)
+    except ValueError as e:
+        msg = str(e)
+        raise HTTPException(status_code=404 if "not found" in msg.lower() else 409, detail=msg)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
+@router.post("/{mission_id}/steps/{step_id}/resolve", response_model=schemas.MissionStepRead)
+def resolve_mission_step(
+    mission_id: str,
+    step_id: int,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Resolve a step — a RESOLUTION: grants the evaluation point and moves the
+    mission's credit-coin value."""
+    try:
+        return crud.resolve_step(db, step_id, user, value_bump=settings.resolution_value_bump)
+    except ValueError as e:
+        msg = str(e)
+        raise HTTPException(status_code=404 if "not found" in msg.lower() else 409, detail=msg)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
+@router.put("/{mission_id}/projected-end", response_model=schemas.MissionRead)
+def set_projected_end(
+    mission_id: str,
+    data: schemas.ProjectedEndSet,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Set the projected MISSION LENGTH end date."""
+    try:
+        return crud.set_projected_end(db, mission_id, data.projected_end_at, user)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))

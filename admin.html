@@ -66,8 +66,8 @@
 </head>
 <body>
 <header>
-  <h1>Earthbux · Data Console</h1>
-  <span class="sub">v2 back-office — read-only over the live database</span>
+  <h1>Earthbux · Admin</h1>
+  <span class="sub" id="headsub">back-office for Earthbux staff · org admin for elected organizations</span>
   <span class="spacer"></span>
   <span class="who" id="who"></span>
   <button id="logout" class="hidden">Sign out</button>
@@ -75,11 +75,20 @@
 
 <div class="layout">
   <nav class="side" id="side">
-    <div class="group">Tables</div>
-    <div id="entities"></div>
-    <div class="group">Views</div>
-    <div class="item special" data-view="ledger">Ledger · transactions</div>
-    <div class="item special" data-view="mission">Search by mission</div>
+    <div id="staff-nav" class="hidden">
+      <div class="group">Tables</div>
+      <div id="entities"></div>
+      <div class="group">Views</div>
+      <div class="item special" data-view="ledger">Ledger · transactions</div>
+      <div class="item special" data-view="mission">Search by mission</div>
+      <div class="item special" data-view="gantt">Gantt · mission plan</div>
+    </div>
+    <div id="org-nav" class="hidden">
+      <div class="group">Your organizations</div>
+      <div id="org-list"></div>
+      <div class="group">Doors</div>
+      <div class="item special" data-view="register">+ Register an organization</div>
+    </div>
   </nav>
   <main id="main">
     <div class="msg">Select a table or view from the left.</div>
@@ -88,8 +97,9 @@
 
 <div class="overlay" id="overlay">
   <form class="login" id="loginForm">
-    <h2>Employee sign-in</h2>
-    <p>The console is restricted to Earthbux employees.</p>
+    <h2>Sign in</h2>
+    <p>Earthbux staff get the data console. Organization reps &amp; executives get their
+    org admin pages. Anyone signed in can register an organization.</p>
     <label>Email or handle</label>
     <input id="li-user" type="text" autocomplete="username" autofocus />
     <label>Password</label>
@@ -143,17 +153,52 @@ $("#logout").addEventListener("click", () => {
 });
 
 // ---------- boot ----------
+// Dual audience (org-experience restructure, 2026-07-10/11):
+//   * staff (role employee/admin) → the data console, unchanged;
+//   * everyone else → the ORG side: per-mission org admin pages for their
+//     rep/executive memberships, plus the registration door (open to any
+//     signed-in benefactor — completing it makes them the founding executive).
+let ME = null, MY_MEMBERSHIPS = [], IS_STAFF = false;
+const OPERATOR_ROLES = ["rep", "executive"];
+
 async function boot() {
   try {
-    const me = await api("/auth/me");
-    $("#who").innerHTML = `${me.handle} <span class="pill">${me.role}</span>`;
+    ME = await api("/auth/me");
+    IS_STAFF = ME.role === "employee" || ME.role === "admin";
+    $("#who").innerHTML = `${ME.handle} <span class="pill">${ME.role}</span>`;
     $("#logout").classList.remove("hidden");
-    const entities = await api("/admin/query/entities");
-    const box = $("#entities"); box.innerHTML = "";
-    entities.forEach((name) => {
-      const d = el("div", "item"); d.textContent = name; d.dataset.entity = name;
-      d.onclick = () => selectEntity(name); box.appendChild(d);
-    });
+    if (IS_STAFF) {
+      $("#staff-nav").classList.remove("hidden");
+      $("#org-nav").classList.add("hidden");
+      const entities = await api("/admin/query/entities");
+      const box = $("#entities"); box.innerHTML = "";
+      entities.forEach((name) => {
+        const d = el("div", "item"); d.textContent = name; d.dataset.entity = name;
+        d.onclick = () => selectEntity(name); box.appendChild(d);
+      });
+    } else {
+      $("#org-nav").classList.remove("hidden");
+      $("#staff-nav").classList.add("hidden");
+      $("#headsub").textContent = "organization admin — missions, members & registration";
+      try { MY_MEMBERSHIPS = await api("/benefactors/me/memberships"); } catch (e) { MY_MEMBERSHIPS = []; }
+      const ops = MY_MEMBERSHIPS.filter((m) => OPERATOR_ROLES.includes(m.role));
+      const box = $("#org-list"); box.innerHTML = "";
+      if (!ops.length) {
+        const d = el("div", "item"); d.style.color = "var(--dim)"; d.style.cursor = "default";
+        d.textContent = MY_MEMBERSHIPS.length ? "no rep/executive roles" : "none yet";
+        box.appendChild(d);
+      }
+      ops.forEach((m) => {
+        const d = el("div", "item"); d.textContent = m.org_id; d.dataset.org = m.org_id;
+        d.onclick = () => selectOrgAdmin(m.org_id); box.appendChild(d);
+      });
+      // deep links: ?register=1[&mission=] | ?org=[&mission=]
+      const q = new URLSearchParams(location.search);
+      if (q.get("register")) selectRegister(q.get("mission") || "");
+      else if (q.get("org")) selectOrgAdmin(q.get("org"), q.get("mission") || "");
+      else if (ops.length) selectOrgAdmin(ops[0].org_id);
+      else selectRegister("");
+    }
   } catch (err) {
     if (err.message === "unauthorized") return;
     $("#main").innerHTML = `<div class="msg warn">${err.message}</div>`;
@@ -287,6 +332,8 @@ async function selectMissionView() {
       <span id="m-tabs">
         <button data-tab="votes_p1" class="primary">P1 votes</button>
         <button data-tab="votes_p2">P2 votes</button>
+        <button data-tab="mission_candidacies">Candidacies</button>
+        <button data-tab="org_claims">Claims</button>
         <button data-tab="posts">Posts</button>
         <button data-tab="transactions">Transactions</button>
       </span>
@@ -314,7 +361,10 @@ async function runMissionView() {
   const ben = $("#m-ben").value.trim();
   const tab = (current && current.tab) || "votes_p1";
   if (!mission) { $("#grid").innerHTML = `<div class="msg">No mission selected.</div>`; return; }
-  const idKey = tab === "posts" ? "ben_author_id" : "ben_id";
+  // Per-table user column: posts author, candidacies submitter, else ben_id.
+  const idKey = tab === "posts" ? "ben_author_id"
+              : tab === "mission_candidacies" ? "submitted_by_id"
+              : "ben_id";
   const filters = { mission_id: mission };
   if (ben) filters[idKey] = ben;
   const limit = parseInt($("#m-limit").value) || 200;
@@ -325,12 +375,416 @@ async function runMissionView() {
       body: JSON.stringify({ entity: tab, filters, limit }),
     });
     const users = new Set(rows.map((r) => r[idKey]).filter((v) => v != null));
-    $("#m-summary").textContent =
-      `${tab} · mission ${mission}${ben ? " · ben " + ben : ""} — ${rows.length} rows, ${users.size} distinct user(s)`;
+    let summary = `${tab} · mission ${mission}${ben ? " · ben " + ben : ""} — ${rows.length} rows, ${users.size} distinct user(s)`;
+    // Keep admin in lockstep with the live p2 vote logic: show the server's
+    // net tally beside the raw vote rows.
+    if (tab === "votes_p2" || tab === "mission_candidacies" || tab === "org_claims") {
+      try {
+        const t = await api(`/missions/${mission}/p2/tally`);
+        const entries = (t && t.entries) || [];
+        summary += entries.length
+          ? " · live tally: " + entries.map((e) => `${e.org_id} ${e.net_votes >= 0 ? "+" : ""}${e.net_votes}`).join(", ")
+          : " · live tally: no org votes yet";
+      } catch (e) {}
+    }
+    $("#m-summary").textContent = summary;
     renderGrid(rows);
+    // Candidacies tab: staff approve/reject actions per row. Reject refunds
+    // every backer in full (server-side) and frees their vote.
+    if (tab === "mission_candidacies") {
+      const table = $("#grid table");
+      if (table && table.tHead && table.tBodies.length) {
+        const th = document.createElement("th"); th.textContent = "actions";
+        table.tHead.rows[0].appendChild(th);
+        Array.from(table.tBodies[0].rows).forEach((tr, i) => {
+          const r = rows[i];
+          const td = document.createElement("td");
+          if (["won", "lost", "rejected"].includes(r.status)) td.textContent = "·";
+          else td.innerHTML =
+            `<button onclick="candAction(${r.id},'approve')">approve</button>
+             <button class="warnbtn" onclick="candAction(${r.id},'reject')">reject</button>`;
+          tr.appendChild(td);
+        });
+      }
+    }
   } catch (err) { $("#grid").innerHTML = `<div class="msg warn">${err.message}</div>`; }
 }
+window.candAction = async function (id, action) {
+  if (action === "reject" &&
+      !confirm("Reject this candidacy? Every EBX committed to this org is refunded to its backers and their votes are freed.")) return;
+  try {
+    await api(`/candidacies/${id}/${action}`, { method: "POST" });
+    runMissionView();
+  } catch (e) { alert(e.message); }
+};
 document.querySelector('[data-view="mission"]').onclick = selectMissionView;
+
+// ---------- gantt · mission plan (§1f) ----------
+// The release phase's STEPs on a timeline: mission start → projected end.
+// Each step bar shows its guaranteed + potential pool; resolving a step is a
+// RESOLUTION (moves the mission's credit-coin value). Steps lock after budget.
+async function selectGanttView() {
+  current = { kind: "gantt" };
+  setActive((i) => i.dataset.view === "gantt");
+  $("#main").innerHTML = `<div class="msg">Loading missions…</div>`;
+  const missions = await _loadMissions();
+  const opts = missions.map((m) =>
+    `<option value="${m.id}">${m.id}${m.cause_id ? " · " + m.cause_id : ""}${m.current_phase ? " · " + m.current_phase : ""}</option>`
+  ).join("");
+  $("#main").innerHTML = `
+    <div class="toolbar">
+      <span class="title">Gantt · mission plan</span>
+      <select id="g-mission">${opts || '<option value="">no missions</option>'}</select>
+      <button class="primary" id="g-run">Load</button>
+      <span class="count" id="g-value"></span>
+    </div>
+    <div id="g-body"><div class="msg">Pick a mission.</div></div>
+    <div class="toolbar" style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px;">
+      <span class="title" style="font-size:13px;">+ step</span>
+      <input id="g-title" placeholder="title" size="24" />
+      <input id="g-guar" type="number" placeholder="guaranteed" style="width:100px" title="guaranteed EBX" />
+      <input id="g-pot" type="number" placeholder="potential" style="width:100px" title="potential EBX (no maximum)" />
+      <input id="g-due" type="date" title="due date" />
+      <button id="g-add">Add step</button>
+      <span id="g-msg" class="count"></span>
+    </div>`;
+  $("#g-run").onclick = runGantt;
+  $("#g-mission").onchange = runGantt;
+  $("#g-add").onclick = addGanttStep;
+  if (missions.length) runGantt();
+}
+async function runGantt() {
+  const mid = $("#g-mission").value;
+  if (!mid) return;
+  const body = $("#g-body");
+  body.innerHTML = `<div class="msg">Loading…</div>`;
+  try {
+    const [mission, steps] = await Promise.all([
+      api("/missions/" + mid), api("/missions/" + mid + "/steps"),
+    ]);
+    $("#g-value").textContent =
+      "credit value ×" + Number(mission.credit_value || 1).toFixed(2) +
+      (mission.projected_end_at ? " · projected end " + String(mission.projected_end_at).slice(0, 10) : " · no projected end set");
+    if (!steps.length) { body.innerHTML = `<div class="msg">No steps yet — add the plan below (locks after the budgeting phase).</div>`; return; }
+    const t0 = mission.started_at ? new Date(mission.started_at).getTime() : Date.now();
+    const dues = steps.map((s) => s.due_at ? new Date(s.due_at).getTime() : 0).filter(Boolean);
+    const tEnd = Math.max(
+      mission.projected_end_at ? new Date(mission.projected_end_at).getTime() : 0,
+      dues.length ? Math.max(...dues) : 0,
+      t0 + 16 * 7 * 86400000,
+    );
+    const span = Math.max(1, tEnd - t0);
+    const pct = (t) => Math.min(100, Math.max(0, ((t - t0) / span) * 100));
+    const nowPct = pct(Date.now());
+    body.innerHTML =
+      `<div style="position:relative;border:1px solid var(--line);border-radius:8px;padding:14px 12px 10px;background:var(--panel2);">` +
+      `<div style="position:absolute;top:0;bottom:0;left:${nowPct}%;width:1px;background:var(--accent2);opacity:0.7;" title="now"></div>` +
+      steps.map((s) => {
+        const st = s.starts_at ? new Date(s.starts_at).getTime() : t0;
+        const en = s.due_at ? new Date(s.due_at).getTime() : Math.min(st + 14 * 86400000, tEnd);
+        const left = pct(st), width = Math.max(2, pct(en) - pct(st));
+        const done = s.status === "resolved";
+        return `<div style="display:flex;align-items:center;gap:10px;margin:7px 0;">
+          <span class="mono" style="width:200px;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;${done ? 'color:var(--accent2);' : ''}">${done ? "✓ " : ""}${s.title}</span>
+          <span style="flex:1;position:relative;height:16px;background:var(--panel);border-radius:4px;overflow:hidden;">
+            <span style="position:absolute;left:${left}%;width:${width}%;top:2px;bottom:2px;border-radius:3px;background:${done ? "var(--accent2)" : "var(--accent)"};opacity:${done ? "0.85" : "0.6"};"></span>
+          </span>
+          <span class="mono" style="width:150px;flex:0 0 auto;font-size:11px;color:var(--dim);" title="guaranteed / potential pool (no maximum)">
+            ${s.guaranteed_ebx} + ${s.potential_ebx} EBX</span>
+          ${done
+            ? `<span class="pill" style="color:var(--accent2);">resolved</span>`
+            : `<button onclick="resolveGanttStep('${mid}',${s.id})">resolve</button>`}
+        </div>`;
+      }).join("") +
+      `</div>`;
+  } catch (err) { body.innerHTML = `<div class="msg warn">${err.message}</div>`; }
+}
+window.resolveGanttStep = async function (mid, sid) {
+  if (!confirm("Resolve this step? A resolution grants the evaluation point and bumps the mission's credit-coin value.")) return;
+  try { await api(`/missions/${mid}/steps/${sid}/resolve`, { method: "POST" }); runGantt(); }
+  catch (e) { alert(e.message); }
+};
+async function addGanttStep() {
+  const mid = $("#g-mission").value;
+  const title = $("#g-title").value.trim();
+  if (!mid || !title) { $("#g-msg").textContent = "mission + title required"; return; }
+  const payload = {
+    title,
+    guaranteed_ebx: parseInt($("#g-guar").value) || 0,
+    potential_ebx: parseInt($("#g-pot").value) || 0,
+    due_at: $("#g-due").value ? $("#g-due").value + "T12:00:00" : null,
+  };
+  try {
+    await api(`/missions/${mid}/steps`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    $("#g-title").value = ""; $("#g-guar").value = ""; $("#g-pot").value = ""; $("#g-msg").textContent = "";
+    runGantt();
+  } catch (e) { $("#g-msg").textContent = e.message; }
+}
+document.querySelector('[data-view="gantt"]').onclick = selectGanttView;
+
+// ==========================================================================
+// ORG SIDE (org-experience restructure, 2026-07-10)
+// Orgs never get a page of their own: their public face is the org panel on
+// mission.html; THIS is their admin — one organization admin page per mission.
+// ==========================================================================
+
+// ---------- org admin: one org, its missions, its members ----------
+async function selectOrgAdmin(orgId, focusMission) {
+  current = { kind: "org", orgId };
+  setActive((i) => i.dataset.org === orgId);
+  $("#main").innerHTML = `<div class="msg">Loading ${orgId}…</div>`;
+  let d;
+  try { d = await api(`/organizations/${encodeURIComponent(orgId)}/profile`); }
+  catch (err) { $("#main").innerHTML = `<div class="msg warn">${err.message}</div>`; return; }
+  const org = d.org || {};
+  const myRole = (MY_MEMBERSHIPS.find((m) => m.org_id === orgId) || {}).role || "—";
+  const isOp = OPERATOR_ROLES.includes(myRole);
+  const cands = d.candidacies || [];
+  $("#main").innerHTML = `
+    <div class="toolbar">
+      <span class="title">${org.name || orgId}</span>
+      <span class="pill">${org.verified ? "✓ EN-verified" : "not yet verified"}</span>
+      <span class="pill">your role: ${myRole}</span>
+      <span class="count">${isOp ? "" : "read-only — org admin needs a rep/executive role"}</span>
+    </div>
+    <div id="org-missions">${cands.length ? "" : `<div class="msg">No mission candidacies yet — register for a mission from the door on the left.</div>`}</div>
+    <div class="toolbar" style="margin-top:18px;border-top:1px solid var(--line);padding-top:12px;">
+      <span class="title" style="font-size:13px;">Members</span>
+    </div>
+    <div id="org-members"></div>
+    ${isOp ? `
+    <div class="toolbar" style="margin-top:8px;">
+      <input id="mem-target" placeholder="handle or email" size="18" />
+      <select id="mem-role">
+        <option value="community">community</option><option value="rep">rep</option>
+        <option value="executive">executive</option><option value="beneficiary">beneficiary</option>
+      </select>
+      <button class="primary" id="mem-add">Add / set role</button>
+      <span class="count" id="mem-msg"></span>
+    </div>` : ""}`;
+  // members
+  const memBox = $("#org-members");
+  memBox.innerHTML = (d.members || []).map((m) =>
+    `<span class="pill" style="margin:0 6px 6px 0;display:inline-block;">@${m.handle || m.ben_id} · ${m.role}</span>`
+  ).join("") || `<div class="msg" style="padding:8px 0;text-align:left;">No members yet.</div>`;
+  if (isOp) $("#mem-add").onclick = async () => {
+    const t = $("#mem-target").value.trim();
+    if (!t) { $("#mem-msg").textContent = "handle or email required"; return; }
+    const body = { role: $("#mem-role").value };
+    body[t.includes("@") && t.indexOf("@") > 0 ? "email" : "handle"] = t.replace(/^@/, "");
+    try {
+      await api(`/organizations/${encodeURIComponent(orgId)}/memberships`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      selectOrgAdmin(orgId, focusMission);
+    } catch (e) { $("#mem-msg").textContent = e.message; }
+  };
+  // one organization admin page per mission
+  const mBox = $("#org-missions");
+  for (const c of cands) {
+    const sect = el("div");
+    sect.style.cssText = "border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:10px 0;background:var(--panel2);";
+    sect.innerHTML = `<div class="msg" style="padding:6px;">Loading ${c.mission_id}…</div>`;
+    mBox.appendChild(sect);
+    renderOrgMission(sect, orgId, c, isOp);
+  }
+  if (focusMission) setTimeout(() => {
+    const t = document.getElementById("om-" + focusMission);
+    if (t) t.scrollIntoView({ behavior: "smooth" });
+  }, 300);
+}
+
+async function renderOrgMission(sect, orgId, cand, isOp) {
+  const mid = cand.mission_id;
+  let state = null, mission = null, steps = [];
+  try { state = await api(`/missions/${mid}/org-state?org_id=${encodeURIComponent(orgId)}`); } catch (e) {}
+  try { mission = await api(`/missions/${mid}`); } catch (e) {}
+  try { steps = await api(`/missions/${mid}/steps`); } catch (e) { steps = []; }
+  const s = state || {};
+  const pills = [
+    `<span class="pill">${s.nominated ? "✓ nominated" : "not nominated"}</span>`,
+    `<span class="pill">${s.claimed ? "✓ claimed" : "unclaimed"}</span>`,
+    `<span class="pill"${s.elected ? ' style="color:var(--accent2);"' : ""}>${s.elected ? "✓ ELECTED" : "not elected"}</span>`,
+    `<span class="pill">${s.approved ? "approved" : (cand.status || "pending")}</span>`,
+    `<span class="pill">${s.has_mission_statement ? "statement ✓" : "no mission statement"}</span>`,
+    `<span class="pill">pool ${Math.round((s.guaranteed_pool_rate || 0.2) * 100)}%</span>`,
+  ].join(" ");
+  const operates = s.claimed || s.elected;
+  sect.innerHTML = `
+    <div id="om-${mid}" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span class="title mono" style="font-size:14px;">${mid}</span>
+      ${mission ? `<span class="count">${mission.current_phase}${mission.projected_end_at ? " · ends " + String(mission.projected_end_at).slice(0, 10) : ""} · credit ×${Number(mission.credit_value || 1).toFixed(2)}</span>` : ""}
+      <span style="flex:1"></span>
+      <a href="mission.html?mission=${mid}&org=${encodeURIComponent(orgId)}">mission page →</a>
+    </div>
+    <div style="margin:8px 0;">${pills}</div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:8px;">${(cand.mission_statement || "").trim() || "No mission statement — required to be elected."}</div>
+    ${!s.claimed && s.claim_window_open ? `<div style="font-size:12px;margin-bottom:8px;">The claim gate lives on the <a href="mission.html?mission=${mid}&org=${encodeURIComponent(orgId)}">mission page</a> — claiming bumps the pool rate.</div>` : ""}
+    <div id="om-steps-${mid}"></div>
+    ${isOp && operates ? `
+    <div class="toolbar" style="margin-top:6px;">
+      <input id="om-title-${mid}" placeholder="step title" size="20" />
+      <input id="om-guar-${mid}" type="number" placeholder="guaranteed" style="width:96px" />
+      <input id="om-pot-${mid}" type="number" placeholder="potential" style="width:96px" />
+      <input id="om-due-${mid}" type="date" />
+      <button data-add-step="${mid}">Add step</button>
+      <span class="count" id="om-msg-${mid}"></span>
+    </div>` : ""}`;
+  const stepBox = sect.querySelector(`#om-steps-${mid}`);
+  if (steps.length) {
+    stepBox.innerHTML = steps.map((st) => {
+      const done = st.status === "resolved";
+      return `<div style="display:flex;align-items:center;gap:10px;margin:4px 0;font-size:12px;">
+        <span class="mono" style="flex:1;${done ? "color:var(--accent2);" : ""}">${done ? "✓ " : ""}${st.title}</span>
+        <span class="mono" style="color:var(--dim);">${st.guaranteed_ebx} + ${st.potential_ebx} EBX</span>
+        <span class="mono" style="color:var(--dim);">${st.due_at ? String(st.due_at).slice(0, 10) : "no due date"}</span>
+        ${done ? `<span class="pill" style="color:var(--accent2);">resolved</span>`
+               : (isOp && operates ? `<button data-resolve="${mid}:${st.id}">resolve</button>` : "")}
+      </div>`;
+    }).join("");
+  } else if (operates) {
+    stepBox.innerHTML = `<div class="msg" style="padding:6px 0;text-align:left;">No steps yet — plan the release phase below (locks after budgeting).</div>`;
+  }
+  sect.querySelectorAll("[data-resolve]").forEach((b) => b.onclick = async () => {
+    const [m, sid] = b.dataset.resolve.split(":");
+    if (!confirm("Resolve this step? A resolution bumps the mission's credit-coin value; early resolutions earn a bonus.")) return;
+    try { await api(`/missions/${m}/steps/${sid}/resolve`, { method: "POST" }); renderOrgMission(sect, orgId, cand, isOp); }
+    catch (e) { alert(e.message); }
+  });
+  const addBtn = sect.querySelector(`[data-add-step="${mid}"]`);
+  if (addBtn) addBtn.onclick = async () => {
+    const title = $(`#om-title-${mid}`).value.trim();
+    if (!title) { $(`#om-msg-${mid}`).textContent = "title required"; return; }
+    try {
+      await api(`/missions/${mid}/steps`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          guaranteed_ebx: parseInt($(`#om-guar-${mid}`).value) || 0,
+          potential_ebx: parseInt($(`#om-pot-${mid}`).value) || 0,
+          due_at: $(`#om-due-${mid}`).value ? $(`#om-due-${mid}`).value + "T12:00:00" : null,
+        }),
+      });
+      renderOrgMission(sect, orgId, cand, isOp);
+    } catch (e) { $(`#om-msg-${mid}`).textContent = e.message; }
+  };
+}
+
+// ---------- the registration door ----------
+// Open to ANY signed-in benefactor: completing it makes you the founding
+// executive member. Orgs are single entities — the fuzzy dup-guard offers
+// existing matches before creating. Ends at the attestation (the one gate).
+const ATTESTATION = [
+  "I am an authorized representative of the organization named, and the information I have provided about it is truthful and accurate.",
+  "I understand Earthbux News (EN) will verify this organization's identity during the budgeting phase, and that misrepresentation is grounds for removal, public disclosure, and legal action.",
+  "I understand the initial advance is released at the start of the budgeting phase and that the full charity pool is unlocked only after verification and against agreed budget and reporting obligations.",
+  "I agree to operate the mission in good faith — to publish a budget, report progress honestly, and direct funds to the stated cause and beneficiary.",
+  "I acknowledge that accepting authority over the budget and mission sequence is a binding commitment, and that funds obtained through fraud may be recovered through litigation.",
+];
+let _regOrgOverride = null, _regForce = false;
+
+async function selectRegister(missionPrefill) {
+  current = { kind: "register" };
+  _regOrgOverride = null; _regForce = false;
+  setActive((i) => i.dataset.view === "register");
+  let missions = [];
+  try { missions = await api("/missions"); } catch (e) {}
+  const claimable = missions.filter((m) => ["pre", "initiative", "budget"].includes(m.current_phase));
+  const opts = ['<option value="">— no mission yet (org only) —</option>']
+    .concat(claimable.map((m) =>
+      `<option value="${m.id}" ${m.id === missionPrefill ? "selected" : ""}>${m.id}${m.cause_id ? " · " + m.cause_id : ""} · ${m.current_phase}</option>`));
+  $("#main").innerHTML = `
+    <div class="toolbar"><span class="title">Register an organization</span>
+      <span class="count">your account becomes the founding executive member</span></div>
+    <div style="max-width:640px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <label style="grid-column:1/-1;font-size:12px;color:var(--dim);">Organization name *<br/>
+          <input id="r-name" style="width:100%" placeholder="e.g. River Cleanup Collective" /></label>
+        <label style="font-size:12px;color:var(--dim);">Website<br/><input id="r-web" style="width:100%" placeholder="https://…" /></label>
+        <label style="font-size:12px;color:var(--dim);">Founded year<br/><input id="r-founded" type="number" style="width:100%" placeholder="2014" /></label>
+        <label style="grid-column:1/-1;font-size:12px;color:var(--dim);">Description / mission focus<br/>
+          <input id="r-desc" style="width:100%" placeholder="What does this organization do?" /></label>
+        <label style="grid-column:1/-1;font-size:12px;color:var(--dim);">Logo URL<br/><input id="r-logo" style="width:100%" placeholder="https://… (optional)" /></label>
+        <label style="grid-column:1/-1;font-size:12px;color:var(--dim);">Mission to run for<br/>
+          <select id="r-mission" style="width:100%">${opts.join("")}</select></label>
+        <label style="grid-column:1/-1;font-size:12px;color:var(--dim);">Mission statement (required to be elected)<br/>
+          <input id="r-stmt" style="width:100%" placeholder="How would your organization run this mission?" /></label>
+        <label style="font-size:12px;color:var(--dim);">Your name *<br/><input id="r-mname" style="width:100%" placeholder="e.g. Maya Reyes" /></label>
+        <label style="font-size:12px;color:var(--dim);">Your position *<br/><input id="r-mpos" style="width:100%" placeholder="e.g. Program Director" /></label>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:14px 0;background:var(--panel2);font-size:12px;color:var(--dim);">
+        <b style="color:var(--txt);">Representative attestation &amp; terms (draft)</b>
+        <ol style="margin:8px 0 0 16px;padding:0;">${ATTESTATION.map((t) => `<li style="margin-bottom:6px;">${t}</li>`).join("")}</ol>
+      </div>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;">
+        <input type="checkbox" id="r-agree" style="margin-top:2px;" />
+        <span>I have read and agree to the terms above on behalf of my organization.</span>
+      </label>
+      <div class="toolbar" style="margin-top:14px;">
+        <button class="primary" id="r-submit">Register</button>
+        <span class="count" id="r-msg"></span>
+      </div>
+      <div id="r-matches"></div>
+    </div>`;
+  $("#r-submit").onclick = submitRegister;
+}
+
+async function submitRegister() {
+  const msg = $("#r-msg");
+  const name = $("#r-name").value.trim(), mName = $("#r-mname").value.trim(), mPos = $("#r-mpos").value.trim();
+  const mid = $("#r-mission").value, stmt = $("#r-stmt").value.trim();
+  if (!name) { msg.textContent = "organization name required"; return; }
+  if (!mName || !mPos) { msg.textContent = "your name and position go on the attestation"; return; }
+  if (mid && !stmt) { msg.textContent = "a mission statement is required to run for a mission"; return; }
+  if (!$("#r-agree").checked) { msg.textContent = "the attestation checkbox is the gate"; return; }
+  msg.textContent = "submitting…";
+  try {
+    const data = await api("/organizations/register", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        website_link: $("#r-web").value.trim() || null,
+        description: $("#r-desc").value.trim() || null,
+        founded_year: parseInt($("#r-founded").value) || null,
+        logo_url: $("#r-logo").value.trim() || null,
+        kind: "registration",
+        mission_id: mid || null,
+        mission_statement: stmt || null,
+        member_name: mName, member_position: mPos,
+        org_id: _regOrgOverride, force: _regForce,
+      }),
+    });
+    if (!data.created && !data.org && (data.matches || []).length) {
+      $("#r-matches").innerHTML =
+        `<div style="margin-top:10px;font-size:12px;">Similar organizations already exist — an org is a single entity, never duplicated:</div>` +
+        data.matches.map((mt) =>
+          `<button style="margin:6px 6px 0 0;" onclick="_regOrgOverride='${mt.org_id}';_regForce=false;submitRegister()">Use “${mt.name}”</button>`).join("") +
+        `<button class="primary" style="margin-top:6px;" onclick="_regOrgOverride=null;_regForce=true;submitRegister()">Mine is different — create it</button>`;
+      msg.textContent = "";
+      return;
+    }
+    const orgId = data.org ? data.org.id : _regOrgOverride;
+    if (mid && orgId) {
+      try {
+        await api(`/missions/${mid}/claim`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ org_id: orgId, kind: "register", member_name: mName, member_position: mPos }),
+        });
+      } catch (e) { /* candidacy already filed by /register; the claim gate can be passed from the mission page */ }
+    }
+    msg.textContent = "";
+    $("#r-matches").innerHTML =
+      `<div style="margin-top:12px;color:var(--accent2);font-size:13px;">✓ Registered. Your acceptance is stored server-side and your account is the founding executive member.</div>`;
+    try { MY_MEMBERSHIPS = await api("/benefactors/me/memberships"); } catch (e) {}
+    await boot();
+    if (orgId) selectOrgAdmin(orgId, mid || "");
+  } catch (e) { msg.textContent = e.message; }
+}
+
+document.querySelector('[data-view="register"]').onclick = () => selectRegister("");
 
 // ---------- start ----------
 if (token) { hideLogin(); boot(); } else { showLogin(); }

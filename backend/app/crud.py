@@ -42,6 +42,13 @@ SHARE_FLOOR = 0.1            # phase-1 vote-split division floor
 SHARE_SUM_CAP = 1.0          # a ben's phase-1 shares sum to <= 1.0
 BASE_VOTE_EBX = 10           # a vote carries 10 EBX of weight without buying any
 EBX_PER_VOTE = 10            # 10 EBX = 1 vote (0.1 vote = 1 EBX)
+P2_EXTRA_VOTE_BASE = 10      # nth EXTRA org vote costs 10 × 2^(n−1) EBX (10, 20, 40, 80 …)
+
+
+def p2_vote_cost(votes: int) -> int:
+    """Total EBX spent to hold `votes` org votes: 1st free, extras on the
+    doubling curve — total = 10 × (2^(votes−1) − 1)."""
+    return P2_EXTRA_VOTE_BASE * (2 ** (max(1, int(votes)) - 1) - 1)
 
 # Phase send rates — the fraction of a ben's contribution treated as the
 # irrevocable (locked-donation) part. NOTE: money is NOT refunded at resolution;
@@ -535,8 +542,11 @@ def _require_org_operator(db: Session, actor: models.BenefactorAccount, org_id: 
     if getattr(actor, "is_staff", False):
         return
     m = get_membership(db, actor.id, org_id)
+    # Role separation shipped 2026-07-10/11 (org-experience restructure): only
+    # rep/executive memberships carry editing, claiming and org-admin rights.
+    # community/beneficiary members keep the mission & profile surfaces.
     if m is None or m.role not in ORG_OPERATOR_ROLES:
-        raise PermissionError("Requires a rep/executive membership of this organization")
+        raise PermissionError("Requires a rep or executive membership of this organization")
 
 
 def create_membership(
@@ -728,6 +738,256 @@ def org_state(
 
 
 # ===========================================================================
+# Mission membership & credit coins (§1 — credits = membership)
+# ===========================================================================
+def is_mission_member(db: Session, ben_id: int, mission_id: str) -> bool:
+    """MISSION membership (held by benefactors; distinct from org memberships).
+    Per the settled rule: voting in BOTH elections guarantees membership;
+    holding the mission's credit coin is membership. Excluded: those who did
+    not vote for any organization, or who voted for an org but committed
+    nothing to the initiative and bought nothing."""
+    coin = db.scalar(
+        select(models.CreditCoin).where(
+            models.CreditCoin.owner_id == ben_id,
+            models.CreditCoin.mission_id == mission_id,
+        )
+    )
+    if coin is not None:
+        return True
+    p2 = db.scalar(
+        select(models.VoteP2).where(
+            models.VoteP2.ben_id == ben_id,
+            models.VoteP2.mission_id == mission_id,
+        )
+    )
+    if p2 is None:
+        return False              # did not vote for any organization
+    p1_committed = db.scalar(
+        select(sqlfunc.coalesce(sqlfunc.sum(models.VoteP1.ebx_committed), 0)).where(
+            models.VoteP1.ben_id == ben_id,
+            models.VoteP1.mission_id == mission_id,
+        )
+    ) or 0
+    # voted p2 AND (has a p1 stake, or bought extra org votes) -> member
+    return float(p1_committed) > 0 or int(p2.ebx_spent or 0) > 0
+
+
+def mint_mission_coins(db: Session, mission_id: str) -> int:
+    """Mint the mission's credit coins — every benefactor who voted gets coins
+    sized by their remaining stake (p1 committed + p2 spend), possibly tiny
+    (e.g. just the 10% send left after a lost commit + withdrawal). Idempotent
+    per (ben, mission); does NOT commit (caller's transaction). Returns the
+    number of coins minted."""
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    stakes: dict[int, float] = {}
+    for v in db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == mission_id)).all():
+        stakes[v.ben_id] = stakes.get(v.ben_id, 0.0) + float(v.ebx_committed or 0)
+    for v in db.scalars(select(models.VoteP2).where(models.VoteP2.mission_id == mission_id)).all():
+        stakes[v.ben_id] = stakes.get(v.ben_id, 0.0) + float(v.ebx_spent or 0)
+    existing = {
+        c.owner_id for c in db.scalars(
+            select(models.CreditCoin).where(models.CreditCoin.mission_id == mission_id)
+        ).all()
+    }
+    minted = 0
+    for ben_id, stake in stakes.items():
+        amount = int(round(stake))
+        if amount <= 0 or ben_id in existing:
+            continue
+        db.add(models.CreditCoin(
+            owner_id=ben_id, mission_id=mission_id,
+            amount_ebx=amount, value=float(mission.credit_value or 1.0),
+        ))
+        minted += 1
+    return minted
+
+
+def global_coin_value(db: Session, scale: float = 100000.0) -> dict:
+    """The GLOBAL coin value — moved by people committing/withdrawing money
+    across the platform (placeholder curve: 1 + net_flow/scale). Per-mission
+    values live on mission.credit_value and move with resolutions."""
+    committed = float(db.scalar(select(sqlfunc.coalesce(sqlfunc.sum(models.VoteP1.ebx_committed), 0))) or 0)
+    spent = float(db.scalar(select(sqlfunc.coalesce(sqlfunc.sum(models.VoteP2.ebx_spent), 0))) or 0)
+    refunded = float(db.scalar(
+        select(sqlfunc.coalesce(sqlfunc.sum(models.Transaction.amount_ebx), 0)).where(
+            models.Transaction.type == "transfer",
+            models.Transaction.bucket == "refund",
+        )
+    ) or 0)
+    net = committed + spent - refunded
+    return {
+        "global_value": round(1.0 + net / scale, 4),
+        "net_flow_ebx": int(net),
+        "scale": scale,
+    }
+
+
+def _bump_mission_coin_value(db: Session, mission: models.Mission, bump: float) -> None:
+    """A RESOLUTION landed: bump the mission's credit value and drift every
+    minted coin of the mission to it. Does not commit."""
+    mission.credit_value = round(float(mission.credit_value or 1.0) + bump, 4)
+    for coin in db.scalars(
+        select(models.CreditCoin).where(models.CreditCoin.mission_id == mission.id)
+    ).all():
+        coin.value = mission.credit_value
+
+
+# ===========================================================================
+# Mission steps (release-phase structure, §1d) + resolutions
+# ===========================================================================
+def list_steps(db: Session, mission_id: str) -> Sequence[models.MissionStep]:
+    return db.scalars(
+        select(models.MissionStep)
+        .where(models.MissionStep.mission_id == mission_id)
+        .order_by(models.MissionStep.order_num.asc(), models.MissionStep.id.asc())
+    ).all()
+
+
+def _require_mission_operator(db: Session, actor: models.BenefactorAccount, mission: models.Mission) -> None:
+    """Steps/plan authority: staff, or a rep/executive member of the mission's
+    winning/claiming org (role separation, 2026-07-10)."""
+    if getattr(actor, "is_staff", False):
+        return
+    org_ids = set()
+    if mission.winning_org_id:
+        org_ids.add(mission.winning_org_id)
+    for claim in db.scalars(
+        select(models.OrgClaim).where(models.OrgClaim.mission_id == mission.id)
+    ).all():
+        org_ids.add(claim.org_id)
+    for org_id in org_ids:
+        m = get_membership(db, actor.id, org_id)
+        if m is not None and m.role in ORG_OPERATOR_ROLES:
+            return
+    raise PermissionError("Requires a rep or executive membership in this mission's organization (or staff)")
+
+
+def create_step(
+    db: Session,
+    mission_id: str,
+    data: schemas.MissionStepCreate,
+    actor: models.BenefactorAccount,
+) -> models.MissionStep:
+    """Add a release-phase STEP. Pools are FINALIZED by the end of the
+    budgeting phase — steps can be added/changed until the mission leaves
+    'budget'; after that the plan is locked."""
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    _require_mission_operator(db, actor, mission)
+    if mission.current_phase not in ("pre", "initiative", "budget"):
+        raise ValueError("The plan is locked — steps are finalized by the end of the budgeting phase")
+    step = models.MissionStep(
+        mission_id=mission_id,
+        title=data.title,
+        description=data.description,
+        order_num=data.order_num,
+        guaranteed_ebx=data.guaranteed_ebx,
+        potential_ebx=data.potential_ebx,
+        starts_at=data.starts_at,
+        due_at=data.due_at,
+        created_by_id=actor.id,
+    )
+    db.add(step)
+    db.commit()
+    db.refresh(step)
+    return step
+
+
+def resolve_step(
+    db: Session,
+    step_id: int,
+    actor: models.BenefactorAccount,
+    value_bump: float = 0.02,
+) -> models.MissionStep:
+    """Resolve a STEP — a RESOLUTION: a small mission-tied outcome we can
+    reasonably assume was accomplished. Grants the evaluation point (ledger
+    note) and moves the mission's credit-coin value. Resolving AHEAD of the
+    due date is recorded (higher cash reward later)."""
+    step = db.get(models.MissionStep, step_id)
+    if step is None:
+        raise ValueError("Step not found")
+    if step.status == "resolved":
+        raise ValueError("Step already resolved")
+    mission = db.get(models.Mission, step.mission_id)
+    _require_mission_operator(db, actor, mission)
+    step.status = "resolved"
+    step.resolved_at = datetime.utcnow()
+    early = bool(step.due_at and step.resolved_at < step.due_at)
+    _bump_mission_coin_value(db, mission, value_bump)
+    db.add(models.Transaction(
+        type="transfer", bucket="evaluation", mission_id=mission.id,
+        ben_id=actor.id, amount_ebx=0,
+        note=f"resolution: step '{step.title}'"
+             + (" — resolved EARLY (bonus eligible)" if early else "")
+             + f"; credit value -> {mission.credit_value}",
+    ))
+    db.commit()
+    db.refresh(step)
+    return step
+
+
+def set_projected_end(
+    db: Session,
+    mission_id: str,
+    when: datetime,
+    actor: models.BenefactorAccount,
+) -> models.Mission:
+    """Set the projected MISSION LENGTH end date (release-phase structure)."""
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    _require_mission_operator(db, actor, mission)
+    mission.projected_end_at = when
+    db.commit()
+    db.refresh(mission)
+    return mission
+
+
+def resolve_suggestion(
+    db: Session,
+    post_id: str,
+    actor: models.BenefactorAccount,
+    value_bump: float = 0.02,
+) -> models.Post:
+    """Mark a context SUGGESTION (S/S/S) as achieved — it becomes a RESOLUTION
+    (resolutions are the winning context-suggestions; context categorizes
+    them). Bumps the mission's credit-coin value; the org achieving it gains
+    value (org.score)."""
+    post = db.get(models.Post, post_id)
+    if post is None:
+        raise ValueError("Post not found")
+    if post.category == "resolution":
+        raise ValueError("Already resolved")
+    if post.category != "context":
+        raise ValueError("Only context suggestions can be resolved")
+    mission = db.get(models.Mission, post.mission_id) if post.mission_id else None
+    if mission is None and post.tiv_id:
+        tiv = db.get(models.Initiative, post.tiv_id)
+        mission = db.get(models.Mission, tiv.mission_id) if (tiv and tiv.mission_id) else None
+    if mission is None:
+        raise ValueError("Suggestion is not tied to a mission")
+    _require_mission_operator(db, actor, mission)
+    post.category = "resolution"
+    _bump_mission_coin_value(db, mission, value_bump)
+    if mission.winning_org_id:
+        org = db.get(models.Organization, mission.winning_org_id)
+        if org is not None:
+            org.score = round(float(org.score or 0) + 1.0, 2)
+    db.add(models.Transaction(
+        type="transfer", bucket="evaluation", mission_id=mission.id,
+        ben_id=post.ben_author_id, amount_ebx=0,
+        note=f"resolution: suggestion '{(post.title or post.body or '')[:60]}'"
+             f" ({post.stance or 'sss'}); credit value -> {mission.credit_value}",
+    ))
+    db.commit()
+    db.refresh(post)
+    return post
+
+
+# ===========================================================================
 # Mission candidacies (an org's bid to run a mission) — replaces OrgRegistration
 # ===========================================================================
 def create_candidacy(
@@ -788,6 +1048,47 @@ def approve_candidacy(
         raise ValueError("Candidacy not found")
     cand.status = "approved"
     cand.approved_by_id = staff.id
+    db.commit()
+    db.refresh(cand)
+    return cand
+
+
+def reject_candidacy(
+    db: Session,
+    candidacy_id: int,
+    staff: models.BenefactorAccount,
+) -> models.MissionCandidacy:
+    """Staff-only: REJECT an org's bid. §1 rule: "If your org was rejected, all
+    your money is returned to you" — every backer's p2 spend is booked to the
+    refund bucket and the vote rows are removed, freeing each ben to vote for
+    another org (one VoteP2 row per ben+mission)."""
+    require_staff(staff)
+    cand = db.get(models.MissionCandidacy, candidacy_id)
+    if cand is None:
+        raise ValueError("Candidacy not found")
+    if cand.status in ("won", "lost"):
+        raise ValueError("This election has already been finalized")
+    cand.status = "rejected"
+    cand.approved_by_id = staff.id     # the employee who decided
+    votes = db.scalars(
+        select(models.VoteP2).where(
+            models.VoteP2.mission_id == cand.mission_id,
+            models.VoteP2.org_id == cand.org_id,
+        )
+    ).all()
+    refunded = 0
+    for v in votes:
+        spent = int(v.ebx_spent or 0)
+        if spent > 0:
+            refunded += spent
+            db.add(models.Transaction(
+                type="transfer", bucket="refund", ben_id=v.ben_id,
+                mission_id=cand.mission_id, phase="p2", target=cand.org_id,
+                amount_ebx=spent, note="org rejected — full p2 refund",
+            ))
+        _log_vote(db, ben_id=v.ben_id, mission_id=cand.mission_id, phase="p2",
+                  action="REMOVE", target=cand.org_id, old_value=v.org_id, new_value=None)
+        db.delete(v)
     db.commit()
     db.refresh(cand)
     return cand
@@ -1006,9 +1307,12 @@ def cast_p2(
     """Upsert a ben's single org vote for a mission. votes>1 = bought extra
     votes; valence='harmful' = block the org. Sets vvv on first p2 vote.
 
-    Election rules (Phase 2 polish):
-      * the org must be a CANDIDATE for this mission (nominated/registered);
-      * a candidacy must carry a mission statement to receive votes;
+    Election rules:
+      * orgs can RUN AND RECEIVE VOTES without being registered — a vote for an
+        org with no candidacy auto-creates a pending one (vote = implicit
+        nomination, submitted_by = the voter);
+      * a missing mission statement does NOT block votes — it blocks ELECTION
+        (enforced in finalize_p2) and is surfaced as a display flag;
       * an UNAPPROVED (pending) org is capped at 1 vote / `unapproved_ebx_cap`
         EBX per ben — if the org is later rejected, that money is returned.
     """
@@ -1027,9 +1331,18 @@ def cast_p2(
         )
     )
     if cand is None:
-        raise ValueError("This organization is not a candidate for this mission — nominate or register it first")
-    if not (cand.mission_statement or "").strip():
-        raise ValueError("This organization must submit a mission statement before it can receive votes")
+        # Vote = implicit nomination. The org enters the race unregistered.
+        cand = models.MissionCandidacy(
+            mission_id=mission_id, org_id=org_id,
+            submitted_by_id=ben_id, status="pending",
+        )
+        db.add(cand)
+        db.flush()
+    if cand.status == "rejected":
+        raise ValueError("This organization was rejected for this mission — its votes were refunded and it can no longer receive them")
+    # PRICING is server-authoritative: additional votes cost 10, 20, 40, 80 …
+    # EBX (10 × 2^(n−1) for the nth extra). The client's ebx_spent is ignored.
+    ebx_spent = p2_vote_cost(votes)
     if cand.status == "pending" and (votes > 1 or ebx_spent > unapproved_ebx_cap):
         raise ValueError(
             f"This organization isn't approved yet — it's capped at 1 vote ({unapproved_ebx_cap} EBX) until approval"
@@ -1203,20 +1516,41 @@ def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
 
 def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
     """Elect the winning org. Sets mission.winning_org_id, flips the winning
-    candidacy to 'won' (others 'lost'), advances to the budget phase."""
+    candidacy to 'won' (others 'lost'), advances to the budget phase.
+
+    Mission-statement rule bites HERE, not at vote time: an org can run and
+    receive votes unregistered, but cannot be ELECTED without a mission
+    statement — the tally walks down to the best-placed org that has one."""
     mission = db.get(models.Mission, mission_id)
     if mission is None:
         raise ValueError("Mission not found")
     tally = p2_tally(db, mission_id)
-    if not tally["entries"] or tally["entries"][0]["net_votes"] <= 0:
+    cands = {
+        c.org_id: c
+        for c in db.scalars(
+            select(models.MissionCandidacy).where(models.MissionCandidacy.mission_id == mission_id)
+        ).all()
+    }
+    winner_entry = None
+    for entry in tally["entries"]:
+        if entry["net_votes"] <= 0:
+            break
+        c = cands.get(entry["org_id"])
+        if c is not None and (c.mission_statement or "").strip():
+            winner_entry = entry
+            break
+    if winner_entry is None:
         return None
-    winner_org = tally["entries"][0]["org_id"]
+    winner_org = winner_entry["org_id"]
     mission.winning_org_id = winner_org
     mission.current_phase = "budget"
-    for cand in db.scalars(select(models.MissionCandidacy).where(models.MissionCandidacy.mission_id == mission_id)).all():
+    for cand in cands.values():
         cand.status = "won" if cand.org_id == winner_org else "lost"
         if cand.org_id == winner_org:
-            cand.p2_vote_tally = tally["entries"][0]["net_votes"]
+            cand.p2_vote_tally = winner_entry["net_votes"]
+    # §1a: settlement mints the mission's credit coins — every benefactor who
+    # voted gets coins sized by their remaining stake.
+    mint_mission_coins(db, mission_id)
     db.commit()
     return winner_org
 
@@ -1427,6 +1761,22 @@ def list_org_posts(db: Session, org_id: str, limit: int = 50) -> Sequence[models
 
 # Categories only staff may author.
 _STAFF_ONLY_CATEGORIES = {"editorial", "headline"}
+# Context suggestions carry the S/S/S taxonomy in `stance` (§1b):
+#   Service — something we can send people to DO (orgs)
+#   Supply  — WHAT those people need to do it (bens)
+#   Support — assurance the issue is being resolved honestly (ebx)
+SSS_VALUES = ("service", "supply", "support")
+
+
+def _post_mission_id(db: Session, data: schemas.PostCreate) -> Optional[str]:
+    """Resolve the mission a post targets (directly or through its tiv)."""
+    if data.mission_id:
+        return data.mission_id
+    if data.tiv_id:
+        tiv = db.get(models.Initiative, data.tiv_id)
+        if tiv is not None and tiv.mission_id:
+            return tiv.mission_id
+    return None
 
 
 def create_post(
@@ -1434,10 +1784,47 @@ def create_post(
     data: schemas.PostCreate,
     author: Optional[models.BenefactorAccount] = None,
 ) -> models.Post:
+    """Category author-permission rules (§1b — everybody posts, by lane):
+      * context   — suggesting S/S/S (stance ∈ service|supply|support; cost
+                    analysis is CONTEXT). Members AND non-members.
+      * case      — both.
+      * analysis  — real analysis, never cost-based. MISSION MEMBERS only.
+      * evaluation— NON-members only (the outside verdict lane).
+      * org_update— members of the authoring org only.
+      * editorial/headline — staff only.
+    """
     if data.category in _STAFF_ONLY_CATEGORIES:
         if author is None:
             raise PermissionError("editorial/headline posts require an employee account")
         require_staff(author)
+
+    if data.category == "context" and data.stance and data.stance not in SSS_VALUES:
+        raise ValueError(f"context stance must be one of {SSS_VALUES} (an S/S/S suggestion) or empty")
+
+    mission_id = _post_mission_id(db, data)
+    staff = author is not None and getattr(author, "is_staff", False)
+
+    if data.category == "analysis" and not staff:
+        if author is None:
+            raise PermissionError("analysis posts require a signed-in account")
+        if mission_id is None:
+            raise ValueError("analysis must target a mission or initiative")
+        if not is_mission_member(db, author.id, mission_id):
+            raise PermissionError("analysis is reserved for mission members — vote in both elections (or hold the mission's credit coin) first")
+
+    if data.category == "evaluation" and not staff and author is not None:
+        if mission_id is not None and is_mission_member(db, author.id, mission_id):
+            raise PermissionError("evaluation is reserved for NON-members — members post analysis instead")
+        if data.org_id and get_membership(db, author.id, data.org_id) is not None:
+            raise PermissionError("you can't evaluate an organization you belong to")
+
+    if data.category == "org_update":
+        org_id = data.org_author_id or data.org_id
+        if author is None or org_id is None:
+            raise PermissionError("org updates require a signed-in org member")
+        if not staff and get_membership(db, author.id, org_id) is None:
+            raise PermissionError("org updates require membership in the authoring organization")
+
     post = models.Post(**data.model_dump())
     # Attribute ben-authored posts to the signed-in account so the profile
     # "my posts" history + helpful-post rewards can find them.
@@ -1584,6 +1971,8 @@ _QUERY_ENTITIES = {
     "benefactor_accounts": models.BenefactorAccount,
     "memberships": models.Membership,
     "mission_candidacies": models.MissionCandidacy,
+    "org_claims": models.OrgClaim,
+    "mission_steps": models.MissionStep,
     "votes_p1": models.VoteP1,
     "votes_p2": models.VoteP2,
     "pools": models.Pool,

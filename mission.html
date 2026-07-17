@@ -130,8 +130,27 @@
     .agree-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .agree-done { display: none; padding: 16px 22px 22px; font-size: 0.9rem; color: var(--clr-ink, #1a2620); }
     .agree-err { display: none; padding: 0 22px 14px; font-size: 0.8rem; color: #b3402e; }
-    /* register modal reuses the agree modal shell */
+    /* claim modal reuses the agree modal shell */
     .mh-modal-body { margin: 4px 22px 16px; overflow-y: auto; }
+    /* the organization mission page — an org's public face, folded INTO the
+       mission (orgs have no standalone page) */
+    .mh-orgpanel {
+      margin: 4px 0 10px; padding: 12px 14px;
+      background: rgba(74,124,89,0.045); border: 1px solid var(--clr-border, #e3ddd0);
+      border-radius: 10px;
+    }
+    .mh-orgpanel__sect {
+      border-top: 1px dashed var(--clr-border, #e7e1d3); margin-top: 10px; padding-top: 8px;
+      font-family: var(--font-mono, monospace); font-size: 0.62rem; text-transform: none;
+      color: var(--clr-ink-light, #6b756d);
+    }
+    .mh-orglogo {
+      width: 44px; height: 44px; border-radius: 10px; flex: 0 0 auto;
+      background: var(--clr-surface, #eee9dc); display: flex; align-items: center;
+      justify-content: center; font-size: 1.2rem; overflow: hidden;
+      border: 1px solid var(--clr-border, #e3ddd0);
+    }
+    .mh-orglogo img { width: 100%; height: 100%; object-fit: cover; }
   </style>
 </head>
 <body>
@@ -176,7 +195,7 @@
       </div>
       <div class="mission-actions">
         <button class="btn-claim" id="btn-open-claim" onclick="startClaim()">Claim this mission</button>
-        <button class="btn-claim secondary" onclick="openRegisterModal()">Register your organization</button>
+        <a class="btn-claim secondary" id="link-register-org" style="text-decoration:none;" href="admin.html?register=1">Register your organization →</a>
         <a class="btn-claim secondary" id="link-back-cause" style="text-decoration:none;display:none;" href="#">← Cause page</a>
       </div>
     </div>
@@ -186,9 +205,10 @@
       <div class="mh-eyebrow">Competing organizations</div>
       <div id="mh-candidates"><span style="font-size:0.84rem;opacity:0.6;">Loading…</span></div>
       <div class="mh-note" id="mh-approval-note" style="display:none;">
+        Any organization can run and receive votes without registering — a first vote nominates it.
         Leading organizations will be <b>approved or rejected soon</b>. Until an org is approved it's capped at
         <b>1 vote (10 EBX)</b> per benefactor; if an org is rejected, every EBX committed to it is <b>returned</b>
-        to its backers. An org must submit a <b>mission statement</b> to receive votes at all.
+        to its backers. An org must submit a <b>mission statement</b> to be <b>elected</b>.
       </div>
     </div>
 
@@ -210,41 +230,9 @@
       budget, reports &amp; member channel coming soon</span>
   </div>
 
-  <!-- ── Register-your-organization modal (the nonprofit application) ── -->
-  <div class="agree-bg" id="reg-bg" onclick="if(event.target.id==='reg-bg')closeRegisterModal()">
-    <div class="agree-modal" role="dialog" aria-modal="true">
-      <div class="agree-modal__head">
-        <h2 class="agree-modal__title">Organization application</h2>
-        <div class="agree-modal__sub">Self-registration is open to any organization, at any time — no gate.
-        Your account becomes the founding executive member.</div>
-      </div>
-      <div class="mh-modal-body mh-form">
-        <label>Organization name *</label>
-        <input type="text" id="reg-name" placeholder="e.g. River Cleanup Collective" />
-        <label>Website</label>
-        <input type="text" id="reg-website" placeholder="https://…" />
-        <label>Description / mission focus</label>
-        <textarea id="reg-desc" placeholder="What does this organization do?"></textarea>
-        <label>Founded year</label>
-        <input type="number" id="reg-founded" placeholder="e.g. 2014" />
-        <label>Logo URL</label>
-        <input type="text" id="reg-logo" placeholder="https://… (optional)" />
-        <label>Mission statement for this mission *</label>
-        <textarea id="reg-statement" placeholder="How would your organization run this mission? Required to receive votes."></textarea>
-        <label>Your name *</label>
-        <input type="text" id="reg-member-name" placeholder="e.g. Maya Reyes" />
-        <label>Your position *</label>
-        <input type="text" id="reg-member-pos" placeholder="e.g. Program Director" />
-        <div class="mh-msg" id="reg-msg"></div>
-      </div>
-      <div class="agree-foot">
-        <div class="agree-row">
-          <button class="agree-btn" onclick="closeRegisterModal()">Cancel</button>
-          <button class="agree-btn primary" onclick="submitRegistration()">Continue to agreement →</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Registration moved to the org door on admin.html (org-experience
+       restructure, 2026-07-10): orgs never get a page of their own, and the
+       registration experience lives behind admin.html?register=1. -->
 
   <!-- ── Claim: pick the organization ── -->
   <div class="agree-bg" id="pick-bg" onclick="if(event.target.id==='pick-bg')closePickModal()">
@@ -433,7 +421,7 @@
       const claimedOrgIds = new Set(claims.map(c => c.org_id));
       const box = document.getElementById('mh-candidates');
       if (!candidacies.length) {
-        box.innerHTML = '<span style="font-size:0.84rem;opacity:0.6;">No organizations are competing yet. Nominate one from the cause page, or register yours below.</span>';
+        box.innerHTML = '<span style="font-size:0.84rem;opacity:0.6;">No organizations are competing yet. Nominate one from the cause page, or register yours through the org door above.</span>';
       } else {
         box.innerHTML = candidacies.map(c => {
           const org = orgsById[c.org_id];
@@ -444,14 +432,16 @@
           if (c.status === 'approved') pills.push('<span class="mh-pill mh-pill--approved">approved</span>');
           if (c.status === 'won') pills.push('<span class="mh-pill mh-pill--won">won</span>');
           if (c.status === 'lost') pills.push('<span class="mh-pill mh-pill--lost">lost</span>');
-          if (!(c.mission_statement || '').trim()) pills.push('<span class="mh-pill mh-pill--nostmt">no mission statement — can\'t receive votes</span>');
+          if (c.status === 'rejected') pills.push('<span class="mh-pill mh-pill--nostmt">rejected — backers refunded</span>');
+          if (!(c.mission_statement || '').trim()) pills.push('<span class="mh-pill mh-pill--nostmt">no mission statement — can\'t be elected</span>');
           if (claimedOrgIds.has(c.org_id)) pills.push('<span class="mh-pill mh-pill--claimed">claimed</span>');
+          const open = _openOrgId === c.org_id;
           return '<div class="mh-cand">' +
-            '<a class="mh-cand__name" href="org.html?id=' + c.org_id + '">' + nm + '</a>' +
+            '<a class="mh-cand__name" href="#" onclick="toggleOrgPanel(\'' + c.org_id + '\');return false;">' + nm + (open ? ' ▾' : ' ▸') + '</a>' +
             pills.join('') +
             '<span class="mh-cand__statement">' + ((c.mission_statement || '').trim() || '—') + '</span>' +
             '<span style="font-family:var(--font-mono,monospace);font-size:0.68rem;white-space:nowrap;">' + votes + ' votes</span>' +
-          '</div>';
+          '</div>' + (open ? orgPanelHTML(c.org_id) : '');
         }).join('');
       }
       document.getElementById('mh-approval-note').style.display =
@@ -459,65 +449,77 @@
     }
 
     await loadAll();
+    // door plumbing: register link carries the mission; ?org= deep-links a
+    // candidate's org panel open (org.html folded in — no standalone page).
+    const regLink = document.getElementById('link-register-org');
+    if (regLink && MID) regLink.href = 'admin.html?register=1&mission=' + MID;
+    const ORG_PARAM = EBX.getParam('org');
     render();
+    if (ORG_PARAM) toggleOrgPanel(ORG_PARAM);
 
-    // ── register-your-organization (nonprofit application) ─────────────────
-    let _pendingReg = null;   // registration payload awaiting the agreement
+    // ── registration lives behind the admin.html door now ──────────────────
     let _claimOrgId = null;   // org the agreement will claim for
     let _agreeMode = 'claim';
     let _memberName = '', _memberPos = '';
 
-    window.openRegisterModal = function () {
-      if (!loggedIn()) { alert('Sign in first — your account becomes the founding executive member.'); return; }
-      document.getElementById('reg-msg').textContent = '';
-      document.getElementById('reg-bg').style.display = 'flex';
-    };
-    window.closeRegisterModal = function () { document.getElementById('reg-bg').style.display = 'none'; };
+    // ── the organization mission page (org.html folded in, restructure) ────
+    // Every org renders INSIDE the mission: clicking a candidate expands its
+    // panel; ?org=<id> deep-links it open. Orgs have no page of their own.
+    let _openOrgId = null;
+    const _orgProfiles = {};   // org_id → /organizations/{id}/profile bundle
 
-    window.submitRegistration = async function (orgIdOverride, force) {
-      const msg = document.getElementById('reg-msg');
-      const name = document.getElementById('reg-name').value.trim();
-      const stmt = document.getElementById('reg-statement').value.trim();
-      const mName = document.getElementById('reg-member-name').value.trim();
-      const mPos = document.getElementById('reg-member-pos').value.trim();
-      if (!name || !stmt) { msg.style.color = '#b3402e'; msg.textContent = 'Organization name and mission statement are required.'; return; }
-      if (!mName || !mPos) { msg.style.color = '#b3402e'; msg.textContent = 'Your name and position are required — they go on the attestation.'; return; }
-      msg.style.color = 'inherit'; msg.textContent = 'Submitting…';
-      const payload = {
-        name,
-        website_link: document.getElementById('reg-website').value.trim() || null,
-        description: document.getElementById('reg-desc').value.trim() || null,
-        founded_year: parseInt(document.getElementById('reg-founded').value, 10) || null,
-        logo_url: document.getElementById('reg-logo').value.trim() || null,
-        kind: 'registration',
-        mission_id: MID,
-        mission_statement: stmt,
-        member_name: mName, member_position: mPos,
-        org_id: orgIdOverride || null,
-        force: !!force,
-      };
-      try {
-        const res = await EBX.Auth.fetchAuthed('/organizations/register', { method: 'POST', body: JSON.stringify(payload) });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) { msg.style.color = '#b3402e'; msg.textContent = data.detail || ('Could not submit (HTTP ' + res.status + ')'); return; }
-        if (!data.created && !data.org && (data.matches || []).length) {
-          msg.style.color = 'inherit';
-          msg.innerHTML = 'Similar organizations already exist — an org is a single entity, never duplicated:<br/>' +
-            data.matches.map(mt =>
-              '<button class="agree-btn" style="margin:5px 5px 0 0;" onclick="submitRegistration(\'' + mt.org_id + '\')">Use “' + mt.name + '”</button>'
-            ).join('') +
-            '<button class="agree-btn primary" style="margin-top:5px;" onclick="submitRegistration(null, true)">Mine is different — create it</button>';
-          return;
-        }
-        // org exists + candidacy filed → the agreement is the last step
-        _claimOrgId = data.org ? data.org.id : orgIdOverride;
-        _memberName = mName; _memberPos = mPos;
-        closeRegisterModal();
-        openOrgAgreement('register');
-      } catch (e) {
-        msg.style.color = '#b3402e'; msg.textContent = 'Could not submit — try again.';
+    window.toggleOrgPanel = async function (orgId) {
+      _openOrgId = _openOrgId === orgId ? null : orgId;
+      render();
+      if (_openOrgId && !_orgProfiles[_openOrgId]) {
+        _orgProfiles[_openOrgId] = (await jget('/organizations/' + encodeURIComponent(_openOrgId) + '/profile')) || { missing: true };
+        render();
       }
     };
+
+    function orgPanelHTML(orgId) {
+      const d = _orgProfiles[orgId];
+      if (!d) return '<div class="mh-orgpanel"><span style="opacity:0.6;font-size:0.8rem;">Loading organization…</span></div>';
+      if (d.missing) return '<div class="mh-orgpanel"><span style="opacity:0.6;font-size:0.8rem;">Organization not found.</span></div>';
+      const org = d.org || {};
+      const subBits = [];
+      if (org.founded_year) subBits.push('founded ' + org.founded_year);
+      if (org.joined_at) subBits.push('on Earthbux since ' + new Date(org.joined_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }));
+      if (org.website_link) subBits.push('<a href="' + org.website_link + '" target="_blank" rel="noopener" style="color:var(--clr-moss,#4a7c59);">' + org.website_link.replace(/^https?:\/\//, '') + '</a>');
+      const chips = [];
+      chips.push(org.verified
+        ? '<span class="mh-chip" style="color:var(--clr-moss,#4a7c59);border-color:rgba(74,124,89,0.5);font-weight:600;">✓ EN-verified</span>'
+        : '<span class="mh-chip">not yet verified — EN verifies during budgeting</span>');
+      if (org.score) chips.push('<span class="mh-chip">score ' + Number(org.score).toFixed(1) + '</span>');
+      (d.cause_ids || []).forEach(cid => {
+        const c = (EBX.config.causes || []).find(x => x.id === cid);
+        chips.push('<span class="mh-chip" style="border-color:' + ((c && c.color) || '#ccc') + ';">' + ((c && (c.emoji + ' ' + c.name)) || cid) + '</span>');
+      });
+      const otherCands = (d.candidacies || []).filter(c => c.mission_id !== MID);
+      const members = (d.members || []).map(m =>
+        '<span class="mh-chip">@' + (m.handle || m.ben_id) + ' · ' + m.role + '</span>').join('');
+      const posts = (d.posts || []).slice(0, 3).map(p =>
+        '<div style="padding:6px 0;border-bottom:1px dashed var(--clr-border,#e7e1d3);">' +
+          (p.title ? '<div style="font-weight:600;font-size:0.8rem;">' + p.title + '</div>' : '') +
+          '<div style="font-size:0.76rem;line-height:1.5;color:var(--clr-ink-light,#4b574f);">' + (p.body || '').slice(0, 200) + ((p.body || '').length > 200 ? '…' : '') + '</div>' +
+          '<div style="font-family:var(--font-mono,monospace);font-size:0.58rem;color:var(--clr-ink-light,#8b958d);margin-top:2px;">' + p.category + (p.mission_id ? ' · ' + p.mission_id : '') + ' · ' + new Date(p.created_at).toLocaleDateString() + '</div>' +
+        '</div>').join('');
+      return '<div class="mh-orgpanel">' +
+        '<div style="display:flex;gap:12px;align-items:center;">' +
+          '<div class="mh-orglogo">' + (org.logo_url ? '<img src="' + org.logo_url + '" alt="" />' : '🏛️') + '</div>' +
+          '<div><div style="font-family:var(--font-display,serif);font-size:1.15rem;color:var(--clr-ink,#1a2620);">' + (org.name || orgId) + '</div>' +
+          '<div style="font-size:0.72rem;color:var(--clr-ink-light,#6b756d);">' + subBits.join(' · ') + '</div></div>' +
+        '</div>' +
+        '<div style="font-size:0.82rem;line-height:1.6;color:var(--clr-ink-light,#4b574f);margin-top:8px;">' + (org.description || 'No description yet.') + '</div>' +
+        '<div style="margin-top:6px;">' + chips.join('') + '</div>' +
+        (otherCands.length ? '<div class="mh-orgpanel__sect">Also running in ' +
+          otherCands.map(c => '<a href="mission.html?mission=' + c.mission_id + '&org=' + orgId + '" style="color:var(--clr-moss,#4a7c59);">' + c.mission_id + '</a> (' + c.status + ')').join(', ') + '</div>' : '') +
+        (members ? '<div class="mh-orgpanel__sect">Members<br/>' + members + '</div>' : '') +
+        (posts ? '<div class="mh-orgpanel__sect">Updates from this organization' + posts + '</div>'
+               : '<div class="mh-orgpanel__sect" style="opacity:0.6;">No updates yet — progress reports land during the mission.</div>') +
+        '<div class="mh-orgpanel__sect"><a href="admin.html?org=' + orgId + (MID ? '&mission=' + MID : '') + '" style="color:var(--clr-moss,#4a7c59);font-weight:600;font-size:0.78rem;">Is this your organization? Org admin →</a></div>' +
+      '</div>';
+    }
 
     // ── claim (pick org → agreement) ────────────────────────────────────────
     window.startClaim = function () {

@@ -2,7 +2,8 @@
 
 Build Phase 2 (org experience): public self-registration/nomination (no staff
 gate), duplicate pre-check, membership create/list, and the public org profile
-bundle that org.html renders in one round trip.
+bundle rendered by the org panel on mission.html and the org admin on admin.html
+(orgs have no standalone page since the 2026-07-10 restructure).
 """
 from typing import Optional
 
@@ -69,7 +70,7 @@ def get_org_causes(org_id: str, db: Session = Depends(get_db)):
 @router.get("/{org_id}/profile", response_model=dict)
 def get_org_profile(org_id: str, db: Session = Depends(get_db)):
     """The public organization page bundle: org + derived causes + candidacies
-    + org-authored posts + members. One round-trip for org.html."""
+    + org-authored posts + members. One round-trip for the org panel/admin views."""
     org = crud.get_org(db, org_id)
     if org is None:
         raise HTTPException(status_code=404, detail="Organization not found")

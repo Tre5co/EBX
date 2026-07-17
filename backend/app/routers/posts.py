@@ -6,10 +6,12 @@ from sqlalchemy.orm import Session
 
 from .. import crud, schemas
 from ..auth import get_current_benefactor
+from ..config import get_settings
 from ..database import get_db
 from ..models import BenefactorAccount
 
 router = APIRouter(prefix="/posts", tags=["posts"])
+settings = get_settings()
 
 
 @router.get("", response_model=list[schemas.PostRead])
@@ -43,6 +45,25 @@ def create_post(
     """Create a post. Editorial/headline categories require an employee account."""
     try:
         return crud.create_post(db, data, author=user)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/{post_id}/resolve", response_model=schemas.PostRead)
+def resolve_suggestion(
+    post_id: str,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Mark a context SUGGESTION (S/S/S) as achieved — it becomes a RESOLUTION
+    and moves the mission's credit-coin value (org members / staff)."""
+    try:
+        return crud.resolve_suggestion(db, post_id, user, value_bump=settings.resolution_value_bump)
+    except ValueError as e:
+        msg = str(e)
+        raise HTTPException(status_code=404 if "not found" in msg.lower() else 409, detail=msg)
     except PermissionError as e:
         raise HTTPException(status_code=403, detail=str(e))
 

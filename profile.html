@@ -842,6 +842,18 @@
       } catch (e) {}
     }
 
+    // §1a: the wallet runs on REAL CreditCoin rows now (minted at election
+    // settlement). Coin icon shows only next to real financial holdings.
+    window._myCoins = null;
+    async function loadMyCoins() {
+      window._myCoins = null;
+      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn() && EBX.Auth.fetchAuthed)) return;
+      try {
+        const r = await EBX.Auth.fetchAuthed('/benefactors/me/credit-coins');
+        if (r && r.ok) window._myCoins = await r.json();
+      } catch (e) {}
+    }
+
     // Shared nav: home mark + user badge on every page
     await EBX.initPage();
 
@@ -872,7 +884,8 @@
         amount:      extras.amount      ?? 20,
         type:        extras.type        ?? 'benefactor',
       };
-      await loadMyChoices();   // build-seq 9: seed choices table + wallet
+      await loadMyChoices();
+      try { await loadMyCoins(); } catch (e) {}   // build-seq 9: seed choices table + wallet
       renderProfile(profile);
       return;
     }
@@ -1363,21 +1376,46 @@
       const initById = {}; inits.forEach(i => { initById[String(i.id)] = i; });
       const orgById  = {}; orgs.forEach(o => { orgById[String(o.id)]  = o; });
 
-      /* ── CreditCoin Wallet — one coin per mission contributed to ── */
-      const coins = causes.map(c => {
-        const ebx = ((tivCommits[c.id] && tivCommits[c.id].ebx) || 0)
-                  + ((orgCommits[c.id] && orgCommits[c.id].ebx) || 0);
-        return ebx > 0 ? { cause: c, ebx } : null;
-      }).filter(Boolean);
-
-      const walletHTML = coins.length
-        ? coins.map(coin => `
-            <a class="coin-chip" href="cause.html?id=${coin.cause.id}" title="${coin.cause.name} mission">
+      /* ── CreditCoin Wallet (§1a) — REAL CreditCoin rows, minted at election
+         settlement. The 🪙 icon marks real financial holdings only; while no
+         coin is minted yet, live commitments show WITHOUT the coin icon.
+         Admin/staff coins (not real money) render in a different color. ── */
+      const _PFX2CAUSE = { atm: 'atmosphere', oce: 'oceans', lan: 'land', 'for': 'forests',
+                           wil: 'wildlife', hmr: 'human-rights', hpr: 'human-progress' };
+      const _realCoins = Array.isArray(window._myCoins) ? window._myCoins : [];
+      const _isAdminCoin = isStaff;   // staff-held coins are test money
+      let coins, walletHTML;
+      if (_realCoins.length) {
+        coins = _realCoins.map(cc => {
+          const cid = _PFX2CAUSE[String(cc.mission_id).slice(0, 3)] || null;
+          const c = causes.find(x => x.id === cid) || null;
+          return { cause: c || { id: '', name: cc.mission_id, index: 0, color: '#999' },
+                   ebx: cc.amount_ebx, value: cc.value || 1, mission: cc.mission_id, real: true };
+        });
+        walletHTML = coins.map(coin => `
+            <a class="coin-chip" href="${coin.cause.id ? 'cause.html?id=' + coin.cause.id : 'mission.html?mission=' + coin.mission}"
+               title="${coin.mission} credit coin${_isAdminCoin ? ' (admin/test — not real money)' : ''}"
+               style="${_isAdminCoin ? 'filter:grayscale(0.8);opacity:0.75;outline:1px dashed #999;' : ''}">
               ${EBX.creditBadge([{ causeIndex: coin.cause.index, amount: coin.ebx }], 40)}
-              <div class="coin-chip__name">${coin.cause.name}</div>
-              <div class="coin-chip__ebx">${EBX.formatEBX(coin.ebx)}</div>
-            </a>`).join('')
-        : `<div class="coin-chip coin-chip--empty">No credit coins yet.<br/>Commit EBX to a mission to mint your first.</div>`;
+              <div class="coin-chip__name">🪙 ${coin.cause.name}</div>
+              <div class="coin-chip__ebx">${EBX.formatEBX(coin.ebx)} · ×${Number(coin.value).toFixed(2)}</div>
+            </a>`).join('');
+      } else {
+        // no minted coins yet — live commitments (no coin icon: not settled money)
+        coins = causes.map(c => {
+          const ebx = ((tivCommits[c.id] && tivCommits[c.id].ebx) || 0)
+                    + ((orgCommits[c.id] && orgCommits[c.id].ebx) || 0);
+          return ebx > 0 ? { cause: c, ebx } : null;
+        }).filter(Boolean);
+        walletHTML = coins.length
+          ? coins.map(coin => `
+              <a class="coin-chip" href="cause.html?id=${coin.cause.id}" title="${coin.cause.name} mission — committed (coin mints at election settlement)">
+                ${EBX.creditBadge([{ causeIndex: coin.cause.index, amount: coin.ebx }], 40)}
+                <div class="coin-chip__name">${coin.cause.name}</div>
+                <div class="coin-chip__ebx">${EBX.formatEBX(coin.ebx)} committed</div>
+              </a>`).join('')
+          : `<div class="coin-chip coin-chip--empty">No credit coins yet.<br/>Commit EBX to a mission to mint your first.</div>`;
+      }
 
       /* ── Choices table — one row per cause; multi-tiv splits show top share only ── */
       const choiceRows = causes.map(c => {
@@ -1451,6 +1489,7 @@
         const myMems = (od && od.memberships) || [];
         const selOrg = od && od.org;
         const myRole = (myMems.find(m => od && m.org_id === od.selectedOrgId) || {}).role || 'community';
+        // Role separation (restructure 2026-07-10): rep/executive operate the org.
         const isOperator = ['rep', 'executive'].includes(myRole);
 
         if (!myMems.length) {
@@ -1461,10 +1500,11 @@
                 <div class="choices-col-card">
                   <div class="choices-col-header"><div class="choices-col-title">Your organization</div></div>
                   <div style="font-size:0.82rem;line-height:1.6;padding:6px 0;color:var(--clr-ink-light);">
-                    You aren't a member of any organization. Organizations can self-register at any time —
-                    no gate — and claiming a mission makes you its representative.
+                    You aren't a member of any organization. Organizations self-register through the
+                    org door on the admin page — your account becomes the founding executive member —
+                    and claiming a mission from its mission page makes you its representative.
                   </div>
-                  <a class="btn btn-forest btn-sm" style="text-decoration:none;" href="mission.html">Register / claim →</a>
+                  <a class="btn btn-forest btn-sm" style="text-decoration:none;" href="admin.html?register=1">Register your organization →</a>
                 </div>`;
         } else {
           // Initiative coins = the org's mission candidacies (its bids/wins).
@@ -1508,7 +1548,8 @@
                   </div>
                   <div style="font-size:0.72rem;color:var(--clr-ink-light);margin-bottom:6px;">
                     Your role: <b>${myRole}</b>${selOrg && selOrg.verified ? ' · ✓ EN-verified' : ''}
-                    · <a href="org.html?id=${od ? od.selectedOrgId : ''}" style="color:var(--clr-moss);">public page →</a>
+                    ${cands.length ? `· <a href="mission.html?mission=${cands[0].mission_id}&org=${od ? od.selectedOrgId : ''}" style="color:var(--clr-moss);">mission page →</a>` : ''}
+                    ${isOperator ? `· <a href="admin.html?org=${od ? od.selectedOrgId : ''}" style="color:var(--clr-moss);">org admin →</a>` : ''}
                   </div>
                   ${myRole === 'beneficiary' ? `
                   <div style="border:1px solid rgba(74,124,89,0.4);background:rgba(74,124,89,0.06);border-radius:8px;padding:8px 10px;font-size:0.76rem;line-height:1.5;margin-bottom:8px;">
@@ -1516,7 +1557,7 @@
                     surfaced at the start of every Phase-2 election this org enters. <i>(scaffold)</i>
                   </div>` : ''}
                   ${isOperator ? '' : `<div style="font-size:0.7rem;color:var(--clr-ink-light);margin-bottom:6px;">
-                    Only <b>rep</b> / <b>executive</b> members may edit the mission page and budget.</div>`}
+                    (editing &amp; org admin are held by rep/executive members)</div>`}
                   <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0;${isOperator ? '' : 'opacity:0.55;pointer-events:none;'}">
                     ${_tasks.map((t, i) => `
                       <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;cursor:pointer;

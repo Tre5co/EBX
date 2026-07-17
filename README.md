@@ -2,21 +2,28 @@
 
 Earthbux is a weekly charity pool elected by its community. Each week a **mission**
 for one of seven rotating **causes** (Atmosphere · Oceans · Land · Forests ·
-Wildlife · Human Rights · Human Progress) opens and runs through a multi-phase
-lifecycle: an **initiative election** (which idea?), an **organization election**
-(who runs it?), **budgeting**, **credit release**, and **resolution**.
-**Earthbux News (EN)** supervises, publicizes, and helps organize the missions,
-funded by a fixed cut of each pool.
+Wildlife · Human Rights · Human Progress) opens and runs through **three phases**:
+an **initiative election** (which idea?), an **organization election** (who runs
+it?), and **resolutions** (the entire post-election back half — budgeting, credit
+release, and the ongoing stream of small resolved outcomes — folded into one
+continuous phase).
 
-> **This README documents the v2 backend + the in-progress frontend rebuild.**
-> The platform was rebuilt around **missions** as the spine (replacing the older
-> initiative-centric model). The cutover is complete; the public-page rewire is
-> partway done (see [§9](#9-frontend-status)).
+**Posts and discussion drive every phase.** Each phase is a structured discussion
+with its own post types; the community's reactions to those posts decide which
+initiative wins, which org runs it, and how the money is spent, and the best posts
+win rewards. **Earthbux News (EN)**, funded by a cut of the pool, supervises,
+publicizes, and helps organize the missions by stimulating that discussion,
+connecting parties, and pooling resources.
 
-**Doc map**
-- **README.md** (this file) — current system, architecture, data model, APIs.
-- **STRUCTURE.md** — the product/design model (page-by-page intent).
-- **INSTRUCTIONS.md** — historical per-pass build driver.
+**Doc map** — three canonical docs; supporting files are folded into them.
+- **README.md** (this file) — the system model: architecture, data model, APIs,
+  lifecycle, the discussion model, money, and the credit framework.
+- **docs/structure.md** — the page-by-page build spec (one section per route).
+- **docs/INSTRUCTIONS.md** — the build queue (`## BUILD SEQUENCE`) plus the
+  living `## BACKLOG`.
+- *(Merged in and deleted: `docs/mission_lifecycle.md` → §3/§5 (2026-07-15);
+  `docs/posts.md` → §5 discussion model, and `docs/backlog.md` → INSTRUCTIONS
+  `## BACKLOG` (2026-07-17).)*
 
 ---
 
@@ -47,6 +54,13 @@ funded by a fixed cut of each pool.
   nothing until `npm run build` regenerates the JS.**
 - **Auth** — JWT bearer tokens (`/auth/login`). Accounts carry a `role`
   (`benefactor | employee | admin`); employee/admin unlocks staff-only actions.
+- **Kids accounts (planned)** — benefactors aged **12–17** get full *voice*
+  but gated *money*: they can vote and post like any benefactor, but **cannot
+  add money without parental approval**. Implies a birthdate (or age bracket)
+  on `BenefactorAccount`, a guardian link, and an approval flow on every
+  money-in action; votes from unfunded kid accounts still carry
+  `BASE_VOTE_EBX` weight. Legal review (COPPA/GDPR-K) before build — see the
+  INSTRUCTIONS `## BACKLOG`.
 
 ---
 
@@ -107,24 +121,130 @@ Key design choices:
 ---
 
 ## 3. Mission lifecycle
-
 Phases are server-authoritative (advanced by `scheduler.py`); the frontend only
 *displays* phase. Timeline is anchored on `mission.started_at` (the day the
 cause's window opens):
 
 ```mermaid
 flowchart LR
-    PRE["pre<br/>(created)"] -->|window opens| INIT["initiative<br/>phase-1 voting open"]
-    INIT -->|"+7 weeks: finalize_p1"| TIV["tiv elected<br/>(org race opens)"]
-    TIV -->|"+8 weeks: finalize_p2"| BUD["budget<br/>(org + EN plan budgets)"]
-    BUD -->|"+33 weeks: distribute"| RES["resolution<br/>(pool allocated)"]
+    PRE["pre<br/>(created)"] -->|window opens| P1["Phase 1 · Initiative election"]
+    P1 -->|"+7 weeks: finalize_p1"| P2["Phase 2 · Organization election"]
+    P2 -->|"+8 weeks: finalize_p2"| P3["Phase 3 · Resolutions<br/>budget → release → resolve"]
+    P3 -->|"many small resolutions, over years"| P3
 ```
 
-`current_phase` values: `pre · initiative · budget · credit · resolution`
-(`finalize_p1` sets the winning tiv and keeps the mission in `initiative` while
-the org race runs; `finalize_p2` advances to `budget`; `distribute_mission`
-advances to `resolution`). A `credit` release phase is reserved between budget
-and resolution for the staged return of the flexible remainder.
+**Three phases, but five code values (for now).** The lifecycle is now modeled as
+three phases — **initiative election**, **organization election**, and
+**resolutions** — where *resolutions* is the entire post-election back half:
+budgeting, credit release, and the ongoing stream of resolved outcomes are
+**stages within one phase, not separate phases.**
+
+The code's `current_phase` enum still carries the old five values —
+`pre · initiative · budget · credit · resolution` — which now map onto the three
+phases:
+
+| Phase | `current_phase` value(s) | Advanced by |
+|---|---|---|
+| 1 — Initiative election | `pre`, `initiative` | `finalize_p1` sets the winning tiv and keeps the mission in `initiative` while the org race runs |
+| 2 — Organization election | `initiative` (org-race sub-state) | `finalize_p2` |
+| 3 — Resolutions | `budget` → `credit` → `resolution` | `finalize_p2` opens budgeting; then per-resolution events (`distribute_mission` marks entry) |
+
+> **Budget → release → resolve is one stream.** A mission does not "reach
+> resolution" as a single event — it **opens** budgeting, releases credits in
+> stages, and closes through MANY tiny **resolutions** (see [§5 — S/S/S &
+> resolutions](#5-the-money-model)), possibly over years. Collapsing the three
+> back-half enum values into a single `resolutions` value is proposed work — see
+> the INSTRUCTIONS `## BACKLOG`.
+
+### Goals
+
+Streamline and publicize charity missions. Pool donations to avoid redundant or
+competing efforts, expose wasteful or fraudulent actors, and reorient attention
+toward the cause rather than the sponsor. Democratize *which* idea and *which*
+organization gets funded, and report on the work independently through Earthbux
+News (EN).
+
+### Full phase map
+
+Three phases. The back half (budgeting → credit release → resolved outcomes) is
+one **Resolutions** phase with internal *stages*, not three separate phases:
+
+| Phase | Stage | Window (from `started_at`) | What happens | Driven by |
+|---|---|---|---|---|
+| **1 — Initiative election** | pre / initiative | weeks < 1 → ~week 7 | Benefactors propose and vote on initiatives | *context* + *case* posts |
+| **2 — Organization election** | — | ~week 8 (cause's final active day) | Benefactors nominate/vote on organizations | *analysis* + *org-review* posts |
+| **3 — Resolutions** | budget | weeks 9–16 | Elected org drafts budgets from socially-selected S/S/S suggestions; **EN verifies the org**; advance released | *suggestion* posts |
+| | release | weeks 17–32 | Credits released in stages; 7–12 step progress reports (org report vs. EN parallel report, benefactor-moderated) | *mission-update* posts |
+| | resolve | weeks 33+ | Many small **resolutions** accumulate, each moving coin value; impact summary. Missions may take **many years** to fully resolve | *suggestion* (S/S/S) posts |
+
+The **organization election (phase 2) happens before any budgeting** — the org is
+chosen on credentials and a short statement, not a detailed plan. Everything after
+that election is the single **Resolutions** phase, and it runs post-by-post:
+*suggestion* (S/S/S) posts become the budget and the resolutions themselves (see
+[§5](#5-the-money-model)).
+
+### Phase 2 — nominate → register/claim → elect
+
+An initiative is a proposition; an organization is a **counterparty** that must
+receive funds and do the work. So phase 2 is three steps, not one:
+
+- **Nomination & registration (both open, no gate).** Orgs can self-register any
+  time; benefactors can nominate any org as a candidate for any phase-2 mission
+  (minimum: a name and a mission statement — required to be *elected*, not to
+  receive votes). An org is a single entity — never nominated twice, no separate
+  pages; near-duplicate names get a "did you mean?" prompt. Nominating and
+  voting are free.
+- **Claiming a mission (the gate).** A real representative **claims** the
+  mission → their account gains authority over the budget and mission sequence.
+  Claiming requires a **click-through legal agreement** (representative
+  attestation — the basis to litigate fraud; see `docs/CONTRACT_DRAFT.md`). A
+  nominated (not self-registered) org may claim until Phase 4 starts (claim
+  window: `pre|initiative|budget`). Claiming bumps the mission's
+  **guaranteed-to-pool rate** (unclaimed 0.20 → claimed 0.35, in `config.py`) —
+  rewarding orgs for showing up, protecting benefactors when no one does.
+- **Identity verification is EN's responsibility, performed during phase 3** —
+  EN only verifies one organization per week (the week's single elected
+  mission).
+
+**If no org claims:** the mission is **not cancelled**. Advances are still sent;
+the community executes the mission as best it can (e.g. donating the pool
+onward) and EN still reports. These cases tend to end with smaller pools.
+Earthbux never creates its own organizations — the community elects existing
+ones.
+
+**Fraud handling:** the advance lands at the *start* of phase 3, but EN verifies
+*during* phase 3 — a fraudulent group could in theory win the advance.
+Mitigations: the click-through agreement (litigation basis), EN verification
+before the full pool unlocks, and recovery through litigation.
+
+**Election content** (benefactor-authored, pre-vote due diligence): *Evaluation*
+(my verdict on this org), *Context* (neutral background / track record),
+*Analysis* (data or expert take). Org-authored: a *Pitch / mission statement*
+plus *Responses*, kept visually distinct. "Feedback" is reserved for the
+post-mission performance phases (4–5); evaluation = pre-vote.
+
+### Withdrawals
+
+- **Phase-2 withdrawal (implemented):** after the tiv is elected but before
+  budgeting locks the pool, a benefactor may withdraw their phase-1 commitment
+  **minus the send** (20% if they backed the winner, 10% otherwise). `POST
+  /missions/{id}/p1/withdraw` → `crud.withdraw_p1`; refund booked to the
+  `refund` bucket, the send stays in the pool.
+- **Phase-3 org-loss withdrawal (deferred):** once orgs are decided, a
+  benefactor whose org **loses** should have their 80% immediately
+  withdrawable, but only after **acknowledging they don't trust the winning
+  organization** (wording/flow TBD). Tune after phase 2 settles.
+
+### Membership roles
+
+Every org account is a set of members: **Contributor** (a benefactor who voted
+for the org / holds credits for the mission — community), **Representative**
+(may edit the mission page), **Executive** (highest org permission), and
+**Beneficiary** (represents the recipients; unique profile surface; gets a
+voice at the start of phase 2). Earthbux retains override authority (e.g. to
+revoke a claim from a fraudulent or inactive rep). Mission memberships (held by
+benefactors) and org memberships (held by approved org admins) are distinct,
+but one person holding both gets a single combined experience.
 
 ---
 
@@ -209,6 +329,40 @@ remainder is held for the credit-release phase) is allocated in **32nds**:
 | **Flexible remainder** | **9/32** | released in credit phase → org or back to benefactors |
 | **Total** | **32/32** | |
 
+### The discussion model — a post type for every phase
+
+Every phase is a structured discussion, and **the posts are what drive the
+outcome**: reactions to *context* and *case* posts move the initiative vote,
+reactions to *analysis* and *org-review* posts move the org vote, and *suggestion*
+and *context* posts become the budget and the resolutions. Commentary does **not**
+live in the voting dialog — it is posted from the home/newsfeed surface and
+surfaced in each phase's recap. The most-helpful post in each category is displayed
+prominently next to its **helpfulness prize**.
+
+Posts are reacted to with **Helpful · Neutral · Harmful** (the shared `valence`
+enum; the UI may label the negative reaction "Wrong" on posts). Comments are just
+posts with a `parent_post_id`. A post always displays its **date** and the
+**initiative/organization it regards**, and is **colored by cause**. Only
+**benefactors** can win post prizes — even when an org or EN authors a popular
+post. Author tags: `<ben>` = benefactor · `<org>` = the mission's org · `<ebx>` =
+Earthbux News.
+
+| # | Post type | Phase | Who posts | What it is |
+|---|---|---|---|---|
+| 1 | **Context** | 1 | `<ben>` | Background teaching voters about the cause's initiatives and related news. Cost analysis is context. |
+| 2 | **Case** *for/against* | 1 | `<ben>` | Argument for or against a specific initiative winning the election. |
+| 3 | **Analysis** | 2 (+3) | `<ben>` (+`<ebx>` in 3) | Research backing, independent assessment of an org's financials/track record, or criticism of a proposal/method. Never cost-based. |
+| 4 | **Suggestions** (S/S/S) | 2 (+3) | `<ben>` `<org>` | Specific service/supply/support items with estimated cost + justification. In phase 3 they target the winning org. |
+| 5 | **Org review/comparison** *for/against/neutral* | 2 | `<ben>` | Targeted review of a specific organization. |
+| 6 | **Org justification** | 2 | `<org>` | An org's pitch — its abilities, resources, history, goals. |
+| 7 | **Evaluation/investigation** | 3 | `<ben>` `<ebx>` | The org actually running the mission: leadership, proposal quality, credibility. |
+| 8 | **Mission updates** | 3 (resolutions) | `<org>` `<ebx>` | Progress against the plan; feeds the step/resolution stream. |
+| 9 | **Testimonials** | later | `<org>` `<ebx>` | Reviews from the beneficiaries. |
+
+Suggestions open **the moment the initiative is elected** — benefactors can start
+proposing budget items into phase 2. Post lanes (who may author each type) are
+enforced in `create_post` — see [S/S/S → resolutions](#sss--resolutions-the-budgeting-procedure).
+
 ### Post rewards (refined) — which post wins, decided by which vote, paid when
 
 Each discussion category is judged by a different phase's post-votes, so the
@@ -238,6 +392,133 @@ in size — only *who wins each reward slice and when it releases* is refined he
   election at 90%, and a 10% skim is booked to the global `commitment_fund`
   bucket. See [§6](#6-voting--the-election-algorithm).
 - Every slice is written to the `transactions` ledger; `pools` is a derived cache.
+
+### Credits & EBX
+
+- 1 credit = 1 EBX ≈ $1; EBX hold $1 value for 7 weeks post-mint.
+- Coins mint at election settlement (`finalize_p2`), sized by each voter's
+  remaining stake; **holding one = mission membership**. Staff/test coins render
+  greyed in the wallet.
+- `GET /coin-value` = global value (net platform flow / `coin_value_scale`);
+  `mission.credit_value` moves with resolutions (`resolution_value_bump`).
+- Minted credits become tax-deductible after they are committed to a charity
+  and converted. The amount people keep as EBX (rather than converting /
+  withdrawing) determines the pool available to budget with.
+- **Design for failure:** many missions will fail (bad org, extreme costs) —
+  the coin model must tolerate that.
+
+### S/S/S → resolutions: the budgeting procedure
+
+The key objects of Earthbux reporting:
+
+| Term | Meaning | Carried by |
+|---|---|---|
+| **Service** | something we can send people to DO | orgs |
+| **Supply** | WHAT those people need to do it | bens |
+| **Support** | how we ensure the issue is resolved honestly | ebx |
+
+A **resolution** is a small, mission-tied outcome we can reasonably assume was
+accomplished; when it lands, its evaluation point is given and it moves the
+mission's credit-coin value. **Resolution is not a single closing event** — the
+Phase-3 resolutions stream *is* many tiny resolutions, and achieving them ahead
+of schedule earns a higher cash reward.
+
+> ⚠️ **Parked inconsistency (phase-3, do not fix yet).** The procedure below treats
+> S/S/S as a *stance on context posts*, but the discussion taxonomy (and the latest
+> design note) treat **Suggestions as its own post category — "S/S/S is not
+> context."** Reconcile when the resolutions UI is built; tracked in the
+> INSTRUCTIONS `## BACKLOG`.
+
+The procedure, end to end:
+
+1. **Suggest (suggestion posts).** Anyone posts a *suggestion* carrying an S/S/S
+   `stance` (`service|supply|support`; cost analysis lives in *context*). Orgs post
+   itemized cost lists; users vote up suggestions; benefactors select the
+   services/supplies they approve. The socially selected picks drive the money
+   routing.
+2. **Budget (phase 3).** The org drafts hypothetical budgets between its
+   guaranteed floor (10/32) and the uncapped maximum (+9/32 flexible, growing
+   with donations). The release phase gets a projected **mission length** /
+   end date (`missions.projected_end_at`) — one strategy: end right before
+   that cause's next phase-1, so the org can bid for another pool.
+3. **Steps.** Each release-phase **step** (`mission_steps`) carries a
+   guaranteed + potential pool, finalized by the end of budgeting (no
+   maximums). Step creation locks when the mission leaves `budget`.
+4. **Resolve.** `POST /posts/{id}/resolve` (context → resolution) and
+   `POST /missions/{id}/steps/{id}/resolve`, gated on mission operators; each
+   bumps coin value and logs an `evaluation`-bucket ledger note; early step
+   resolution is flagged for bonus. Admin gantt renders the plan.
+
+Post lanes (enforced in `create_post`): context = anyone; analysis = mission
+members only (never cost-based); evaluation = non-members only; case = both;
+org_update = authoring-org members; editorial/headline = staff.
+
+### The creditcoin — front & back (planned: the 3D earth)
+
+The creditcoin becomes a two-sided card, **born on `mission.html`**:
+
+- **Front** — the facts: value, initiative, organization, election info, key
+  dates.
+- **Back** — a **3D earth** the user can rotate toward three key locations:
+  1. the current user's home location,
+  2. the location(s) where the mission must take place,
+  3. the location(s) of the organization(s).
+
+Missions will have different **location-types** (e.g. a fixed site vs. a
+region vs. distributed/global), which the globe must render appropriately.
+Requires location fields on benefactors, missions (typed), and organizations —
+see the INSTRUCTIONS `## BACKLOG`.
+
+### Transactional credit — decision framework
+
+Benefactors should be able to **tune** a donation — to a cause, to an
+initiative within that cause, or simply to *the next mission* — and change the
+availability of their money throughout the process, possibly targeting a
+location, an organization, or a beneficiary type. The questions and key
+decisions to settle before building:
+
+**1. Donation targets (what can EBX be aimed at?)**
+- Which target levels exist: platform-wide ("next mission") → cause →
+  initiative → mission → org → location → beneficiary type?
+- Is a target a *constraint* (money can only go there) or a *preference*
+  (routing weight)? Constraints can strand money; preferences dilute intent.
+- What happens to targeted money when the target never materializes (the
+  initiative never wins, no mission in that location)? Expiry → next mission?
+  Carryover like the loser path (90% + skim)?
+- Do targeted donations count as phase-1 votes, or is donating and voting
+  decoupled?
+
+**2. Availability (when can the benefactor change their mind?)**
+- Which states can money be in: `available → committed → sent → converted`?
+  Define the full state machine and which transitions the benefactor controls.
+- At each phase, what fraction is withdrawable? (Today: P2 window minus the
+  send; phase-3 distrust withdrawal deferred.) Does targeting change the rates?
+- Can availability be scheduled ("release 10/week"), or only toggled?
+- Does changing a target mid-phase re-price the send rate already accrued?
+
+**3. Routing & precedence**
+- When constraints conflict (org X but location Y, and X doesn't operate in
+  Y), who wins — and is the benefactor told at donate time or at routing time?
+- Order of application: location vs org vs beneficiary-type filters.
+- Does untargeted money in a pool inherit the socially-selected S/S/S picks by
+  default (it should — decide explicitly)?
+- Minimum granularity: is location a country / region / radius / mission-site
+  match (ties into the mission location-types)?
+
+**4. Ledger & value**
+- Every tuning change is a `Transaction` — new `type='retarget'` or a bucket?
+- Do targeted coins carry their target on the coin (visible on the coin
+  front)? Does a tighter target affect coin value or rewards?
+- Tax-deductibility timing: at commit, at send, or at conversion — and does
+  targeting change it?
+
+**5. Abuse & failure modes**
+- Can targeting be used to steer a pool toward a colluding org (a benefactor
+  "buying" an election via availability games)? Caps needed?
+- What happens to tightly-targeted money in a failed mission (design for
+  failure, as with coins)?
+- Parental-approval interaction: kids' money (see §Accounts) presumably can't
+  be retargeted without re-approval — confirm.
 
 ---
 
@@ -294,7 +575,7 @@ send rates `P1 20/10` and `P2 100/20` (win/lose).
   can pull back their phase-1 commitment **minus the send** (20% if they backed the
   winning tiv, 10% otherwise). The refund is booked to the `refund` bucket; the
   send stays in the pool. (Phase-3 "org loses → 80% withdrawable with a distrust
-  acknowledgment" is **deferred** — see `docs/mission_lifecycle.md`.)
+  acknowledgment" is **deferred** — see [§3 Withdrawals](#withdrawals).)
 
 ---
 
@@ -408,7 +689,10 @@ frontend/
   src/ebx_shared.ts    shared engine source (esbuild → resources/js/ebx_shared.js)
 index.html  cause.html  profile.html  admin.html
 resources/js/ebx_shared.js   built engine
-STRUCTURE.md  INSTRUCTIONS.md
+docs/
+  structure.md       page-by-page build spec (per route)
+  INSTRUCTIONS.md    build queue (## BUILD SEQUENCE) + ## BACKLOG
+  CONTRACT_DRAFT.md  representative attestation (claim gate)
 ```
 
 ---

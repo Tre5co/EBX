@@ -95,6 +95,10 @@ class Mission(Base):
     # Guaranteed-to-pool rate. NULL = unclaimed default (settings.pool_rate_unclaimed);
     # set to the claimed rate when a representative claims the mission (org_claims).
     guaranteed_pool_rate: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    # Projected MISSION LENGTH end date (release-phase structure, §1d). One
+    # strategy: end right before the cause's next phase 1 so the org can bid
+    # for another pool.
+    projected_end_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
@@ -128,6 +132,9 @@ class Mission(Base):
         back_populates="mission", foreign_keys="Post.mission_id"
     )
     claims: Mapped[list["OrgClaim"]] = relationship(
+        back_populates="mission", cascade="all, delete-orphan"
+    )
+    steps: Mapped[list["MissionStep"]] = relationship(
         back_populates="mission", cascade="all, delete-orphan"
     )
 
@@ -323,6 +330,34 @@ class OrgClaim(Base):
     mission: Mapped["Mission"] = relationship(back_populates="claims")
     org: Mapped["Organization"] = relationship()
     ben: Mapped["BenefactorAccount"] = relationship()
+
+
+# ===========================================================================
+# MissionStep — one STEP of the release phase (§1d). Each step carries a
+# guaranteed and a potential pool (no maximums), finalized by the end of the
+# budgeting phase. Resolving a step is a RESOLUTION: it grants the evaluation
+# point and moves the mission's credit-coin value. Also powers the admin gantt.
+# ===========================================================================
+class MissionStep(Base):
+    __tablename__ = "mission_steps"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    mission_id: Mapped[str] = mapped_column(ForeignKey("missions.id"), nullable=False)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    order_num: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    guaranteed_ebx: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    potential_ebx: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # open-ended
+    starts_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    due_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    status: Mapped[str] = mapped_column(String, default="planned", nullable=False)  # planned|active|resolved
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_by_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("benefactor_accounts.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    mission: Mapped["Mission"] = relationship(back_populates="steps")
 
 
 # ===========================================================================
