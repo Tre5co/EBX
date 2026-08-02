@@ -2,7 +2,7 @@
 
 Earthbux is a weekly charity pool elected by its community. Each week a **mission**
 for one of seven rotating **causes** (Atmosphere · Oceans · Land · Forests ·
-Wildlife · Human Rights · Human Progress) opens and runs through **three phases**:
+Wildlife · Human Rights · Human Progress) (a new cause can be initiated) opens and runs through **three phases**:
 an **initiative election** (which idea?), an **organization election** (who runs
 it?), and **resolutions** (the entire post-election back half — budgeting, credit
 release, and the ongoing stream of small resolved outcomes — folded into one
@@ -117,7 +117,6 @@ Key design choices:
 - **`Query`** — saved, staff-only data-console lookups (the admin browser).
 - **`valence`** (`helpful | neutral | harmful`) on votes & posts — `harmful`
   means a vote *against* a tiv or a *block* on an org.
-
 ---
 
 ## 3. Mission lifecycle
@@ -172,15 +171,15 @@ one **Resolutions** phase with internal *stages*, not three separate phases:
 | Phase | Stage | Window (from `started_at`) | What happens | Driven by |
 |---|---|---|---|---|
 | **1 — Initiative election** | pre / initiative | weeks < 1 → ~week 7 | Benefactors propose and vote on initiatives | *context* + *case* posts |
-| **2 — Organization election** | — | ~week 8 (cause's final active day) | Benefactors nominate/vote on organizations | *analysis* + *org-review* posts |
-| **3 — Resolutions** | budget | weeks 9–16 | Elected org drafts budgets from socially-selected S/S/S suggestions; **EN verifies the org**; advance released | *suggestion* posts |
+| **2 — Organization election** | — | ~week 8 (cause's final active day) | Benefactors nominate/vote on organizations | *analysis* + *review* posts |
+| **3 — Resolutions** | budget | weeks 9–16 | Elected org drafts budgets from socially-selected **budgeting** (S/S/S) items; **EN verifies the org**; advance released | *budgeting* + *investigation* posts |
 | | release | weeks 17–32 | Credits released in stages; 7–12 step progress reports (org report vs. EN parallel report, benefactor-moderated) | *mission-update* posts |
-| | resolve | weeks 33+ | Many small **resolutions** accumulate, each moving coin value; impact summary. Missions may take **many years** to fully resolve | *suggestion* (S/S/S) posts |
+| | resolve | weeks 33+ | Many small **resolutions** accumulate, each moving coin value; impact summary. Missions may take **many years** to fully resolve | *budgeting* (S/S/S) posts |
 
 The **organization election (phase 2) happens before any budgeting** — the org is
 chosen on credentials and a short statement, not a detailed plan. Everything after
 that election is the single **Resolutions** phase, and it runs post-by-post:
-*suggestion* (S/S/S) posts become the budget and the resolutions themselves (see
+*budgeting* (S/S/S) posts become the budget and the resolutions themselves (see
 [§5](#5-the-money-model)).
 
 ### Phase 2 — nominate → register/claim → elect
@@ -323,61 +322,101 @@ remainder is held for the credit-release phase) is allocated in **32nds**:
 | Org — mission side | 8/32 (¼) | guaranteed |
 | Org — advance | 2/32 (1/16) | releases with the case post reward |
 | **Org guaranteed** | **10/32 (5/16)** | the budgeting **floor** |
-| Reward — best case | 1/32 | benefactor post reward |
-| Reward — context/analysis | 1/32 | benefactor post reward |
-| Reward — comments | 1/32 | benefactor post reward |
+| Reward — best context | 1/32 | benefactor post reward |
+| Reward — best investigation | 1/32 | benefactor post reward |
+| Reward — best analysis | 1/32 | benefactor post reward |
 | **Flexible remainder** | **9/32** | released in credit phase → org or back to benefactors |
 | **Total** | **32/32** | |
 
 ### The discussion model — a post type for every phase
 
 Every phase is a structured discussion, and **the posts are what drive the
-outcome**: reactions to *context* and *case* posts move the initiative vote,
-reactions to *analysis* and *org-review* posts move the org vote, and *suggestion*
-and *context* posts become the budget and the resolutions. Commentary does **not**
-live in the voting dialog — it is posted from the home/newsfeed surface and
-surfaced in each phase's recap. The most-helpful post in each category is displayed
-prominently next to its **helpfulness prize**.
+outcome**: *mission-support* posts (context/investigation/analysis) inform the
+elections and carry the rewards, *review* posts (case/evaluation) argue the
+initiative and judge the org's effort, and *budgeting* posts (service/supply/
+support) become the budget and the resolutions. Commentary does **not** live in
+the voting dialog. **New discussions originate on the Context page (`main.html`,
+each tiv/org row's own thread) or the Mission page (`mission.html`)**; the
+**Landing** page (`index.html`) aggregates all posts; the **cause/election page is
+view-only**, showing only the top few posts per phase. The winning post in each
+rewarded type is displayed prominently next to its **prize**.
 
-Posts are reacted to with **Helpful · Neutral · Harmful** (the shared `valence`
-enum; the UI may label the negative reaction "Wrong" on posts). Comments are just
-posts with a `parent_post_id`. A post always displays its **date** and the
-**initiative/organization it regards**, and is **colored by cause**. Only
-**benefactors** can win post prizes — even when an org or EN authors a popular
-post. Author tags: `<ben>` = benefactor · `<org>` = the mission's org · `<ebx>` =
-Earthbux News.
+**Two-tier types.** Every post carries a **`category` (supercategory)** and a
+**`type` (subcategory)**. The single source of truth is
+`backend/app/post_config.py` — limits, reactions, edit locks, rewards, and
+membership-to-win all read from that one table. Three benefactor categories:
 
-| # | Post type | Phase | Who posts | What it is |
+**Reactions are one backend enum, three columns** — `helpful · neutral · harmful`
+(stored on `PostVote`; one `react_to_post` path for every post). A post type only
+declares **which columns the frontend shows** and how they're **labelled**. No
+type gets its own vote code.
+
+| Category | Type (subcategory) | Limit per ben / mission | Reactions shown | Rewarded? |
 |---|---|---|---|---|
-| 1 | **Context** | 1 | `<ben>` | Background teaching voters about the cause's initiatives and related news. Cost analysis is context. |
-| 2 | **Case** *for/against* | 1 | `<ben>` | Argument for or against a specific initiative winning the election. |
-| 3 | **Analysis** | 2 (+3) | `<ben>` (+`<ebx>` in 3) | Research backing, independent assessment of an org's financials/track record, or criticism of a proposal/method. Never cost-based. |
-| 4 | **Suggestions** (S/S/S) | 2 (+3) | `<ben>` `<org>` | Specific service/supply/support items with estimated cost + justification. In phase 3 they target the winning org. |
-| 5 | **Org review/comparison** *for/against/neutral* | 2 | `<ben>` | Targeted review of a specific organization. |
-| 6 | **Org justification** | 2 | `<org>` | An org's pitch — its abilities, resources, history, goals. |
-| 7 | **Evaluation/investigation** | 3 | `<ben>` `<ebx>` | The org actually running the mission: leadership, proposal quality, credibility. |
-| 8 | **Mission updates** | 3 (resolutions) | `<org>` `<ebx>` | Progress against the plan; feeds the step/resolution stream. |
-| 9 | **Testimonials** | later | `<org>` `<ebx>` | Reviews from the beneficiaries. |
+| **Budgeting** | Service · Supply · Support | **one per type** (up to 3), rolling — a new slot opens only when the current item is **paid out** | **Helpful only** (upvote); neutral & harmful hidden, counts stay 0 | no — a budget line, not a prize |
+| **Mission Support** | Context · Investigation · Analysis | **one each** | **Helpful / Neutral / Harmful** (full) | **yes — the 3 rewarded types**, one 1/32 each |
+| **Review** | Case · Evaluation | **one each** | **Fair / Unfair** (= helpful / harmful); no neutral (count stays 0) — **both** counts displayed | perk (comm line), not cash |
 
-Suggestions open **the moment the initiative is elected** — benefactors can start
-proposing budget items into phase 2. Post lanes (who may author each type) are
-enforced in `create_post` — see [S/S/S → resolutions](#sss--resolutions-the-budgeting-procedure).
+Author tags: `<ben>` = benefactor · `<org>` = the mission's org · `<ebx>` =
+Earthbux News. The three categories above are **benefactor-authored**; org/EN
+posts (`org_update`, `mission_update`, `testimonial`, `editorial`, `headline`) are
+unlimited, sit outside the per-ben allowance, and win nothing.
+
+- **Budgeting.** Service = something we send people to DO (orgs) · Supply = what
+  they need (bens) · Support = how we ensure honest resolution (ebx). Items are
+  **never revoked** — a slot frees only when the money is **actually paid out**.
+  Some fields (the committed cost line, once adopted) **cannot be edited**. S/S/S
+  is **its own category now — it has nothing to do with context.**
+- **Mission Support.** The three rewarded posts. **Neutral matters here** — it
+  signals people are reading and feel neutral about a post, i.e. engagement where
+  commitment isn't necessary. Winners resolve on a staggered clock: **context with
+  the advances · investigation at the end of phase 3 · analysis later.**
+- **Review.** *Case* pitches the initiative the ben supports; *evaluation* reviews
+  the org's effort. Rated **fair / unfair**; **winner = most fair votes** (for now).
+  Each winner earns a **direct line to Earthbux and the org** — a perk, so the
+  winner **must be a member**.
+
+**Edits are versioned updates.** Editing keeps the prior versions viewable (an
+audit trail) rather than overwriting. **Replying to your own post is an allowed
+alternative to editing it.** Budgeting items are the exception — some parts lock
+once adopted (above).
+
+**Membership is a requirement of being eligible to win.** Anyone in scope may post;
+only mission members can *win* a reward or the review comm-line. This reconciles
+the tax-deductible-reward claim with `is_mission_member` (§6): a winner is by
+construction a member.
+
+**Where each type may live:** *review* (case/evaluation on an org) can be posted on
+**any org, any time**; *mission-support* and *budgeting* only exist **inside an
+active mission**. Clicking a comment/reply opens the **Context** page for P1/P2 and
+the **Mission** page for P3+. The **P1 recap** carries just two types — *context*
+and *case*.
+
+Post rules (limits, reactions, edit locks, membership-to-win) are enforced from
+`post_config.py` — one table, read by both `create_post`/`react_to_post` and the
+frontend composer. See [budgeting procedure](#sss--resolutions-the-budgeting-procedure).
 
 ### Post rewards (refined) — which post wins, decided by which vote, paid when
 
-Each discussion category is judged by a different phase's post-votes, so the
-rewards release on a staggered timeline rather than all at the case-post moment:
+The three **mission-support** types are the rewarded posts — one **1/32** slice
+each. This replaces the old best_case / context_or_analysis / comments slices; the
+total 32nds split is unchanged in size. Winners resolve on a staggered clock, and
+**a winner must be a mission member**:
 
-| Category | Scope | Judged by | Reward |
-|---|---|---|---|
-| **Context** | cause-specific | Phase-1 post-votes | the EBX post reward (paid at P1 close) |
-| **Analysis** | initiative-specific | Phase-2 post-votes | the EBX post reward (paid at P2 close) |
-| **Evaluation** | mission outcome | Phase-3 post-votes | the EBX post reward (paid in P3) |
-| **Case** | the winning argument | Phase-1 post-votes | **no cash** — an upgraded org membership (e.g. veto rights, a communication line, early Earthbux information) |
+| Rewarded type | Judged by | Winner decided / paid |
+|---|---|---|
+| **Context** | its post-votes (most helpful) | **with the advances** |
+| **Investigation** | its post-votes (most helpful) | at the **end of phase 3** |
+| **Analysis** | its post-votes (most helpful) | **later** (post-phase-3) |
 
-This restages the "advance" releases (which previously all rode the case-post
-moment) onto each category's own phase close. The 32nds split above is unchanged
-in size — only *who wins each reward slice and when it releases* is refined here.
+**Review** posts win no cash: the most-*fair* **case** and the most-*fair*
+**evaluation** each earn their author a **direct line to Earthbux and the org**
+(plus any upgraded membership perks). **Budgeting** posts aren't prizes at all — an
+upvoted item becomes a budget line and pays out as the money is spent.
+
+Only *which post type wins each slice and when it releases* changed; the 32nds
+sizes are unchanged. Enforcement reads the rewarded set from `post_config.py`
+(`REWARDED_TYPES` = context · investigation · analysis).
 
 - EN only takes its cut when the pool clears `POOL_THRESHOLD` ($100).
 - **Budgeting range** (`mission_budget_range`): the org's **minimum** is a
@@ -423,19 +462,17 @@ mission's credit-coin value. **Resolution is not a single closing event** — th
 Phase-3 resolutions stream *is* many tiny resolutions, and achieving them ahead
 of schedule earns a higher cash reward.
 
-> ⚠️ **Parked inconsistency (phase-3, do not fix yet).** The procedure below treats
-> S/S/S as a *stance on context posts*, but the discussion taxonomy (and the latest
-> design note) treat **Suggestions as its own post category — "S/S/S is not
-> context."** Reconcile when the resolutions UI is built; tracked in the
-> INSTRUCTIONS `## BACKLOG`.
+> ✅ **Resolved (2026-07-19).** S/S/S is its own **category** (`budgeting`) with
+> three **types** — service · supply · support. It is **not** a stance on context.
+> The taxonomy lives in `backend/app/post_config.py`.
 
 The procedure, end to end:
 
-1. **Suggest (suggestion posts).** Anyone posts a *suggestion* carrying an S/S/S
-   `stance` (`service|supply|support`; cost analysis lives in *context*). Orgs post
-   itemized cost lists; users vote up suggestions; benefactors select the
-   services/supplies they approve. The socially selected picks drive the money
-   routing.
+1. **Suggest (budgeting posts).** A benefactor posts a **budgeting** item under one
+   of the three types — **service · supply · support** (one open per type, rolling).
+   Orgs post itemized cost lists; users **upvote** items (upvote-only — no down or
+   neutral); the socially selected picks drive the money routing. An item is never
+   revoked, and its slot frees only when it is **paid out**.
 2. **Budget (phase 3).** The org drafts hypothetical budgets between its
    guaranteed floor (10/32) and the uncapped maximum (+9/32 flexible, growing
    with donations). The release phase gets a projected **mission length** /
@@ -449,9 +486,10 @@ The procedure, end to end:
    bumps coin value and logs an `evaluation`-bucket ledger note; early step
    resolution is flagged for bonus. Admin gantt renders the plan.
 
-Post lanes (enforced in `create_post`): context = anyone; analysis = mission
-members only (never cost-based); evaluation = non-members only; case = both;
-org_update = authoring-org members; editorial/headline = staff.
+Post lanes now live in `post_config.py`, not scattered constants. Authoring is
+open to any benefactor within scope; **membership gates *winning*, not posting.**
+Org/EN lanes are unchanged: `org_update` = authoring-org members · `editorial` /
+`headline` = staff.
 
 ### The creditcoin — front & back (planned: the 3D earth)
 

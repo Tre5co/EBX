@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Earthbucks — You donate, we follow.</title>
+  <title>Earthbux — Context</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
@@ -589,8 +589,11 @@
 
     /* ══ Home rework: brand · full-width top card · lower-left control block ══ */
 
-    /* Topbar now holds brand + user badge only (tagline moved to index.html). */
-    .ebx-topbar__inner { grid-template-columns: auto 1fr; }
+    /* Topbar now holds brand + page tag + user badge (tagline moved to index.html).
+       §0d (2026-08-01): the override said `auto 1fr` — TWO columns for THREE
+       children (brand, pagetag, badge mount), so the profile badge wrapped onto
+       a second grid row at every width. Three columns fixes the spill. */
+    .ebx-topbar__inner { grid-template-columns: auto auto 1fr; }
     .ebx-topbar__brand {
       font-family: var(--font-display); font-weight: 800; font-size: 1.2rem;
       color: var(--clr-parchment); text-decoration: none; letter-spacing: -0.01em;
@@ -630,6 +633,14 @@
       white-space: nowrap; flex-shrink: 0;
     }
     .topcard-full__cta:hover { filter: brightness(1.08); }
+    /* Ghost CTA (outlined) — used for the secondary "Mission page →" link. */
+    .topcard-full__cta--ghost {
+      background: transparent; border: 1px solid currentColor;
+    }
+    .topcard-full__cta--ghost:hover { filter: none; background: rgba(255,255,255,0.06); }
+    /* Row wrapper so the primary + ghost CTAs sit side by side and wrap. */
+    .topcard-sub__ctas { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 4px; }
+    .topcard-sub__ctas .topcard-full__cta { align-self: flex-start; }
     .topcard-full__body { padding: 14px 16px; }
     .topcard-full__body--tiv { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--sp-xl); }
     .topcard-full__body--org { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -692,31 +703,34 @@
       .controlblock__row { background: transparent; border: none; box-shadow: none; backdrop-filter: none; padding: 0; }
     }
 
-    /* Diagonal cause-label square: Active pinned top-right (rotated 90°),
-       Upcoming bottom-left, split on the TL→BR diagonal so each triangle's
-       edge points toward its card. */
-    .cause-square {
-      position: relative; width: 122px; height: 122px; flex-shrink: 0;
+    /* build-seq §2 (2026-07-31): the diagonal active/upcoming square is gone.
+       A 2-tier column replaces it — horizontal rows, upcoming cause on the
+       TOP tier, active cause on the BOTTOM tier (bottom-left placement via the
+       control block). */
+    .cause-col {
+      display: flex; flex-direction: column; flex-shrink: 0; min-width: 172px;
       border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; overflow: hidden;
       background: rgba(0,0,0,0.2);
     }
-    .cause-square__tri { position: absolute; inset: 0; }
-    .cause-square__tri--active   { clip-path: polygon(0 0, 100% 0, 100% 100%); background: color-mix(in srgb, var(--ac) 24%, transparent); }
-    .cause-square__tri--upcoming { clip-path: polygon(0 0, 0 100%, 100% 100%); background: color-mix(in srgb, var(--uc) 24%, transparent); }
-    .cause-square__diag {
-      position: absolute; inset: 0; pointer-events: none;
-      background: linear-gradient(to bottom right,
-        transparent calc(50% - 0.8px), rgba(245,240,232,0.4) calc(50% - 0.8px),
-        rgba(245,240,232,0.4) calc(50% + 0.8px), transparent calc(50% + 0.8px));
+    .cause-col__row {
+      display: flex; align-items: baseline; gap: 8px; padding: 8px 12px;
+      background: color-mix(in srgb, var(--cc) 22%, transparent);
     }
-    .cause-square__label { position: absolute; display: flex; flex-direction: column; gap: 1px; max-width: 104px; }
-    .cause-square__label--active {
-      top: 6px; right: 6px; align-items: flex-start; text-align: left;
-      transform: rotate(90deg); transform-origin: right top;
+    .cause-col__row + .cause-col__row { border-top: 1px solid rgba(245,240,232,0.28); }
+    .cause-col__eyebrow { font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.55); flex-shrink: 0; }
+    .cause-col__name { font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; color: var(--cc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* build-seq §2: propose + show-toggle lodged in the annulus panel's upper
+       corners — absolutely positioned overlays, so the panel keeps its exact
+       size and location. */
+    .annulus-corner { position: absolute; top: 0; z-index: 6; }
+    .annulus-corner--tl { left: 0; }
+    .annulus-corner--tr { right: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .annulus-corner .btn, .annulus-corner .main-toggle__single { font-size: 0.7rem; padding: 6px 10px; }
+    @media (max-width: 980px) {
+      .annulus-corner { position: static; margin: 6px 0; }
+      .annulus-corner--tr { align-items: flex-start; }
     }
-    .cause-square__label--upcoming { bottom: 8px; left: 8px; align-items: flex-start; }
-    .cause-square__eyebrow { font-family: var(--font-mono); font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.55); }
-    .cause-square__name { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
@@ -725,7 +739,8 @@
        new landing page (index.html). ── -->
   <div class="ebx-topbar">
     <div class="container ebx-topbar__inner">
-      <a class="ebx-topbar__brand" href="index.html">Earthbux <em>News</em></a>
+      <a class="ebx-topbar__brand" href="main.html">Earthbux <em>News</em></a>
+      <span class="ebx-topbar__pagetag" style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.5);align-self:center;white-space:nowrap;">Context</span>
       <div class="ebx-topbar__right" id="ebx-user-badge-mount"></div>
     </div>
   </div>
@@ -747,8 +762,18 @@
         <div class="hero__side hero__left" id="left-panel"></div>
 
         <div class="hero__center">
-          <!-- Cause annulus -->
+          <!-- Cause annulus. build-seq §2: propose (upper-left) and the
+               show-toggle (upper-right) overlay the panel's corners without
+               changing its size or location. -->
           <div class="hero__annulus-wrap" id="ebx-annulus-mount">
+            <div class="annulus-corner annulus-corner--tl">
+              <button class="btn btn-forest" id="main-propose-btn" onclick="onProposePrimary()">+ Propose an Initiative</button>
+            </div>
+            <div class="annulus-corner annulus-corner--tr">
+              <div class="page-toggle__showing" id="main-showing">Showing Initiatives</div>
+              <button class="main-toggle__btn main-toggle__single" id="main-toggle-btn"
+                      onclick="toggleMainMode()" aria-label="Switch between initiatives and active missions">Show Active Missions</button>
+            </div>
             <div class="ebx-center" id="ebx-center" role="button" tabindex="0" title="Go to the voting area">
               <div class="ebx-center__today" id="ebx-center-today">—</div>
               <div class="ebx-center__divider"></div>
@@ -1101,40 +1126,28 @@
     window.renderCards = renderCards;
 
     // ── Control block (overlaid IN FRONT of the top card, lower-left) ──
-    // A diagonal cause-label square — "Active" pinned to the top-right corner and
-    // rotated 90°, "Upcoming" to the diagonally-opposite bottom-left, split along
-    // the diagonal so each triangle's edge faces its card — with the page toggle
-    // and the propose/nominate button beside it.
+    // build-seq §2 (2026-07-31): the diagonal square + button stack is gone.
+    // The block now carries only the 2-tier cause column — upcoming cause on
+    // the TOP tier, active cause on the BOTTOM tier. The propose + show-toggle
+    // buttons moved to the annulus panel's upper corners (static HTML;
+    // setMainMode keeps their labels current by id).
     function renderControlBlock(activeIndex, upcomingIdx) {
       const mount = document.getElementById('hero-controlblock');
       if (!mount) return;
       const active = EBX.config.causes.find(c => c.index === activeIndex);
       const upcoming = EBX.config.causes.find(c => c.index === upcomingIdx);
       if (!active || !upcoming) return;
-      const isTiv = _mainMode !== 'org';
-      const toggleLabel   = isTiv ? 'Show Active Missions' : 'Show Initiatives';
-      const proposeLabel  = isTiv ? '+ Propose an Initiative' : '+ Register an Organization';
-      const showingLabel  = isTiv ? 'Showing Initiatives' : 'Showing Organizations';
       mount.innerHTML =
         '<div class="controlblock__row">' +
-          '<div class="cause-square" style="--ac:' + active.color + ';--uc:' + upcoming.color + ';">' +
-            '<div class="cause-square__tri cause-square__tri--upcoming"></div>' +
-            '<div class="cause-square__tri cause-square__tri--active"></div>' +
-            '<div class="cause-square__diag"></div>' +
-            '<div class="cause-square__label cause-square__label--active">' +
-              '<span class="cause-square__eyebrow">Active</span>' +
-              '<span class="cause-square__name" style="color:' + active.color + ';">' + active.name + '</span>' +
+          '<div class="cause-col">' +
+            '<div class="cause-col__row" style="--cc:' + upcoming.color + ';">' +
+              '<span class="cause-col__eyebrow">Upcoming</span>' +
+              '<span class="cause-col__name">' + upcoming.name + '</span>' +
             '</div>' +
-            '<div class="cause-square__label cause-square__label--upcoming">' +
-              '<span class="cause-square__eyebrow">Upcoming</span>' +
-              '<span class="cause-square__name" style="color:' + upcoming.color + ';">' + upcoming.name + '</span>' +
+            '<div class="cause-col__row" style="--cc:' + active.color + ';">' +
+              '<span class="cause-col__eyebrow">Active</span>' +
+              '<span class="cause-col__name">' + active.name + '</span>' +
             '</div>' +
-          '</div>' +
-          '<div class="controlblock__actions">' +
-            '<div class="page-toggle__showing" id="main-showing">' + showingLabel + '</div>' +
-            '<button class="main-toggle__btn main-toggle__single" id="main-toggle-btn" ' +
-                    'onclick="toggleMainMode()" aria-label="Switch between initiatives and active missions">' + toggleLabel + '</button>' +
-            '<button class="btn btn-forest" id="main-propose-btn" onclick="onProposePrimary()">' + proposeLabel + '</button>' +
           '</div>' +
         '</div>';
     }
@@ -1282,7 +1295,10 @@
             _tcStat('Committed pool', pool > 0 ? EBX.formatEBX(pool) : '—') +
             _tcStat('Org vote closes', _fmtFullDate(orgVoteDay)) +
           '</div>' +
-          '<a class="topcard-full__cta" href="cause.html?id=' + cause.id + '&vote=2#phase-recap-2" style="background:' + col + ';">Go to org vote &rarr;</a>' +
+          '<div class="topcard-sub__ctas">' +
+            '<a class="topcard-full__cta" href="cause.html?id=' + cause.id + '&vote=2#phase-recap-2" style="background:' + col + ';">Go to org vote &rarr;</a>' +
+            '<a class="topcard-full__cta topcard-full__cta--ghost" href="mission.html?mission=' + (_lhsMission ? _lhsMission.id : '') + '&cause=' + cause.id + '" style="color:' + col + ';border-color:' + col + ';">Mission page &rarr;</a>' +
+          '</div>' +
         '</div>';
 
       let rightCard;
@@ -1303,8 +1319,11 @@
                 ? _tcStat('Elected org', _winOrg ? _winOrg.name : _prevMission.winning_org_id, col)
                 : _tcStat('Org vote closes', _fmtFullDate(thisWeekDecision), col)) +
             '</div>' +
-            '<a class="topcard-full__cta" href="cause.html?id=' + cause.id + '&vote=2#phase-recap-2" style="background:' + col + ';">' +
-              (_done ? 'See the result &rarr;' : 'Go to org vote &rarr;') + '</a>' +
+            '<div class="topcard-sub__ctas">' +
+              '<a class="topcard-full__cta" href="cause.html?id=' + cause.id + '&vote=2#phase-recap-2" style="background:' + col + ';">' +
+                (_done ? 'See the result &rarr;' : 'Go to org vote &rarr;') + '</a>' +
+              '<a class="topcard-full__cta topcard-full__cta--ghost" href="mission.html?mission=' + _prevMission.id + '&cause=' + cause.id + '" style="color:' + col + ';border-color:' + col + ';">Mission page &rarr;</a>' +
+            '</div>' +
           '</div>';
       } else {
         rightCard =
@@ -2004,40 +2023,53 @@
   }
   window.idxRowExpand = idxRowExpand;
 
-  // build-seq 10: the post dialog (compose + feed) shared by every expanded row.
-  function _idxDiscussionHTML() {
+  // build-seq §4 (2026-08-01): the post dialog is GONE from main.html.
+  // Expanded rows carry ONLY the description + a STATUS panel: current votes,
+  // age, if_active, winning case, posts that WON, org running it, key dates.
+  // This is a FRAME — fields not yet wired render "—"; execution comes later.
+  function _idxRowStatusHTML(entity, kind) {
+    const missions = (EBX.config && EBX.config.missions) || [];
+    const orgs = (EBX.config && EBX.config.organizations) || [];
+    const WK = 7 * 86400000;
+    const stat = (label, value) =>
+      `<div class="tc-stat"><span class="tc-stat__label">${label}</span>` +
+      `<span class="tc-stat__value">${value == null || value === '' ? '—' : value}</span></div>`;
+    let m = null, votes = '—', age = '—', active = '—', runOrg = '—', keyDates = '—';
+    if (kind === 'tiv') {
+      m = entity.mission_id ? missions.find(x => x.id === entity.mission_id) : null;
+      const ebx = entity.committed_ebx || entity.ebx_committed || 0;
+      votes = ebx > 0 ? (EBX.voteWeight ? EBX.voteWeight(ebx) : Math.round(ebx / 10)).toLocaleString() + ' votes · ' + ebx.toLocaleString() + ' EBX' : '—';
+      if (entity.proposed_at) age = Math.max(0, Math.floor((Date.now() - new Date(entity.proposed_at)) / 86400000)) + ' days';
+      active = entity.status === 'active' ? 'active' : (entity.status || '—');
+      if (m && m.winning_org_id) {
+        const o = orgs.find(x => x.id === m.winning_org_id);
+        runOrg = o ? o.name : m.winning_org_id;
+      }
+      if (m && m.started_at) {
+        const s = new Date(m.started_at).getTime();
+        const f = t => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        keyDates = 'opened ' + f(s) + ' · p1 ' + f(s + 7 * WK) + ' · org ' + f(s + 14 * WK);
+      }
+    } else {
+      votes = (entity.committed_ebx || 0) > 0 ? (entity.committed_ebx).toLocaleString() + ' EBX' : '—';
+      active = entity.verified ? 'verified' : 'unverified';
+      if (entity.founded) age = 'founded ' + entity.founded;
+    }
     return `
-      <div class="init-detail-discussion" style="margin-top:var(--sp-lg);border-top:1px solid var(--clr-border);padding-top:var(--sp-md);">
-        <div class="idx-section-head" style="margin-bottom:var(--sp-md);">Discussion</div>
-        <div id="idx-compose" style="background:rgba(15,26,20,0.5);border:1px solid rgba(255,255,255,0.09);
-             border-radius:var(--radius-sm);padding:14px;margin-bottom:var(--sp-md);">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;">
-            <div style="font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;
-                        text-transform:uppercase;opacity:0.7;">Join the discussion</div>
-            <div id="idx-compose-scope" style="font-family:var(--font-mono);font-size:0.62rem;opacity:0.5;"></div>
-          </div>
-          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-            <select id="idx-compose-type" class="init-filter" style="min-width:140px;" aria-label="Post category"
-                    onchange="idxComposeCatChanged()"></select>
-            <!-- case → for/against · evaluation → positive/negative (build-seq 11) -->
-            <select id="idx-compose-stance" class="init-filter" style="min-width:120px;display:none;" aria-label="Stance"></select>
-            <!-- context/analysis → about this entity vs the whole mission -->
-            <select id="idx-compose-scope-sel" class="init-filter" style="min-width:170px;display:none;" aria-label="Post scope"></select>
-            <input id="idx-compose-title" type="text" placeholder="Title (optional)"
-                   style="flex:1;min-width:160px;padding:6px 10px;font-size:0.8rem;
-                          background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);
-                          border-radius:var(--radius-sm);color:inherit;" />
-          </div>
-          <textarea id="idx-compose-body" rows="3" placeholder="Share context, analysis, or your case…"
-                    style="width:100%;margin-top:8px;padding:8px 10px;font-size:0.82rem;line-height:1.4;
-                           background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);
-                           border-radius:var(--radius-sm);color:inherit;resize:vertical;"></textarea>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
-            <button class="btn btn-forest btn-sm" onclick="idxSubmitPost()">Post</button>
-            <span id="idx-compose-msg" style="font-family:var(--font-mono);font-size:0.68rem;opacity:0.7;"></span>
-          </div>
+      <div class="init-detail-status" style="margin-top:var(--sp-lg);border-top:1px solid var(--clr-border);padding-top:var(--sp-md);">
+        <div class="idx-section-head" style="margin-bottom:var(--sp-md);">Status</div>
+        <div class="tc-stats-grid">
+          ${stat('Current votes', votes)}
+          ${stat('Age', age)}
+          ${stat('Active', active)}
+          ${stat('Winning case', null)}
+          ${stat('Posts that won', null)}
+          ${stat('Org running it', runOrg)}
+          ${stat('Key dates', keyDates)}
         </div>
-        <div class="feed-list" id="idx-feed-list"></div>
+        <div style="font-family:var(--font-mono);font-size:0.58rem;opacity:0.45;margin-top:8px;">
+          §4 frame — winning case / winning posts wire up with the per-row discussion (backlog: Context table).
+        </div>
       </div>`;
   }
 
@@ -2055,8 +2087,7 @@
       <div class="init-selected__title">${(init.emoji ? init.emoji + ' ' : '') + (init.title || '')}</div>
       <div class="init-selected__meta">${meta}</div>
       <div class="init-selected__desc">${init.description || ''}</div>
-      <div class="init-selected__actions">${entityVoteActionsForTiv(init)}</div>
-      ${_idxDiscussionHTML()}
+      ${_idxRowStatusHTML(init, 'tiv')}
     </div>`;
   }
 
@@ -2074,8 +2105,7 @@
       <div class="init-selected__title">${org.name || ''}</div>
       <div class="init-selected__meta">${meta}</div>
       <div class="init-selected__desc">${org.description || 'No description provided.'}</div>
-      <div class="init-selected__actions">${entityVoteActionsForOrg(org)}</div>
-      ${_idxDiscussionHTML()}
+      ${_idxRowStatusHTML(org, 'org')}
     </div>`;
   }
 
@@ -2136,12 +2166,12 @@
   }
   window.idxSelectOrg = idxSelectOrg;
 
-  // build-seq (two-button cards): the card "Research" button — filters the
-  // entity table to this cause/org and opens the leading row's detail panel.
-  // Mode-aware: tiv mode opens the leading initiative; org mode opens the
-  // leading org registered for the cause's elected mission.
+  // build-seq §2 (2026-07-31): the card "View" button — filters the entity
+  // table to this cause/org and scrolls down to it, WITHOUT opening any
+  // expanded row (the view is the filtered table, no open row).
   function idxResearch(causeId) {
     if (!causeId) return;
+    _selectedInit = null; _selectedOrg = null; // no open row after View
     const cause = ((EBX.config && EBX.config.causes) || []).find(c => c.id === causeId);
     if (_mainMode === 'org') {
       const mission = ((EBX.config && EBX.config.initiatives) || []).find(i =>
@@ -2149,24 +2179,11 @@
         (i.cause_id === causeId || (cause && i.cause_index === cause.index)));
       const sel = document.getElementById('filter-initiative');
       if (sel) sel.value = mission ? mission.id : '';
-      filterInitiatives();
-      const firstRow = document.querySelector('#init-table-body tr[data-id][data-kind="org"]');
-      if (firstRow) {
-        const org = ((EBX.config && EBX.config.organizations) || [])
-          .find(o => String(o.id) === String(firstRow.getAttribute('data-id')));
-        if (org) idxSelectOrg(JSON.stringify(org));
-      }
     } else {
       const sel = document.getElementById('filter-cause');
       if (sel) sel.value = causeId;
-      filterInitiatives();
-      const firstRow = document.querySelector('#init-table-body tr[data-id][data-kind="tiv"]');
-      if (firstRow) {
-        const init = (_allInits || [])
-          .find(i => String(i.id) === String(firstRow.getAttribute('data-id')));
-        if (init) idxSelectInit(JSON.stringify(init));
-      }
     }
+    filterInitiatives(); // re-render collapses any open detail row
     const table = document.querySelector('.tiv-table-section');
     if (table) table.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }

@@ -11,47 +11,72 @@
 
 ## Discussion & newsfeed — the build focus (phases 1–2)
 
-Posts drive every phase (README §5). The immediate goal is to master the
-**posting and newsfeed experience** across four surfaces — each a different
-filtered view of the same post stream:
+Posts drive every phase (README §5). Five surfaces show the same post stream in
+different ways. **New discussions originate on the Context page or the Mission
+page**; every other surface aggregates or replies.
 
-| Surface | Filter | Click-through |
-|---|---|---|
-| **Landing / newsfeed** (`main.html`) | all posts | stays on landing; users continue discussion threads |
-| **Context page** (`index.html`) table | tiv-filtered | → landing |
-| **Cause page** (`cause.html`) phase areas | cause-filtered | → context-page expanded table row |
-| **Profile** (`profile.html`) | user-filtered | → cause page |
+| Surface | Page | What it shows | Posting |
+|---|---|---|---|
+| **Landing** | `index.html` | all posts, most-recent / trending | reply here; link out to Context/Mission to start a thread |
+| **Context** | `main.html` | each tiv/org **expanded row has its own discussion**; the post source for **P1/P2** | **originate + continue** threads |
+| **Election** | `cause.html` | only the **top few posts per phase** (view-only) + pending budget items in resolutions | none — read-only |
+| **Mission** | `mission.html` | the **full conversation** for one mission; the post source for **P3+** | **originate + continue** threads |
+| **Profile** | `profile.html` | all activity from the signed-in user | reply here |
 
 Post-surface rules:
-- **Posts are view-only on the cause page** — no writing-in there.
-- Every post everywhere shows its **date** and the **initiative/organization it
-  regards**, and is **colored by that cause**.
-- Reactions are **Helpful / Neutral / Harmful**, plus **Reply** — replying opens
-  the landing-page discussion thread, where replies render *inside* the post.
-- **Comments are posts with a parent** (`parent_post_id`).
+- **Comments = replies = posts with a `parent_post_id`.** Clicking a reply opens
+  the **Context** page (P1/P2) or the **Mission** page (P3+), by the post's phase.
+- **Where each post type may live:** *org reviews, investigations, testimonials*
+  can be posted on **any org, any time** (no active mission needed); *analysis,
+  comparisons, justifications* only exist **inside an active mission**.
+- **Context table** — initiatives/orgs **currently in a mission** get a **distinct
+  row type**: it names the mission, current phase, start date, and current votes,
+  and links to the Mission or Election page. Rows with no active mission are where
+  users post about that tiv/org.
+- Every post shows its **date** and the **initiative/org it regards**, and is
+  **colored by that cause**.
+- Reactions are **Helpful / Neutral / Harmful**.
+- **P1 recap** shows only two categories — **context** and **case**.
+- The **resolutions** area links to the **Mission** page.
 - Post categories route by phase & scope (Context/Case → P1; Analysis / Suggestion
   / Org-review → P2; Evaluation → P3) — taxonomy in README §5.
-- Table **expanded columns** filter by **tiv (or org)**, not just by cause (today
-  it only filters by cause).
 - Image attachments on posts — deferred (INSTRUCTIONS `## BACKLOG`).
 
-> The "home page" is being renamed the **context page**. `main.html` and
-> `en.html` both surface feeds — resolve their overlap (landing/all-posts vs.
-> EN's curated cross-mission feed) as part of this focus.
+> `index.html` is the **landing** page (we always land there); `main.html` is the
+> **context** page. `en.html` also surfaces a feed — resolve its overlap with the
+> Landing all-posts stream (curated cross-mission vs. everything).
 
-## main.html — Landing / newsfeed (all-posts discussion) — DESIGN PENDING
-- ◑ Feed + discussion scaffold exists; full **landing design is pending**.
-- [ ] **All-posts stream** — unfiltered; the destination every other surface's
-  post-clicks lead to.
-- [ ] **Discussion threads** — users continue threads here; replies render
-  *inside* the parent post (`parent_post_id`).
-- [ ] **Post composer** — Helpful / Neutral / Harmful reactions + Reply; category
-  chosen by phase & scope (README §5). The primary place to *write* posts (cause
-  page is view-only).
-- [ ] Resolve overlap with `en.html` (all-posts landing vs. EN curated feed).
+## index.html — Landing (extreme-simplified, 2026-08-01 · jax notes 2)
+- ✅ Topbar: EBX brand · profile badge.
+- ✅ **a — founding blurb** ("In 2023, Earthbux was created with one goal…").
+- ✅ **b — The System, 3 Phases, All Community-Controlled** with link cards
+  p1 → `main.html` · p2 → `cause.html` · p3 → `mission.html`.
+- The all-posts stream is GONE from index (lived here 2026-07-31 → 08-01);
+  the newsfeed lives on the Context/Mission surfaces. This resolves the
+  index-vs-`en.html` overlap: index carries no feed.
 
-## index.html — Context page (home / newsfeed)
-- [ ] **Rename** "home" → **context page** throughout nav/copy.
+## main.html — Context (per-row discussions; P1/P2 post source)
+> Each tiv/org expanded row has its **own discussion**; this is where users
+> **originate** and continue P1/P2 threads. If a row has no active mission, this is
+> where users post about that tiv/org.
+- ◑ **Table** — state 1 initiatives (phase-1 only) / state 2 organizations.
+    - [ ] **Per-row discussion** — each row's expanded columns filter posts by
+      **tiv (or org)**, not just cause; users originate/continue P1/P2 posts here.
+    - [ ] **In-mission row type** — initiatives/orgs currently in a mission get a
+      **distinct row**: mission id, current phase, start date, current votes; links
+      to the Mission or Election page.
+    - [ ] **Choices table** — toggle **phase 1 / phase 2** (not initiatives/orgs);
+      show p1 choices in phase 1, and at the election clear the user's choices and
+      make the winning initiative the p2 row label.
+- ◑ **Entity card** — leading initiative/org; vote button per mode.
+- ✅ **Post dialog REMOVED from main.html** (2026-08-01, build-seq §4). Expanded
+  rows = description + **status frame** (current votes · age · if_active ·
+  winning case · posts that WON · org running it · key dates); winning-case /
+  winning-posts render "—" until the per-row discussion wiring lands.
+- [ ] Post composer (per-row, future pass) — Helpful / Neutral / Harmful + Reply; category by phase & scope (README §5).
+- [ ] Propose / nominate dialogs shared with the cause page.
+- [ ] Resolve overlap with `en.html` (curated cross-mission feed vs. Landing all-posts).
+
 - ◑ **Annulus 1** — cause ring, glow marker for the next cause, `now` indicator.
     - [ ] **Center**
     - [ ] **Size and thickness**
@@ -97,16 +122,8 @@ Post-surface rules:
         |3._org_name__________________#votes|
         |My choice - choice_name     |ebx   |
         |My committment_-_x_ebx______|pool__|
-- ◑ **Table** — state 1 initiatives (phase-1 only) / state 2 organizations.
-    - [ ] **Tiv-filtered post view** — the row's expanded columns filter posts by
-      **tiv (or org)**, not just cause; clicking a row leads to the **landing**
-      newsfeed.
-    - [ ] **Choices table** — instead of an initiatives/organizations toggle,
-      toggle **phase 1 / phase 2**: show the p1 election choices in phase 1; once
-      the election happens, clear the user's choices and the winning initiative
-      becomes the p2 row label.
-- ◑ **Entity card** — leading initiative/org; vote button per mode.
-- [ ] Propose / nominate dialogs shared with the cause page.
+- ◑ **Election cards → context** — cards link to the tiv/org row on the **Context**
+  page (`main.html`), which owns the interactive table + per-row discussion.
 
 ## cause.html — Cause / election surface
 - ✅ Active-missions bar (7 cause squares).
@@ -115,38 +132,68 @@ Post-surface rules:
 - ◑ **Right cards** — page 1: phase-1 (top) / phase-2 (middle) / most-recent prior (bottom); pages 2+ previous missions.
 - ◑ **Phase recaps** — five stacked blocks (5 at top → 1 at bottom); live election widget in the active phase.
 - ◑ **Phase 2 area** — org election: evaluation/context/analysis + org pitch; nominate/register entry.
-- [ ] **Discussion, view-only** — posts here are **cause-filtered** and **read-only**
-  (no writing-in); clicking a post leads to the **context-page expanded table row**.
-- [ ] Discussion categories per phase (Context/Case → P1; Analysis/Suggestion/
-  Org-review → P2 — README §5).
-
-## mission.html — Mission hub (NEW, skeleton) — resolutions phase (parked)
-> Phase 3. Everything here is the **resolutions stream** (budget → release →
-> resolve, README §3/§5). Modeled, but parked behind the phase-1/2 posting focus.
-- ✅ Skeleton + function blurb.
-- ✅ **Click-through legal agreement** gating register/claim.
+- ◑ **Discussion, view-only** — 2026-08-01 (build-seq §3): each ACTIVE phase
+  area splits into its own thread — **checkbox post-type filters** (P1
+  context·case / P2 analysis·investigation·evaluation / P3
+  service·supply·support·evaluation), **sort** relevance / popularity /
+  recency, **pager** (5/page). No writing-in; clicking a post opens the
+  **Context** page (P1/P2) or **Mission** page (P3). Remaining: narrow to
+  "top few" on first paint per the original spec if the full thread is noisy.
+- ✅ **Three phases only** — recap stack collapsed 5 → 3 (2026-08-01): the back
+  half is one **Budgeting & Resolution** area (S/S/S suggestions folded in;
+  annulus center reads "Phase 3 · Budgeting & Resolution" for enum 3/4/5).
+  P2 still needs its strong redesign (build-seq §3 note).
+- [ ] **Pending budget items** surfaced in the resolutions area.
+We will need an indicator / display for when a benefactors vote won.
+     ______________________________________________________date_
+    |winning_tiv Organization Election      |total fund   |     |         
+    | ______________________ |  my_vote | my_commit     |vote  || This row shows which organization the logged-in benefactor has their vote going towards
+p2  ||Leaderboards*         | _______  ______   _______        || *Not the recap, which it currently says. this is the organization race which will be elected at the date above
+    ||                      ||sent   ||Limbo  ||wdrawn ||wdraw || *This row is all totals, not specific to benefactor
+    ||                      ||_______||_______||_______||purchs||
+    ||______________________|___________________________________|
+    | evaluations of selected org or the one they are voting for| if none selected from leaderboard. Links to the expanded table row for that org.
+    | Analysis for this mission                                 |
+    |___________________________________________________________|
+    _______________________________________________________date
+    |"        *                "   |Posts recap:                | *As is
+    | WINNER                       | best case for              |
+p1* | ___my_vote. its_%_of_total__ | leading contex             | *recap
+    || 2nd, 3rd, 4th.*            ||                            |* Only those 3. 
+    ||                            ||                            |
+    ||____________________________||                            |
+    |______________________________|____________________________|
+## mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout)
+> Every initiative has a unique mission page (`?mission=` / `?id=<tiv>`).
+> Grid: **a** mission toggle ←→ + initiative search · **g** name + core info ·
+> **b** profile + membership status · **c** post stream (3 category tabs:
+> budgeting / mission_support / review) · **e** phase circle, 3 phases
+> (ultimately a 3D globe) · **d** dated progress log ("Elected <tiv> with
+> <EBX>", "Approved <step> for <cost>"…) · **f** pool (in-pool / committed /
+> withdrawn). Cause color accents the whole page.
+- ✅ Layout a–g live against the API (posts, pool, steps, tallies).
+- ✅ **Click-through legal agreement** gating register/claim (kept verbatim).
+- ✅ Competing-organizations card kept below the grid (slot TBD in globe era).
+- [ ] **Full conversation** — the **P3+ post source**; users originate/continue
+  mission threads here (the resolutions link from other surfaces lands here).
 - [ ] **Suggestions → budget** — S/S/S *suggestion* posts (open the moment the tiv
   is elected) feed the org's budget & plan builder, between the guaranteed floor
   and the uncapped max.
-- [ ] **Steps → resolutions** — 7–12 step ring; *context* posts carrying an S/S/S
-  stance resolve into coin-value bumps; early resolution flagged for bonus.
+- [ ] **Steps → resolutions** — 7–12 step ring; *suggestion* (S/S/S) posts resolve
+  into coin-value bumps; early resolution flagged for bonus.
 - [ ] Progress reports (org report vs EN parallel report, benefactor-moderated).
 - [ ] Member communication channel (contributor / representative / executive / beneficiary).
 - [ ] Mission annulus / ring widget (deadlines, 7–12 steps).
 - [ ] Creditcoin front/back + 3D earth (born here).
 
-## en.html — Earthbux News (NEW, skeleton)
-- ✅ Skeleton + function blurb.
-- [ ] Cross-mission feed: featured evaluations, context, analysis.
-- [ ] EN parallel progress reports & accountability coverage.
-- [ ] Post categories & moderation.
-- [ ] Resolve overlap with `main.html` (curated cross-mission feed vs. all-posts landing).
-
 ## profile.html — Profiles
 - ✅ Benefactor profile: credit-coin wallet, choices table, settings.
-- [ ] **User-filtered discussion** — the choices table **toggles a discussion
-  area**; if the user hasn't posted about a mission, show that mission's **leading
-  posts** instead. Clicking a post leads to the **cause page**.
+- [ ] **All of the signed-in user's activity** — users can **reply** to posts from
+  here. The choices table **toggles a discussion area**; if the user hasn't posted
+  about a mission, show that mission's **leading posts** instead. Clicking a post
+  opens the **Context** (P1/P2) or **Mission** (P3+) page.
+- [ ] **Mission-member messageboard** — member pages carry a deeper messageboard /
+  discussion console, **separate from posts**.
 - ✅ **Switch to Organization mode** gated on holding a credit coin → membership picker.
 - [ ] Organization profile: initiative coins, tasklist, annulus 4, memberships.
 - [ ] Beneficiary profile (unique page; voice at phase-2 start).

@@ -901,6 +901,26 @@
       content: "·"; margin-left: 10px; opacity: 0.4; font-weight: 400;
     }
     .phase-recap--pre .phase-recap__sub { line-height: 1.2; }
+    /* ── §3 (2026-08-01): per-phase discussion threads ──
+       Every ACTIVE phase area splits into a thread: checkbox the post types
+       you want, sort by relevance / popularity / recency, page through. */
+    .phase-recap--pre .phase-disc { display: none; }
+    .phase-disc { margin-top: 12px; border-top: 1px dashed rgba(245,240,232,0.14); padding-top: 10px; }
+    .phase-disc__bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+    .phase-disc__eyebrow { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cause-color, var(--clr-honey)); font-weight: 700; }
+    .phase-disc__check { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 0.62rem; color: rgba(245,240,232,0.75); cursor: pointer; user-select: none; }
+    .phase-disc__check input { accent-color: var(--cause-color, #e0a341); margin: 0; }
+    .phase-disc__sort { font: inherit; font-family: var(--font-mono); font-size: 0.62rem; background: transparent; color: rgba(245,240,232,0.85); border: 1px solid rgba(245,240,232,0.25); border-radius: 6px; padding: 3px 6px; margin-left: auto; }
+    .phase-disc__sort option { color: #1a2620; }
+    .phase-disc__post { display: block; text-decoration: none; padding: 7px 8px; border-radius: 6px; border: 1px solid rgba(245,240,232,0.08); margin-bottom: 6px; color: var(--clr-parchment); }
+    .phase-disc__post:hover { background: rgba(255,255,255,0.05); border-color: var(--cause-color, rgba(245,240,232,0.3)); }
+    .phase-disc__meta { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(245,240,232,0.5); margin-bottom: 2px; }
+    .phase-disc__meta b { color: var(--cause-color, var(--clr-honey)); }
+    .phase-disc__body { font-size: 0.76rem; line-height: 1.45; color: rgba(245,240,232,0.85); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .phase-disc__pager { display: flex; align-items: center; gap: 8px; justify-content: flex-end; font-family: var(--font-mono); font-size: 0.6rem; color: rgba(245,240,232,0.6); }
+    .phase-disc__pager button { font: inherit; cursor: pointer; background: transparent; color: rgba(245,240,232,0.85); border: 1px solid rgba(245,240,232,0.25); border-radius: 5px; padding: 2px 9px; }
+    .phase-disc__pager button:disabled { opacity: 0.3; cursor: default; }
+    .phase-disc__empty { font-family: var(--font-mono); font-size: 0.66rem; color: rgba(245,240,232,0.45); padding: 4px 0; }
     /* ── Phase-1 election widget (build-seq 2a) ──
        The phase-1 recap block transforms into the live initiative-election
        UI: per-initiative share-allocation sliders, a running remaining-share
@@ -1151,7 +1171,7 @@
   </style>
 </head>
 <body>
-  <a href="index.html" class="ebx-home-mark">EBX</a>
+  <a href="main.html" class="ebx-home-mark">EBX</a>
 
   <!-- ══ TOP BAR — 7 cause tabs span between EBX and profile ══ -->
   <div class="ebx-topbar">
@@ -1220,27 +1240,17 @@
       <div class="mission-header" id="mission-header">
         <div id="mission-overview"></div>
       </div>
-      <!-- build-seq 7: phases stack newest-on-top — Phase 5 (Resolution) sits
-           just below the header, Phase 1 (the live election) anchors the bottom. -->
-      <div class="phase-recap" id="phase-recap-5" data-phase="5">
-        <div class="phase-recap__num">Phase 5</div>
-        <div class="phase-recap__body">
-          <div class="phase-recap__title">Resolution</div>
-          <div class="phase-recap__sub" id="phase-recap-5-sub">—</div>
-        </div>
-      </div>
-      <div class="phase-recap" id="phase-recap-4" data-phase="4">
-        <div class="phase-recap__num">Phase 4</div>
-        <div class="phase-recap__body">
-          <div class="phase-recap__title">Credit-Release · mission plan</div>
-          <div class="phase-recap__sub" id="phase-recap-4-sub">—</div>
-        </div>
-      </div>
+      <!-- build-seq §3 (2026-08-01): THREE phases only — the back half
+           (budget · credit · resolution) collapses into one Budgeting &
+           Resolution area. Stack stays newest-on-top; Phase 1 (the live
+           election) anchors the bottom. Each phase area carries its own
+           discussion thread (checkbox type filters · sort · paging). -->
       <div class="phase-recap" id="phase-recap-3" data-phase="3">
         <div class="phase-recap__num">Phase 3</div>
         <div class="phase-recap__body">
-          <div class="phase-recap__title">New-Mission · budget discussion</div>
+          <div class="phase-recap__title">Budgeting &amp; Resolution</div>
           <div class="phase-recap__sub" id="phase-recap-3-sub">—</div>
+          <div class="phase-disc" id="phase-disc-3"></div>
         </div>
       </div>
       <div class="phase-recap" id="phase-recap-2" data-phase="2">
@@ -1251,6 +1261,7 @@
             <div class="election-card__remaining" id="phase-recap-2-date" style="display:none;">Org decision <b>—</b></div>
           </div>
           <div class="phase-recap__sub" id="phase-recap-2-sub">—</div>
+          <div class="phase-disc" id="phase-disc-2"></div>
         </div>
       </div>
       <div class="phase-recap" id="phase-recap-1" data-phase="1">
@@ -1258,6 +1269,7 @@
         <div class="phase-recap__body">
           <div class="phase-recap__title">Pre-Initiative · election card</div>
           <div class="phase-recap__sub" id="phase-recap-1-sub">—</div>
+          <div class="phase-disc" id="phase-disc-1"></div>
         </div>
       </div>
     </div>
@@ -1585,13 +1597,23 @@
       // Anchor-date model (README §4/§7): when a specific mission is selected and
       // carries an election_open date, derive Phase-2/3/4 boundaries from THAT
       // anchor via EBX.Cycle.missionPhaseDates — not the cause's CURRENT decision
-      // date. Falls back to the live cause cadence (+7w/+14w) when unselected.
+      // date. Falls back to the live cause cadence (+0w/+7w) when unselected.
       let _pd = null;
       if (opts.missionRef && (opts.missionRef.election_close || opts.missionRef.election_open) && EBX.Cycle.missionPhaseDates) {
         try { _pd = EBX.Cycle.missionPhaseDates(opts.missionRef.election_close || opts.missionRef.election_open); } catch(e) { _pd = null; }
       }
-      const orgVoteDate = _pd ? _pd.phase2_start : new Date(decisionDate.getTime() + 7*WEEK_MS);
-      const releaseDate = _pd ? _pd.phase3_start : new Date(decisionDate.getTime() + 14*WEEK_MS);
+      // §0b (2026-08-01): the org decision falls ON the cause's next decision
+      // day — the weekly cadence makes the p1 close of the NEW mission and the
+      // org close of the PREVIOUS mission the same date (org close = its p1 +
+      // 7wk, and the cause is active exactly every 7 weeks; same rule as the
+      // main.html top card). The old "+7wk" here double-counted the cycle and
+      // rendered the p2 date a full cause-cycle late (backlog bug: hpr showed
+      // Nov 3 / atm Sep 22 instead of Sep 15 / Aug 4; hmr's Sep 8 was right).
+      // NOTE: the _pd (missionPhaseDates, +8wk) path for a selected past
+      // mission still disagrees with this cadence by 1 week — parked with the
+      // back-half phase-enum redesign in the backlog.
+      const orgVoteDate = _pd ? _pd.phase2_start : new Date(decisionDate.getTime());
+      const releaseDate = _pd ? _pd.phase3_start : new Date(decisionDate.getTime() + 7*WEEK_MS);
       // build-seq 7: derive how far the targeted mission has progressed so the
       // phases it hasn't reached collapse to the STRUCTURE.md "Pre" one-liner.
       const _stForPhase = (opts.missionRef && opts.missionRef.status)
@@ -1629,7 +1651,13 @@
         (!_refMission && opts.missionRef.winning_org)));
       const p2RecapRef = _refOrgDone ? opts.missionRef : null;
       if (p2RecapRef) {
-        const winnerName = p2RecapRef.winning_org || 'Organization (record missing)';
+        // §0(b) fix (2026-07-31): initiatives no longer carry a `winning_org`
+        // name (legacy JSON field) — resolve the winner from the mission's
+        // winning_org_id against the loaded organizations instead.
+        const _refWinOrg = _refMission && _refMission.winning_org_id
+          ? (EBX.config.organizations || []).find(o => o.id === _refMission.winning_org_id) : null;
+        const winnerName = (_refWinOrg && _refWinOrg.name)
+          || p2RecapRef.winning_org || 'Organization (record missing)';
         // Runner-ups from the synthetic distribution — presumptive until
         // real per-election org tallies are stored.
         const ru = (typeof causeOrgShares === 'function' ? causeOrgShares() : [])
@@ -1809,19 +1837,16 @@
       }
       // build-seq 7: render each phase block either active (rich body) or as a
       // single-line "Phase x · Title · Date" pre stub.
-      // §1 (2026-07-09): phase 5 is GONE — the fifth block is Suggestions:
-      // the mission's S/S/S pipeline (context suggestions → resolutions).
+      // build-seq §3 (2026-08-01): THREE phases only. Blocks 4 & 5 are gone —
+      // credit release, resolutions AND the S/S/S suggestions pipeline all
+      // live inside the single Phase-3 "Budgeting & Resolution" area.
       const _PHASE_TITLES = {
         2: ['New-Initiative', 'New-Initiative · org election card'],
-        3: ['New-Mission',    'New-Mission · budget discussion'],
-        4: ['Credit-Release', 'Credit-Release · mission plan'],
-        5: ['Suggestions',    'Suggestions · services, supplies & support'],
+        3: ['Budgeting & Resolution', 'Budgeting & Resolution · mission underway'],
       };
       const _phaseDate = {
         2: orgVoteDate,
         3: releaseDate,
-        4: new Date(releaseDate.getTime() + 7*WEEK_MS),
-        5: new Date(releaseDate.getTime() + 14*WEEK_MS),
       };
       const _renderPhaseBlock = (num, active, activeSubHtml) => {
         const blk = document.getElementById('phase-recap-' + num);
@@ -1859,18 +1884,23 @@
           _tEl.textContent = (_wt.emoji ? _wt.emoji + ' ' : '') + _wt.title + ' · Organization Election';
         }
       })();
-      _renderPhaseBlock(3, _curPhase >= 3,
-        `Budget locked, mission underway. Release window opens <b>${fmtDate(releaseDate)}</b>.`);
-      _renderPhaseBlock(4, _curPhase >= 4,
-        leader && leader.status === 'resolved'
-          ? `Resolved. Credits released in stages; benefactors posted evaluations of mission impact.`
-          : `Credits release in stages; benefactors evaluate the mission's impact and post resolutions.`);
-      // Suggestions live from the org race onward (a mission is in flight).
+      // §3: the whole back half is ONE area. It activates once budgeting
+      // starts (curPhase >= 3) OR as soon as a mission is in flight and has
+      // suggestions to collect (S/S/S opens the moment the tiv is elected).
       const _sugMission = _displayMission(cause);
       const _sugLive = !!(_sugMission && (p2Active || p2RecapRef));
-      _renderPhaseBlock(5, _sugLive,
-        `<div id="sss-area" style="font-size:0.78rem;opacity:0.6;">Loading suggestions…</div>`);
-      if (_sugLive) renderSuggestions(_sugMission.id);
+      _renderPhaseBlock(3, _curPhase >= 3 || _sugLive,
+        (_curPhase >= 3
+          ? (leader && leader.status === 'resolved'
+              ? `Resolved. Credits released in stages; benefactors posted evaluations of mission impact.`
+              : `Budget locked, mission underway. Release window opened <b>${fmtDate(releaseDate)}</b>; credits release in stages and suggestions resolve below.`)
+          : `Opens <b>${fmtDate(releaseDate)}</b> — suggestions (services · supplies · support) are already collecting for the mission in flight.`) +
+        `<div id="sss-area" style="font-size:0.78rem;opacity:0.6;margin-top:8px;">Loading suggestions…</div>` +
+        `<div style="margin-top:8px;"><a class="btn btn-ghost btn-sm" style="text-decoration:none;"
+              href="mission.html?mission=${_sugMission ? _sugMission.id : ''}&cause=${cause.id}">Resolutions live on the Mission page →</a></div>`);
+      if (_sugLive || _curPhase >= 3) renderSuggestions((_sugMission || {}).id);
+      // §3: each phase area splits into its own navigable discussion thread.
+      renderPhaseDiscussions(cause);
     }
 
     // ── §1b/§1 vocabulary: the Suggestions area ─────────────────────────────
@@ -1978,6 +2008,121 @@
         renderSuggestions(missionId);
       } catch (e) { msg.textContent = 'Network error — try again.'; }
     }
+
+    // ── §3 (2026-08-01): per-phase discussion threads ───────────────────────
+    // Each ACTIVE phase area splits into its own thread. Checkboxes pick which
+    // post types show (taxonomy from backend/app/post_config.py), a select
+    // sorts by relevance / popularity / recency, and a pager walks the thread
+    // 5 posts at a time. Read-only here (the Election surface never writes) —
+    // clicking a post opens the Context page (P1/P2) or Mission page (P3).
+    const _DISC_TYPES = {
+      1: ['context', 'case'],
+      2: ['analysis', 'investigation', 'evaluation'],
+      3: ['service', 'supply', 'support', 'evaluation'],
+    };
+    const _DISC_PAGE = 5;
+    const _discState = {};   // phase → { types:Set, sort, page }
+    const _discPosts = {};   // phase → cached fetched posts
+    function _discStateFor(ph) {
+      if (!_discState[ph]) _discState[ph] = { types: new Set(_DISC_TYPES[ph]), sort: 'relevance', page: 0 };
+      return _discState[ph];
+    }
+    // The mission each phase area discusses.
+    function _discMission(cause, ph) {
+      const ms = (EBX.config.missions || []).filter(m => m.cause_id === cause.id)
+        .sort((a, b) => (b.cycle_num || 0) - (a.cycle_num || 0));
+      if (ph === 1) return _v2Mission(cause.id);
+      if (ph === 2) return ms.find(m => m.winning_tiv_id) || _displayMission(cause);
+      return ms.find(m => m.winning_org_id || ['budget', 'credit', 'resolution'].includes(m.current_phase))
+          || ms.find(m => m.winning_tiv_id) || _displayMission(cause);
+    }
+    function _discScore(p) {
+      return (p.helpful_count || 0) - (p.harmful_count || 0) + (p.reply_count || 0);
+    }
+    async function renderPhaseDiscussions(cause) {
+      for (const ph of [1, 2, 3]) {
+        const box = document.getElementById('phase-disc-' + ph);
+        if (!box) continue;
+        const blk = document.getElementById('phase-recap-' + ph);
+        if (blk && blk.classList.contains('phase-recap--pre')) { box.innerHTML = ''; continue; }
+        const m = _discMission(cause, ph);
+        if (!m) { box.innerHTML = ''; continue; }
+        if (!_discPosts[ph] || _discPosts[ph].missionId !== m.id) {
+          let posts = [];
+          try {
+            const r = await fetch('/posts?mission_id=' + m.id + '&roots_only=true&limit=100');
+            if (r.ok) posts = await r.json();
+          } catch (e) {}
+          _discPosts[ph] = { missionId: m.id, posts };
+        }
+        _renderDiscList(cause, ph);
+      }
+    }
+    function _renderDiscList(cause, ph) {
+      const box = document.getElementById('phase-disc-' + ph);
+      const st = _discStateFor(ph);
+      const cached = _discPosts[ph] || { posts: [] };
+      const typeOf = p => p.type || p.stance || p.category || '';
+      let posts = cached.posts.filter(p => st.types.has(typeOf(p)));
+      if (st.sort === 'recency') {
+        posts.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+      } else if (st.sort === 'popularity') {
+        posts.sort((a, b) => _discScore(b) - _discScore(a));
+      } else { // relevance = popularity with a recency decay (half-life ~1 week)
+        const rel = p => _discScore(p) / (1 + (Date.now() - new Date(p.created_at || 0)) / (7 * 86400000));
+        posts.sort((a, b) => rel(b) - rel(a));
+      }
+      const pages = Math.max(1, Math.ceil(posts.length / _DISC_PAGE));
+      st.page = Math.min(st.page, pages - 1);
+      const slice = posts.slice(st.page * _DISC_PAGE, (st.page + 1) * _DISC_PAGE);
+      const missionId = cached.missionId || '';
+      const href = p => ph === 3
+        ? 'mission.html?mission=' + missionId + '&cause=' + cause.id
+        : 'main.html?cause=' + cause.id + (p.tiv_id ? '&tiv=' + p.tiv_id : '');
+      const checks = _DISC_TYPES[ph].map(t =>
+        '<label class="phase-disc__check"><input type="checkbox" ' + (st.types.has(t) ? 'checked' : '') +
+        ' onchange="discToggleType(' + ph + ',\'' + t + '\',this.checked)" />' + t + '</label>').join('');
+      const list = slice.length
+        ? slice.map(p => {
+            const regards = p.tiv_id || p.org_id || '';
+            return '<a class="phase-disc__post" href="' + href(p) + '">' +
+              '<div class="phase-disc__meta"><b>' + (typeOf(p) || 'post') + '</b> · ' +
+                new Date(p.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+                (regards ? ' · re: ' + regards : '') + ' · +' + _discScore(p) + '</div>' +
+              (p.title ? '<div style="font-weight:600;font-size:0.78rem;">' + p.title + '</div>' : '') +
+              '<div class="phase-disc__body">' + (p.body || '') + '</div></a>';
+          }).join('')
+        : '<div class="phase-disc__empty">No posts of the checked types yet' +
+          (ph === 3 ? ' — start the thread on the Mission page.' : ' — start the thread on the Context page.') + '</div>';
+      box.innerHTML =
+        '<div class="phase-disc__bar"><span class="phase-disc__eyebrow">Discussion</span>' + checks +
+          '<select class="phase-disc__sort" onchange="discSetSort(' + ph + ',this.value)">' +
+            ['relevance', 'popularity', 'recency'].map(s =>
+              '<option value="' + s + '"' + (st.sort === s ? ' selected' : '') + '>' + s + '</option>').join('') +
+          '</select></div>' +
+        list +
+        (pages > 1
+          ? '<div class="phase-disc__pager"><button ' + (st.page === 0 ? 'disabled' : '') +
+            ' onclick="discPage(' + ph + ',-1)">‹ prev</button>page ' + (st.page + 1) + '/' + pages +
+            '<button ' + (st.page >= pages - 1 ? 'disabled' : '') + ' onclick="discPage(' + ph + ',1)">next ›</button></div>'
+          : '');
+      // stash the cause for the handlers below
+      _renderDiscList._cause = cause;
+    }
+    window.discToggleType = function (ph, t, on) {
+      const st = _discStateFor(ph);
+      if (on) st.types.add(t); else st.types.delete(t);
+      st.page = 0;
+      _renderDiscList(_renderDiscList._cause, ph);
+    };
+    window.discSetSort = function (ph, s) {
+      _discStateFor(ph).sort = s; _discStateFor(ph).page = 0;
+      _renderDiscList(_renderDiscList._cause, ph);
+    };
+    window.discPage = function (ph, d) {
+      _discStateFor(ph).page += d;
+      _renderDiscList(_renderDiscList._cause, ph);
+    };
 
     // ── Phase-1 election widget (build-seq 2a) ──
     // Builds a soft-vote share allocator inside the phase-recap-1 block.
@@ -2453,7 +2598,7 @@
           <div class="p1-grid">
             <div>
               <div class="p1-box__row" style="cursor:default;color:var(--cause-color);font-weight:700;font-size:0.95rem;">
-                <span>✓ ${title}</span><span style="font-family:var(--font-mono);font-size:0.66rem;">WINNER</span>
+                <span>✓ ${title}</span><span style="font-family:var(--font-mono);font-size:0.66rem;"><span id="p1-recap-winvotes" style="opacity:0.85;"></span>WINNER</span>
               </div>
               <div style="font-family:var(--font-mono);font-size:0.66rem;opacity:0.8;margin:8px 0 2px;">
                 My vote: <b style="color:var(--cause-color);">${_topPickName || '—'}</b>${(_topPickEbx > 0 && _poolTotal > 0) ? ' · ' + (_topPickEbx / _poolTotal * 100).toFixed(0) + '%' : ''}
@@ -2467,6 +2612,19 @@
             </div>
           </div>
         </div>`;
+      // build-seq §3 (2026-07-31): hydrate the winner's VOTE COUNT from the
+      // mission's p1 tally (fire-and-forget, matches the live-card pattern).
+      try {
+        const _mid = missionRef.mission_id;
+        if (_mid) fetch('/missions/' + _mid + '/p1/tally')
+          .then(r => r.ok ? r.json() : null)
+          .then(t => {
+            const el = document.getElementById('p1-recap-winvotes');
+            const e = t && (t.entries || []).find(x => x.tiv_id === missionRef.id);
+            if (el && e) el.textContent = Number(e.votes || 0).toLocaleString(undefined,
+              { maximumFractionDigits: 1 }) + ' votes · ';
+          }).catch(() => {});
+      } catch (e) {}
     }
 
     // ── build-seq 2 (pass 35): STRUCTURE Phase-1 helpers ──
@@ -3590,9 +3748,11 @@
         let _sub = '', _line2 = '', _line3 = '';
         if (_ph === 1)      { _line2 = _clip(cause.name, 12) + ' Decision:'; _line3 = _fmt(_missionP1Ms(_m)); }
         else if (_ph === 2) { _sub = 'Phase 2 · Org Election'; _line2 = _winTiv ? _acronym(_winTiv.title) : cause.name; _line3 = _fmt(_missionP2Ms(_m)); }
-        else if (_ph === 3) { _sub = 'Phase 3 · Budget';       _line2 = 'Budget';     _line3 = _fmt(_missionCreditMs(_m)); }
-        else if (_ph === 4) { _sub = 'Phase 4 · Credit';       _line2 = 'Credit'; }
-        else                { _sub = 'Phase 5 · Resolution';   _line2 = 'Resolution'; }
+        // §3 (2026-08-01): three phases only — the whole back half reads
+        // "Phase 3 · Budgeting & Resolution" (internal enum still 3/4/5).
+        else if (_ph === 3) { _sub = 'Phase 3 · Budgeting & Resolution'; _line2 = 'Budget'; _line3 = _fmt(_missionCreditMs(_m)); }
+        else if (_ph === 4) { _sub = 'Phase 3 · Budgeting & Resolution'; _line2 = 'Credit'; }
+        else                { _sub = 'Phase 3 · Budgeting & Resolution'; _line2 = 'Resolution'; }
 
         if (_sub) {
           centerContent =
@@ -3806,7 +3966,13 @@
       }
 
       const startDate = (init && (init.election_close || init.election_open)) ? fmtDate(new Date(init.election_close || init.election_open)) : null;
-      const orgName = missionRef && missionRef.winning_org ? missionRef.winning_org : null;
+      // §0(b) fix (2026-07-31): winning org name comes from the mission record
+      // (winning_org_id → organizations), not the legacy init.winning_org field.
+      const _hdrMission = missionRef && missionRef.mission_id
+        ? (EBX.config.missions || []).find(mm => mm.id === missionRef.mission_id) : null;
+      const _hdrOrg = _hdrMission && _hdrMission.winning_org_id
+        ? (EBX.config.organizations || []).find(o => o.id === _hdrMission.winning_org_id) : null;
+      const orgName = (_hdrOrg && _hdrOrg.name) || (missionRef && missionRef.winning_org) || null;
       // Brief header content: mission title (+ org) when a mission is targeted,
       // else the cause name + cycle number. Phase chip + start date are secondary.
       const briefMain = missionRef

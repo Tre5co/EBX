@@ -463,7 +463,13 @@ class Post(Base):
     __tablename__ = "posts"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    category: Mapped[str] = mapped_column(String, default="editorial", nullable=False)  # case|context|analysis|evaluation|org_update|editorial|headline
+    # Two-tier taxonomy (2026-07-19): `category` is the SUPERcategory, `type` the
+    # SUBcategory. Benefactor cats: budgeting{service|supply|support} ·
+    # mission_support{context|investigation|analysis} · review{case|evaluation}.
+    # Org/staff cats (org_update|mission_update|testimonial|editorial|headline|
+    # resolution) leave `type` null. Source of truth: app/post_config.py.
+    category: Mapped[str] = mapped_column(String, default="editorial", nullable=False)
+    type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
 

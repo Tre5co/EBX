@@ -32,6 +32,7 @@ from sqlalchemy import func as sqlfunc, select
 from sqlalchemy.orm import Session
 
 from . import models, schemas
+from . import post_config as pcfg
 from .auth import hash_password
 
 
@@ -76,10 +77,14 @@ EN_MISSION = 8 / 32          # EN guaranteed 1/4 — its mission-side budget
 EN_ADVANCE = 2 / 32          # EN 1/16 advance; releases with the case post reward
 ORG_MISSION = 8 / 32         # org guaranteed 1/4 — its mission-side budget
 ORG_ADVANCE = 2 / 32         # org 1/16 advance; releases with the case post reward
-# Three benefactor post-type rewards, 1/32 each (released with the case reward).
-REWARD_BEST_CASE = 1 / 32
-REWARD_CONTEXT_OR_ANALYSIS = 1 / 32
-REWARD_COMMENTS = 1 / 32
+# The three REWARDED post types (mission_support), 1/32 each — context ·
+# investigation · analysis (replaces best_case/context_or_analysis/comments).
+# Staggered release (context with the advances · investigation at end of P3 ·
+# analysis later) awaits the winner-picker; distribution currently books all
+# three at settlement (staged in INSTRUCTIONS "Post model v2").
+REWARD_CONTEXT = 1 / 32
+REWARD_INVESTIGATION = 1 / 32
+REWARD_ANALYSIS = 1 / 32
 # The remaining 9/32 is flexible — released in the credit phase to the org or
 # back to benefactors. (8+2 EN) + (8+2 org) + (3 rewards) + (9 flexible) = 32/32.
 FLEXIBLE = 9 / 32
@@ -772,6 +777,26 @@ def is_mission_member(db: Session, ben_id: int, mission_id: str) -> bool:
     return float(p1_committed) > 0 or int(p2.ebx_spent or 0) > 0
 
 
+def can_post_mission(db: Session, ben_id: int, mission_id: str) -> bool:
+    """Posting gate for benefactor categories (settled 2026-07-19): you must be a
+    mission member, OR have *agreed to become one* by committing a phase-1 stake.
+
+    Strict membership is minted at election (finalize_p2); before that no one holds
+    a coin, so `is_mission_member` is false through phase 1. The "agreement" that
+    lets you post early is a committed phase-1 stake (ebx_committed > 0) — the same
+    skin-in-the-game the membership rule ultimately requires. Someone who never
+    commits stays ineligible and will not receive membership at the p2 vote."""
+    if is_mission_member(db, ben_id, mission_id):
+        return True
+    p1_committed = db.scalar(
+        select(sqlfunc.coalesce(sqlfunc.sum(models.VoteP1.ebx_committed), 0)).where(
+            models.VoteP1.ben_id == ben_id,
+            models.VoteP1.mission_id == mission_id,
+        )
+    ) or 0
+    return float(p1_committed) > 0
+
+
 def mint_mission_coins(db: Session, mission_id: str) -> int:
     """Mint the mission's credit coins — every benefactor who voted gets coins
     sized by their remaining stake (p1 committed + p2 spend), possibly tiny
@@ -952,17 +977,18 @@ def resolve_suggestion(
     actor: models.BenefactorAccount,
     value_bump: float = 0.02,
 ) -> models.Post:
-    """Mark a context SUGGESTION (S/S/S) as achieved — it becomes a RESOLUTION
-    (resolutions are the winning context-suggestions; context categorizes
-    them). Bumps the mission's credit-coin value; the org achieving it gains
-    value (org.score)."""
+    """Mark a BUDGETING item (S/S/S — service/supply/support) as achieved — it
+    becomes a RESOLUTION. Per the settled model a budgeting item resolves when
+    its money is actually paid out; a mission operator records that here, which
+    bumps the mission's credit-coin value. (Auto-resolve-on-payout is staged —
+    INSTRUCTIONS "Post model v2".)"""
     post = db.get(models.Post, post_id)
     if post is None:
         raise ValueError("Post not found")
     if post.category == "resolution":
         raise ValueError("Already resolved")
-    if post.category != "context":
-        raise ValueError("Only context suggestions can be resolved")
+    if post.category != "budgeting":
+        raise ValueError("Only budgeting items (service/supply/support) can be resolved")
     mission = db.get(models.Mission, post.mission_id) if post.mission_id else None
     if mission is None and post.tiv_id:
         tiv = db.get(models.Initiative, post.tiv_id)
@@ -1682,10 +1708,10 @@ def distribute_mission(db: Session, mission_id: str) -> dict:
         # Organization: mission-side 1/4 + 1/16 advance (= 5/16).
         alloc["org_mission"] = _T("org", ORG_MISSION, "org mission-side budget (1/4)", org=win_org)
         alloc["org_advance"] = _T("org", ORG_ADVANCE, "org advance 1/16 (releases with case reward)", org=win_org)
-        # Three benefactor post-type rewards (1/32 each).
-        alloc["reward_best_case"] = _T("reward", REWARD_BEST_CASE, "best-case post reward")
-        alloc["reward_context_or_analysis"] = _T("reward", REWARD_CONTEXT_OR_ANALYSIS, "context/analysis post reward")
-        alloc["reward_comments"] = _T("reward", REWARD_COMMENTS, "comments post reward")
+        # The three rewarded mission-support post types (1/32 each).
+        alloc["reward_context"] = _T("reward", REWARD_CONTEXT, "context post reward")
+        alloc["reward_investigation"] = _T("reward", REWARD_INVESTIGATION, "investigation post reward")
+        alloc["reward_analysis"] = _T("reward", REWARD_ANALYSIS, "analysis post reward")
         # Whatever is left is the 9/32 flexible remainder, held in the pool.
         flexible = pool - sum(alloc.values())
         if flexible > 0:
@@ -1784,48 +1810,72 @@ def create_post(
     data: schemas.PostCreate,
     author: Optional[models.BenefactorAccount] = None,
 ) -> models.Post:
-    """Category author-permission rules (§1b — everybody posts, by lane):
-      * context   — suggesting S/S/S (stance ∈ service|supply|support; cost
-                    analysis is CONTEXT). Members AND non-members.
-      * case      — both.
-      * analysis  — real analysis, never cost-based. MISSION MEMBERS only.
-      * evaluation— NON-members only (the outside verdict lane).
-      * org_update— members of the authoring org only.
-      * editorial/headline — staff only.
+    """Post creation rules (settled 2026-07-19; taxonomy in `post_config`).
+
+    Benefactor categories (budgeting · mission_support · review):
+      * `type` must belong to `category`.
+      * author must be able to post the mission — a MEMBER, or agreed-to-become
+        one via a committed phase-1 stake (`can_post_mission`).
+      * one post per (ben, type, mission); replies (`parent_id`) are exempt.
+        Budgeting slots are rolling — a new one should open only once the prior
+        item is paid out; payout isn't built yet, so the one-open limit stands
+        (tracked in INSTRUCTIONS "Post model v2").
+
+    Org/staff lanes are unchanged: org_update = authoring-org member ·
+    editorial/headline = staff.
     """
+    mission_id = _post_mission_id(db, data)
+    staff = author is not None and getattr(author, "is_staff", False)
+    is_reply = bool(data.parent_id)
+
     if data.category in _STAFF_ONLY_CATEGORIES:
         if author is None:
             raise PermissionError("editorial/headline posts require an employee account")
         require_staff(author)
 
-    if data.category == "context" and data.stance and data.stance not in SSS_VALUES:
-        raise ValueError(f"context stance must be one of {SSS_VALUES} (an S/S/S suggestion) or empty")
-
-    mission_id = _post_mission_id(db, data)
-    staff = author is not None and getattr(author, "is_staff", False)
-
-    if data.category == "analysis" and not staff:
-        if author is None:
-            raise PermissionError("analysis posts require a signed-in account")
-        if mission_id is None:
-            raise ValueError("analysis must target a mission or initiative")
-        if not is_mission_member(db, author.id, mission_id):
-            raise PermissionError("analysis is reserved for mission members — vote in both elections (or hold the mission's credit coin) first")
-
-    if data.category == "evaluation" and not staff and author is not None:
-        if mission_id is not None and is_mission_member(db, author.id, mission_id):
-            raise PermissionError("evaluation is reserved for NON-members — members post analysis instead")
-        if data.org_id and get_membership(db, author.id, data.org_id) is not None:
-            raise PermissionError("you can't evaluate an organization you belong to")
-
-    if data.category == "org_update":
+    elif data.category == "org_update":
         org_id = data.org_author_id or data.org_id
         if author is None or org_id is None:
             raise PermissionError("org updates require a signed-in org member")
         if not staff and get_membership(db, author.id, org_id) is None:
             raise PermissionError("org updates require membership in the authoring organization")
 
+    elif data.category in pcfg.POST_REQUIRES_MEMBERSHIP:
+        if author is None:
+            raise PermissionError(f"{data.category} posts require a signed-in account")
+        t = pcfg.TYPES.get(data.type or "")
+        if t is None or t.category != data.category:
+            raise ValueError(
+                f"'{data.type}' is not a valid type for category '{data.category}' "
+                f"(expected one of {pcfg.CATEGORIES[data.category].type_keys})"
+            )
+        if mission_id is None:
+            raise ValueError(f"{data.category} posts must target a mission or initiative")
+        if not staff and not can_post_mission(db, author.id, mission_id):
+            raise PermissionError(
+                "you must be a mission member — or agree to become one by committing "
+                "a phase-1 stake — before posting here"
+            )
+        if not is_reply:
+            dup = db.scalar(
+                select(models.Post).where(
+                    models.Post.ben_author_id == author.id,
+                    models.Post.mission_id == mission_id,
+                    models.Post.type == data.type,
+                    models.Post.parent_id.is_(None),
+                )
+            )
+            if dup is not None:
+                raise ValueError(
+                    f"you already have a {data.type} post for this mission — edit it, "
+                    f"or reply to add more (one {data.type} per mission)"
+                )
+
     post = models.Post(**data.model_dump())
+    # Normalise the derived mission onto benefactor posts so the per-type limit
+    # and the "my posts" history are reliable even when the post targets a tiv.
+    if data.category in pcfg.POST_REQUIRES_MEMBERSHIP and post.mission_id is None:
+        post.mission_id = mission_id
     # Attribute ben-authored posts to the signed-in account so the profile
     # "my posts" history + helpful-post rewards can find them.
     if author is not None and post.author_type == "ben" and post.ben_author_id is None:
@@ -1837,11 +1887,19 @@ def create_post(
 
 
 def react_to_post(db: Session, post_id: str, ben_id: int, value: str) -> models.Post:
-    """Upsert a ben's reaction and keep the denormalised counts in sync."""
+    """Upsert a ben's reaction and keep the denormalised counts in sync.
+
+    Reactions are one backend enum (helpful/neutral/harmful); a post type only
+    exposes a SUBSET (post_config). Budgeting = helpful only; review = helpful/
+    harmful (Fair/Unfair). Reject anything the type doesn't allow so hidden
+    reactions can't be forced through the API."""
     _valence_ok(value)
     post = db.get(models.Post, post_id)
     if post is None:
         raise ValueError("Post not found")
+    if post.type and pcfg.is_benefactor_type(post.type) and not pcfg.is_reaction_allowed(post.type, value):
+        allowed = ", ".join(pcfg.reaction_label(post.type, r) for r in pcfg.allowed_reactions(post.type))
+        raise ValueError(f"'{value}' isn't a valid reaction for a {post.type} post (allowed: {allowed})")
     existing = db.scalar(
         select(models.PostVote).where(
             models.PostVote.post_id == post_id,

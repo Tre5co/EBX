@@ -1,0 +1,73 @@
+It's time to break down this logical puzzle of the causes. We can't operate without a broad framework of causes, but they need a prospect of change and improvement.
+However, they need to be resistant to corruption.
+The problem with good systems is that once they become corrupted, it stays that way. 
+That's why you need to allocate resources towards a thick skin.
+
+The cause needs to be a ubiquitously essential experience of humans that someone would donate to have optimized.
+
+If THE SAME cause is voted on by over 50% of the people for the whole 6-week period, it replaces the cause that would have come next.
+For each mission, diaplay 
+
+Next things
+- Fix the org election experience. It's ugly.
+- The active cause active mission top card has many errors.
+- In the bottom row of the 7 causes, there is space on the left and the right. Add a link to "Help" (->index.html) on the left and one for 
+- Context page profile is in a new line
+- main glowy marker pointing
+- Colored sectors ray outwards. 
+
+Handling ties:
+In the last election, I think I voted 5 each to make solar grids more efficient and global education access grid. What ended up happening was Global Education Access Grid won, and it says I committed 4.5 votes (not possible) and the total fund is 5 and I'm trying to figure out what to do. This issue will have to be resolved on a case by case basis and in the future it will be extremely rare.
+Right now: org decisions: Human rights: sep 8 (correct) human progress: nov 3 (wrong) atmosphere: sep 22 (wrong)
+
+ _________________________________________________________________________________________
+|                  |                                                  |                  |
+|       a          |                   g                              |         b        |
+|__________________|                                                  |__________________|
+|                   \                      ____                      /                   |
+|                     \                                            /                     |
+|                       \                                        /                       |
+|                         \ /                                \ /                         |
+|                          |                                  |                          |
+|         c                                  e                                 d         |
+|                                                                                        |
+|                          |                                  |                          |
+|                         / \                                / \                         |
+|                       /                                        \                       |
+|                     /                    _____                   \                     |
+|___________________/                                                \___________________|
+|                                                                                        |
+|      f                                                                                 |
+|                                                                                        |
+|                                                                                        |
+|________________________________________________________________________________________|
+
+a. mission toggle left<>right with a search bar that users can look up initiatives, which all have their own page.
+b. profile and membership status (if mission is active, all users have a membership status)
+c. Stream of most recent posts in one of the 3 categories for the specific initiative/mission. Toggle the 3 categories at the bottom.
+d. Dated log of updates in mission progress. For example "Finished <rank> in <cause>", "Advanced to P2 with <amount> EBX", "Approved <budget-item> for <cost>"
+e. Circle displaying the current phase and status of the initiative. Ultimately this will be a 3d globe.
+f.Information about how much money is in the pool, how much is committed, & how much has been withdrawn.
+g. Name and core info about the initiative.
+
+Landing
+___________________________________________________________________
+|EBX___________________________________________________profile_____|
+|                                                                  |
+|                                                                  |
+|                            a                                     |
+|                                                                  |  
+|                                                                  |
+||_________________________________________________________________|
+||                              | ___________ __________ _________ |
+||                              ||          ||         ||         ||
+||              b               ||    p1    ||   p2    ||   p3    || p1->main, p2->cause, p3->mission (links)
+||                              ||          ||         ||         ||
+||______________________________||__________||_________||_________||
+|                                                                  |
+
+a. "In 2023, Earthbux was created with one goal: Democratize and publicize charity. Capital warehouses of large private endowments hold trillions of dollars, incentivizing the most capable organizations to work for the richest grantmakers while ignoring the opinions of most people. Meanwhile, public charities fund professional fundraisers instead of the missions they allegedly support. (1) Earthbux operates ethically inside a system that doesn't require transparency by leveraging community engagement and independent news production to give donors control of their donations."
+b. "The System - 3 Phases - All Community-Controlled
+1. Initiative Election
+2. Organization Election
+3. Budgeting & Resolution"

@@ -3,347 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Earthbux — You donate. We follow.</title>
+  <title>Earthbux — Democratize and publicize charity</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
-    /* ── Landing page ────────────────────────────────────────────────────
-       Combines the news (EN), an expanded discussion feed, and the about
-       copy on one conventional charity landing page. Big type, image
-       placeholders (replace the .lp-img backgrounds with Jax's art), links
-       to Home / Profile and to the cause pages for the upcoming elections,
-       with a deeper news + discussion feed below. */
-    body { background: var(--clr-parchment); }
-
-    /* Top nav */
-    .lp-nav {
-      position: sticky; top: 0; z-index: 20;
-      height: var(--nav-height);
-      background: rgba(15,26,20,0.96);
-      border-bottom: 1px solid rgba(245,240,232,0.08);
-      backdrop-filter: blur(8px);
+    /* ── Landing — build-seq §2 (2026-08-01): EXTREME simplify, jax notes 2.
+       Topbar (EBX · profile) · a: founding blurb · b: the 3-phase system with
+       p1→main / p2→cause / p3→mission link cards. Nothing else.
+       (The old all-posts stream left this page; the newsfeed lives on the
+       Context/Mission surfaces per structure.md.) ─────────────────────────── */
+    body { background: #0f1a14; color: var(--clr-parchment, #f5f0e8); min-height: 100vh; display: flex; flex-direction: column; }
+    .ld-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 26px; border-bottom: 1px solid rgba(245,240,232,0.08);
     }
-    .lp-nav .container { display: flex; align-items: center; justify-content: space-between; height: 100%; }
-    .lp-brand {
-      font-family: var(--font-display); font-weight: 800; font-size: 1.25rem;
-      color: var(--clr-parchment); text-decoration: none; letter-spacing: -0.01em;
+    .ld-brand {
+      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.3rem;
+      color: var(--clr-parchment, #f5f0e8); text-decoration: none; letter-spacing: -0.01em;
     }
-    .lp-brand em { color: var(--clr-honey); font-style: normal; }
-    .lp-nav__links { display: flex; align-items: center; gap: var(--sp-lg); }
-    .lp-nav__links a {
-      color: rgba(245,240,232,0.82); text-decoration: none;
-      font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 0.03em;
+    .ld-brand em { color: var(--clr-honey, #e8a84c); font-style: normal; }
+    .ld-main { flex: 1; width: 100%; max-width: 980px; margin: 0 auto; padding: 48px 26px 56px; box-sizing: border-box; }
+    /* a — founding blurb */
+    .ld-blurb {
+      font-family: var(--font-display, serif);
+      font-size: clamp(1.05rem, 2vw, 1.35rem); line-height: 1.75;
+      color: rgba(245,240,232,0.9); max-width: 62ch; margin: 0 auto;
     }
-    .lp-nav__links a:hover { color: var(--clr-honey); }
-    .lp-cta {
-      background: var(--clr-honey); color: #0f1a14 !important; font-weight: 700;
-      padding: 8px 18px; border-radius: var(--radius-sm);
+    .ld-blurb b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    /* b — the system + phase links */
+    .ld-system { display: grid; grid-template-columns: 1fr 1.15fr; gap: 26px; align-items: stretch; margin-top: 54px; border-top: 1px solid rgba(245,240,232,0.1); padding-top: 40px; }
+    @media (max-width: 780px) { .ld-system { grid-template-columns: 1fr; } }
+    .ld-system__title { font-family: var(--font-display, serif); font-weight: 800; font-size: clamp(1.4rem, 2.6vw, 1.9rem); margin: 0 0 8px; }
+    .ld-system__sub { font-family: var(--font-mono, monospace); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); margin-bottom: 14px; }
+    .ld-system ol { margin: 0; padding-left: 22px; line-height: 2; font-size: 1rem; color: rgba(245,240,232,0.85); }
+    .ld-phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    @media (max-width: 520px) { .ld-phases { grid-template-columns: 1fr; } }
+    .ld-phase {
+      display: flex; flex-direction: column; justify-content: center; text-align: center;
+      gap: 6px; padding: 22px 12px; text-decoration: none;
+      border: 1px solid rgba(245,240,232,0.16); border-radius: 14px;
+      background: rgba(245,240,232,0.03); color: var(--clr-parchment, #f5f0e8);
+      transition: transform 0.15s, border-color 0.15s, background 0.15s;
     }
-    @media (max-width: 640px) { .lp-nav__hide { display: none; } }
-
-    /* Hero */
-    .lp-hero {
-      background: #0f1a14; color: var(--clr-parchment);
-      padding: var(--sp-3xl) 0;
-      position: relative; overflow: hidden;
-    }
-    .lp-hero__grid {
-      display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--sp-2xl);
-      align-items: center;
-    }
-    @media (max-width: 860px) { .lp-hero__grid { grid-template-columns: 1fr; gap: var(--sp-xl); } }
-    .lp-hero__eyebrow {
-      font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.18em;
-      text-transform: uppercase; color: var(--clr-honey); margin-bottom: var(--sp-md);
-    }
-    .lp-hero__title {
-      font-family: var(--font-display); font-weight: 800;
-      font-size: clamp(2.4rem, 5.5vw, 4rem); line-height: 1.02;
-      letter-spacing: -0.02em; margin: 0 0 var(--sp-md);
-      color: var(--clr-parchment);
-    }
-    .lp-hero__title em { color: var(--clr-honey); font-style: normal; }
-    .lp-hero__sub {
-      font-size: clamp(1rem, 1.6vw, 1.2rem); line-height: 1.6;
-      color: rgba(245,240,232,0.82); max-width: 34ch; margin: 0 0 var(--sp-lg);
-    }
-    .lp-hero__actions { display: flex; gap: var(--sp-md); flex-wrap: wrap; }
-    .btn-honey { background: var(--clr-honey); color: #0f1a14; border: none; font-weight: 700; }
-    .btn-ghost-light {
-      background: transparent; color: var(--clr-parchment);
-      border: 1px solid rgba(245,240,232,0.35);
-    }
-    .btn-ghost-light:hover { border-color: var(--clr-honey); color: var(--clr-honey); }
-
-    /* Image placeholders — swap the background for Jax's provided art. */
-    .lp-img {
-      border-radius: var(--radius-lg);
-      background:
-        linear-gradient(135deg, rgba(232,168,76,0.18), rgba(78,122,78,0.22)),
-        repeating-linear-gradient(45deg, rgba(245,240,232,0.04) 0 12px, transparent 12px 24px);
-      border: 1px dashed rgba(245,240,232,0.25);
-      display: flex; align-items: center; justify-content: center;
-      color: rgba(245,240,232,0.5); font-family: var(--font-mono); font-size: 0.72rem;
-      letter-spacing: 0.08em; text-transform: uppercase; text-align: center; padding: var(--sp-md);
-    }
-    .lp-hero__img { aspect-ratio: 4 / 3; }
-
-    /* Section scaffolding */
-    .lp-section { padding: var(--sp-2xl) 0; }
-    .lp-section--alt { background: var(--clr-paper); }
-    .lp-section__head { margin-bottom: var(--sp-xl); }
-    .lp-section__eyebrow {
-      font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.16em;
-      text-transform: uppercase; color: var(--clr-moss); margin-bottom: var(--sp-sm);
-    }
-    .lp-section__title {
-      font-family: var(--font-display); font-weight: 800;
-      font-size: clamp(1.8rem, 3.4vw, 2.6rem); color: var(--clr-ink); margin: 0;
-    }
-    .lp-section__lead { color: var(--clr-ink-muted); max-width: 60ch; margin-top: var(--sp-sm); line-height: 1.6; }
-
-    /* Upcoming elections */
-    .lp-elections { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-md); }
-    @media (max-width: 900px) { .lp-elections { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 520px) { .lp-elections { grid-template-columns: 1fr; } }
-    .lp-cause-card {
-      display: block; text-decoration: none; color: var(--clr-ink);
-      background: var(--clr-bg); border: 1px solid var(--clr-border);
-      border-top: 4px solid var(--cc, var(--clr-moss));
-      border-radius: var(--radius-md); padding: var(--sp-lg);
-      transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .lp-cause-card:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(20,26,22,0.12); }
-    .lp-cause-card__dot { display:inline-block; width:9px; height:9px; border-radius:50%; background: var(--cc); box-shadow:0 0 6px var(--cc); }
-    .lp-cause-card__name { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; margin: 8px 0 4px; }
-    .lp-cause-card__meta { font-family: var(--font-mono); font-size: 0.72rem; color: var(--clr-ink-light); }
-    .lp-cause-card__date { margin-top: var(--sp-md); font-family: var(--font-mono); font-size: 0.74rem; color: var(--cc); font-weight: 700; }
-
-    /* How it works */
-    .lp-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-lg); }
-    @media (max-width: 760px) { .lp-steps { grid-template-columns: 1fr; } }
-    .lp-step { background: var(--clr-bg); border: 1px solid var(--clr-border); border-radius: var(--radius-md); padding: var(--sp-lg); }
-    .lp-step__num { font-family: var(--font-display); font-weight: 900; font-size: 2rem; color: var(--clr-honey); line-height: 1; }
-    .lp-step__title { font-weight: 700; margin: 8px 0 6px; color: var(--clr-ink); }
-    .lp-step__body { font-size: 0.92rem; line-height: 1.6; color: var(--clr-ink-muted); }
-
-    /* News + discussion feed */
-    .lp-feed-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: var(--sp-2xl); align-items: start; }
-    @media (max-width: 860px) { .lp-feed-grid { grid-template-columns: 1fr; gap: var(--sp-xl); } }
-    .lp-feed-list { display: flex; flex-direction: column; gap: var(--sp-md); }
-    .lp-post {
-      background: var(--clr-bg); border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md); padding: var(--sp-lg); text-decoration: none; color: inherit; display: block;
-      transition: border-color 0.15s;
-    }
-    .lp-post:hover { border-color: var(--clr-moss); }
-    .lp-post__cat { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--clr-moss); }
-    .lp-post__title { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; margin: 6px 0; color: var(--clr-ink); }
-    .lp-post__body { font-size: 0.92rem; line-height: 1.6; color: var(--clr-ink-muted); }
-    .lp-aside { background: var(--clr-bg); border: 1px solid var(--clr-border); border-radius: var(--radius-md); padding: var(--sp-lg); }
-    .lp-aside__title { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clr-ink-light); margin-bottom: var(--sp-md); }
-    .lp-empty { color: var(--clr-ink-light); font-size: 0.9rem; font-style: italic; }
+    .ld-phase:hover { transform: translateY(-3px); border-color: var(--clr-honey, #e8a84c); background: rgba(232,168,76,0.07); }
+    .ld-phase__num { font-family: var(--font-mono, monospace); font-size: 1.5rem; font-weight: 700; color: var(--clr-honey, #e8a84c); }
+    .ld-phase__name { font-weight: 700; font-size: 0.92rem; }
+    .ld-phase__dest { font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.5); }
   </style>
 </head>
 <body>
+  <div class="ld-top">
+    <a class="ld-brand" href="index.html">Earthbux <em>News</em></a>
+    <div id="ebx-user-badge-mount"></div>
+  </div>
 
-  <!-- ── Nav: brand + links to Home / Profile / News, login badge ── -->
-  <nav class="lp-nav">
-    <div class="container">
-      <a href="index.html" class="lp-brand">Earthbux <em>News</em></a>
-      <div class="lp-nav__links">
-        <a href="main.html">Home</a>
-        <a href="profile.html" class="lp-nav__hide">Profile</a>
-        <a href="#news">News &amp; discussion</a>
-        <a href="main.html" class="lp-cta">Start voting →</a>
-        <span id="ebx-user-badge-mount"></span>
-      </div>
-    </div>
-  </nav>
+  <div class="ld-main">
+    <!-- a — the founding blurb -->
+    <p class="ld-blurb">In 2023, Earthbux was created with one goal: <b>Democratize and publicize
+    charity.</b> Capital warehouses of large private endowments hold trillions of dollars,
+    incentivizing the most capable organizations to work for the richest grantmakers while ignoring
+    the opinions of most people. Meanwhile, public charities fund professional fundraisers instead of
+    the missions they allegedly support. Earthbux operates ethically inside a system that doesn't
+    require transparency by leveraging community engagement and independent news production to give
+    donors control of their donations.</p>
 
-  <!-- ── Hero ── -->
-  <header class="lp-hero">
-    <div class="container lp-hero__grid">
+    <!-- b — the system, 3 phases, all community-controlled -->
+    <div class="ld-system">
       <div>
-        <div class="lp-hero__eyebrow">A weekly charity pool, elected by the community</div>
-        <h1 class="lp-hero__title">You donate. <em>We follow.</em></h1>
-        <p class="lp-hero__sub">
-          Every week the community elects one mission and the organization that runs it.
-          Earthbux News supervises, publicizes, and helps see it through — reporting on the
-          cause, not the sponsors.
-        </p>
-        <div class="lp-hero__actions">
-          <a href="main.html" class="btn btn-honey">Vote on this week's mission →</a>
-          <a href="#how" class="btn btn-ghost-light">How it works</a>
-          <a href="mission.html" class="btn btn-ghost-light" title="Nonprofit application — organizations can self-register at any time">Run a mission — register your org →</a>
-        </div>
+        <div class="ld-system__sub">All community-controlled</div>
+        <h2 class="ld-system__title">The System — 3 Phases</h2>
+        <ol>
+          <li>Initiative Election</li>
+          <li>Organization Election</li>
+          <li>Budgeting &amp; Resolution</li>
+        </ol>
       </div>
-      <!-- Replace background-image with Jax's hero art -->
-      <div class="lp-img lp-hero__img" role="img" aria-label="Hero image placeholder">Hero image — replace</div>
-    </div>
-  </header>
-
-  <!-- ── Upcoming elections (links to cause pages) ── -->
-  <section class="lp-section">
-    <div class="container">
-      <div class="lp-section__head">
-        <div class="lp-section__eyebrow">Across the phases</div>
-        <h2 class="lp-section__title">Highlighted missions</h2>
-        <p class="lp-section__lead">One mission from each phase — from this week's initiative vote
-          through resolution. Open one to follow along, weigh in, or vote.</p>
-      </div>
-      <div class="lp-elections" id="upcoming-grid">
-        <div class="lp-empty">Loading upcoming elections…</div>
+      <div class="ld-phases">
+        <a class="ld-phase" href="main.html">
+          <span class="ld-phase__num">P1</span>
+          <span class="ld-phase__name">Initiative Election</span>
+          <span class="ld-phase__dest">Context →</span>
+        </a>
+        <a class="ld-phase" href="cause.html">
+          <span class="ld-phase__num">P2</span>
+          <span class="ld-phase__name">Organization Election</span>
+          <span class="ld-phase__dest">Elections →</span>
+        </a>
+        <a class="ld-phase" href="mission.html">
+          <span class="ld-phase__num">P3</span>
+          <span class="ld-phase__name">Budgeting &amp; Resolution</span>
+          <span class="ld-phase__dest">Missions →</span>
+        </a>
       </div>
     </div>
-  </section>
-
-  <!-- ── How it works (about) ── -->
-  <section class="lp-section lp-section--alt" id="how">
-    <div class="container">
-      <div class="lp-section__head">
-        <div class="lp-section__eyebrow">About</div>
-        <h2 class="lp-section__title">How a mission works</h2>
-        <p class="lp-section__lead">Donors elect the missions and who runs them. Funds release in
-          stages tied to milestones, and Earthbux News tracks every step.</p>
-      </div>
-      <div class="lp-steps">
-        <div class="lp-step">
-          <div class="lp-step__num">01</div>
-          <div class="lp-step__title">Week 0 — Initiative decision</div>
-          <div class="lp-step__body">Benefactors propose initiatives and split their vote across them.
-            The strongest initiative wins and becomes the week's mission.</div>
-        </div>
-        <div class="lp-step">
-          <div class="lp-step__num">02</div>
-          <div class="lp-step__title">Week 8 — Organization decision</div>
-          <div class="lp-step__body">Registered organizations compete to run the elected mission.
-            One vote, one organization — the winner claims the pool.</div>
-        </div>
-        <div class="lp-step">
-          <div class="lp-step__num">03</div>
-          <div class="lp-step__title">Week 16 — Funds released</div>
-          <div class="lp-step__body">Committed funds release in stages as the mission hits its
-            milestones, with EN publishing parallel progress reports.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── News + discussion feed ── -->
-  <section class="lp-section" id="news">
-    <div class="container">
-      <div class="lp-section__head">
-        <div class="lp-section__eyebrow">Earthbux News</div>
-        <h2 class="lp-section__title">News &amp; discussion</h2>
-        <p class="lp-section__lead">Featured evaluations, context, and analysis from across every active
-          mission — the independent reporting layer that keeps organizations to their commitments.</p>
-      </div>
-      <div class="lp-feed-grid">
-        <div class="lp-feed-list" id="news-feed">
-          <div class="lp-empty">Loading the latest…</div>
-        </div>
-        <aside class="lp-aside">
-          <div class="lp-aside__title">Join in</div>
-          <p style="font-size:0.92rem;line-height:1.6;color:var(--clr-ink-muted);margin-top:0;">
-            Earn Earthbucks by contributing the most helpful research and analysis to a mission.
-          </p>
-          <a href="main.html" class="btn btn-forest" style="margin-top:8px;">Go to the missions →</a>
-          <!-- Replace with Jax's art -->
-          <div class="lp-img" style="aspect-ratio:1/1;margin-top:var(--sp-lg);" role="img" aria-label="Community image placeholder">Image — replace</div>
-        </aside>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <div id="ebx-footer-mount"></div>
-
   <script src="resources/js/ebx_shared.js"></script>
-  <script>
-  (async function () {
-    try { await EBX.loadAll(); } catch (e) { try { await EBX.loadCauses(); } catch (_e) {} }
-
-    const fmtDate = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-
-    // ── Highlighted missions: one per phase (instructions §1) ──
-    try {
-      const causes = (EBX.config && EBX.config.causes) || [];
-      const inits = (EBX.config && EBX.config.initiatives) || [];
-      const causeById = {}; causes.forEach((c) => { causeById[c.id] = c; });
-      const phaseOf = (m) => {
-        const ph = (m.current_phase || '').toLowerCase();
-        if (ph === 'resolution') return 5;
-        if (ph === 'credit') return 4;
-        if (ph === 'budget') return 3;
-        if (m.winning_tiv_id) return 2;
-        return 1;
-      };
-      const PHASE_LABEL = { 1: 'Phase 1 · Initiative', 2: 'Phase 2 · Organization', 3: 'Phase 3 · Budget', 4: 'Phase 4 · Credit release', 5: 'Phase 5 · Resolution' };
-      const missions = (EBX.config && EBX.config.missions) || [];
-      const grid = document.getElementById('upcoming-grid');
-      // Pick the richest mission in each phase (highest pool).
-      const byPhase = {};
-      missions.forEach((m) => {
-        const p = phaseOf(m);
-        const pool = m.ebx_committed || m.pool_value || 0;
-        if (!byPhase[p] || pool > (byPhase[p]._pool || 0)) { m._pool = pool; byPhase[p] = m; }
-      });
-      const picks = [1, 2, 3, 4, 5].map((p) => byPhase[p]).filter(Boolean);
-      if (grid && picks.length) {
-        grid.innerHTML = picks.map((m) => {
-          const c = causeById[m.cause_id] || {};
-          const win = m.winning_tiv_id ? inits.find((i) => i.id === m.winning_tiv_id) : null;
-          const titleLine = win ? ((win.emoji ? win.emoji + ' ' : '') + win.title) : (c.name || 'Mission');
-          const p = phaseOf(m);
-          return `<a class="lp-cause-card" href="cause.html?id=${m.cause_id}&mission=${m.id}" style="--cc:${c.color || 'var(--clr-moss)'};">
-            <span class="lp-cause-card__dot"></span>
-            <div class="lp-cause-card__name">${titleLine}</div>
-            <div class="lp-cause-card__meta">${c.name || ''}</div>
-            <div class="lp-cause-card__date">${PHASE_LABEL[p]}</div>
-          </a>`;
-        }).join('');
-      } else if (grid) {
-        // Fallback (no mission data loaded): upcoming elections by decision date.
-        const withDates = causes.map((c) => {
-          let when = null;
-          try { when = EBX.Cycle && EBX.Cycle.nextDecisionDate ? EBX.Cycle.nextDecisionDate(c.index) : null; } catch (e) {}
-          return { c, when };
-        }).filter((x) => x.when).sort((a, b) => a.when - b.when).slice(0, 4);
-        grid.innerHTML = withDates.length ? withDates.map(({ c, when }) => {
-          const days = Math.max(0, Math.ceil((when.getTime() - Date.now()) / 86400000));
-          const dayStr = days === 0 ? 'decides today' : ('in ' + days + ' day' + (days === 1 ? '' : 's'));
-          return `<a class="lp-cause-card" href="cause.html?id=${c.id}" style="--cc:${c.color || 'var(--clr-moss)'};">
-            <span class="lp-cause-card__dot"></span>
-            <div class="lp-cause-card__name">${c.name}</div>
-            <div class="lp-cause-card__meta">Initiative election</div>
-            <div class="lp-cause-card__date">${fmtDate(when)} · ${dayStr}</div>
-          </a>`;
-        }).join('') : '<div class="lp-empty">No missions yet.</div>';
-      }
-    } catch (e) {}
-
-    // ── News + discussion feed (read-only) ──
-    try {
-      const feed = ((EBX.config && EBX.config.feed) || [])
-        .slice()
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
-        .slice(0, 8);
-      const list = document.getElementById('news-feed');
-      if (list) {
-        list.innerHTML = feed.length ? feed.map(p => {
-          const cat = ((p.type || p.category || 'post') + '').toUpperCase();
-          const body = (p.body || '').slice(0, 180);
-          return `<a class="lp-post" href="cause.html?id=${p.cause_id || ''}&post=${p.id}">
-            <div class="lp-post__cat">${cat}</div>
-            <div class="lp-post__title">${p.title || body.slice(0, 70) || 'Untitled'}</div>
-            <div class="lp-post__body">${body}${(p.body || '').length > 180 ? '…' : ''}</div>
-          </a>`;
-        }).join('') : '<div class="lp-empty">No posts yet — be the first on a mission page.</div>';
-      }
-    } catch (e) {}
-
-    try { await EBX.initPage(); } catch (e) {}
-  })();
-  </script>
 </body>
 </html>

@@ -401,7 +401,12 @@ class CreditCoinRead(BaseModel):
 # Posts & post votes
 # ---------------------------------------------------------------------------
 class PostBase(BaseModel):
-    category: str = "editorial"  # case|context|analysis|evaluation|org_update|editorial|headline
+    # Supercategory. Benefactor: budgeting|mission_support|review · org/staff:
+    # org_update|mission_update|testimonial|editorial|headline|resolution.
+    category: str = "editorial"
+    # Subcategory (the leaf a ben posts under); null for org/staff cats.
+    # See app/post_config.py for the (category → type) taxonomy.
+    type: Optional[str] = None
     title: Optional[str] = None
     body: str
     author_type: str = "earthbux"  # ben | org | earthbux

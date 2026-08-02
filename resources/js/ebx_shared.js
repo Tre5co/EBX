@@ -1393,7 +1393,7 @@
     const cid = String(d.causeId || "").replace(/'/g, "");
     const base = "flex:1;display:block;text-align:center;font-family:var(--font-mono);font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 6px;border-radius:6px;cursor:pointer;text-decoration:none;box-sizing:border-box;transition:filter 0.15s,background 0.15s;";
     const vote = '<a href="' + voteHref + '" class="rc-vote" style="' + base + "background:" + d.color + ";color:#0f1a14;border:1px solid " + d.color + ';">Vote</a>';
-    const research = '<button type="button" class="rc-research" onclick="if(window.idxResearch)idxResearch(\'' + cid + "');return false;\" style=\"" + base + "background:transparent;color:" + d.color + ";border:1px solid " + d.color + ';">Discuss</button>';
+    const research = '<button type="button" class="rc-research" onclick="if(window.idxResearch)idxResearch(\'' + cid + "');return false;\" style=\"" + base + "background:transparent;color:" + d.color + ";border:1px solid " + d.color + ';">View</button>';
     return '<div style="display:flex;gap:7px;padding:9px 12px 11px;border-top:1px solid rgba(255,255,255,0.07);">' + vote + research + "</div>";
   }
   // Vote window shown in a card's corner: the full election phase ending on the
