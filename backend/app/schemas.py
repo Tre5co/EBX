@@ -34,7 +34,25 @@ class CauseCreate(CauseBase):
 class CauseRead(CauseBase):
     model_config = ConfigDict(from_attributes=True)
     id: str
-    index: int
+    # §5 (2026-08-06): a SUGGESTED cause holds no window yet, so index is None
+    # until it wins one.
+    index: Optional[int] = None
+    status: str = "active"
+    proposed_by_id: Optional[int] = None
+
+
+class CauseSuggest(BaseModel):
+    """A benefactor proposing a cause — name plus the colour they picked off
+    the wheel, since a cause is recognised by its colour everywhere."""
+    name: str
+    color: str
+    description: Optional[str] = None
+    emoji: Optional[str] = None
+
+
+class CauseVoteCast(BaseModel):
+    slot: int          # which upcoming window, 1..7
+    cause_id: str
 
 
 # ---------------------------------------------------------------------------
@@ -417,6 +435,9 @@ class PostBase(BaseModel):
     stance: Optional[str] = None     # case: for|against · evaluation: positive|negative
     parent_id: Optional[str] = None  # set for a comment (reply to another post)
     image_url: Optional[str] = None  # attached image (data URL or path)
+    # §2a: budgeting posts (service|supply|support) must carry both estimates.
+    est_setup_days: Optional[float] = None  # how long to stand it up
+    est_cost_usd: Optional[float] = None    # what it costs
 
 
 class PostCreate(PostBase):
@@ -434,6 +455,16 @@ class PostRead(PostBase):
     neutral_count: int = 0
     harmful_count: int = 0
     created_at: datetime
+    # Post-support layer: green | orange | red. Only org-tagged types (case,
+    # investigation, evaluation) are meaningfully rated — see post_config.
+    flag: str = "green"
+    flag_reason: Optional[str] = None
+
+
+class PostFlagUpdate(BaseModel):
+    """Staff override on the post-support layer (mission annulus)."""
+    flag: str
+    reason: Optional[str] = None
 
 
 class PostVoteCreate(BaseModel):

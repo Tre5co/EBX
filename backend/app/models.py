@@ -55,13 +55,56 @@ class Cause(Base):
     __tablename__ = "causes"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    index: Mapped[int] = mapped_column(Integer, unique=True, nullable=False)  # rotation order 0..6
+    # Rotation order 0..6 for a cause that currently HOLDS a window; NULL for a
+    # suggested cause that is still campaigning for one (§5, 2026-08-06).
+    index: Mapped[Optional[int]] = mapped_column(Integer, unique=True, nullable=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     color: Mapped[str] = mapped_column(String, nullable=False)
     emoji: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # 'active'    — holds one of the seven windows
+    # 'suggested' — proposed by a benefactor, campaigning to replace one
+    # 'retired'   — was replaced; kept so old missions still resolve their cause
+    status: Mapped[str] = mapped_column(String, default="active", nullable=False)
+    proposed_by_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("benefactor_accounts.id"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     missions: Mapped[list["Mission"]] = relationship(back_populates="cause")
+    votes: Mapped[list["CauseVote"]] = relationship(
+        back_populates="cause", cascade="all, delete-orphan"
+    )
+
+
+# ===========================================================================
+# CauseVote — §5 (2026-08-06). One benefactor's vote, for one WEEK, on which
+# cause should hold an upcoming window.
+#
+# The contest runs SEVEN weeks but is advertised as six: week 1 is an
+# aggregation of the six weeks *before* the contest opened, so a challenger
+# that has quietly been winning already arrives with a head start rather than
+# starting from nothing. A challenger takes a week by clearing **>50%** of
+# that week's votes; taking all seven replaces the cause holding the window.
+# ===========================================================================
+class CauseVote(Base):
+    __tablename__ = "cause_votes"
+    __table_args__ = (
+        UniqueConstraint("ben_id", "slot", "week_start", name="uq_cause_vote_ben_slot_week"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ben_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
+    # Which upcoming window is being contested: 1 = the next one to open, …, 7.
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)
+    cause_id: Mapped[str] = mapped_column(ForeignKey("causes.id"), nullable=False)
+    # Monday (UTC) of the week this vote counts in — the unit the majority is
+    # measured over.
+    week_start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    ben: Mapped["BenefactorAccount"] = relationship()
+    cause: Mapped["Cause"] = relationship(back_populates="votes")
 
 
 # ===========================================================================
@@ -254,8 +297,6 @@ class BenefactorAccount(Base):
     @property
     def is_staff(self) -> bool:
         return self.role in ("employee", "admin")
-
-
 # ===========================================================================
 # Membership — person <-> org link with a role (association object).
 # ===========================================================================
@@ -273,8 +314,6 @@ class Membership(Base):
 
     ben: Mapped["BenefactorAccount"] = relationship(back_populates="memberships")
     org: Mapped["Organization"] = relationship(back_populates="memberships")
-
-
 # ===========================================================================
 # MissionCandidacy — an org's BID to run a specific mission. Grants build access
 # on approval; the winner sets Mission.winning_org_id. (Replaces OrgRegistration.)
@@ -301,8 +340,6 @@ class MissionCandidacy(Base):
 
     mission: Mapped["Mission"] = relationship(back_populates="candidacies")
     org: Mapped["Organization"] = relationship(back_populates="candidacies")
-
-
 # ===========================================================================
 # OrgClaim — THE gate. A real representative's click-through acceptance of the
 # legal agreement for one (mission, org). Recording a claim grants the org
@@ -330,8 +367,6 @@ class OrgClaim(Base):
     mission: Mapped["Mission"] = relationship(back_populates="claims")
     org: Mapped["Organization"] = relationship()
     ben: Mapped["BenefactorAccount"] = relationship()
-
-
 # ===========================================================================
 # MissionStep — one STEP of the release phase (§1d). Each step carries a
 # guaranteed and a potential pool (no maximums), finalized by the end of the
@@ -358,8 +393,6 @@ class MissionStep(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     mission: Mapped["Mission"] = relationship(back_populates="steps")
-
-
 # ===========================================================================
 # VoteP1 — TIV election. Split-vote economy: a ben can spread share across
 # several tivs (>=0.1 each, sum <=1.0); one row per (ben, tiv). Committed EBX
@@ -387,8 +420,6 @@ class VoteP1(Base):
     ben: Mapped["BenefactorAccount"] = relationship(back_populates="votes_p1")
     mission: Mapped["Mission"] = relationship(back_populates="votes_p1")
     tiv: Mapped["Initiative"] = relationship(back_populates="votes_p1")
-
-
 # ===========================================================================
 # VoteP2 — ORG election. "1 vote, 1 org; extra votes bought at rising prices."
 # One row per (ben, mission). `valence` harmful = BLOCK the org (same cost as
@@ -416,8 +447,6 @@ class VoteP2(Base):
     # One-directional on purpose: an org doesn't carry a back-collection of the
     # votes for/against it (kept symmetric with how bens relate to missions).
     org: Mapped["Organization"] = relationship()
-
-
 # ===========================================================================
 # Pool — per-mission money aggregate (DERIVED cache; recompute on commit/rollover).
 # ===========================================================================
@@ -435,8 +464,6 @@ class Pool(Base):
     )
 
     mission: Mapped["Mission"] = relationship(back_populates="pool")
-
-
 # ===========================================================================
 # CreditCoin — the EBX token issued to a ben on a mission. Owning one = community
 # membership in that mission (STRUCTURE: "credits=membership").
@@ -454,20 +481,20 @@ class CreditCoin(Base):
 
     owner: Mapped["BenefactorAccount"] = relationship(back_populates="credit_coins")
     mission: Mapped["Mission"] = relationship(back_populates="credit_coins")
-
-
 # ===========================================================================
 # Post — discussion/editorial content.
+# Two-tier taxonomy (2026-07-19): `category` is the SUPERcategory, `type` the
+# SUBcategory. Benefactor cats: 
+# budgeting{service|supply|support} -
+# mission_support{context|investigation|analysis} · 
+# review{case|evaluation}.
+# Org/staff cats (org_update|mission_update|testimonial|editorial|headline|
+# resolution) leave `type` null. Source of truth: app/post_config.py.
 # ===========================================================================
 class Post(Base):
     __tablename__ = "posts"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    # Two-tier taxonomy (2026-07-19): `category` is the SUPERcategory, `type` the
-    # SUBcategory. Benefactor cats: budgeting{service|supply|support} ·
-    # mission_support{context|investigation|analysis} · review{case|evaluation}.
-    # Org/staff cats (org_update|mission_update|testimonial|editorial|headline|
-    # resolution) leave `type` null. Source of truth: app/post_config.py.
     category: Mapped[str] = mapped_column(String, default="editorial", nullable=False)
     type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
@@ -493,6 +520,27 @@ class Post(Base):
     # Attached image — a data URL or stored path.
     image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    # §2a (2026-08-08) — a BUDGETING post (service / supply / support) is a
+    # suggestion the mission may actually adopt, so it is not a suggestion until
+    # it is costed: one estimate for the SETUP TIME and one for the COST.
+    # Required for the budgeting category, null everywhere else.
+    est_setup_days: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    est_cost_usd: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # ── Post-support layer (the first layer of the mission annulus) ──────────
+    # Every post carrying an ORGANIZATION tag (case · investigation ·
+    # evaluation) is run through a filter and flagged, because philanthropies
+    # get a weekly digest of what was written about them and they are owed an
+    # honest label on it:
+    #   green  — useful.
+    #   orange — CRITICAL, but helpful.
+    #   red    — spam, scams, or unsupported slander. We apologise for these and
+    #            tell the org we are working to keep them off the platform.
+    # The filter is a stub today and rates everything green (post_config
+    # .classify_flag); staff can override through POST /posts/{id}/flag.
+    flag: Mapped[str] = mapped_column(String, default="green", nullable=False)
+    flag_reason: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
     helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     neutral_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     harmful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -510,10 +558,11 @@ class Post(Base):
     votes: Mapped[list["PostVote"]] = relationship(
         back_populates="post", cascade="all, delete-orphan"
     )
-
-
 # ===========================================================================
-# PostVote — per-ben reaction. helpful | neutral | harmful.
+# PostVote — per-ben reaction. 
+# budgeting{service|supply|support} - helpful | not - Not counts as neutral. No harmful option.
+# mission_support{context|investigation|analysis} - helpful | neutral | harmful
+# review{case|evaluation}. fair|neutral|biased - same logic as mission_support
 # ===========================================================================
 class PostVote(Base):
     __tablename__ = "post_votes"
@@ -529,8 +578,6 @@ class PostVote(Base):
 
     post: Mapped["Post"] = relationship(back_populates="votes")
     ben: Mapped["BenefactorAccount"] = relationship()
-
-
 # ===========================================================================
 # Query — EMPLOYEE-ONLY saved data-access tool (the "navigate the database"
 # staff permission). Tooling, not domain spine. Gated to role in (employee,admin).
@@ -554,8 +601,6 @@ class Query(Base):
     last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     created_by: Mapped[Optional["BenefactorAccount"]] = relationship()
-
-
 # ===========================================================================
 # Transaction — the single append-only EBX ledger. Replaces VoteEvent: one log
 # for everything that moves EBX or changes a vote in a mission. Two kinds:

@@ -3,16 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Earthbux — Democratize and publicize charity</title>
+  <title>Earthbux News — you donate, we follow</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
-    /* ── Landing — build-seq §2 (2026-08-01): EXTREME simplify, jax notes 2.
-       Topbar (EBX · profile) · a: founding blurb · b: the 3-phase system with
-       p1→main / p2→cause / p3→mission link cards. Nothing else.
-       (The old all-posts stream left this page; the newsfeed lives on the
-       Context/Mission surfaces per structure.md.) ─────────────────────────── */
-    body { background: #0f1a14; color: var(--clr-parchment, #f5f0e8); min-height: 100vh; display: flex; flex-direction: column; }
+    /* ── Landing — build-seq §1 (2026-08-05), per docs/structure.md.
+       Two blocks and nothing else:
+         a — the founding blurb: a four-line stanza, a rule, then the three
+             lines that say what the system asks of you. Set as verse, centered
+             on the Earthbux News wordmark ("you donate, we follow").
+         b — The System: 1. Initiative Election → 2. Organization Election →
+             3. Research and Development, linking main / cause / mission.
+       (jax notes 2 landing sketch: a full-width on top, b lower-left, the three
+       phase cards lower-right.) ────────────────────────────────────────────── */
+    body {
+      background:
+        radial-gradient(1100px 620px at 50% -10%, rgba(232,168,76,0.10), transparent 62%),
+        radial-gradient(760px 520px at 12% 108%, rgba(78,122,78,0.16), transparent 66%),
+        #0f1a14;
+      color: var(--clr-parchment, #f5f0e8);
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
     .ld-top {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 26px; border-bottom: 1px solid rgba(245,240,232,0.08);
@@ -22,35 +33,253 @@
       color: var(--clr-parchment, #f5f0e8); text-decoration: none; letter-spacing: -0.01em;
     }
     .ld-brand em { color: var(--clr-honey, #e8a84c); font-style: normal; }
-    .ld-main { flex: 1; width: 100%; max-width: 980px; margin: 0 auto; padding: 48px 26px 56px; box-sizing: border-box; }
-    /* a — founding blurb */
-    .ld-blurb {
+    .ld-main { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 60px 26px 64px; box-sizing: border-box; }
+
+    /* ── a — founding blurb ─────────────────────────────────────────────── */
+    .ld-a { text-align: center; }
+    /* §0a (2026-08-06): "Earthbux" was black on black. The shared stylesheet
+       sets `h1..h6 { color: var(--clr-earth) }` (near-black, for the light
+       pages) and that beat the inherited parchment on this dark hero, so only
+       the honey "News" was visible. Every heading here now states its colour. */
+    .ld-wordmark {
+      font-family: var(--font-display, serif); font-weight: 900;
+      font-size: clamp(2.6rem, 7.2vw, 4.6rem); line-height: 1.02;
+      letter-spacing: -0.03em; margin: 0;
+      color: var(--clr-parchment, #f5f0e8);
+    }
+    .ld-wordmark em { font-style: normal; color: var(--clr-honey, #e8a84c); }
+    .ld-sub {
+      font-family: var(--font-mono, monospace); font-size: clamp(0.66rem, 1.5vw, 0.8rem);
+      letter-spacing: 0.34em; text-transform: uppercase;
+      color: rgba(245,240,232,0.5); margin: 14px 0 0;
+    }
+    .ld-verse {
       font-family: var(--font-display, serif);
-      font-size: clamp(1.05rem, 2vw, 1.35rem); line-height: 1.75;
-      color: rgba(245,240,232,0.9); max-width: 62ch; margin: 0 auto;
+      font-size: clamp(1.02rem, 2.1vw, 1.3rem); line-height: 1.95;
+      color: rgba(245,240,232,0.92); margin: 40px auto 0; max-width: 60ch;
     }
-    .ld-blurb b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
-    /* b — the system + phase links */
-    .ld-system { display: grid; grid-template-columns: 1fr 1.15fr; gap: 26px; align-items: stretch; margin-top: 54px; border-top: 1px solid rgba(245,240,232,0.1); padding-top: 40px; }
-    @media (max-width: 780px) { .ld-system { grid-template-columns: 1fr; } }
-    .ld-system__title { font-family: var(--font-display, serif); font-weight: 800; font-size: clamp(1.4rem, 2.6vw, 1.9rem); margin: 0 0 8px; }
-    .ld-system__sub { font-family: var(--font-mono, monospace); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); margin-bottom: 14px; }
-    .ld-system ol { margin: 0; padding-left: 22px; line-height: 2; font-size: 1rem; color: rgba(245,240,232,0.85); }
-    .ld-phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    @media (max-width: 520px) { .ld-phases { grid-template-columns: 1fr; } }
-    .ld-phase {
-      display: flex; flex-direction: column; justify-content: center; text-align: center;
-      gap: 6px; padding: 22px 12px; text-decoration: none;
-      border: 1px solid rgba(245,240,232,0.16); border-radius: 14px;
-      background: rgba(245,240,232,0.03); color: var(--clr-parchment, #f5f0e8);
-      transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    .ld-verse span { display: block; }
+    .ld-verse span b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    .ld-rule {
+      width: min(560px, 90%); height: 1px; margin: 30px auto;
+      background: linear-gradient(90deg, transparent, rgba(232,168,76,0.55), transparent);
     }
-    .ld-phase:hover { transform: translateY(-3px); border-color: var(--clr-honey, #e8a84c); background: rgba(232,168,76,0.07); }
-    .ld-phase__num { font-family: var(--font-mono, monospace); font-size: 1.5rem; font-weight: 700; color: var(--clr-honey, #e8a84c); }
-    .ld-phase__name { font-weight: 700; font-size: 0.92rem; }
-    .ld-phase__dest { font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.5); }
+    /* §1a (2026-08-08) — the two lines that say what this is now sit ABOVE the
+       wordmark, so the first thing read is the claim and the wordmark answers
+       it. Below the title: the two things a visitor can do. */
+    .ld-lede {
+      font-family: var(--font-display, serif);
+      font-size: clamp(0.98rem, 2vw, 1.22rem); line-height: 1.85;
+      color: rgba(245,240,232,0.86); margin: 0 auto 26px; max-width: 56ch;
+    }
+    .ld-lede span { display: block; }
+    .ld-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+    .ld-cta__btn {
+      font: inherit; font-size: 0.86rem; font-weight: 700; cursor: pointer;
+      text-decoration: none; border-radius: 10px; padding: 11px 22px;
+      border: 1px solid rgba(245,240,232,0.28); background: transparent;
+      color: var(--clr-parchment, #f5f0e8); transition: all 0.15s;
+    }
+    .ld-cta__btn:hover { border-color: var(--clr-honey, #e8a84c); background: rgba(232,168,76,0.1); }
+    .ld-cta__btn--primary {
+      background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14;
+    }
+    .ld-cta__btn--primary:hover { filter: brightness(1.07); background: var(--clr-honey, #e8a84c); }
+    .ld-verse--why { font-size: clamp(0.98rem, 1.9vw, 1.18rem); color: rgba(245,240,232,0.75); margin-top: 0; }
+
+    /* §1b/§1c/§1d (2026-08-09) — the two nouns that carry the whole model are
+       colour-coded wherever they appear: the pooled donation recipient (an
+       ORGANIZATION, honey) and the ELECTED INITIATIVE (green). Where they are
+       links, they go to the election that decides them. */
+    .ld-term {
+      text-decoration: none; font-weight: 600; white-space: nowrap;
+      border-bottom: 1px dashed currentColor; padding-bottom: 1px;
+    }
+    .ld-term--org { color: var(--clr-honey, #e8a84c); }
+    .ld-term--tiv { color: #8fce9d; }
+    a.ld-term:hover { border-bottom-style: solid; }
+    .ld-key {
+      display: flex; gap: 20px; flex-wrap: wrap; margin-top: 14px;
+      font-family: var(--font-mono, monospace); font-size: 0.62rem;
+      color: rgba(245,240,232,0.45);
+    }
+    .ld-key b { font-weight: 400; }
+    .ld-key i { font-style: normal; }
+    .ld-key .ld-key__dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+    /* ── §1c / §1d section shell ───────────────────────────────────────────── */
+    .ld-sect {
+      max-width: 760px; margin: 0 auto; padding-top: 40px; text-align: left;
+    }
+    .ld-sect + .ld-sect { margin-top: 8px; }
+    .ld-sect__title {
+      font-family: var(--font-display, serif); font-weight: 800;
+      font-size: clamp(1.5rem, 3.2vw, 2.15rem); line-height: 1.15; margin: 0 0 14px;
+      color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.02em;
+    }
+    .ld-sect__title--sm { font-size: clamp(1.15rem, 2.3vw, 1.5rem); margin: 34px 0 12px; }
+    .ld-sect__title2 { color: rgba(245,240,232,0.55); }
+    .ld-sect__body {
+      font-size: 0.98rem; line-height: 1.75; color: rgba(245,240,232,0.74); margin: 0 0 12px;
+    }
+    .ld-sect__body b { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
+    .ld-sect__lead {
+      font-family: var(--font-display, serif); font-size: clamp(1.02rem, 2vw, 1.24rem);
+      line-height: 1.55; color: rgba(245,240,232,0.88); margin: 4px 0 14px;
+    }
+    .ld-sect__lead b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    .ld-sect__body--grant { margin: 28px 0 10px; font-size: 1.02rem; }
+
+    /* §1c — the transparency scale. Five steps; the LEFT end is maximum
+       transparency and costs us 1/16, the RIGHT end is minimum and costs 5/16.
+       This is the same number as the runway chart's take, so the scale owns it
+       and the chart reads it. */
+    .ld-scale {
+      margin-top: 22px; padding: 16px 18px 14px;
+      border: 1px solid rgba(245,240,232,0.14); border-radius: 12px;
+      background: rgba(245,240,232,0.03);
+    }
+    .ld-scale__ends {
+      display: flex; justify-content: space-between; gap: 12px;
+      font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: rgba(245,240,232,0.42); margin-bottom: 9px;
+    }
+    .ld-scale__steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+    @media (max-width: 620px) { .ld-scale__steps { grid-template-columns: repeat(2, 1fr); } }
+    .ld-step {
+      font: inherit; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 2px;
+      padding: 8px 9px; border-radius: 8px; color: rgba(245,240,232,0.62);
+      background: transparent; border: 1px solid rgba(245,240,232,0.18); transition: all 0.15s;
+    }
+    .ld-step:hover { border-color: rgba(232,168,76,0.65); color: rgba(245,240,232,0.92); }
+    .ld-step.on {
+      background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14;
+    }
+    .ld-step__name { font-size: 0.74rem; font-weight: 700; }
+    .ld-step__frac { font-family: var(--font-mono, monospace); font-size: 0.6rem; opacity: 0.72; }
+    .ld-scale__what {
+      font-size: 0.82rem; line-height: 1.55; color: rgba(245,240,232,0.62); margin-top: 11px;
+    }
+    .ld-scale__what b { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
+    .ld-scale__split {
+      display: flex; align-items: center; gap: 9px; margin-top: 11px;
+      font-family: var(--font-mono, monospace); font-size: 0.62rem; color: rgba(245,240,232,0.45);
+    }
+    .ld-scale__split b { color: rgba(245,240,232,0.88); }
+    .ld-scale__bar {
+      flex: 1; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(78,122,78,0.55);
+    }
+    .ld-scale__bar i { display: block; height: 100%; background: var(--clr-honey, #e8a84c); transition: width 0.2s; }
+
+    /* §1d — runway chart */
+    .ld-runway {
+      margin: 0; padding: 16px 18px 14px; text-align: left;
+      border: 1px solid rgba(245,240,232,0.14); border-radius: 12px;
+      background: rgba(245,240,232,0.03);
+    }
+    .ld-runway__label {
+      font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(245,240,232,0.45); margin-bottom: 10px;
+    }
+    .ld-runway__figure { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+    .ld-runway__weeks {
+      font-family: var(--font-display, serif); font-weight: 900;
+      font-size: 2.4rem; line-height: 1; color: var(--clr-honey, #e8a84c);
+    }
+    .ld-runway__unit { font-size: 0.92rem; color: rgba(245,240,232,0.7); }
+    .ld-runway__bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; height: 46px; }
+    .ld-runway__bar { background: rgba(245,240,232,0.1); border-radius: 3px 3px 0 0; height: 100%; }
+    .ld-runway__bar.on { background: var(--clr-honey, #e8a84c); }
+    .ld-runway__note { font-size: 0.76rem; line-height: 1.55; color: rgba(245,240,232,0.42); margin-top: 10px; }
+    .ld-runway__note b { color: rgba(245,240,232,0.7); }
+
+    /* §1c — the dime. Ten of them a week, one dollar, everybody. */
+    .ld-dime { margin-top: 4px; }
+    .ld-dime__row { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+    .ld-dime__cap {
+      font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: rgba(245,240,232,0.4); margin-top: 7px;
+    }
+
+    /* §1d — the system, three rows: what you do | what the money does. */
+    .ld-sys { list-style: none; margin: 0; padding: 0; counter-reset: none; }
+    .ld-sys__row {
+      display: grid; grid-template-columns: 26px 1.1fr 1fr; gap: 14px; align-items: start;
+      padding: 14px 0; border-top: 1px solid rgba(245,240,232,0.1);
+    }
+    .ld-sys__row:last-child { border-bottom: 1px solid rgba(245,240,232,0.1); }
+    @media (max-width: 700px) {
+      .ld-sys__row { grid-template-columns: 26px 1fr; }
+      .ld-sys__money { grid-column: 2; }
+    }
+    .ld-sys__n {
+      font-family: var(--font-display, serif); font-weight: 900; font-size: 1.25rem;
+      line-height: 1.2; color: var(--clr-honey, #e8a84c);
+    }
+    .ld-sys__do {
+      display: block; text-decoration: none; font-size: 0.94rem; line-height: 1.6;
+      color: var(--clr-parchment, #f5f0e8);
+    }
+    .ld-sys__do:hover { color: var(--clr-honey, #e8a84c); }
+    .ld-sys__do:hover .ld-term { color: inherit; }
+    .ld-sys__dest {
+      display: block; margin-top: 5px; font-family: var(--font-mono, monospace);
+      font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(245,240,232,0.42);
+    }
+    .ld-sys__do:hover .ld-sys__dest { color: var(--clr-honey, #e8a84c); }
+    .ld-sys__money {
+      font-size: 0.86rem; line-height: 1.6; color: rgba(245,240,232,0.58);
+      padding-left: 14px; border-left: 1px solid rgba(245,240,232,0.12);
+    }
+    .ld-sys__money b { color: rgba(245,240,232,0.85); font-weight: 600; }
+
+    /* ── the rest, condensed, at the bottom ────────────────────────────────── */
+    .ld-fine {
+      max-width: 760px; margin: 54px auto 0; padding-top: 26px; text-align: left;
+      border-top: 1px solid rgba(245,240,232,0.1);
+    }
+    .ld-fine__title {
+      font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(245,240,232,0.42); margin: 0 0 14px; font-weight: 400;
+    }
+    .ld-fine__list { margin: 0; }
+    .ld-fine__item { margin-bottom: 12px; }
+    .ld-fine__item dt {
+      font-size: 0.88rem; font-weight: 600; color: var(--clr-parchment, #f5f0e8); margin-bottom: 2px;
+    }
+    .ld-fine__item dd {
+      margin: 0; font-size: 0.84rem; line-height: 1.6; color: rgba(245,240,232,0.6);
+    }
+    .ld-fine__item dd b { color: rgba(245,240,232,0.85); font-weight: 600; }
+    /* §4 (2026-08-10) — body copy for the cause-change block moved off the
+       Context page's cause-election card (structure.md ME-Right note i). */
+    .ld-lede-sm {
+      font-size: 0.86rem; line-height: 1.65; color: rgba(245,240,232,0.62);
+      margin: 0 0 10px; max-width: 68ch;
+    }
+    .ld-lede-sm b { color: rgba(245,240,232,0.88); font-weight: 600; }
+    /* §1e (2026-08-10) — the seven seeded causes, each in its own colour. */
+    .ld-causes { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+    .ld-cause {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: var(--font-mono, monospace); font-size: 0.68rem; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; text-decoration: none;
+      color: var(--cc); padding: 5px 11px; border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--cc) 55%, transparent);
+      background: color-mix(in srgb, var(--cc) 9%, transparent);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .ld-cause:hover { background: color-mix(in srgb, var(--cc) 18%, transparent); border-color: var(--cc); }
+    .ld-cause__dot {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--cc);
+      box-shadow: 0 0 6px var(--cc); flex: 0 0 auto;
+    }
+    .ld-cauchange { padding-top: 34px; }
+    .ld-cauchange .ld-fine__title { margin-bottom: 10px; }
   </style>
 </head>
+
 <body>
   <div class="ld-top">
     <a class="ld-brand" href="index.html">Earthbux <em>News</em></a>
@@ -58,47 +287,363 @@
   </div>
 
   <div class="ld-main">
-    <!-- a — the founding blurb -->
-    <p class="ld-blurb">In 2023, Earthbux was created with one goal: <b>Democratize and publicize
-    charity.</b> Capital warehouses of large private endowments hold trillions of dollars,
-    incentivizing the most capable organizations to work for the richest grantmakers while ignoring
-    the opinions of most people. Meanwhile, public charities fund professional fundraisers instead of
-    the missions they allegedly support. Earthbux operates ethically inside a system that doesn't
-    require transparency by leveraging community engagement and independent news production to give
-    donors control of their donations.</p>
 
-    <!-- b — the system, 3 phases, all community-controlled -->
-    <div class="ld-system">
-      <div>
-        <div class="ld-system__sub">All community-controlled</div>
-        <h2 class="ld-system__title">The System — 3 Phases</h2>
-        <ol>
-          <li>Initiative Election</li>
-          <li>Organization Election</li>
-          <li>Budgeting &amp; Resolution</li>
-        </ol>
-      </div>
-      <div class="ld-phases">
-        <a class="ld-phase" href="main.html">
-          <span class="ld-phase__num">P1</span>
-          <span class="ld-phase__name">Initiative Election</span>
-          <span class="ld-phase__dest">Context →</span>
-        </a>
-        <a class="ld-phase" href="cause.html">
-          <span class="ld-phase__num">P2</span>
-          <span class="ld-phase__name">Organization Election</span>
-          <span class="ld-phase__dest">Elections →</span>
-        </a>
-        <a class="ld-phase" href="mission.html">
-          <span class="ld-phase__num">P3</span>
-          <span class="ld-phase__name">Budgeting &amp; Resolution</span>
-          <span class="ld-phase__dest">Missions →</span>
-        </a>
+    <!-- a — the founding blurb -->
+    <div class="ld-a">
+      <!-- §1a (2026-08-08): the two lines that say what this IS run ABOVE the
+           wordmark; the wordmark and its "you donate, we follow" answer them.
+           The two actions sit directly under the title. -->
+      <p class="ld-lede">
+        <span>A public forum to direct pooled philanthropic missions.</span>
+        <span>An independent research team to publicize their impact.</span>
+      </p>
+
+      <h1 class="ld-wordmark">Earthbux <em>News</em></h1>
+      <p class="ld-sub">you donate, we follow</p>
+
+      <div class="ld-cta" id="ld-cta"></div>
+
+      <div class="ld-rule"></div>
+
+      <!-- §1b — why it exists. Two lines, on their own, between the hero and
+           the argument. -->
+      <p class="ld-verse ld-verse--why">
+        <span>In 2026, the world seemed at risk of total destruction.</span>
+        <span>Earthbux was invented to give us control so we <b>save it</b>.</span>
+      </p>
+
+      <div class="ld-rule"></div>
+    </div>
+
+    <!-- ══ §1c — PUBLICITY, EFFICIENCY, AND THE SYSTEM ════════════════════════
+         2026-08-09 rewrite. Two claims in the title, one mechanism under them:
+         transparency from the philanthropy is REWARDED — the more it shows us,
+         the less of the pool we consume. Same number as the runway chart in
+         §1d, so this scale owns it and the chart reads it. -->
+    <div class="ld-sect ld-publicity">
+      <h2 class="ld-sect__title">Bringing publicity to philanthropy,<br />
+        <span class="ld-sect__title2">Enabling research based donations.</span></h2>
+
+      <!-- §8 (2026-08-10): the scale's framing flipped. It used to read
+           "transparency is rewarded", most→least, which described the reward
+           and left the reader to infer the cost. It now states the causal
+           chain and labels the axis by COST, which is the thing the runway
+           chart below actually spends. -->
+      <p class="ld-sect__lead">Lower transparency &rArr; Lower efficiency</p>
+      <p class="ld-sect__body">Mission pool consumed by Earthbux</p>
+      <div class="ld-scale" id="ld-scale"></div>
+    </div>
+
+    <!-- ══ §1d — THE SYSTEM, THE GRANT, THE RUNWAY ═══════════════════════════
+         2026-08-10: "The system" moved out of §1c into §1d, gained a fourth
+         row (research grants) and the mission-length line, and the runway chart
+         now sits under the grant it is a runway FOR. -->
+    <div class="ld-sect">
+      <h2 class="ld-sect__title ld-sect__title--sm">The system</h2>
+      <p class="ld-sect__body">Each mission is slated to last <b>a year</b>, but can last longer
+        or end sooner.</p>
+      <ol class="ld-sys">
+        <li class="ld-sys__row">
+          <span class="ld-sys__n">1</span>
+          <a class="ld-sys__do" href="main.html">
+            Commit tokens to elect an
+            <span class="ld-term ld-term--tiv">initiative</span> in each week's cause.
+            <span class="ld-sys__dest">Context →</span>
+          </a>
+          <span class="ld-sys__money">A <b>1 year mission</b> targeting the winning initiative
+            commences.</span>
+        </li>
+        <li class="ld-sys__row">
+          <span class="ld-sys__n">2</span>
+          <a class="ld-sys__do" href="main.html?state=oe">
+            Commit to a <span class="ld-term ld-term--org">philanthropy</span> who will lead the
+            mission.
+            <span class="ld-sys__dest">Context →</span>
+          </a>
+          <span class="ld-sys__money">Tokens become mission-valued <b>credit coins</b> that are
+            exchangeable and tax-deductible.</span>
+        </li>
+        <li class="ld-sys__row">
+          <span class="ld-sys__n">3</span>
+          <a class="ld-sys__do" href="cause.html">
+            Determine how to allocate funds.
+            <span class="ld-sys__dest">Discussion →</span>
+          </a>
+          <span class="ld-sys__money">The top-rated <b>context</b>, <b>investigation</b> and
+            <b>analysis</b> studies are rewarded with credit coins.</span>
+        </li>
+        <li class="ld-sys__row">
+          <span class="ld-sys__n">4</span>
+          <a class="ld-sys__do" href="mission.html">
+            Win Research Grants.
+            <span class="ld-sys__dest">Mission →</span>
+          </a>
+          <span class="ld-sys__money">Grow your <b>credit</b>.</span>
+        </li>
+      </ol>
+
+      <p class="ld-sect__body ld-sect__body--grant">Everyone is granted <b>10 EBX / week</b> to
+        contribute to the decision-making process for each mission.</p>
+      <div class="ld-dime" id="ld-dime-viz"></div>
+
+      <div class="ld-runway" id="ld-runway"></div>
+    </div>
+
+    <!-- ══ §1e — THE CAUSES ══════════════════════════════════════════════════
+         New 2026-08-10. The seven causes are the one part of the system a
+         reader is most likely to assume is arbitrary, so the page says who
+         chose them and how they can be replaced. -->
+    <div class="ld-sect">
+      <h2 class="ld-sect__title ld-sect__title--sm">The causes</h2>
+      <p class="ld-sect__body">I seeded this system with the <b>7 causes</b> I think sum up
+        everything I would ever donate to. However, benefactors can elect a replacement cause
+        with <b>overwhelming support</b>.</p>
+      <div class="ld-causes" id="ld-causes"></div>
+      <p class="ld-sect__body" style="margin-top:10px;">A challenger has to win
+        <b>6 successive votes</b> — and the vote does not happen at the end of the active week.
+        <a class="ld-term ld-term--tiv" href="#cause-change">How cause change works &rarr;</a></p>
+    </div>
+
+    <!-- ══ HOW A CAUSE CHANGES ═══════════════════════════════════════════════
+         §4 (2026-08-10). This paragraph used to be the footer of the
+         cause-election card on the Context page, where it was three lines of
+         rules under a control you were trying to use — structure.md ME-Right
+         note (i): "The description at the bottom must be moved to the landing
+         page." It is also the backlog's "Add cause change explanation". The
+         card now links here (`main.html` → "how cause change works →"). -->
+    <div class="ld-sect ld-cauchange" id="cause-change">
+      <h3 class="ld-fine__title">How a cause changes</h3>
+      <p class="ld-lede-sm">The seven causes are meant to be <b>hard</b> to change — they are the
+        standing subjects the whole system elects inside, so a week of enthusiasm should not move
+        one. A challenger has to win the same window <b>7 weeks in a row</b>. Lose a single week
+        and the streak resets, and the swap date moves back by a full rotation.</p>
+      <p class="ld-lede-sm">Each of the seven windows is voted on <b>one rotation before it runs</b>,
+        so a vote settled this week decides the cause seven weeks out. Only the <b>active</b>
+        cause's replacement window is open at a time; a window reopens once a replacement has been
+        elected into it. On the streak chart, the leftmost column is this week and the rightmost
+        aggregates the six weeks before the contest opened — which is why a 7-week rule is
+        advertised as six.</p>
+      <p class="ld-lede-sm">Anyone can propose a cause. A cause worth standing up is a
+        <b>ubiquitously essential human experience</b> — something nearly everyone lives through,
+        that someone would donate to see optimized, and that is resistant to capture. Propose one,
+        pick its colour, and make your case in the discussion:
+        <a class="ld-term ld-term--tiv" href="main.html">the cause election is on the Context page
+        &rarr;</a></p>
+    </div>
+
+    <!-- ══ THE REST, CONDENSED ═══════════════════════════════════════════════
+         Everything the §1a–§1d outline doesn't carry, kept because the numbers
+         in it are the ones a reader actually asks for — what a token is, and
+         what happens to it after the organization is chosen. Four lines, at the
+         bottom, out of the argument's way. -->
+    <div class="ld-fine">
+      <h3 class="ld-fine__title">The fine print, in four lines</h3>
+      <dl class="ld-fine__list">
+        <div class="ld-fine__item">
+          <dt>A token is a vote, not yet a donation.</dt>
+          <dd>Earthbucks are all identical and transferable — one Earthbux dime, worth 10¢, the
+            same in anyone's hands. None of them is a <b>donation</b> until it is labelled with an
+            <a class="ld-term ld-term--org" href="main.html?state=oe">organization</a>.</dd>
+        </div>
+        <div class="ld-fine__item">
+          <dt>Labelling it is called finalizing.</dt>
+          <dd>Finalized money can be converted between missions; it cannot be exchanged back for
+            cash. What you hold after that is a <b>credit token</b>, and it becomes a <b>credit
+            coin</b> belonging to the winning organization once it is donated.</dd>
+        </div>
+        <div class="ld-fine__item">
+          <dt>Backing the winner moves it automatically.</dt>
+          <dd>If the organization that wins is the one you voted for, the coin moves on its own.
+            If it isn't, you have <b>7 weeks</b> to decide how much of your original share to
+            commit — floor <b>10%</b> of what you first committed.</dd>
+        </div>
+        <div class="ld-fine__item">
+          <dt>So the worst case is small.</dt>
+          <dd>Dislike both the cause <em>and</em> the organization that wins it, and the most you
+            can lose is <b>10% twice</b>. We audit these organizations as publicly as we can —
+            that is the whole product. <b>Give through us.</b></dd>
+        </div>
+      </dl>
+      <div class="ld-key">
+        <span><i class="ld-key__dot" style="background:#e8a84c;"></i><b>the organization</b> — elected in phase 2, the pooled donation recipient</span>
+        <span><i class="ld-key__dot" style="background:#8fce9d;"></i><b>the initiative</b> — elected in phase 1, the mission it claims</span>
       </div>
     </div>
+
   </div>
 
   <div id="ebx-footer-mount"></div>
   <script src="resources/js/ebx_shared.js"></script>
+  <script>
+  // §1a — the two calls to action under the title. There are only two things a
+  // visitor can do from here: get an account, or go vote. Signed in, the first
+  // has nothing to offer, so it becomes the profile link and Vote now carries
+  // the row.
+  (function () {
+    const mount = document.getElementById('ld-cta');
+    if (!mount) return;
+    const authed = !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
+    mount.innerHTML = authed
+      ? '<a class="ld-cta__btn ld-cta__btn--primary" href="main.html">Vote now &rarr;</a>' +
+        '<a class="ld-cta__btn" href="profile.html">My profile</a>'
+      : '<button type="button" class="ld-cta__btn" id="ld-cta-login">Log in / Sign up</button>' +
+        '<a class="ld-cta__btn ld-cta__btn--primary" href="main.html">Vote now &rarr;</a>';
+    const btn = document.getElementById('ld-cta-login');
+    if (btn) btn.onclick = () => {
+      if (window.EBX && EBX.Auth && EBX.Auth.openModal) EBX.Auth.openModal('login');
+      else location.href = 'profile.html';
+    };
+  })();
+
+  // ══ §1c + §1d — ONE NUMBER, SEEN TWICE ═════════════════════════════════════
+  // Earthbux takes n/16 of the pool, n = 1..5, and n is set by how TRANSPARENT
+  // the philanthropy is: a phl that publishes its own work is Dormant for us
+  // and costs 1/16; a phl we have to arbitrate with costs 5/16. Left end of the
+  // scale = maximum transparency, right end = minimum.
+  //
+  //   what we take    = pool x n/16      (§1c split bar)
+  //   the runway      = that, divided by what a week of voting costs (§1d)
+  //   a week of votes = members x 10 EBX x 10c   ($1 each, given to everyone)
+  //
+  // The scale in §1c is the control; the chart in §1d reads it. They used to be
+  // two copies of the same idea in two places, one of them mislabelled as
+  // "levels of activity a mission needs" — the level is not about the mission,
+  // it is about the philanthropy's transparency.
+  (async function () {
+    const scaleEl = document.getElementById('ld-scale');
+    const runEl = document.getElementById('ld-runway');
+    const dimeEl = document.getElementById('ld-dime-viz');
+    const BASE_EBX = 10, CENTS = 0.10, WEEKS_SHOWN = 12;
+
+    const LEVELS = [
+      { n: 1, name: 'Dormant', what: 'The philanthropy publishes its own work and it holds up. We keep the lights on and the ledger public.' },
+      { n: 2, name: 'Watching', what: 'We follow the work and file the routine reports it does not file itself.' },
+      { n: 3, name: 'Reporting', what: 'Our team has to be on the mission — visits, interviews, a parallel progress report.' },
+      { n: 4, name: 'Auditing', what: 'Its numbers have to be verified rather than read. The organization is under active audit.' },
+      { n: 5, name: 'Arbitrating', what: 'Something is contested. We investigate, mediate, and publish the finding.' },
+    ];
+    let level = 1;                       // no live transparency signal yet
+
+    // ── the dime (visual): ten of them, one week, one dollar ──
+    if (dimeEl) {
+      const coin = () =>
+        '<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">' +
+        '<circle cx="13" cy="13" r="11.5" fill="none" stroke="#e8a84c" stroke-width="1.4" opacity="0.9"/>' +
+        '<circle cx="13" cy="13" r="8.5" fill="rgba(232,168,76,0.14)"/>' +
+        '<text x="13" y="17" text-anchor="middle" style="font-family:var(--font-mono,monospace);' +
+        'font-size:9px;fill:#e8a84c;">10¢</text></svg>';
+      dimeEl.innerHTML =
+        '<div class="ld-dime__row">' + Array.from({ length: 10 }, coin).join('') + '</div>' +
+        '<div class="ld-dime__cap">10 EBX &middot; ten dimes &middot; $1 &middot; every week</div>';
+    }
+
+    // ── live figures ──
+    let pooledEbx = 0, benefactors = 0;
+    try {
+      const r = await fetch('/initiatives');
+      if (r.ok) (await r.json() || []).forEach(i => { pooledEbx += (i.ebx_committed || i.committed_ebx || 0); });
+    } catch (e) {}
+    try {
+      const r = await fetch('/missions');
+      if (r.ok) {
+        const ms = await r.json() || [];
+        const tallies = await Promise.all(ms.slice(0, 8).map(m =>
+          fetch('/missions/' + m.id + '/p1/tally').then(x => x.ok ? x.json() : null).catch(() => null)));
+        const voters = new Set();
+        tallies.forEach(t => (t && t.entries || []).forEach(e => {
+          for (let k = 0; k < (e.voter_count || 0); k++) voters.add(t.mission_id + ':' + e.tiv_id + ':' + k);
+        }));
+        benefactors = voters.size;
+      }
+    } catch (e) {}
+    const weeklyCost = Math.max(0, benefactors) * BASE_EBX * CENTS;
+    const pooledUsd = pooledEbx * CENTS;
+
+    function paint() {
+      const lv = LEVELS[level - 1];
+      const takeShare = lv.n / 16;
+      const runwayUsd = pooledUsd * takeShare;
+      const weeks = weeklyCost > 0 ? Math.floor(runwayUsd / weeklyCost) : 0;
+
+      // §1c — the scale
+      if (scaleEl) {
+        scaleEl.innerHTML =
+          // §8 (2026-08-10) — structure.md §1c now labels the axis by COST:
+          // "Lowest cost <- Dormant(1/16) ... Arbitrating(5/16) -> Highest cost".
+          // Same scale, named by what it spends rather than by what it rewards,
+          // which is the quantity the runway chart under it actually consumes.
+          '<div class="ld-scale__ends">' +
+            '<span>&larr; lowest cost</span>' +
+            '<span>highest cost &rarr;</span>' +
+          '</div>' +
+          '<div class="ld-scale__steps">' +
+            LEVELS.map(l =>
+              '<button type="button" class="ld-step' + (l.n === lv.n ? ' on' : '') + '" data-level="' + l.n + '">' +
+                '<span class="ld-step__name">' + l.name + '</span>' +
+                '<span class="ld-step__frac">' + l.n + '/16</span>' +
+              '</button>').join('') +
+          '</div>' +
+          '<div class="ld-scale__what"><b>' + lv.name + '.</b> ' + lv.what + '</div>' +
+          '<div class="ld-scale__split">' +
+            '<span>Earthbux <b>' + lv.n + '/16</b></span>' +
+            '<span class="ld-scale__bar"><i style="width:' + (takeShare * 100).toFixed(0) + '%"></i></span>' +
+            '<span>the mission <b>' + (16 - lv.n) + '/16</b></span>' +
+          '</div>';
+        scaleEl.querySelectorAll('.ld-step').forEach(b => {
+          b.onclick = () => { level = Number(b.dataset.level) || 1; paint(); };
+        });
+      }
+
+      // §1d — the runway
+      if (runEl) {
+        const bars = Array.from({ length: WEEKS_SHOWN }, (_, k) =>
+          '<div class="ld-runway__bar' + (k < weeks ? ' on' : '') +
+          '" style="height:' + (30 + k * 5) + '%"></div>').join('');
+        runEl.innerHTML =
+          '<div class="ld-runway__label">Funding runway &middot; at ' + lv.name.toLowerCase() +
+            ' (' + lv.n + '/16)</div>' +
+          '<div class="ld-runway__figure">' +
+            '<span class="ld-runway__weeks">' + weeks + '</span>' +
+            '<span class="ld-runway__unit">week' + (weeks === 1 ? '' : 's') +
+              ' of voting our share of the pool can fund at today’s membership</span>' +
+          '</div>' +
+          '<div class="ld-runway__bars">' + bars + '</div>' +
+          // §8 (2026-08-10, structure.md §1d): say the sentence Jax wrote —
+          // "Donating is currently funding $1 per week per active community
+          // member" — and show the divisor it comes from, total ÷ members,
+          // with the member count named rather than buried.
+          '<div class="ld-runway__note">Donating is currently funding <b>$1 per week</b> per ' +
+            'active community member. <b>' + benefactors + '</b> active member' +
+            (benefactors === 1 ? '' : 's') + ' &middot; pool <b>$' + pooledUsd.toFixed(2) + '</b> ' +
+            '&divide; <b>$' + weeklyCost.toFixed(2) + '</b> per week = <b>' + weeks + '</b> week' +
+            (weeks === 1 ? '' : 's') + '. ' +
+            (weeks === 0
+              ? 'It reads zero because no money has been donated yet.'
+              : 'That pool is <b>simulated pilot EBX</b> — no money has been donated yet, so treat ' +
+                'this as the shape of the number, not the number.') + '</div>';
+      }
+    }
+    paint();
+
+    // §1e (2026-08-10) — the seven seeded causes, in their own colours. The
+    // section claims "I seeded this system with the 7 causes"; showing them is
+    // what makes that checkable rather than a claim.
+    (async function () {
+      const el = document.getElementById('ld-causes');
+      if (!el) return;
+      let causes = [];
+      try {
+        const r = await fetch('/causes');
+        if (r.ok) causes = (await r.json() || []).sort((a, b) => (a.index || 0) - (b.index || 0));
+      } catch (e) {}
+      if (!causes.length) { el.innerHTML = ''; return; }
+      el.innerHTML = causes.map(c =>
+        '<a class="ld-cause" style="--cc:' + (c.color || '#8fce9d') + ';" ' +
+          'href="cause.html?id=' + encodeURIComponent(c.id) + '">' +
+          '<i class="ld-cause__dot"></i>' + String(c.name || c.id).replace(/</g, '&lt;') +
+        '</a>').join('');
+    })();
+  })();
+  </script>
 </body>
 </html>

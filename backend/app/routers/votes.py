@@ -1,8 +1,9 @@
 """Phase-1 (tiv) + phase-2 (org) voting endpoints — v2."""
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
@@ -29,6 +30,17 @@ def put_p1_shares(
         crud.replace_p1_shares(db, user.id, mission_id, body.shares, ebx_total=body.ebx)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except IntegrityError as e:
+        # §0a (2026-08-05): a constraint clash here is a bad slate, not a server
+        # fault — surface it as a 400 instead of a 500 "Exception in ASGI
+        # application". (The known cause, orphaned initiatives, is fixed at the
+        # source in crud.create_tiv / adopt_orphan_tivs.)
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="This slate conflicts with a vote you already hold on one of "
+                   "these initiatives. Reload the page and try again.",
+        ) from e
     return crud.p1_tally(db, mission_id, settings.size_factor)
 
 
@@ -55,6 +67,35 @@ def withdraw_p1(
     """Phase-2 withdrawal: pull back this ben's phase-1 commitment minus the send."""
     try:
         return crud.withdraw_p1(db, user.id, mission_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/missions/{mission_id}/p1/carryover", response_model=dict)
+def p1_carryover(
+    mission_id: str,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """What this benefactor committed here, what the election did with it, and
+    how much is still theirs to keep or roll forward (2026-08-06)."""
+    try:
+        return crud.p1_carryover_state(db, user.id, mission_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.put("/missions/{mission_id}/p1/carryover", response_model=dict)
+def set_p1_carryover(
+    mission_id: str,
+    body: dict = Body(...),
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Keep `keep_ebx` in this mission; the remainder rolls to the next
+    iteration of the same cause. Phase 2 only."""
+    try:
+        return crud.carryover_p1(db, user.id, mission_id, body.get("keep_ebx"))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

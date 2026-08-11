@@ -193,6 +193,56 @@
         phase4_start: new Date(base + 32 * wk),
         phase4_resolved: new Date(base + 48 * wk)
       };
+    },
+    /**
+     * §7 (2026-08-10) — THE FIVE DATES OF ONE MISSION, FROM ONE ANCHOR.
+     * The single source of truth for every date any page prints about a
+     * mission. Jax, build-seq §1: "The anchor is 'Mission started' which
+     * happens at week 0. Cause open is exactly 7 weeks before 0, cause
+     * finalized is 7-14 weeks before 0. Philanthropy Elected is 8 weeks
+     * after 0."
+     *
+     *   T (mission started, UX week 0) = started_at + 7 weeks
+     *   cause opened                   = T - 7 weeks  (= started_at exactly)
+     *   cause finalized                = a WINDOW, T-14w .. T-7w
+     *   philanthropy elected           = T + 8 weeks
+     *   credit release                 = T + 16 weeks
+     *
+     * THE +8 EXCURSION, AND WHY IT IS BACK AT +7. On 2026-08-10 this briefly
+     * read `started_at + 8wk`, after "you have T a week early". That was a
+     * DOUBLE CORRECTION — the week had already been accounted for — and Jax
+     * called it: "everything is right, T is just 1 week late."
+     * The decisive check is that +7 reproduces the two philanthropy dates Jax
+     * gave directly in §5, and +8 reproduces neither:
+     *     atm0 Carbon Capture Expansion  -> Aug 11   (+7 ✓, +8 gives Aug 18)
+     *     atm1 Methane Leak Detection    -> Sep 29   (+7 ✓, +8 gives Oct 6)
+     * Those two dates are the fixed points; anything that misses them is wrong.
+     *
+     * A CONSEQUENCE, STATED SO IT ISN'T MISTAKEN FOR A BUG: 8 weeks is not a
+     * multiple of the 7-week rotation, so `phlElected` does NOT sit on the same
+     * point of the cause's cycle that T does. That is Jax's explicit call:
+     * "T + 8 weeks is the philanthropy election, T - 7 weeks is when the cause
+     * is opened."
+     *
+     * DUPLICATED, ON PURPOSE: main.html and cause.html carry a byte-identical
+     * fallback copy of this function (see their §7b shim) so a stale cache of
+     * THIS file cannot blank those pages. If the formula changes, change all
+     * three and bump the `?v=` on both script tags.
+     */
+    missionDates(mission) {
+      const wk = config.decisionIntervalDays * MS_PER_DAY;
+      const startMs = (mission && mission.started_at)
+        ? new Date(mission.started_at).getTime() : Date.now();
+      const T = startMs + 7 * wk;
+      return {
+        startedAt:          new Date(startMs),
+        causeFinalizedFrom: new Date(T - 14 * wk),
+        causeFinalizedTo:   new Date(T - 7 * wk),
+        causeOpened:        new Date(T - 7 * wk),
+        missionStarted:     new Date(T),
+        phlElected:         new Date(T + 8 * wk),
+        creditRelease:      new Date(T + 16 * wk)
+      };
     }
   };
   var LocalElections = {
@@ -285,6 +335,8 @@
     }
   };
   var Annulus = {
+    /** Sector that wears the "coming up" glow; null = the next cause. */
+    glowIndex: null,
     _rafId: null,
     _rotatingGroup: null,
     _nowGroup: null,
@@ -380,10 +432,35 @@
         dateLine.textContent = "\u2026";
         labelGroup.appendChild(dateLine);
         group.appendChild(labelGroup);
+        // §2 (2026-08-05, jax notes 2: "Colored sectors ray outwards") — each
+        // cause throws short rays past the outer edge in its own color. They
+        // ride the rotating group, so they stay welded to their sector, and
+        // _update() brightens the active + upcoming cause's rays.
+        const rayGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        rayGroup.setAttribute("pointer-events", "none");
+        const RAYS = 5;
+        for (let k = 0; k < RAYS; k++) {
+          const a = startAngle + anglePerSeg * ((k + 0.5) / RAYS);
+          const edge = k === 0 || k === RAYS - 1;
+          const r0 = outerR + 2;
+          const r1 = outerR + (edge ? 6 : 11);   // stays inside the 400×400 box
+          const ray = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          ray.setAttribute("x1", String(cx + r0 * Math.cos(a)));
+          ray.setAttribute("y1", String(cy + r0 * Math.sin(a)));
+          ray.setAttribute("x2", String(cx + r1 * Math.cos(a)));
+          ray.setAttribute("y2", String(cy + r1 * Math.sin(a)));
+          ray.setAttribute("stroke", cause.color);
+          ray.setAttribute("stroke-width", edge ? "1.2" : "2");
+          ray.setAttribute("stroke-linecap", "round");
+          ray.setAttribute("opacity", "0.32");
+          rayGroup.appendChild(ray);
+        }
+        group.appendChild(rayGroup);
         Annulus._segments.push({
           innerPath,
           outerGroup,
           labelGroup,
+          rayGroup,
           midX: lx,
           midY: ly
         });
@@ -414,13 +491,19 @@
       nowLine.setAttribute("stroke-linecap", "round");
       nowLine.setAttribute("filter", "url(#ebx-now-glow)");
       nowGroup.appendChild(nowLine);
-      const nowDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      nowDot.setAttribute("cx", String(cx));
-      nowDot.setAttribute("cy", String(cy - outerR - 3));
-      nowDot.setAttribute("r", "3");
-      nowDot.setAttribute("fill", "white");
-      nowDot.setAttribute("filter", "url(#ebx-now-glow)");
-      nowGroup.appendChild(nowDot);
+      // §2 (2026-08-05, jax notes 2: "main glowy marker pointing") — the now
+      // marker is an arrowhead aimed INTO the wheel, not a dot: it points at
+      // the cause the clock is currently standing on.
+      const nowTip = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+      const _ty = cy - outerR - 4;          // tip sits just above the ring
+      nowTip.setAttribute("points",
+        `${cx},${_ty + 9} ${cx - 6},${_ty - 4} ${cx + 6},${_ty - 4}`);
+      nowTip.setAttribute("fill", "white");
+      nowTip.setAttribute("filter", "url(#ebx-now-glow)");
+      nowGroup.appendChild(nowTip);
+      // (No "NOW" caption: at r=184 the label lands on the viewBox edge and the
+      // arrowhead already reads as the marker — the centre panel carries today's
+      // date in words.)
       svg.appendChild(nowGroup);
       Annulus._nowGroup = nowGroup;
       el.appendChild(svg);
@@ -441,26 +524,40 @@
       const { _cx: cx, _cy: cy, _outerR: outerR, _midR: midR } = Annulus;
       const n = 7;
       const anglePerSeg = 2 * Math.PI / n;
-      const nextIndex = (state.causeIndex + 1) % n;
+      // §2 (2026-08-05): which sector wears the "coming up" glow. Defaults to
+      // the next cause; main.html points it at the ACTIVE cause while the page
+      // is showing active missions (structure.md backlog).
+      const nextIndex = (Annulus.glowIndex == null)
+        ? (state.causeIndex + 1) % n
+        : ((Annulus.glowIndex % n) + n) % n;
       Annulus._segments.forEach((seg, i) => {
         seg.labelGroup.setAttribute(
           "transform",
           `rotate(${-state.rotationDeg}, ${seg.midX}, ${seg.midY})`
         );
+        const _rays = (opacity, glowCol) => {
+          if (!seg.rayGroup) return;
+          Array.from(seg.rayGroup.childNodes).forEach(r => r.setAttribute("opacity", String(opacity)));
+          if (glowCol) seg.rayGroup.setAttribute("filter", `drop-shadow(0 0 5px ${glowCol})`);
+          else seg.rayGroup.removeAttribute("filter");
+        };
         if (i === state.causeIndex) {
           seg.innerPath.setAttribute("stroke", "#ffffff");
           seg.innerPath.setAttribute("stroke-width", "3");
           seg.innerPath.setAttribute("filter", "drop-shadow(0 0 8px rgba(255,255,200,0.55))");
+          _rays(1, "rgba(255,255,255,0.8)");
         } else if (i === nextIndex) {
           // Upcoming cause — glow in its own color (layered colored halo).
           const col = config.causes[i] ? config.causes[i].color : "#ffffff";
           seg.innerPath.setAttribute("stroke", col);
           seg.innerPath.setAttribute("stroke-width", "2");
           seg.innerPath.setAttribute("filter", `drop-shadow(0 0 4px ${col}) drop-shadow(0 0 11px ${col})`);
+          _rays(0.95, col);
         } else {
           seg.innerPath.setAttribute("stroke", "#0f1a14");
           seg.innerPath.setAttribute("stroke-width", "1.5");
           seg.innerPath.removeAttribute("filter");
+          _rays(0.32, null);
         }
       });
       // Raise the active + upcoming sectors above their neighbors so the glow
@@ -470,7 +567,11 @@
         Annulus._lastHiCause = state.causeIndex;
         [nextIndex, state.causeIndex].forEach(hi => {
           const seg = Annulus._segments[hi];
-          if (seg && group) { group.appendChild(seg.innerPath); group.appendChild(seg.labelGroup); }
+          if (seg && group) {
+            group.appendChild(seg.innerPath);
+            if (seg.rayGroup) group.appendChild(seg.rayGroup);
+            group.appendChild(seg.labelGroup);
+          }
         });
       }
       if (Annulus._nameEl) {
@@ -636,7 +737,10 @@
   `);
   }
   var formatNumber = (n) => Number(n).toLocaleString();
-  var formatEBX = (n) => `${formatNumber(n)} EBX`;
+  // §2 (2026-08-05): EBX reads as a whole count on cards and in dialogs —
+  // fractional EBX exists in the ledger (a 0.5 skim is real) but "39.429 EBX"
+  // in a card footer is noise, not information.
+  var formatEBX = (n) => `${formatNumber(Math.round(Number(n) || 0))} EBX`;
   var EBX_PER_VOTE = 10;   // 10 EBX = 1 vote (≈ $1), matching the backend p1 tally
   function voteWeight(baseVotes, committedEbx) {
     return Math.max(baseVotes || 0, (committedEbx || 0) / EBX_PER_VOTE);
@@ -1385,16 +1489,22 @@
     </a>
   `;
   }
-  // Card action footer (build-seq: two-button cards). Vote → the cause-page
-  // p1/p2 voting area (caller supplies d.voteHref). Research → opens the
-  // matching entity's expanded table row via the page's idxResearch() hook.
+  // Card action footer (build-seq: two-button cards).
+  // §1 (2026-08-05, structure.md main.html): **View is gone — Vote does both.**
+  // Vote filters the Context table to this cause AND points the table's top-row
+  // vote dialog at it (window.voteOnCause on main.html); Discuss leaves for the
+  // cause page, which is the discussion hub. Pages without a voteOnCause hook
+  // (cause.html reuses these cards) fall back to the caller's voteHref.
+  // NOTE: this file is the LIVE artifact — frontend/src/ebx_shared.ts has
+  // diverged and no longer contains this function, so there is nothing to
+  // mirror there.
   function _electionCardFooter(d) {
     const voteHref = d.voteHref || d.href || "#";
     const cid = String(d.causeId || "").replace(/'/g, "");
     const base = "flex:1;display:block;text-align:center;font-family:var(--font-mono);font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:8px 6px;border-radius:6px;cursor:pointer;text-decoration:none;box-sizing:border-box;transition:filter 0.15s,background 0.15s;";
-    const vote = '<a href="' + voteHref + '" class="rc-vote" style="' + base + "background:" + d.color + ";color:#0f1a14;border:1px solid " + d.color + ';">Vote</a>';
-    const research = '<button type="button" class="rc-research" onclick="if(window.idxResearch)idxResearch(\'' + cid + "');return false;\" style=\"" + base + "background:transparent;color:" + d.color + ";border:1px solid " + d.color + ';">View</button>';
-    return '<div style="display:flex;gap:7px;padding:9px 12px 11px;border-top:1px solid rgba(255,255,255,0.07);">' + vote + research + "</div>";
+    const vote = '<button type="button" class="rc-vote" onclick="if(window.voteOnCause){voteOnCause(\'' + cid + "');}else{window.location.href='" + voteHref + "';}return false;\" style=\"" + base + "background:" + d.color + ";color:#0f1a14;border:1px solid " + d.color + ';">Vote</button>';
+    const discuss = '<a href="cause.html?id=' + cid + '" class="rc-discuss" style="' + base + "background:transparent;color:" + d.color + ";border:1px solid " + d.color + ';">Discuss</a>';
+    return '<div style="display:flex;gap:7px;padding:9px 12px 11px;border-top:1px solid rgba(255,255,255,0.07);">' + vote + discuss + "</div>";
   }
   // Vote window shown in a card's corner: the full election phase ending on the
   // decision/close date — "<open> - <close>". Phase 1 (initiative vote) runs 7
@@ -1404,29 +1514,86 @@
     const open = new Date(close.getTime() - (weeks || 7) * 7 * MS_PER_DAY);
     return formatShortDate(open) + " - " + formatShortDate(close);
   }
+  // The "uncommitted" counter. Dialing a slate in the Context table's top-row
+  // vote dialog parks the change locally (main.html `_pendingEbx`) instead of
+  // sending it per-drag; this strip surfaces that pending delta on the cause's
+  // election card and offers the single Commit that flushes it.
+  // §1 (2026-08-05): counted in EBX, matching the dialog.
+  // Rendered only when there is something uncommitted for this cause.
+  function _uncommittedStrip(d) {
+    var n = 0;
+    try { n = (typeof window !== "undefined" && window._uncommittedVotes) ? window._uncommittedVotes(d.causeId) : 0; } catch (e) { n = 0; }
+    if (!n) return "";
+    var cid = String(d.causeId || "").replace(/'/g, "");
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--font-mono);font-size:0.72rem;color:' + d.color + ';padding-top:2px;">' +
+      '<span><span style="color:rgba(245,240,232,0.62);font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">Uncommitted</span> ' + n + ' EBX</span>' +
+      '<button type="button" onclick="if(window.commitVotes)commitVotes(\'' + cid + '\');return false;" style="font:inherit;font-family:var(--font-mono);font-size:0.66rem;font-weight:700;cursor:pointer;background:' + d.color + ';color:#0f1a14;border:none;border-radius:5px;padding:2px 10px;">Commit</button>' +
+      '</div>';
+  }
   function electionCardFace(d) {
-    // build-seq (readability pass): dark card, leader-only row spilling to 2
-    // lines, larger type, high-contrast light text, dates emphasized. The card
-    // body is no longer clickable — only the header link and the footer
-    // Vote / Discuss buttons carry actions.
+    // §2 (2026-08-05) — the card anatomy from Jax's drawing (jax notes 2,
+    // CONTEXT), which is now the ONE shape every election card on the Context
+    // page uses, side cards and top card alike:
+    //
+    //   ____________________________________
+    //   |<header left>                 date|
+    //   |1. name                        ebx|
+    //   |2. name                        ebx|
+    //   |3. name________________________ebx|
+    //   |My choice - choice_name     |ebx   |
+    //   |My commitment - x ebx_______|pool__|
+    //
+    // Two changes from the old face: THREE ranked rows instead of the leader
+    // alone, and every number is an **EBX count, never a percentage** — "that
+    // allows one to estimate the total pool size" (jax notes 2). `d.scale`
+    // renders the same anatomy larger for the full-width top card.
     const CARD_BG = "rgba(15,26,20,0.85)";       // dark card background
     const INK = "rgba(245,240,232,0.95)";        // light primary text (high contrast)
     const INK_MUTED = "rgba(245,240,232,0.62)";  // light secondary text
-    const leader = d.rows && d.rows.length ? d.rows[0] : null;
-    const _num = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-    // My choice's rank + vote count within the field, so it reads like the
-    // leader row ("<rank>. <name> - <votes>"). Matched by name in d.rows.
+    const big = d.scale === "top";
+    const fRow = big ? "0.98rem" : "0.82rem";
+    const fHead = big ? "0.86rem" : "0.74rem";
+    const fFoot = big ? "0.86rem" : "0.74rem";
+    const padX = big ? "20px" : "14px";
+    const rows = (d.rows || []).slice(0, 3);
+    const _ebx = (n) => Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    // My choice's rank + EBX within the field, so it reads like a ranked row.
     const _myIdx = (d.myChoice && d.rows) ? d.rows.findIndex(r => r.name === d.myChoice) : -1;
     const _myRank = _myIdx >= 0 ? _myIdx + 1 : null;
-    const _myVotes = _myIdx >= 0 ? Number(d.rows[_myIdx].votes || 0) : 0;
-    // Leader row: "1. <leader> - <votes>" (name spills to 2 lines; votes pinned).
-    const body = leader
-      ? '<div style="display:flex;align-items:flex-start;gap:6px;padding:9px 14px;font-family:var(--font-mono);font-size:0.82rem;color:' + INK + ';"><span style="flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600;line-height:1.3;word-break:break-word;">1. ' + leader.name + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (leader.votes > 0 ? _num(leader.votes) : "--") + "</span></div>"
-      : '<div style="padding:12px 14px;font-size:0.82rem;color:rgba(245,240,232,0.4);font-style:italic;">No votes yet.</div>';
+    const _myEbx = _myIdx >= 0 ? Number(d.rows[_myIdx].ebx || 0) : Number(d.myChoiceEbx || 0);
+    const body = rows.length
+      ? '<div style="padding:' + (big ? "4px 0 5px" : "3px 0 4px") + ';">' + rows.map((r, i) =>
+          '<div style="display:flex;align-items:flex-start;gap:8px;padding:' + (big ? "6px " : "4px ") + padX +
+            ';font-family:var(--font-mono);font-size:' + fRow + ';color:' + INK + ';">' +
+            '<span style="flex:1;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:' +
+              (i === 0 ? "600" : "400") + ';line-height:1.3;word-break:break-word;' +
+              (i === 0 ? '' : 'color:' + INK_MUTED + ';') + '">' + (i + 1) + '. ' + r.name + '</span>' +
+            '<span style="color:' + (i === 0 ? d.color : INK_MUTED) + ';font-weight:700;flex-shrink:0;">' +
+              (Number(r.ebx || 0) > 0 ? _ebx(r.ebx) : "--") + '</span>' +
+          '</div>').join('') + '</div>'
+      : '<div style="padding:12px ' + padX + ';font-size:' + fRow + ';color:rgba(245,240,232,0.4);font-style:italic;">' +
+        (d.emptyText || "No votes yet.") + '</div>';
     const glow = d.glowColor
       ? "box-shadow:0 0 16px " + d.glowColor + ",0 0 5px " + d.glowColor + ";"
-      : (d.glow ? "box-shadow:0 0 14px rgba(255,255,255,0.28),0 0 4px rgba(255,255,255,0.5);" : "");
-    return '<div class="race-card" data-cause-id="' + d.causeId + '" style="--rc-color:' + d.color + ";display:block;text-decoration:none;width:100%;box-sizing:border-box;background:" + CARD_BG + ";border:1.5px solid var(--rc-color);border-radius:10px;overflow:hidden;color:" + INK + ";" + glow + '"><div style="padding:10px 14px;background:rgba(0,0,0,0.22);border-bottom:1.5px solid var(--rc-color);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;"><a href="' + d.href + '" style="font-family:var(--font-mono);font-size:0.74rem;letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;word-break:break-word;">' + d.headerLeft + '</a><span style="font-family:var(--font-mono);font-size:0.72rem;color:' + INK + ';font-weight:700;white-space:nowrap;flex-shrink:0;background:rgba(255,255,255,0.08);padding:3px 8px;border-radius:5px;">' + d.headerRight + "</span></div>" + body + '<div style="border-top:1px solid rgba(255,255,255,0.07);padding:8px 14px 9px;display:flex;flex-direction:column;gap:4px;"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.74rem;color:' + INK + ';"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (d.myChoice ? (_myRank ? _myRank + '. ' : '') + d.myChoice : '<span style="opacity:0.5;font-style:italic;">no vote yet</span>') + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (d.myChoice ? _num(_myVotes) : "--") + '</span></div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:0.74rem;color:' + INK + ';"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:' + INK_MUTED + ';font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatEBX(d.myCommit) : "--") + '</span><span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:' + INK_MUTED + ';font-weight:400;font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatEBX(d.pool) : "--") + "</span></div></div>" + _electionCardFooter(d) + "</div>";
+      : (d.glow ? "box-shadow:0 0 26px rgba(255,255,255,0.35),0 0 6px rgba(255,255,255,0.6);border-color:rgba(255,255,255,0.85);" : "");
+    return '<div class="race-card" data-cause-id="' + d.causeId + '" style="--rc-color:' + d.color + ";display:block;text-decoration:none;width:100%;box-sizing:border-box;background:" + CARD_BG + ";border:1.5px solid var(--rc-color);border-radius:10px;overflow:hidden;color:" + INK + ";" + glow + '">' +
+      // header: name (links out) + the card's date
+      '<div style="padding:' + (big ? "12px " : "10px ") + padX + ';background:rgba(0,0,0,0.22);border-bottom:1.5px solid var(--rc-color);display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+        '<a href="' + d.href + '" style="font-family:var(--font-mono);font-size:' + fHead + ';letter-spacing:0.04em;text-transform:uppercase;color:var(--rc-color);font-weight:700;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.35;word-break:break-word;">' + d.headerLeft + '</a>' +
+        '<span style="font-family:var(--font-mono);font-size:' + fHead + ';color:' + INK + ';font-weight:700;white-space:nowrap;flex-shrink:0;background:rgba(255,255,255,0.08);padding:3px 8px;border-radius:5px;">' + d.headerRight + '</span>' +
+      '</div>' + body +
+      // footer: my choice · my commitment / pool
+      '<div style="border-top:1px solid rgba(255,255,255,0.07);padding:8px ' + padX + ' 9px;display:flex;flex-direction:column;gap:4px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:' + fFoot + ';color:' + INK + ';">' +
+          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:' + INK_MUTED + ';font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">My choice</span> ' +
+          (d.myChoice ? (_myRank ? _myRank + '. ' : '') + d.myChoice : '<span style="opacity:0.5;font-style:italic;">no vote yet</span>') + '</span>' +
+          '<span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (d.myChoice ? _ebx(_myEbx) : "--") + '</span>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:' + fFoot + ';color:' + INK + ';">' +
+          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:' + INK_MUTED + ';font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatEBX(d.myCommit) : "--") + '</span>' +
+          '<span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:' + INK_MUTED + ';font-weight:400;font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatEBX(d.pool) : "--") + '</span>' +
+        '</div>' + _uncommittedStrip(d) +
+      '</div>' + (d.noFooter ? "" : _electionCardFooter(d)) + '</div>';
   }
   function sideCard(causeIndex, opts) {
     const cause = config.causes.find((c) => c.index === causeIndex);
@@ -1583,6 +1750,277 @@
     `;
     }).join("");
   }
+  // ════════════════════════════════════════════════════════════════════════
+  // Dialogs — §2 (2026-08-05). structure.md, main.html: "Propose / nominate
+  // dialogs shared with the cause page."
+  //
+  // The Context page and the Discussion page each carried their own copy of
+  // the propose-an-initiative dialog, and the org dialog had DIVERGED: the
+  // cause page had the real one (nominate/register, duplicate detection,
+  // per-mission candidacies) while the Context page had a stub that punted to
+  // profile.html. Both now mount these. Markup and styles are injected on
+  // first open, so a page only needs to call EBX.Dialogs.propose(...) /
+  // EBX.Dialogs.orgRegister(...).
+  // ════════════════════════════════════════════════════════════════════════
+  function openP1Mission(causeId) {
+    const ms = (config.missions || []).filter((m) => m.cause_id === causeId);
+    return ms.find((m) => m.current_phase === "initiative" && !m.winning_tiv_id)
+        || ms.find((m) => m.current_phase === "initiative")
+        || ms.slice().sort((a, b) => (b.cycle_num || 0) - (a.cycle_num || 0))[0]
+        || null;
+  }
+  function _slugFor(title) {
+    const base = (title || "").toLowerCase()
+      .normalize("NFKD").replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "initiative";
+    return base + "-" + Math.random().toString(36).slice(2, 7);
+  }
+  var _dlgStyled = false;
+  function _dlgStyles() {
+    if (_dlgStyled) return;
+    _dlgStyled = true;
+    const st = document.createElement("style");
+    st.textContent = `
+      .ebx-dlg-bg { position: fixed; inset: 0; background: rgba(10,16,12,0.72); backdrop-filter: blur(2px);
+        display: flex; align-items: center; justify-content: center; z-index: 400; padding: 20px;
+        opacity: 0; pointer-events: none; transition: opacity 0.18s; }
+      .ebx-dlg-bg.open { opacity: 1; pointer-events: auto; }
+      .ebx-dlg { width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; box-sizing: border-box;
+        background: #14211a; border: 1.5px solid rgba(245,240,232,0.18); border-radius: 12px;
+        padding: 22px 24px 20px; color: var(--clr-parchment, #f5f0e8);
+        box-shadow: 0 18px 60px rgba(0,0,0,0.55); }
+      .ebx-dlg__title { font-family: var(--font-display, serif); font-size: 1.25rem; font-weight: 800; margin-bottom: 14px; }
+      .ebx-dlg label { display: block; font-family: var(--font-mono, monospace); font-size: 0.6rem;
+        letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.5); margin: 12px 0 5px; }
+      .ebx-dlg input[type=text], .ebx-dlg textarea, .ebx-dlg select {
+        width: 100%; box-sizing: border-box; font: inherit; font-size: 0.88rem; padding: 8px 10px;
+        color: var(--clr-parchment, #f5f0e8); background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(245,240,232,0.18); border-radius: 6px; outline: none; }
+      .ebx-dlg textarea { min-height: 92px; resize: vertical; }
+      .ebx-dlg input:focus, .ebx-dlg textarea:focus, .ebx-dlg select:focus { border-color: var(--clr-honey, #e8a84c); }
+      .ebx-dlg select option { background: #14211a; }
+      .ebx-dlg__actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+      .ebx-dlg__btn { font: inherit; font-family: var(--font-mono, monospace); font-size: 0.7rem; font-weight: 700;
+        letter-spacing: 0.06em; cursor: pointer; padding: 8px 16px; border-radius: 6px;
+        background: var(--clr-honey, #e8a84c); color: #0f1a14; border: 1px solid var(--clr-honey, #e8a84c); }
+      .ebx-dlg__btn--ghost { background: transparent; color: rgba(245,240,232,0.7); border-color: rgba(245,240,232,0.22); }
+      .ebx-dlg__btn--ghost:hover { color: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); }
+      .ebx-dlg__btn--sm { padding: 5px 11px; font-size: 0.64rem; }
+      .ebx-dlg__msg { font-size: 0.8rem; line-height: 1.5; margin-top: 12px; min-height: 1em; }
+      .ebx-dlg__picker { max-height: 150px; overflow: auto; border: 1px solid rgba(245,240,232,0.14);
+        border-radius: 6px; padding: 8px; margin-top: 5px; }
+      .ebx-dlg__picker label { display: flex; gap: 8px; align-items: center; font-family: var(--font-body, sans-serif);
+        font-size: 0.82rem; letter-spacing: 0; text-transform: none; color: rgba(245,240,232,0.9);
+        margin: 0; padding: 3px 0; cursor: pointer; }
+      .ebx-dlg__kinds { display: flex; gap: 6px; margin-bottom: 6px; }
+    `;
+    document.head.appendChild(st);
+  }
+  function _dlgShell(id, titleHtml, bodyHtml) {
+    _dlgStyles();
+    let bg = document.getElementById(id);
+    if (!bg) {
+      bg = document.createElement("div");
+      bg.id = id;
+      bg.className = "ebx-dlg-bg";
+      bg.addEventListener("click", (e) => { if (e.target === bg) bg.classList.remove("open"); });
+      document.body.appendChild(bg);
+    }
+    bg.innerHTML = '<div class="ebx-dlg"><div class="ebx-dlg__title">' + titleHtml + "</div>" + bodyHtml + "</div>";
+    requestAnimationFrame(() => bg.classList.add("open"));
+    return bg;
+  }
+  var Dialogs = {
+    close(id) {
+      const bg = document.getElementById(id);
+      if (bg) bg.classList.remove("open");
+    },
+    /** Propose an initiative. opts: { causeId, onCreated } */
+    propose(opts) {
+      opts = opts || {};
+      const fixed = opts.causeId || null;
+      const causeField = fixed
+        ? '<input type="hidden" id="ebx-dlg-cause" value="' + fixed + '" />'
+        : '<label>Cause *</label><select id="ebx-dlg-cause"><option value="">Select a cause…</option>' +
+          (config.causes || []).map((c) => '<option value="' + c.id + '">' + c.name + "</option>").join("") +
+          "</select>";
+      const cname = fixed ? ((config.causes || []).find((c) => c.id === fixed) || {}).name : null;
+      const bg = _dlgShell("ebx-dlg-propose",
+        "Propose an Initiative" + (cname ? ' <span style="opacity:0.5;font-size:0.8rem;">· ' + cname + "</span>" : ""),
+        causeField +
+        "<label>Title *</label><input type=\"text\" id=\"ebx-dlg-title\" placeholder=\"e.g. Restore kelp forests in the Pacific\" />" +
+        "<label>Description *</label><textarea id=\"ebx-dlg-desc\" placeholder=\"What should happen, why it matters, and how you'd measure success…\"></textarea>" +
+        "<label>Your handle</label><input type=\"text\" id=\"ebx-dlg-handle\" placeholder=\"@yourhandle\" />" +
+        '<div class="ebx-dlg__actions">' +
+          '<button class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
+          '<button class="ebx-dlg__btn" data-act="submit">Submit proposal</button>' +
+        "</div><p class=\"ebx-dlg__msg\" id=\"ebx-dlg-msg\"></p>");
+      const msg = bg.querySelector("#ebx-dlg-msg");
+      bg.querySelector('[data-act=cancel]').onclick = () => Dialogs.close("ebx-dlg-propose");
+      bg.querySelector('[data-act=submit]').onclick = async (ev) => {
+        const causeId = (bg.querySelector("#ebx-dlg-cause").value || "").trim();
+        const title = (bg.querySelector("#ebx-dlg-title").value || "").trim();
+        const desc = (bg.querySelector("#ebx-dlg-desc").value || "").trim();
+        if (!causeId) { msg.style.color = "#e8a84c"; msg.textContent = "Please select a cause."; return; }
+        if (!title || !desc) { msg.style.color = "#e8a84c"; msg.textContent = "Title and description are required."; return; }
+        if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) {
+          msg.style.color = "#e8a84c";
+          msg.textContent = "Please log in to propose an initiative.";
+          if (Auth && Auth.openModal) Auth.openModal("login");
+          return;
+        }
+        ev.target.setAttribute("disabled", "true");
+        msg.style.color = ""; msg.textContent = "Submitting…";
+        try {
+          // No mission_id: the backend attaches the cause's open phase-1
+          // mission itself (crud.create_tiv, §0a) — one rule, both pages.
+          const res = await Auth.fetchAuthed("/initiatives", {
+            method: "POST",
+            body: JSON.stringify({
+              id: _slugFor(title), title, description: desc,
+              cause_id: causeId, proposed_by: "benefactor", status: "suggested",
+            }),
+          });
+          if (!res.ok) {
+            let detail = "";
+            try { detail = (await res.json()).detail || ""; } catch (e) {}
+            msg.style.color = "#e07b6b";
+            msg.textContent = detail ? "Couldn't submit: " + detail : "Couldn't submit (HTTP " + res.status + ").";
+            return;
+          }
+          const created = await res.json();
+          msg.style.color = "#5abd6c";
+          msg.textContent = 'Proposal submitted! "' + title + '" is now in the election.';
+          bg.querySelector("#ebx-dlg-title").value = "";
+          bg.querySelector("#ebx-dlg-desc").value = "";
+          if (typeof opts.onCreated === "function") { try { opts.onCreated(created); } catch (e) {} }
+          setTimeout(() => Dialogs.close("ebx-dlg-propose"), 1500);
+        } catch (e) {
+          msg.style.color = "#e07b6b";
+          msg.textContent = "Cannot reach the server. Is the API running?";
+        } finally {
+          ev.target.removeAttribute("disabled");
+        }
+      };
+      return bg;
+    },
+    /** Nominate or register an organization. opts: { causeId, onDone } */
+    orgRegister(opts) {
+      opts = opts || {};
+      const causeId = opts.causeId || null;
+      const all = config.initiatives || [];
+      const mine = causeId ? all.filter((i) => i.cause_id === causeId) : all;
+      // Elected tivs first; else anything with committed EBX; else everything.
+      let picks = mine.filter((i) => ["active", "org_vote"].includes(i.status));
+      if (!picks.length) picks = mine.filter((i) => (i.committed_ebx || i.ebx_committed || 0) > 0);
+      if (!picks.length) picks = mine;
+      const cname = causeId ? ((config.causes || []).find((c) => c.id === causeId) || {}).name : null;
+      const bg = _dlgShell("ebx-dlg-orgreg",
+        "Organization — Nominate or Register" + (cname ? ' <span style="opacity:0.5;font-size:0.8rem;">· ' + cname + "</span>" : ""),
+        '<div class="ebx-dlg__kinds">' +
+          '<button class="ebx-dlg__btn ebx-dlg__btn--sm" data-kind="nomination">Nominate</button>' +
+          '<button class="ebx-dlg__btn ebx-dlg__btn--sm ebx-dlg__btn--ghost" data-kind="registration">Register (I\'m a member) →</button>' +
+        "</div>" +
+        "<label>Organization name *</label><input type=\"text\" id=\"ebx-dlg-org-name\" placeholder=\"e.g. River Cleanup Collective\" />" +
+        "<label>Website *</label><input type=\"text\" id=\"ebx-dlg-org-site\" placeholder=\"https://…\" />" +
+        "<label>Brief justification *</label><textarea id=\"ebx-dlg-org-just\" placeholder=\"Why is this organization fit for the work?\"></textarea>" +
+        '<label>Initiatives this org is fit to accomplish * <span style="opacity:.6;">(pick at least 1)</span></label>' +
+        '<div class="ebx-dlg__picker" id="ebx-dlg-org-picks">' +
+          (picks.length
+            ? picks.map((i) => '<label><input type="checkbox" class="ebx-dlg-org-cb" value="' + i.id + '" /> ' +
+                (i.emoji ? i.emoji + " " : "") + i.title + "</label>").join("")
+            : '<div style="font-size:0.78rem;opacity:0.6;">No initiatives found for this cause yet.</div>') +
+        "</div>" +
+        '<div class="ebx-dlg__actions">' +
+          '<button class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
+          '<button class="ebx-dlg__btn" data-act="submit">Submit</button>' +
+        "</div><p class=\"ebx-dlg__msg\" id=\"ebx-dlg-org-msg\"></p>");
+      const msg = bg.querySelector("#ebx-dlg-org-msg");
+      let pickedId = null, force = false;
+      bg.querySelector('[data-act=cancel]').onclick = () => Dialogs.close("ebx-dlg-orgreg");
+      // Registration is an ORG act and lives behind the admin door
+      // (org-experience restructure 2026-07-10); nomination is a community act
+      // and happens right here.
+      bg.querySelector('[data-kind=registration]').onclick = () => {
+        const m = openP1Mission(causeId);
+        location.href = "admin.html?register=1" + (m && m.id ? "&mission=" + m.id : "");
+      };
+      bg.querySelector('[data-kind=nomination]').onclick = () => {};
+      const submit = async () => {
+        const name = (bg.querySelector("#ebx-dlg-org-name").value || "").trim();
+        const site = (bg.querySelector("#ebx-dlg-org-site").value || "").trim();
+        const just = (bg.querySelector("#ebx-dlg-org-just").value || "").trim();
+        const initIds = Array.from(bg.querySelectorAll(".ebx-dlg-org-cb:checked")).map((cb) => cb.value);
+        if (!name || !site || !just) { msg.style.color = "#e07b6b"; msg.textContent = "Name, website, and justification are required."; return; }
+        if (!initIds.length) { msg.style.color = "#e07b6b"; msg.textContent = "Select at least 1 initiative the organization is fit to accomplish."; return; }
+        // Each selected initiative bids on ITS mission.
+        const missionIds = [];
+        initIds.forEach((id) => {
+          const ini = all.find((i) => i.id === id);
+          const m = ini && ini.mission_id ? ini.mission_id : (openP1Mission(causeId) || {}).id;
+          if (m && missionIds.indexOf(m) < 0) missionIds.push(m);
+        });
+        msg.style.color = ""; msg.textContent = "Submitting…";
+        if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) {
+          try {
+            const stash = JSON.parse(localStorage.getItem("ebx_org_regs") || "[]");
+            stash.push({ kind: "nomination", org_name: name, website: site, justification: just,
+                         initiative_ids: initIds, cause_id: causeId, at: Date.now() });
+            localStorage.setItem("ebx_org_regs", JSON.stringify(stash));
+            msg.style.color = "#5abd6c";
+            msg.textContent = "✓ Saved locally — sign in to submit it for real.";
+            setTimeout(() => Dialogs.close("ebx-dlg-orgreg"), 1500);
+          } catch (e) { msg.style.color = "#e07b6b"; msg.textContent = "Could not save — try again."; }
+          return;
+        }
+        try {
+          const res = await Auth.fetchAuthed("/organizations/register", {
+            method: "POST",
+            body: JSON.stringify({
+              name, website_link: site, kind: "nomination",
+              mission_id: missionIds[0] || null, mission_statement: just,
+              member_name: null, member_position: null,
+              org_id: pickedId || null, force,
+            }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) { msg.style.color = "#e07b6b"; msg.textContent = data.detail || ("Could not submit (HTTP " + res.status + ")."); return; }
+          if (!data.created && !data.org && (data.matches || []).length) {
+            // "Did you mean an existing org?" — an org is never duplicated.
+            msg.style.color = "";
+            msg.innerHTML = "Similar organizations already exist — an org is never duplicated:<br/>" +
+              data.matches.map((mt) =>
+                '<button class="ebx-dlg__btn ebx-dlg__btn--ghost ebx-dlg__btn--sm" style="margin:6px 6px 0 0;" data-use="' +
+                mt.org_id + '">Use “' + mt.name + "”</button>").join("") +
+              '<button class="ebx-dlg__btn ebx-dlg__btn--sm" style="margin:6px 0 0 0;" data-force="1">Mine is different — create it</button>';
+            msg.querySelectorAll("[data-use]").forEach((b) => {
+              b.onclick = () => { pickedId = b.getAttribute("data-use"); submit(); };
+            });
+            const f = msg.querySelector("[data-force]");
+            if (f) f.onclick = () => { force = true; submit(); };
+            return;
+          }
+          const orgId = data.org ? data.org.id : pickedId;
+          for (let i = 1; i < missionIds.length; i++) {
+            try {
+              await Auth.fetchAuthed("/candidacies", { method: "POST",
+                body: JSON.stringify({ mission_id: missionIds[i], org_id: orgId, mission_statement: just }) });
+            } catch (e) {}
+          }
+          pickedId = null; force = false;
+          msg.style.color = "#5abd6c";
+          msg.textContent = "✓ Nominated. The org now shows in this election (capped until approved).";
+          if (typeof opts.onDone === "function") { try { opts.onDone(data); } catch (e) {} }
+          setTimeout(() => Dialogs.close("ebx-dlg-orgreg"), 1700);
+        } catch (e) {
+          msg.style.color = "#e07b6b"; msg.textContent = "Could not submit — try again.";
+        }
+      };
+      bg.querySelector('[data-act=submit]').onclick = submit;
+      return bg;
+    },
+  };
+
   var EBX = {
     config,
     fetchJSON,
@@ -1636,6 +2074,8 @@
     filterBySearch,
     filterByField,
     sortBy,
+    Dialogs,
+    openP1Mission,
     Auth
   };
   window.EBX = EBX;

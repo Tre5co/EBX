@@ -15,6 +15,9 @@ win rewards. **Earthbux News (EN)**, funded by a cut of the pool, supervises,
 publicizes, and helps organize the missions by stimulating that discussion,
 connecting parties, and pooling resources.
 
+The **causes themselves are votable** — a cause that holds a majority for long
+enough replaces the one that would have come next (§4, *Changing a cause*).
+
 **Doc map** — three canonical docs; supporting files are folded into them.
 - **README.md** (this file) — the system model: architecture, data model, APIs,
   lifecycle, the discussion model, money, and the credit framework.
@@ -35,7 +38,7 @@ connecting parties, and pooling resources.
  ┌───────────────────┐    │                                           │
  │ index / cause /   │    │  routers/  ── crud.py ── models.py (ORM)   │
  │ profile / admin   │◄──►│     │            │           │            │
- │ .html             │HTTP│  auth.py     scheduler.py   database.py    │
+ │ / mission.html    │HTTP│  auth.py     scheduler.py   database.py    │
  │                   │    │  (JWT)       bootstrap.py        │         │
  │ resources/js/     │    └───────────────────────────────── │ ───────┘
  │  ebx_shared.js    │                                       ▼
@@ -95,10 +98,10 @@ erDiagram
     MISSION      ||--o{ TRANSACTION     : "ledger"
 ```
 
-**15 tables.** `causes`, `missions`, `initiatives`, `organizations`,
+**16 tables.** `causes`, `missions`, `initiatives`, `organizations`,
 `benefactor_accounts`, `memberships`, `mission_candidacies`, `votes_p1`,
-`votes_p2`, `pools`, `credit_coins`, `posts`, `post_votes`, `queries`,
-`transactions`.
+`votes_p2`, `cause_votes`, `pools`, `credit_coins`, `posts`, `post_votes`,
+`queries`, `transactions`.
 
 Naming convention throughout the code: **`ben`** = benefactor, **`tiv`** =
 initiative, **`org`** = organization (so e.g. `tiv_id = ForeignKey("initiatives.id")`).
@@ -114,6 +117,11 @@ Key design choices:
   `OrgRegistration`); approval is what grants page-build access.
 - **`Transaction`** — the single append-only ledger for both vote mutations
   (`type='vote'`) and money transfers (`type='transfer'`, with a `bucket`).
+- **`CauseVote`** — §5 (2026-08-06): one benefactor's vote, for one WEEK, on
+  which cause should hold an upcoming window. The seven causes are themselves
+  elected (§4, *Changing a cause*), so `Cause` grew `status`
+  (`active | suggested | retired`), `proposed_by_id`, and a **nullable**
+  `index` — a suggested cause holds no window until it wins one.
 - **`Query`** — saved, staff-only data-console lookups (the admin browser).
 - **`valence`** (`helpful | neutral | harmful`) on votes & posts — `harmful`
   means a vote *against* a tiv or a *block* on an org.
@@ -275,6 +283,67 @@ Seven causes run staggered 7-week windows — one cause's window opens each week
 Current DB state: **atm0 = `initiative` (open)**, oce0…hpr0 = `pre` (open weekly
 through 2026-07-27).
 
+### ME and OE — the two halves a benefactor sees
+
+The lifecycle above is one continuous machine, but a benefactor is only ever
+looking at one of two things, and the Context page names them (2026-08-06):
+
+- **ME — Mission Election.** *The entire process before the initiative election,
+  i.e. before the mission starts.* It covers the cause being settled for that
+  window and the initiatives competing to become the mission. It ends the moment
+  an initiative is elected: the mission has initiated.
+- **OE — Organization Election.** *The mission's first 8 weeks*, in which the
+  community elects the organization that will run it. It ends when
+  `winning_org_id` is set and budgeting begins.
+
+They are page states, not new database phases — ME is a mission in `pre` /
+`initiative` with no `winning_tiv_id`; OE is one with a winner and no
+`winning_org_id`.
+
+### Changing a cause
+
+The seven causes are not fixed forever. Any cause window can be contested:
+
+- Benefactors vote for a **challenger** cause to hold an upcoming window, or
+  suggest a new one for the catalogue.
+- **A challenger only wins if the SAME challenger takes the week 7 weeks in a
+  row** (raised from 6 on 2026-08-06 — one week per column of the streak bars).
+  A run that breaks — or that moves to a different challenger part-way — resets
+  to the incumbent and pushes the swap date out by a full challenge period. This
+  is deliberate: a cause has to be resistant to a single bad week, or the
+  rotation could be captured by whoever happens to show up.
+- If no challenger clears that bar, the window's incumbent is **confirmed** and
+  the interface says so outright: *"&lt;incumbent&gt; will be the next cause for
+  the mission commencing &lt;ME day&gt;"* — which is always at least 7 weeks out,
+  because that is how long the challenge period runs.
+- A replaced cause takes over the window that would have been the incumbent's;
+  the rotation length (7) does not change.
+
+Causes must be **ubiquitously essential human experiences**, corruption-
+resistant ("thick skin" — resources allocated to resilience), with a real
+prospect of change (`INSTRUCTIONS.md` → Cause framework).
+
+**Status: built 2026-08-06.** `cause_votes` holds one vote per
+`(benefactor, window, week)`; `causes` carries `status`
+(`active | suggested | retired`), `proposed_by_id` and a nullable `index` — a
+suggested cause holds no window until it wins one. Endpoints:
+`POST /causes/suggest` (name + colour, hex-validated, refused if it clashes with
+an active cause's colour), `POST /causes/vote`, `GET /causes/ballot/{slot}`,
+`GET /causes/vote/mine`. Migration `b7d4e9a1c206`, applied automatically at
+startup.
+
+**Seven columns, advertised as six.** The ballot's leftmost column is the
+current week; the rightmost aggregates the six weeks *before* the contest
+opened, so a challenger that was already winning arrives with that behind it
+instead of starting from nothing. A column is won by whoever clears >50% of the
+votes cast in it, and the streak fills from the left — lose a week and it
+resets.
+
+**Still to build:** the swap itself. Nothing yet retires the incumbent and hands
+its window to a challenger that has taken all seven columns; that belongs in
+`scheduler.run_due()`, before `bootstrap.ensure_due()` creates the window's
+mission.
+
 ---
 
 ## 5. The money model
@@ -296,6 +365,30 @@ tracked separately only for org attribution; for the money math they combine.)
 
 Phase 2 applies the same shape to the org race: **100%** of your commitment is
 sent if your organization wins, **20%** if not.
+
+### Where a donation goes
+
+A benefactor's weekly contribution is **100% a donation** — nothing is held back
+as a fee on the way in. It lands in three places (Jax, 2026-08-06). At $20/week:
+
+| Slice | Range at $20 | What it is |
+|---|---|---|
+| Researchers | **$2** | paid to the best researchers on the platform — the posts that actually moved a decision (see *Post rewards*) |
+| Earthbux | **$0–6** | the platform's own cut: supervision, publication, organizing |
+| The mission | **$6–18** | the pool the elected organization draws against |
+
+The Earthbux and mission slices flex against each other — the more of a
+contribution that is directed (spent on the organization election, or given
+under a *specified-must-donate* instruction), the more of it is bound for a
+mission rather than the platform. **Anything directed that way ends up in _a_
+mission**, even if not the one it was cast in: that is what the phase-2
+carryover does with a commitment the benefactor doesn't keep where it is
+(§6, *Carryover*).
+
+**Not built.** There is no donation intake, no split at the door and no
+researcher payout — the numbers above are the model, and the ledger's `bucket`
+field is where they will land. See the INSTRUCTIONS backlog, *Money / credit /
+donations*.
 
 ### Votes by phase
 
@@ -331,7 +424,7 @@ remainder is held for the credit-release phase) is allocated in **32nds**:
 ### The discussion model — a post type for every phase
 
 Every phase is a structured discussion, and **the posts are what drive the
-outcome**: *mission-support* posts (context/investigation/analysis) inform the
+outcome**: *reswearch* posts (context/investigation/analysis) inform the
 elections and carry the rewards, *review* posts (case/evaluation) argue the
 initiative and judge the org's effort, and *budgeting* posts (service/supply/
 support) become the budget and the resolutions. Commentary does **not** live in
@@ -354,8 +447,12 @@ type gets its own vote code.
 | Category | Type (subcategory) | Limit per ben / mission | Reactions shown | Rewarded? |
 |---|---|---|---|---|
 | **Budgeting** | Service · Supply · Support | **one per type** (up to 3), rolling — a new slot opens only when the current item is **paid out** | **Helpful only** (upvote); neutral & harmful hidden, counts stay 0 | no — a budget line, not a prize |
-| **Mission Support** | Context · Investigation · Analysis | **one each** | **Helpful / Neutral / Harmful** (full) | **yes — the 3 rewarded types**, one 1/32 each |
+| **Research** | Context · Investigation · Analysis | **one each** | **Helpful / Neutral / Harmful** (full) | **yes — the 3 rewarded types**, one 1/32 each |
 | **Review** | Case · Evaluation | **one each** | **Fair / Unfair** (= helpful / harmful); no neutral (count stays 0) — **both** counts displayed | perk (comm line), not cash |
+
+Research must be tied to a mission.
+Case -> Initiative or Cause
+Evaluation -> Philanthropy
 
 Author tags: `<ben>` = benefactor · `<org>` = the mission's org · `<ebx>` =
 Earthbux News. The three categories above are **benefactor-authored**; org/EN
@@ -579,6 +676,16 @@ send rates `P1 20/10` and `P2 100/20` (win/lose).
   sum to ≤ 1.0). Each row's `ebx_committed = ebx_total · share`. The slate is
   editable any time before finalization; every change writes a vote `Transaction`.
   A no-EBX vote still holds `BASE_VOTE_EBX` of weight.
+  The **UI** for this is the Context table's top row (2026-08-05, structure.md):
+  whole-EBX sliders over a budget of **10 base EBX + purchased**, split across at
+  most **10** initiatives, with the remainder held in an *Uncommitted* bar. The
+  client normalizes its whole-EBX split to `shares` and PUTs one slate per mission.
+  Every tiv in a slate **must belong to that mission** — the guard matches ids
+  explicitly, so an initiative with a NULL `mission_id` is rejected rather than
+  silently inserted (that hole produced a `UNIQUE(ben_id, tiv_id)` 500; §0a
+  2026-08-05). `create_tiv` now adopts the cause's open phase-1 mission when a
+  proposal arrives without one, and `adopt_orphan_tivs` repairs legacy orphans at
+  startup.
 - **Commit** (`commit_p1_ebx`, `commit_p1`): locks EBX onto a tiv; allowed only
   while the mission is `pre`/`initiative`.
 - **Tally** (`p1_tally`): per tiv, `votes = Σ (ebx_committed / EBX_PER_VOTE) ·
@@ -600,11 +707,43 @@ send rates `P1 20/10` and `P2 100/20` (win/lose).
   `commitment_fund` ledger bucket. The 80% locked behind a *winning* vote stays in
   the won mission and is untouched. (Rates are placeholders — tune later.)
 
+### Carryover — what happens to a commitment once phase 1 closes
+
+A phase-1 commitment doesn't simply vanish into the winner. When the election
+closes (2026-08-06):
+
+- **Losing initiatives roll forward automatically.** `_carry_losers_forward`
+  re-lists each loser under the cause's next-cycle mission and moves its backers'
+  commitments with it at **90%** — the 10% skim books to the global commitment
+  fund.
+- **What backed the winner stays put**, minus nothing — but a slice of it is
+  already spent: the **send** (`P1_SEND_WIN` 20% behind the winner,
+  `P1_SEND_LOSE` 10% behind the rest) is the irrevocable donation that made the
+  election real.
+- **The rest is the benefactor's choice.** During phase 2 they can keep it in
+  this mission or roll it into the next election of the same cause —
+  `GET/PUT /missions/{id}/p1/carryover`, surfaced as a slider in the Context
+  page's OE voting area. The send is the floor; the slider can never go below
+  it. The send is measured against the **original** commitment (the exact float
+  is kept in the ledger row's `new_value`), so repeated moves can't erode money
+  already in the pool. Rolled EBX lands on the benefactor's carried rows in the
+  next-cycle mission when they hold any, and is booked to a `carryover` bucket
+  in the ledger either way.
+- `withdraw_p1` is the all-or-nothing version of the same window and still
+  exists; the carryover is the graduated one.
+
 ### Phase 2 — organization election (`VoteP2`, one row per `(ben, mission)`)
 
 - **Cast** (`cast_p2`): 1 vote for 1 org; extra votes bought at rising prices;
   `helpful` supports, `harmful` blocks.
 - **Tally** (`p2_tally`): net votes (`Σ votes · sign(valence)`; blocks subtract).
+  §2 (2026-08-05) it also reports **EBX per org** plus `total_ebx` /
+  `total_votes`, and sorts on EBX — the Context page's election cards rank and
+  size an org race by money, not by percentage, "because that allows one to
+  estimate the total pool size". EBX counts at face value regardless of valence:
+  a block still spent its money. `GET /benefactors/me/p2-votes` returns every
+  org vote a benefactor holds (the twin of `/p1-votes`) so a page full of cards
+  needs one round-trip, not one per card.
 - **Finalize** (`finalize_p2`, fired **8 weeks after the initiative election** = 15
   weeks after the mission opens): elects the top net-vote org, sets `winning_org_id`, advances the mission to
   `budget`. No-op without a positive signal.

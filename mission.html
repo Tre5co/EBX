@@ -24,7 +24,17 @@
         "a g b"
         "c e d"
         "f f f";
+      position: relative; /* §1 funnel-lines layer anchors to the grid */
     }
+    .mp-grid > .mp-card { position: relative; z-index: 1; }
+    /* §1 (2026-08-02): the angled lines from the jax-notes-2 drawing — the
+       left-side inputs (budgeting, posts) COMPRESS into the middle circle and
+       come OUT on the right as the progress log. Drawn as an SVG layer behind
+       the cards, repositioned from the real card rects on load + resize. */
+    .mp-funnel { position: absolute; inset: 0; z-index: 0; pointer-events: none; width: 100%; height: 100%; }
+    .mp-funnel line { stroke: rgba(26,38,32,0.28); stroke-width: 2; }
+    .mp-funnel line.mp-funnel__accent { stroke: var(--mp-accent); opacity: 0.35; }
+    @media (max-width: 900px) { .mp-funnel { display: none; } }
     @media (max-width: 900px) {
       .mp-grid { grid-template-columns: 1fr; grid-template-areas: "a" "g" "b" "e" "c" "d" "f"; }
     }
@@ -123,6 +133,40 @@
     .mp-pool__label { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--clr-ink-light, #8b958d); }
     .mp-pool__value { font-family: var(--font-display, serif); font-size: 1.3rem; color: var(--clr-ink, #1a2620); margin-top: 2px; }
     .mp-pool__sub { font-size: 0.68rem; color: var(--clr-ink-light, #8b958d); margin-top: 2px; }
+    /* ── post-support layer (the mission annulus, layer 1) ── */
+    .ps-wrap { display: grid; grid-template-columns: 220px 1fr; gap: 18px; align-items: start; }
+    @media (max-width: 780px) { .ps-wrap { grid-template-columns: 1fr; } }
+    .ps-ringcol { text-align: center; }
+    .ps-legend { margin-top: 8px; text-align: left; }
+    .ps-leg {
+      display: flex; align-items: baseline; gap: 7px; font-size: 0.7rem;
+      line-height: 1.45; color: var(--clr-ink-light, #4b574f); margin-bottom: 3px;
+    }
+    .ps-leg__dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+    .ps-leg__n { font-family: var(--font-mono, monospace); font-size: 0.62rem; margin-left: auto; }
+    .ps-leg b { color: var(--clr-ink, #1a2620); font-weight: 600; }
+    .ps-org { border-bottom: 1px dashed var(--clr-border, #e7e1d3); padding: 8px 0; }
+    .ps-org:last-child { border-bottom: none; }
+    .ps-org__head { display: flex; align-items: baseline; gap: 8px; }
+    .ps-org__name { font-weight: 600; font-size: 0.86rem; color: var(--clr-ink, #1a2620); }
+    .ps-org__counts { margin-left: auto; display: flex; gap: 5px; }
+    .ps-count {
+      font-family: var(--font-mono, monospace); font-size: 0.58rem; border-radius: 4px;
+      padding: 1px 6px; border: 1px solid currentColor;
+    }
+    .ps-thread {
+      display: flex; align-items: center; gap: 8px; padding: 4px 0 4px 2px;
+      font-size: 0.78rem; color: var(--clr-ink-light, #4b574f); min-width: 0;
+    }
+    .ps-thread__dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+    .ps-thread__type {
+      font-family: var(--font-mono, monospace); font-size: 0.56rem; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--clr-ink-light, #8b958d); flex: 0 0 auto;
+    }
+    .ps-thread__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ps-thread__react { font-family: var(--font-mono, monospace); font-size: 0.6rem; color: var(--clr-ink-light, #8b958d); flex: 0 0 auto; }
+    .ps-empty { font-size: 0.82rem; color: var(--clr-ink-light, #6b756d); line-height: 1.6; }
+
     /* ── competing orgs (kept, below the grid) ── */
     .mh-cand { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px dashed var(--clr-border, #e7e1d3); font-size: 0.86rem; }
     .mh-cand:last-child { border-bottom: none; }
@@ -168,6 +212,46 @@
     .mh-orgpanel__sect { border-top: 1px dashed var(--clr-border, #e7e1d3); margin-top: 10px; padding-top: 8px; font-family: var(--font-mono, monospace); font-size: 0.62rem; color: var(--clr-ink-light, #6b756d); }
     .mh-orglogo { width: 44px; height: 44px; border-radius: 10px; flex: 0 0 auto; background: var(--clr-surface, #eee9dc); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; overflow: hidden; border: 1px solid var(--clr-border, #e3ddd0); }
     .mh-orglogo img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* §3 (2026-08-10) — the initiative leaderboard, moved off cause.html.
+       A rank, a name, a bar, the EBX and the share: the bar is what makes a
+       leaderboard readable at a glance, and cause.html's top-3 box had none. */
+    .ml-rows { display: flex; flex-direction: column; gap: 2px; }
+    .ml-row {
+      display: grid; grid-template-columns: 22px minmax(0,1fr) 90px 78px 40px;
+      align-items: center; gap: 8px; padding: 6px 4px;
+      border-bottom: 1px solid var(--clr-border, #e7e1d3); font-size: 0.82rem;
+    }
+    .ml-row:last-child { border-bottom: none; }
+    .ml-row__rank {
+      font-family: var(--font-mono, monospace); font-size: 0.68rem;
+      color: var(--clr-ink-light, #6b756d); text-align: right;
+    }
+    .ml-row__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ml-row__won {
+      margin-left: 7px; font-family: var(--font-mono, monospace); font-size: 0.56rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      background: var(--clr-honey, #e8a84c); color: #1a2620;
+      border-radius: 3px; padding: 1px 5px;
+    }
+    .ml-row--won .ml-row__name { font-weight: 700; }
+    .ml-row__bar {
+      height: 6px; border-radius: 3px; background: rgba(74,124,89,0.15); overflow: hidden;
+    }
+    .ml-row__bar i { display: block; height: 100%; background: var(--clr-moss, #4a7c59); }
+    .ml-row--won .ml-row__bar i { background: var(--clr-honey, #e8a84c); }
+    .ml-row__ebx {
+      font-family: var(--font-mono, monospace); font-size: 0.7rem; text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    .ml-row__pct {
+      font-family: var(--font-mono, monospace); font-size: 0.68rem; text-align: right;
+      color: var(--clr-ink-light, #6b756d); font-variant-numeric: tabular-nums;
+    }
+    @media (max-width: 620px) {
+      .ml-row { grid-template-columns: 20px minmax(0,1fr) 70px 38px; }
+      .ml-row__bar { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -175,6 +259,8 @@
 
   <div class="mp-shell">
     <div class="mp-grid" id="mp-grid">
+      <!-- §1: angled compression/expansion lines (drawn by drawFunnel()) -->
+      <svg class="mp-funnel" id="mp-funnel" aria-hidden="true"></svg>
 
       <!-- a — mission toggle + initiative search -->
       <div class="mp-card mp-a">
@@ -243,6 +329,54 @@
         <div class="mp-pool" id="mp-pool"></div>
         <div class="mp-pool__sub" id="mp-rate-line" style="margin-top:8px;"></div>
       </div>
+    </div>
+
+    <!-- ── THE MISSION ANNULUS · layer 1 — POST SUPPORT (2026-08-08) ────────
+         From structure.md (mission.html): the annulus will carry many layers;
+         the first is the post-support layer. Every post that carries an
+         ORGANIZATION tag — case, investigation, evaluation — is run through a
+         filter that decides whether it is critical or spam, because we send
+         philanthropies a weekly digest of what was written about them and each
+         thread in that digest is labelled:
+             green  Useful
+             orange CRITICAL, but helpful
+             red    spam, scams, or unsupported slander — which we apologise
+                    for and are working to keep off the platform.
+         The classifier is a stub today: everything is rated GREEN
+         (backend/app/post_config.py :: classify_flag). Staff move a rating with
+         POST /posts/{id}/flag; the ring reads GET /missions/{id}/post-support. -->
+    <div class="mp-card" style="margin-top:14px;">
+      <div class="mp-eyebrow">Mission annulus · layer 1 — post support</div>
+      <div class="ps-wrap">
+        <div class="ps-ringcol">
+          <div id="ps-ring"></div>
+          <div class="ps-legend" id="ps-legend"></div>
+        </div>
+        <div class="ps-listcol" id="ps-list">
+          <span style="font-size:0.84rem;opacity:0.6;">Loading post support…</span>
+        </div>
+      </div>
+      <div class="mh-note" id="ps-note">
+        Only posts that carry an <b>organization tag</b> are rated here — <b>case</b>,
+        <b>investigation</b> and <b>evaluation</b>. Every philanthropy on this mission gets a
+        <b>weekly message</b> listing what the community wrote about it, with each thread
+        carrying the flag it has below. Red threads come with our apology and our commitment
+        to keep that material off the platform.
+        <span id="ps-stub" style="display:block;margin-top:6px;opacity:0.8;"></span>
+      </div>
+    </div>
+
+    <!-- ── §3 (2026-08-10, build-seq §1 "Move leaderboards to mission.html") ──
+         The initiative leaderboard. It was the top-3 box on cause.html's
+         election card, beside "Pool size / My commit" — vote stats on a page
+         that does not take votes. cause.html is the timeline and the
+         discussion; the standings belong with the mission they decided. Full
+         field here, not top-3: this page has the room, and the point of a
+         leaderboard is the whole ranking. -->
+    <div class="mp-card" style="margin-top:14px;">
+      <div class="mp-eyebrow">Initiative election · leaderboard</div>
+      <div id="ml-board"><span style="font-size:0.84rem;opacity:0.6;">Loading…</span></div>
+      <div class="mh-note" id="ml-note" style="margin-top:10px;"></div>
     </div>
 
     <!-- ── Competing organizations (kept from the previous page — the org race
@@ -411,10 +545,10 @@
       if (mission.winning_tiv_id) return { num: 2, label: 'Phase 2 — Organization Election' };
       return { num: 1, label: 'Phase 1 — Initiative Election' };
     }
-    // Cadence dates (same rule as main.html/cause.html): p1 close = start + 7wk;
-    // org close = p1 + 7wk (the cause's next active week).
+    // Cadence dates (§0b 2026-08-02, canonical): p1 close = start + 7wk;
+    // org close = tiv election + 8wk (= missionPhaseDates.phase2_start).
     function p1Ms()  { return mission && mission.started_at ? new Date(mission.started_at).getTime() + 7 * WK_MS : null; }
-    function p2Ms()  { const a = p1Ms(); return a ? a + 7 * WK_MS : null; }
+    function p2Ms()  { const a = p1Ms(); return a ? a + 8 * WK_MS : null; }
 
     // ── a: toggle + search ──────────────────────────────────────────────────
     function initToggle() {
@@ -505,6 +639,122 @@
       renderPosts();
     });
 
+    // ── THE ANNULUS · layer 1: POST SUPPORT ─────────────────────────────────
+    // One arc per org-tagged thread (case · investigation · evaluation),
+    // grouped by the ORGANIZATION it names, coloured by the thread's flag:
+    //   green  Useful · orange CRITICAL but helpful · red spam/scam/slander.
+    // Rating is a server-side stub that returns green for everything, so a
+    // healthy mission is a solid green ring — and any other colour on it is a
+    // human decision someone made through POST /posts/{id}/flag.
+    // This is layer ONE. The annulus is designed to take more.
+    const PS_COLORS = { green: '#4a9d5f', orange: '#e0a341', red: '#c1503c' };
+    const PS_WORD = { green: 'Useful', orange: 'Critical, but helpful', red: 'Spam, scams or unsupported slander' };
+
+    async function renderPostSupport() {
+      const ring = document.getElementById('ps-ring');
+      const legend = document.getElementById('ps-legend');
+      const list = document.getElementById('ps-list');
+      const stub = document.getElementById('ps-stub');
+      if (!ring || !list) return;
+      const data = MID ? await jget('/missions/' + MID + '/post-support') : null;
+      if (!data) {
+        list.innerHTML = '<div class="ps-empty">No mission selected.</div>';
+        ring.innerHTML = ''; legend.innerHTML = '';
+        return;
+      }
+      const counts = data.counts || { green: 0, orange: 0, red: 0 };
+      const total = data.total || 0;
+
+      // ── the ring ──
+      const R = 78, r = 52, cx = 95, cy = 95;
+      const flat = [];
+      (data.orgs || []).forEach((o, gi) => (o.threads || []).forEach(t =>
+        flat.push({ flag: t.flag, gi, title: t.title, org: o.org_name })));
+      let svg = '<svg viewBox="0 0 190 190" width="180" height="180" role="img" aria-label="Post support ring">';
+      if (!flat.length) {
+        svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + ((R + r) / 2) + '" fill="none" ' +
+               'stroke="rgba(20,26,22,0.10)" stroke-width="' + (R - r) + '" stroke-dasharray="3 6" />';
+      } else {
+        // A gap between organizations so the ring reads as groups, and a hair
+        // gap between threads inside a group.
+        const GROUP_GAP = 5, ITEM_GAP = 1.2;
+        const groups = (data.orgs || []).filter(o => (o.threads || []).length);
+        const usable = 360 - groups.length * GROUP_GAP;
+        let a = -90;
+        groups.forEach(o => {
+          const share = usable * ((o.threads.length) / flat.length);
+          const each = (share - (o.threads.length - 1) * ITEM_GAP) / o.threads.length;
+          o.threads.forEach((t, i) => {
+            svg += psArc(cx, cy, R, r, a, a + each, PS_COLORS[t.flag] || PS_COLORS.green, t.title, o.org_name);
+            a += each + (i < o.threads.length - 1 ? ITEM_GAP : 0);
+          });
+          a += GROUP_GAP;
+        });
+      }
+      svg += '<text x="' + cx + '" y="' + (cy - 2) + '" text-anchor="middle" ' +
+             'style="font-family:var(--font-display,serif);font-size:26px;fill:var(--clr-ink,#1a2620);">' + total + '</text>' +
+             '<text x="' + cx + '" y="' + (cy + 15) + '" text-anchor="middle" ' +
+             'style="font-family:var(--font-mono,monospace);font-size:8px;letter-spacing:0.1em;' +
+             'text-transform:uppercase;fill:var(--clr-ink-light,#8b958d);">' +
+             (total === 1 ? 'rated thread' : 'rated threads') + '</text>' +
+             '</svg>';
+      ring.innerHTML = svg;
+
+      legend.innerHTML = ['green', 'orange', 'red'].map(f =>
+        '<div class="ps-leg"><span class="ps-leg__dot" style="background:' + PS_COLORS[f] + '"></span>' +
+        '<span><b>' + f + '</b> — ' + PS_WORD[f] + '</span>' +
+        '<span class="ps-leg__n">' + (counts[f] || 0) + '</span></div>').join('');
+
+      // ── the per-organization list (this is the weekly digest, on screen) ──
+      if (!total) {
+        list.innerHTML = '<div class="ps-empty">Nothing to rate yet. This layer fills as the community ' +
+          'posts <b>cases</b>, <b>investigations</b> and <b>evaluations</b> naming the organizations ' +
+          'on this mission.</div>';
+      } else {
+        list.innerHTML = (data.orgs || []).map(o => {
+          const c = o.counts || {};
+          const pills = ['green', 'orange', 'red'].filter(f => c[f]).map(f =>
+            '<span class="ps-count" style="color:' + PS_COLORS[f] + '">' + c[f] + ' ' + f + '</span>').join('');
+          return '<div class="ps-org">' +
+            '<div class="ps-org__head"><span class="ps-org__name">' + esc(o.org_name || 'Untagged') + '</span>' +
+              '<span class="ps-org__counts">' + pills + '</span></div>' +
+            (o.threads || []).map(t =>
+              '<div class="ps-thread" title="' + esc(t.flag_reason || PS_WORD[t.flag] || '') + '">' +
+                '<span class="ps-thread__dot" style="background:' + (PS_COLORS[t.flag] || PS_COLORS.green) + '"></span>' +
+                '<span class="ps-thread__type">' + esc(t.type || '') + '</span>' +
+                '<span class="ps-thread__title">' + esc(t.title || '') + '</span>' +
+                '<span class="ps-thread__react">' + (t.helpful_count || 0) + '↑ ' + (t.harmful_count || 0) + '↓</span>' +
+              '</div>').join('') +
+          '</div>';
+        }).join('');
+      }
+
+      if (stub) {
+        stub.innerHTML = counts.orange || counts.red
+          ? 'Ratings on this mission have been reviewed by hand.'
+          : 'The content filter is not built yet, so <b>every post here is rated green</b>. ' +
+            'Staff can move a rating by hand until it is.';
+      }
+    }
+
+    // One annulus segment: an arc band from a1° to a2° between radii r and R.
+    function psArc(cx, cy, R, r, a1, a2, color, title, org) {
+      const rad = d => (d * Math.PI) / 180;
+      const P = (rr, d) => [cx + rr * Math.cos(rad(d)), cy + rr * Math.sin(rad(d))];
+      const big = (a2 - a1) > 180 ? 1 : 0;
+      const [x1, y1] = P(R, a1), [x2, y2] = P(R, a2);
+      const [x3, y3] = P(r, a2), [x4, y4] = P(r, a1);
+      const d = 'M' + x1 + ' ' + y1 + ' A' + R + ' ' + R + ' 0 ' + big + ' 1 ' + x2 + ' ' + y2 +
+                ' L' + x3 + ' ' + y3 + ' A' + r + ' ' + r + ' 0 ' + big + ' 0 ' + x4 + ' ' + y4 + ' Z';
+      return '<path d="' + d + '" fill="' + color + '" opacity="0.9">' +
+             '<title>' + esc((org ? org + ' — ' : '') + (title || '')) + '</title></path>';
+    }
+
+    function esc(s) {
+      return String(s === null || s === undefined ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
     // ── d: dated progress log ───────────────────────────────────────────────
     function renderLog() {
       const el = document.getElementById('mp-log');
@@ -585,6 +835,89 @@
         : 'Unclaimed mission — guaranteed-to-pool rate <b>' + Math.round(rate * 100) + '%</b>; claiming bumps the rate.';
     }
 
+    // ── §3 (2026-08-10) — the initiative leaderboard, moved off cause.html ──
+    // The standings of the phase-1 election THIS mission came out of: every
+    // initiative that ran, ranked by committed EBX, with the winner marked. It
+    // ranks on `p1` (the mission's own phase-1 tally) when the API has one and
+    // falls back to the initiative rows' committed EBX, which is what
+    // cause.html ranked on.
+    let p1Tally = null;
+    async function loadP1Tally() {
+      if (!MID) return;
+      p1Tally = await jget('/missions/' + MID + '/p1/tally');
+    }
+    function renderLeaderboard() {
+      const box = document.getElementById('ml-board');
+      const note = document.getElementById('ml-note');
+      if (!box) return;
+      if (!mission) {
+        box.innerHTML = '<span style="font-size:0.84rem;opacity:0.6;">No mission selected.</span>';
+        if (note) note.innerHTML = '';
+        return;
+      }
+      // `/missions/{id}/p1/tally` returns SHARES, not EBX: each entry carries
+      // `votes` · `weighted_share` · `voter_count`, and the money is one number
+      // at the top, `pool_total_ebx`. So a row's EBX is its share OF that pool,
+      // derived here rather than read — and the tally only lists initiatives
+      // that received a vote, so it is merged over the mission's full field.
+      // An initiative that ran and got nothing is part of the result.
+      const entries = (p1Tally && Array.isArray(p1Tally.entries)) ? p1Tally.entries : [];
+      const pool = Number(p1Tally && p1Tally.pool_total_ebx) || 0;
+      const byTiv = {};
+      entries.forEach(e => { byTiv[e.tiv_id] = e; });
+      const field = (EBX.config.initiatives || [])
+        .filter(i => i.mission_id === mission.id);
+      // Anything with votes but somehow outside the field still shows.
+      entries.forEach(e => {
+        if (!field.some(i => i.id === e.tiv_id)) {
+          const i = (EBX.config.initiatives || []).find(x => x.id === e.tiv_id);
+          field.push(i || { id: e.tiv_id, title: e.tiv_id });
+        }
+      });
+      let rows = field.map(i => {
+        const e = byTiv[i.id] || null;
+        const share = e ? (Number(e.weighted_share) || 0) : 0;
+        return {
+          id: i.id, title: i.title || i.id, emoji: i.emoji || '',
+          share: share, ebx: share * pool,
+          votes: e ? (Number(e.votes) || 0) : 0,
+          voters: e ? (Number(e.voter_count) || 0) : 0,
+        };
+      }).sort((a, b) => (b.share - a.share) || (b.votes - a.votes) ||
+                        String(a.title).localeCompare(String(b.title)));
+      if (!rows.length) {
+        box.innerHTML = '<span style="font-size:0.84rem;opacity:0.6;">No initiatives ran in this election.</span>';
+        if (note) note.innerHTML = '';
+        return;
+      }
+      const winId = mission.winning_tiv_id || null;
+      const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      box.innerHTML = '<div class="ml-rows">' + rows.map((r, idx) => {
+        const won = r.id === winId;
+        const pct = Math.round(r.share * 100);
+        return '<div class="ml-row' + (won ? ' ml-row--won' : '') + '"' +
+          ' title="' + esc(r.title) + ' · ' + r.votes + ' vote' + (r.votes === 1 ? '' : 's') +
+            ' from ' + r.voters + ' benefactor' + (r.voters === 1 ? '' : 's') + '">' +
+          '<span class="ml-row__rank">' + (idx + 1) + '</span>' +
+          '<span class="ml-row__name">' + (r.emoji ? r.emoji + ' ' : '') + esc(r.title) +
+            (won ? '<span class="ml-row__won">elected</span>' : '') + '</span>' +
+          '<span class="ml-row__bar"><i style="width:' + pct + '%;"></i></span>' +
+          '<span class="ml-row__ebx">' + Math.round(r.ebx).toLocaleString() + ' EBX</span>' +
+          '<span class="ml-row__pct">' + pct + '%</span>' +
+        '</div>';
+      }).join('') + '</div>';
+      if (note) {
+        const voted = rows.filter(r => r.share > 0).length;
+        note.innerHTML = 'Ranked by <b>weighted vote share</b>; the EBX column is each ' +
+          'initiative’s share of the <b>' + Math.round(pool).toLocaleString() + ' EBX</b> ' +
+          'phase-1 pool. <b>' + voted + '</b> of <b>' + rows.length + '</b> initiatives drew a vote. ' +
+          'Voting happens on the <a href="main.html?cause=' + (cause ? cause.id : '') +
+          '" style="color:var(--clr-honey);">Context page</a>; the discussion is on the ' +
+          '<a href="cause.html?id=' + (cause ? cause.id : '') +
+          '" style="color:var(--clr-honey);">Cause page</a>.';
+      }
+    }
+
     // ── g + candidates ──────────────────────────────────────────────────────
     function renderCore() {
       const backLink = document.getElementById('link-back-cause');
@@ -645,10 +978,65 @@
         candidacies.some(c => c.status === 'pending') ? '' : 'none';
     }
 
+    // ── §1 (2026-08-02): the funnel lines from the jax-notes-2 drawing ─────
+    // Everything on the left (budgeting/posts, c) angles IN toward the middle
+    // circle (e), and comes OUT on the right to the progress log (d) — like
+    // the sketch: \ in from the top corners, broken vertical bars beside e,
+    // / out toward the bottom row (f).
+    function drawFunnel() {
+      const svg = document.getElementById('mp-funnel');
+      const grid = document.getElementById('mp-grid');
+      if (!svg || !grid) return;
+      const g = grid.getBoundingClientRect();
+      const R = id => {
+        const el = document.querySelector('.mp-' + id);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { l: r.left - g.left, r: r.right - g.left, t: r.top - g.top, b: r.bottom - g.top,
+                 cx: r.left - g.left + r.width / 2 };
+      };
+      const a = R('a'), b = R('b'), c = R('c'), d = R('d'), e = R('e'), f = R('f');
+      if (!a || !b || !c || !d || !e || !f) { svg.innerHTML = ''; return; }
+      svg.setAttribute('viewBox', '0 0 ' + g.width + ' ' + g.height);
+      const L = (x1, y1, x2, y2, cls) =>
+        '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"' +
+        (cls ? ' class="' + cls + '"' : '') + ' stroke-linecap="round"/>';
+      const midY = (e.t + e.b) / 2;
+      svg.innerHTML =
+        // compress IN: from under the outer top cards toward e's upper corners
+        L(a.cx, a.b + 4, e.l - 6, midY - (e.b - e.t) * 0.22, 'mp-funnel__accent') +
+        L(b.cx, b.b + 4, e.r + 6, midY - (e.b - e.t) * 0.22, 'mp-funnel__accent') +
+        // the broken vertical bars beside the circle (the | | in the sketch)
+        L(e.l - 6, midY - (e.b - e.t) * 0.16, e.l - 6, midY + (e.b - e.t) * 0.16) +
+        L(e.r + 6, midY - (e.b - e.t) * 0.16, e.r + 6, midY + (e.b - e.t) * 0.16) +
+        // come OUT: from e's lower corners down toward the pool row (f)
+        L(e.l - 6, midY + (e.b - e.t) * 0.22, c.cx, f.t - 4, 'mp-funnel__accent') +
+        L(e.r + 6, midY + (e.b - e.t) * 0.22, d.cx, f.t - 4, 'mp-funnel__accent');
+    }
+    window.addEventListener('resize', () => { try { drawFunnel(); } catch (e) {} });
+
     function render() {
       renderCore(); initToggle(); renderLog(); renderCircle(); renderPool();
       renderMembership(); renderPosts();
+      renderLeaderboard();   // §3 (2026-08-10) — moved off cause.html
+      loadP1Tally().then(renderLeaderboard).catch(() => {});
+      renderPostSupport();   // the annulus, layer 1
+      try { drawFunnel(); setTimeout(drawFunnel, 250); } catch (e) {}
     }
+
+    // §0 (2026-08-08) — ORG-PANEL STATE MOVED UP. These five were declared
+    // BELOW the `render()` call at the bottom of this block, and `renderCore()`
+    // reads `_openOrgId` while painting the competing-organizations list. `let`
+    // is not hoisted-and-initialised, so on any mission that actually HAS a
+    // candidacy the first paint threw
+    //     ReferenceError: Cannot access '_openOrgId' before initialization
+    // and took the whole page down — mission.html?mission=atm0 rendered nothing
+    // at all. Declaring them before first paint is the whole fix.
+    let _claimOrgId = null;
+    let _agreeMode = 'claim';
+    let _memberName = '', _memberPos = '';
+    let _openOrgId = null;
+    const _orgProfiles = {};
 
     await loadAll();
     const regLink = document.getElementById('link-register-org');
@@ -658,12 +1046,6 @@
     if (ORG_PARAM) toggleOrgPanel(ORG_PARAM);
 
     // ── org panel (org.html folded in — orgs have no standalone page) ──────
-    let _claimOrgId = null;
-    let _agreeMode = 'claim';
-    let _memberName = '', _memberPos = '';
-    let _openOrgId = null;
-    const _orgProfiles = {};
-
     window.toggleOrgPanel = async function (orgId) {
       _openOrgId = _openOrgId === orgId ? null : orgId;
       renderCore();

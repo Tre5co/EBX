@@ -24,11 +24,12 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 from typing import Optional, Sequence
 
 from sqlalchemy import func as sqlfunc, select
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -229,12 +230,413 @@ def p1_ebx_by_tiv(db: Session, tiv_ids: Optional[list[str]] = None) -> dict[str,
     return {tid: float(total or 0) for tid, total in db.execute(q).all()}
 
 
+def open_p1_mission(db: Session, cause_id: str) -> Optional[models.Mission]:
+    """The cause's mission whose phase-1 election is still open — i.e. no winner
+    yet and the phase hasn't moved past `initiative`. Newest cycle wins.
+
+    This is the same choice the frontends make (`_p1MissionForCause` on
+    main.html / `_v2Mission` on cause.html), lifted server-side so a proposal
+    lands in the right election no matter which page submitted it.
+    """
+    return db.scalars(
+        select(models.Mission)
+        .where(
+            models.Mission.cause_id == cause_id,
+            models.Mission.winning_tiv_id.is_(None),
+            models.Mission.current_phase.in_(("pre", "initiative")),
+        )
+        .order_by(models.Mission.cycle_num.desc())
+    ).first()
+
+
+# ===========================================================================
+# The cause election — §5 (2026-08-06)
+#
+# Seven windows rotate; each can be contested. Benefactors propose causes
+# (name + colour) and vote, per week, on which cause should hold a given
+# upcoming window. A challenger TAKES a week by clearing >50% of that week's
+# votes for that window. Take all seven and the challenger replaces the
+# incumbent.
+#
+# Seven weeks, advertised as six: **week 1 is an aggregation of the six weeks
+# before the contest opened**, so a challenger that has quietly been winning
+# arrives with that head start instead of starting from zero.
+# ===========================================================================
+CAUSE_STREAK_WEEKS = 7          # columns to win
+CAUSE_LOOKBACK_WEEKS = 6        # weeks folded into column 1
+CAUSE_MAJORITY = 0.5            # strictly greater than
+
+
+def _week_start(when: Optional[datetime] = None) -> datetime:
+    """Monday 00:00 UTC of the week `when` falls in — the unit a majority is
+    measured over."""
+    when = when or datetime.utcnow()
+    day = datetime(when.year, when.month, when.day)
+    return day - timedelta(days=day.weekday())
+
+
+def active_cause_index(when: Optional[datetime] = None) -> int:
+    """Which of the seven causes holds this week's window.
+
+    §2 (2026-08-08). The rotation is a pure function of the calendar — one cause
+    per week from `bootstrap.GENESIS` — and the server needs it to answer "which
+    window is open to a vote", which cannot be a client claim. Same clock the
+    frontend's `EBX.Cycle` runs on, so the two agree by construction.
+    """
+    from . import bootstrap
+    when = when or datetime.utcnow()
+    weeks = (when - bootstrap.GENESIS).days // 7
+    return int(weeks) % bootstrap.ROTATION_WEEKS
+
+
+def _slot_is_open(db: Session, slot: int) -> tuple[bool, Optional[str]]:
+    """Is this window open to a cause vote this week, and who (if anyone) has
+    already been elected into it? See `cause_slate` for the rule."""
+    slot = int(slot)
+    if slot == CAUSE_STREAK_WEEKS:
+        return True, None
+    idx = (active_cause_index() + slot) % CAUSE_STREAK_WEEKS
+    incumbent = db.scalar(select(models.Cause).where(models.Cause.index == idx,
+                                                     models.Cause.status == "active"))
+    state = cause_ballot_state(db, slot, incumbent.id if incumbent else None)
+    challenger = state.get("challenger_id")
+    elected = challenger if (challenger and int(state.get("streak") or 0) >= CAUSE_STREAK_WEEKS) else None
+    return bool(elected), elected
+
+
+def list_causes_all(db: Session, status: Optional[str] = None) -> Sequence[models.Cause]:
+    """Causes, optionally filtered by status. Falls back to the plain list on a
+    database that predates the b7d4e9a1c206 migration."""
+    stmt = select(models.Cause)
+    if status:
+        stmt = stmt.where(models.Cause.status == status)
+    try:
+        return db.scalars(stmt.order_by(models.Cause.index.is_(None), models.Cause.index)).all()
+    except OperationalError:
+        db.rollback()
+        return list_causes(db) if status in (None, "active") else []
+
+
+def suggest_cause(
+    db: Session,
+    ben_id: int,
+    name: str,
+    color: str,
+    description: Optional[str] = None,
+    emoji: Optional[str] = None,
+) -> models.Cause:
+    """Propose a cause. It holds no window until it wins one, so `index` is
+    NULL and `status` is 'suggested'. The colour comes from the client's colour
+    wheel — a cause is recognised by its colour everywhere in the UI, so the
+    proposer picks it."""
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("A cause needs a name")
+    color = (color or "").strip()
+    if not re.fullmatch(r"#[0-9a-fA-F]{6}", color):
+        raise ValueError("Colour must be a hex value like #6baed6")
+    cid = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40] or "cause"
+    existing = db.get(models.Cause, cid)
+    if existing is not None:
+        raise ValueError(f"'{existing.name}' already exists")
+    # Don't let a suggestion sit on top of an active cause's colour.
+    clash = db.scalar(select(models.Cause).where(
+        models.Cause.color == color, models.Cause.status == "active"))
+    if clash is not None:
+        raise ValueError(f"That colour already belongs to {clash.name} — pick another")
+    cause = models.Cause(
+        id=cid, index=None, name=name, color=color, emoji=emoji,
+        description=description, status="suggested", proposed_by_id=ben_id,
+    )
+    db.add(cause)
+    db.commit()
+    db.refresh(cause)
+    return cause
+
+
+def cast_cause_vote(db: Session, ben_id: int, slot: int, cause_id: str) -> models.CauseVote:
+    """One vote, one benefactor, one window, THIS week. Voting again this week
+    replaces the earlier vote rather than stacking."""
+    if not (1 <= int(slot) <= 7):
+        raise ValueError("slot must be 1..7")
+    cause = db.get(models.Cause, cause_id)
+    if cause is None:
+        raise ValueError("Cause not found")
+    if cause.status == "retired":
+        raise ValueError("That cause has been retired")
+    # §2 (2026-08-08): a window that is not open this week cannot be voted in,
+    # and the client is not the authority on which those are. Slot 7 — the
+    # active cause's own next appearance, seven weeks out — is always open; any
+    # other window is open only if a replacement has already been elected into
+    # it. The rule is stated in `cause_slate`.
+    open_, _elected = _slot_is_open(db, int(slot))
+    if not open_:
+        raise ValueError(
+            f"That window is settled. This week's cause vote decides the window "
+            f"{CAUSE_STREAK_WEEKS} weeks out — the active cause's replacement. A window "
+            f"reopens only once a replacement has been elected into it."
+        )
+    wk = _week_start()
+    row = db.scalar(select(models.CauseVote).where(
+        models.CauseVote.ben_id == ben_id,
+        models.CauseVote.slot == int(slot),
+        models.CauseVote.week_start == wk,
+    ))
+    if row is None:
+        row = models.CauseVote(ben_id=ben_id, slot=int(slot), cause_id=cause_id, week_start=wk)
+        db.add(row)
+    else:
+        row.cause_id = cause_id
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def _week_winner(db: Session, slot: int, start: datetime, end: datetime) -> tuple[Optional[str], int, dict]:
+    """Who cleared >50% of the votes cast for `slot` in [start, end)?
+    Returns (winning cause id or None, total votes, per-cause counts).
+
+    Tolerates a database that hasn't run the b7d4e9a1c206 migration yet: an
+    empty ballot is a better answer than a 500 on every page load.
+    """
+    try:
+        rows = db.execute(
+            select(models.CauseVote.cause_id, sqlfunc.count()).where(
+                models.CauseVote.slot == slot,
+                models.CauseVote.week_start >= start,
+                models.CauseVote.week_start < end,
+            ).group_by(models.CauseVote.cause_id)
+        ).all()
+    except OperationalError:
+        db.rollback()
+        return None, 0, {}
+    counts = {cid: int(n) for cid, n in rows}
+    total = sum(counts.values())
+    if not total:
+        return None, 0, counts
+    top_id, top_n = max(counts.items(), key=lambda kv: kv[1])
+    return (top_id if top_n / total > CAUSE_MAJORITY else None), total, counts
+
+
+def cause_ballot_state(db: Session, slot: int, incumbent_id: Optional[str] = None) -> dict:
+    """The seven columns for one contested window.
+
+    Ordered as Jax drew them: **leftmost is the ACTIVE week** (1 line),
+    rightmost is the oldest (7 lines). The oldest column is the one that makes
+    the process "seven weeks advertised as six" — it aggregates the six weeks
+    before the contest opened, so a challenger that was already winning arrives
+    with that behind it rather than starting from nothing.
+
+    A column is won by whichever cause cleared >50% of the votes cast in it.
+    The **streak** fills from the left: this week, then last week, and so on,
+    for as long as the SAME challenger keeps winning. Break the run and it
+    resets to the incumbent.
+    """
+    now_week = _week_start()
+    columns: list[dict] = []
+    # Columns 1..6 — this week, then one week back each, newest on the left.
+    for k in range(CAUSE_STREAK_WEEKS - 1):
+        s_ = now_week - timedelta(weeks=k)
+        e_ = s_ + timedelta(weeks=1)
+        win, total, counts = _week_winner(db, slot, s_, e_)
+        columns.append({"index": k + 1, "lines": k + 1, "aggregate": False, "weeks": 1,
+                        "start": s_.isoformat(), "winner": win, "votes": total, "counts": counts})
+    # Column 7 — the aggregate of the six weeks before the contest opened.
+    agg_end = now_week - timedelta(weeks=CAUSE_STREAK_WEEKS - 1)
+    agg_start = agg_end - timedelta(weeks=CAUSE_LOOKBACK_WEEKS)
+    win, total, counts = _week_winner(db, slot, agg_start, agg_end)
+    columns.append({"index": CAUSE_STREAK_WEEKS, "lines": CAUSE_STREAK_WEEKS,
+                    "aggregate": True, "weeks": CAUSE_LOOKBACK_WEEKS,
+                    "start": agg_start.isoformat(), "winner": win, "votes": total, "counts": counts})
+
+    # The streak: consecutive columns from the LEFT (this week backwards), all
+    # won by one challenger that isn't the incumbent.
+    challenger, streak = None, 0
+    for col in columns:
+        w = col["winner"]
+        if w is None or w == incumbent_id:
+            break
+        if challenger is None:
+            challenger = w
+        if w != challenger:
+            break
+        streak += 1
+        col["won"] = True
+
+    # Standings this week, so the card can show each suggestion's share.
+    _, this_total, this_counts = _week_winner(db, slot, now_week, now_week + timedelta(weeks=1))
+    standings = [
+        {"cause_id": cid, "votes": n,
+         "share": round(n / this_total * 100) if this_total else 0}
+        for cid, n in sorted(this_counts.items(), key=lambda kv: -kv[1])
+    ]
+    return {
+        "slot": slot,
+        "incumbent_id": incumbent_id,
+        "challenger_id": challenger,
+        "streak": streak,
+        "weeks_required": CAUSE_STREAK_WEEKS,
+        "advertised_weeks": CAUSE_STREAK_WEEKS - 1,
+        "columns": columns,
+        "standings": standings,
+        "this_week_votes": this_total,
+        "week_start": now_week.isoformat(),
+    }
+
+
+def cause_slate(db: Session, active_index: Optional[int] = None) -> dict:
+    """Every upcoming window at once: who holds it, who is challenging it, and
+    whether it is open to a vote this week.
+
+    §2 (2026-08-08) — the cause vote has **dates and display conditions** now
+    (structure.md, main.html backlog):
+
+    * **The vote decided this week settles the window seven weeks out.** Seven
+      causes rotate one per week, so seven weeks ahead is exactly one full
+      rotation — the ACTIVE cause's own next appearance. That window is `slot`
+      7 and it is always open.
+    * **Every other window is read-only, with one exception**: a window that a
+      challenger has already WON (all seven columns) is no longer held by the
+      rotation incumbent, so it opens for a vote again. Nothing about the
+      rotation guarantees the replacement is still what benefactors want by the
+      time it runs, and this is where they say so.
+    * A window whose challenger is mid-streak is *contested*, not elected — it
+      stays read-only until the streak completes.
+
+    Slot s is the window s weeks out, held by the cause at index
+    (active_index + s) % 7 unless a challenger has taken it. `active_index`
+    defaults to the server's own rotation clock; a client may pass its cycle
+    index instead, and the two agree by construction.
+    """
+    if active_index is None:
+        active_index = active_cause_index()
+    try:
+        active_index = int(active_index) % 7
+    except (TypeError, ValueError):
+        raise ValueError("active_index must be an integer")
+    by_index = {
+        c.index: c for c in db.scalars(
+            select(models.Cause).where(models.Cause.status == "active")
+        ).all() if c.index is not None
+    }
+    slots = []
+    for slot in range(1, CAUSE_STREAK_WEEKS + 1):
+        incumbent = by_index.get((active_index + slot) % 7)
+        incumbent_id = incumbent.id if incumbent else None
+        state = cause_ballot_state(db, slot, incumbent_id)
+        streak = int(state.get("streak") or 0)
+        challenger_id = state.get("challenger_id")
+        elected_id = challenger_id if (challenger_id and streak >= CAUSE_STREAK_WEEKS) else None
+        holder_id = elected_id or incumbent_id
+        holder = db.get(models.Cause, holder_id) if holder_id else None
+        slots.append({
+            "slot": slot,
+            "weeks_out": slot,
+            "incumbent_id": incumbent_id,
+            "challenger_id": challenger_id,
+            "streak": streak,
+            "weeks_required": CAUSE_STREAK_WEEKS,
+            # The cause that will actually run this window as things stand.
+            "elected_id": elected_id,
+            "holder_id": holder_id,
+            "holder_name": holder.name if holder else None,
+            "holder_color": holder.color if holder else None,
+            # The two conditions above, and which one applies.
+            "votable": bool(slot == CAUSE_STREAK_WEEKS or elected_id),
+            "votable_reason": (
+                "the active cause's replacement — decided seven weeks before it runs"
+                if slot == CAUSE_STREAK_WEEKS else
+                "a replacement has been elected for this window, so it is open again"
+                if elected_id else
+                "this window is settled until it comes back around"
+            ),
+            "swapped": bool(elected_id and elected_id != incumbent_id),
+        })
+    return {
+        "active_index": active_index,
+        "weeks_required": CAUSE_STREAK_WEEKS,
+        "default_slot": CAUSE_STREAK_WEEKS,
+        "slots": slots,
+    }
+
+
+def my_cause_votes(db: Session, ben_id: int) -> dict:
+    """This benefactor's live votes, slot → cause_id (this week only)."""
+    wk = _week_start()
+    rows = db.scalars(select(models.CauseVote).where(
+        models.CauseVote.ben_id == ben_id, models.CauseVote.week_start == wk)).all()
+    return {str(r.slot): r.cause_id for r in rows}
+
+
 def create_tiv(db: Session, data: schemas.InitiativeCreate) -> models.Initiative:
-    tiv = models.Initiative(**data.model_dump())
+    """Create an initiative.
+
+    §0a (2026-08-05): a proposal with no `mission_id` used to be stored ORPHANED
+    (mission_id NULL). Neither propose dialog sends one, so every user-proposed
+    initiative was invisible to mission-scoped queries — and worse, a NULL
+    mission_id slipped past the "is this tiv in this mission?" guard in
+    `replace_p1_shares` (SQL `NULL != 'oce1'` is NULL, not TRUE), so the same
+    orphan could be voted on under two different missions and blow up the
+    UNIQUE(ben_id, tiv_id) index with a 500. Orphans now adopt their cause's
+    open phase-1 mission at creation.
+    """
+    payload = data.model_dump()
+    if not payload.get("mission_id") and payload.get("cause_id"):
+        m = open_p1_mission(db, payload["cause_id"])
+        if m is not None:
+            payload["mission_id"] = m.id
+    tiv = models.Initiative(**payload)
     db.add(tiv)
     db.commit()
     db.refresh(tiv)
     return tiv
+
+
+def adopt_orphan_tivs(db: Session) -> list[str]:
+    """Idempotent repair: attach every mission-less initiative to its cause's
+    open phase-1 mission. Runs at startup (see main.py) so pre-§0a orphans stop
+    poisoning the vote path. Returns the ids it adopted."""
+    adopted: list[str] = []
+    orphans = db.scalars(
+        select(models.Initiative).where(models.Initiative.mission_id.is_(None))
+    ).all()
+    if not orphans:
+        return adopted
+    for tiv in orphans:
+        if not tiv.cause_id:
+            continue
+        m = open_p1_mission(db, tiv.cause_id)
+        if m is None:
+            continue
+        tiv.mission_id = m.id
+        adopted.append(tiv.id)
+        # Any phase-1 vote already cast on the orphan belongs to the mission it
+        # has just joined — otherwise the row keeps a stale mission_id and the
+        # ben's own slate reads short.
+        moved = db.scalars(
+            select(models.VoteP1).where(models.VoteP1.tiv_id == tiv.id)
+        ).all()
+        for row in moved:
+            row.mission_id = m.id
+        # Re-pointing can push a benefactor's slate for the target mission over
+        # the 1.0 share cap (their orphan vote joins a slate they already
+        # filled). Scale that ben's rows back down proportionally so the tally
+        # stays honest until they next edit their slate.
+        for ben_id in {r.ben_id for r in moved}:
+            rows = db.scalars(
+                select(models.VoteP1).where(
+                    models.VoteP1.ben_id == ben_id,
+                    models.VoteP1.mission_id == m.id,
+                )
+            ).all()
+            total = sum(float(r.share or 0) for r in rows)
+            if total > SHARE_SUM_CAP + 1e-6:
+                for r in rows:
+                    r.share = float(r.share or 0) * SHARE_SUM_CAP / total
+                    r.ebx_committed = float(r.ebx_committed or 0) * SHARE_SUM_CAP / total
+    if adopted:
+        db.commit()
+    return adopted
 
 
 def approve_tiv(db: Session, tiv_id: str, staff: models.BenefactorAccount) -> models.Initiative:
@@ -466,6 +868,169 @@ def create_ben(db: Session, data: schemas.BenefactorCreate) -> models.Benefactor
         db.commit()
         db.refresh(ben)
     return ben
+
+
+def account_footprints(db: Session) -> list[dict]:
+    """Every account plus what it has done — the numbers a staffer needs before
+    deciding an account is fraudulent or bug-created (2026-08-06)."""
+    out: list[dict] = []
+    for ben in db.scalars(select(models.BenefactorAccount).order_by(models.BenefactorAccount.id)).all():
+        p1 = db.scalars(select(models.VoteP1).where(models.VoteP1.ben_id == ben.id)).all()
+        p2 = db.scalars(select(models.VoteP2).where(models.VoteP2.ben_id == ben.id)).all()
+        posts = db.scalar(
+            select(sqlfunc.count()).select_from(models.Post).where(models.Post.ben_author_id == ben.id)
+        ) or 0
+        reacts = db.scalar(
+            select(sqlfunc.count()).select_from(models.PostVote).where(models.PostVote.ben_id == ben.id)
+        ) or 0
+        out.append({
+            "id": ben.id,
+            "email": ben.email,
+            "handle": ben.handle,
+            "role": ben.role,
+            "created_at": ben.created_at.isoformat() if ben.created_at else None,
+            "p1_votes": len(p1),
+            "p1_ebx": round(sum(float(v.ebx_committed or 0) for v in p1), 2),
+            "p2_votes": len(p2),
+            "p2_ebx": round(sum(float(v.ebx_spent or 0) for v in p2), 2),
+            "posts": posts,
+            "reactions": reacts,
+            "memberships": db.scalar(
+                select(sqlfunc.count()).select_from(models.Membership).where(models.Membership.ben_id == ben.id)
+            ) or 0,
+            "credit_coins": db.scalar(
+                select(sqlfunc.count()).select_from(models.CreditCoin).where(models.CreditCoin.owner_id == ben.id)
+            ) or 0,
+        })
+    return out
+
+
+def issue_temp_password(db: Session, ben_id: int, staff: models.BenefactorAccount) -> dict:
+    """Staff-only: replace an account's password with a one-off temporary one
+    and hand it back so it can be sent to the address on the account.
+
+    §0d (2026-08-08) — "I forgot the password to Jackson. How can I recover it?
+    The email registered with the account is valid." Earthbux has no mail
+    transport, so a real self-serve *forgot password* flow (token email, expiry,
+    single-use redemption) is not a trivial change and stays on the backlog.
+    A staff-issued temporary password is trivial, and it recovers the account
+    today: staff issues it, sends it to the registered address, the owner signs
+    in and changes it in profile settings.
+
+    The plaintext is returned EXACTLY ONCE — it is never stored, only its hash.
+    """
+    require_staff(staff)
+    ben = db.get(models.BenefactorAccount, ben_id)
+    if ben is None:
+        raise ValueError("Account not found")
+    if not ben.email:
+        raise ValueError("That account has no registered email to send a temporary password to")
+    import secrets
+    from . import auth as _auth
+    # Readable but not guessable: three short groups, no ambiguous characters.
+    alphabet = "abcdefghjkmnpqrstuvwxyz23456789"
+    temp = "-".join("".join(secrets.choice(alphabet) for _ in range(4)) for _ in range(3))
+    ben.pass_hash = _auth.hash_password(temp)
+    db.add(models.Transaction(
+        type="admin", bucket="account", ben_id=None, phase=None, target=str(ben_id),
+        amount_ebx=0,
+        note=f"temporary password issued for account #{ben_id} ({ben.handle}) by staff #{staff.id}",
+    ))
+    db.commit()
+    return {
+        "id": ben.id,
+        "handle": ben.handle,
+        "email": ben.email,
+        "temp_password": temp,
+        "note": "Send this to the registered address. It replaces the old password "
+                "immediately — the owner should change it from profile settings after signing in.",
+    }
+
+
+def remove_account(db: Session, ben_id: int, staff: models.BenefactorAccount) -> dict:
+    """Staff-only: delete an account and withdraw everything it voted.
+
+    Fraudulent and bug-created accounts skew every tally they touched, so the
+    votes go with the account rather than being left behind as orphan rows.
+    What survives: **posts** (orphaned to `ben_author_id = NULL`, because a
+    thread other people replied to shouldn't develop holes) and the
+    **transaction ledger** (append-only by design — the rows are relabelled,
+    not erased, so the history of what happened stays auditable).
+
+    Refuses to delete the last remaining admin, and refuses to delete you.
+    """
+    require_staff(staff)
+    ben = db.get(models.BenefactorAccount, ben_id)
+    if ben is None:
+        raise ValueError("Account not found")
+    if ben.id == staff.id:
+        raise ValueError("You cannot remove your own account")
+    if ben.role == "admin":
+        others = db.scalar(
+            select(sqlfunc.count()).select_from(models.BenefactorAccount).where(
+                models.BenefactorAccount.role == "admin",
+                models.BenefactorAccount.id != ben.id,
+            )
+        ) or 0
+        if not others:
+            raise ValueError("Refusing to remove the last admin account")
+
+    summary = {"id": ben.id, "handle": ben.handle, "email": ben.email}
+    missions_touched: set[str] = set()
+
+    p1 = db.scalars(select(models.VoteP1).where(models.VoteP1.ben_id == ben_id)).all()
+    for v in p1:
+        missions_touched.add(v.mission_id)
+        db.delete(v)
+    p2 = db.scalars(select(models.VoteP2).where(models.VoteP2.ben_id == ben_id)).all()
+    for v in p2:
+        missions_touched.add(v.mission_id)
+        db.delete(v)
+    reacts = db.scalars(select(models.PostVote).where(models.PostVote.ben_id == ben_id)).all()
+    for r in reacts:
+        db.delete(r)
+    memberships = db.scalars(select(models.Membership).where(models.Membership.ben_id == ben_id)).all()
+    for m in memberships:
+        db.delete(m)
+    coins = db.scalars(select(models.CreditCoin).where(models.CreditCoin.owner_id == ben_id)).all()
+    for c in coins:
+        db.delete(c)
+
+    posts = db.scalars(select(models.Post).where(models.Post.ben_author_id == ben_id)).all()
+    for p in posts:
+        p.ben_author_id = None
+    txs = db.scalars(select(models.Transaction).where(models.Transaction.ben_id == ben_id)).all()
+    for t in txs:
+        t.ben_id = None
+        t.note = ((t.note + " · ") if t.note else "") + f"account #{ben_id} removed by staff"
+
+    db.delete(ben)
+    db.commit()
+
+    # §0 (2026-08-08): deleting the vote rows was only half the job. Two caches
+    # are derived from them — `Pool` and `MissionCandidacy.p2_vote_tally` — and
+    # neither was rebuilt, so a removed account went on inflating the cards it
+    # was removed for. (The id-7 pilot account left atm0 reading 150 EBX of
+    # phase-2 pool and org-001 holding a 5-vote candidacy tally after every one
+    # of its votes was gone.) Both are rebuilt here, per mission touched.
+    for mid in sorted(missions_touched):
+        try:
+            recompute_pool(db, mid)
+            resync_p2_tallies(db, mid)
+        except Exception:      # a cache rebuild must never fail the removal
+            db.rollback()
+
+    summary.update({
+        "p1_votes_deleted": len(p1),
+        "p2_votes_deleted": len(p2),
+        "reactions_deleted": len(reacts),
+        "memberships_deleted": len(memberships),
+        "credit_coins_deleted": len(coins),
+        "posts_orphaned": len(posts),
+        "transactions_relabelled": len(txs),
+        "missions_retallied": sorted(missions_touched),
+    })
+    return summary
 
 
 def set_role(
@@ -1142,6 +1707,16 @@ def get_all_p1_votes(db: Session, ben_id: int) -> Sequence[models.VoteP1]:
     ).all()
 
 
+def get_all_p2_votes(db: Session, ben_id: int) -> Sequence[models.VoteP2]:
+    """Every phase-2 (organization) vote row this benefactor holds, across all
+    missions. §2 (2026-08-05): the twin of get_all_p1_votes — the Context page's
+    side + top cards each show "my choice" for an org race, and one round-trip
+    beats one /p2/mine call per card."""
+    return db.scalars(
+        select(models.VoteP2).where(models.VoteP2.ben_id == ben_id)
+    ).all()
+
+
 def replace_p1_shares(
     db: Session,
     ben_id: int,
@@ -1176,15 +1751,23 @@ def replace_p1_shares(
         raise ValueError(f"Total share {total:.2f} exceeds {SHARE_SUM_CAP}")
 
     # Every tiv must belong to this mission.
+    # §0a (2026-08-05): the old predicate was `mission_id != mission_id`, which
+    # in SQL is NULL — never TRUE — for an orphaned initiative. Orphans therefore
+    # passed the guard, were inserted under an arbitrary mission, and collided
+    # with UNIQUE(ben_id, tiv_id) as an unhandled IntegrityError (the "Exception
+    # in ASGI application" Jax hit committing an Oceans vote). Match NULLs
+    # explicitly, and treat an unknown id as out-of-mission too.
     if cleaned:
-        bad = db.scalars(
+        wanted = list(cleaned.keys())
+        in_mission = set(db.scalars(
             select(models.Initiative.id).where(
-                models.Initiative.id.in_(list(cleaned.keys())),
-                models.Initiative.mission_id != mission_id,
+                models.Initiative.id.in_(wanted),
+                models.Initiative.mission_id == mission_id,
             )
-        ).all()
+        ).all())
+        bad = [t for t in wanted if t not in in_mission]
         if bad:
-            raise ValueError(f"Initiatives {list(bad)} are not in mission {mission_id}")
+            raise ValueError(f"Initiatives {bad} are not in mission {mission_id}")
 
     existing = {row.tiv_id: row for row in get_p1_votes(db, ben_id, mission_id)}
     # Pilot: a benefactor may change their slate at will, even after committing.
@@ -1298,6 +1881,173 @@ def withdraw_p1(db: Session, ben_id: int, mission_id: str) -> dict:
     db.commit()
     recompute_pool(db, mission_id)
     return {"mission_id": mission_id, "refunded_ebx": round(refunded, 2), "send_kept_ebx": round(kept, 2)}
+
+
+CARRYOVER_BUCKET = "carryover"
+
+
+def _rolled_so_far(db: Session, ben_id: int, mission_id: str) -> float:
+    """EBX this benefactor has already rolled out of this mission.
+
+    Summed from `new_value` (the exact float) rather than `amount_ebx` (whole
+    EBX, for the human-readable ledger) — rounding the roll and then deriving
+    the send floor from it would let the floor drift every time the slider
+    moves. Cf. the open "skim ledger rounding" item in the backlog.
+    """
+    return float(db.scalar(
+        select(sqlfunc.sum(sqlfunc.coalesce(models.Transaction.new_value,
+                                            models.Transaction.amount_ebx))).where(
+            models.Transaction.ben_id == ben_id,
+            models.Transaction.mission_id == mission_id,
+            models.Transaction.bucket == CARRYOVER_BUCKET,
+        )
+    ) or 0)
+
+
+def _send_floor(rows, winner_id: Optional[str], original: float, current: float) -> float:
+    """The irrevocable slice of the ORIGINAL phase-1 commitment: 20% of what
+    backed the winner, 10% of the rest. Scaled off the original total so a
+    second pass at the slider can't dip into money already in the pool."""
+    if current <= 0:
+        return 0.0
+    scale = original / current
+    return sum(
+        float(r.ebx_committed or 0) * scale
+        * (P1_SEND_WIN if r.tiv_id == winner_id else P1_SEND_LOSE)
+        for r in rows
+    )
+
+
+def p1_carryover_state(db: Session, ben_id: int, mission_id: str) -> dict:
+    """What a benefactor's phase-1 commitment looks like once the initiative
+    election is over — the numbers behind the OE carryover slider (2026-08-06).
+
+    After `finalize_p1`, the losing initiatives (and the vote rows behind them)
+    have already rolled to the cause's next cycle via `_carry_losers_forward`.
+    What is still sitting in THIS mission is what backed the winner. Of that, the
+    **send** is irrevocable — it went to the pool the moment the election closed
+    — and the rest is the benefactor's to keep here or roll forward.
+    """
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    from . import bootstrap
+    rows = get_p1_votes(db, ben_id, mission_id)
+    winner_id = mission.winning_tiv_id
+    total = sum(float(r.ebx_committed or 0) for r in rows)
+    already = float(_rolled_so_far(db, ben_id, mission_id))
+    # The send is a slice of the ORIGINAL commitment, not of whatever is left
+    # after a previous roll — otherwise moving the slider twice would eat into
+    # money that is already irrevocably in the pool.
+    original = total + already
+    send = _send_floor(rows, winner_id, original, total)
+    # What they voted for here, strongest first (their slate as it was cast).
+    my_picks = [
+        {"tiv_id": r.tiv_id, "ebx": round(float(r.ebx_committed or 0), 2),
+         "share": round(float(r.share or 0), 4), "won": r.tiv_id == winner_id}
+        for r in sorted(rows, key=lambda r: -(float(r.ebx_committed or 0)))
+    ]
+    next_mid = bootstrap.mission_id(mission.cause_id, (mission.cycle_num or 0) + 1) \
+        if mission.cause_id in bootstrap.CAUSE_PREFIX else None
+    return {
+        "mission_id": mission_id,
+        "cause_id": mission.cause_id,
+        "winning_tiv_id": winner_id,
+        "backed_winner": any(p["won"] for p in my_picks),
+        "my_picks": my_picks,
+        "total_ebx": round(total, 2),
+        "original_ebx": round(original, 2),
+        "sent_to_pool_ebx": round(send, 2),     # irrevocable, already in the pool
+        "movable_ebx": round(max(0.0, total - send), 2),
+        "kept_here_ebx": round(total, 2),       # everything still here is "kept"
+        "already_rolled_ebx": round(float(already), 2),
+        "next_mission_id": next_mid,
+        "open": bool(winner_id and not mission.winning_org_id and mission.current_phase == "initiative"),
+    }
+
+
+def carryover_p1(db: Session, ben_id: int, mission_id: str, keep_ebx: float) -> dict:
+    """Keep `keep_ebx` of this mission's phase-1 commitment here; roll the rest
+    into the next iteration of the same cause.
+
+    The **send** can never be rolled — it is the irrevocable slice that made the
+    election real (20% behind the winner, 10% behind the rest), so `keep_ebx` is
+    clamped to at least that. Rolled EBX lands on the benefactor's carried rows
+    in the next-cycle mission when they have any, and is booked to the ledger
+    either way so the balance is auditable.
+
+    Open during phase 2 only — the same window as `withdraw_p1`. Once an
+    organization is elected the pool locks.
+    """
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    if not mission.winning_tiv_id or mission.winning_org_id or mission.current_phase != "initiative":
+        raise ValueError("The carryover choice is open during phase 2 only "
+                         "(after the initiative is elected, before budgeting)")
+    from . import bootstrap
+
+    rows = [r for r in get_p1_votes(db, ben_id, mission_id) if float(r.ebx_committed or 0) > 0]
+    total = sum(float(r.ebx_committed or 0) for r in rows)
+    if total <= 0:
+        raise ValueError("You have no commitment in this mission")
+    already = float(_rolled_so_far(db, ben_id, mission_id))
+    send = _send_floor(rows, mission.winning_tiv_id, total + already, total)
+    try:
+        keep = float(keep_ebx)
+    except (TypeError, ValueError):
+        raise ValueError("keep_ebx must be a number")
+    keep = max(send, min(total, keep))
+    rolled = total - keep
+    if rolled <= 0:
+        return {"mission_id": mission_id, "kept_ebx": round(total, 2), "rolled_ebx": 0.0,
+                "next_mission_id": None, "landed_on": []}
+
+    # Take the rolled amount off each row proportionally, never below its share
+    # of the send floor.
+    for r in rows:
+        committed = float(r.ebx_committed or 0)
+        floor = send * (committed / total) if total else 0.0
+        take = min(rolled * (committed / total), max(0.0, committed - floor))
+        r.ebx_committed = committed - take
+
+    next_mid = bootstrap.mission_id(mission.cause_id, (mission.cycle_num or 0) + 1) \
+        if mission.cause_id in bootstrap.CAUSE_PREFIX else None
+    landed: list[str] = []
+    if next_mid is not None:
+        if db.get(models.Mission, next_mid) is None:
+            bootstrap.ensure_mission(db, mission.cause_id, (mission.cycle_num or 0) + 1)
+        # If they already hold carried rows there (losing initiatives that rolled
+        # forward), the money lands on them proportionally and becomes votes.
+        carried = [r for r in get_p1_votes(db, ben_id, next_mid)]
+        base = sum(float(r.ebx_committed or 0) for r in carried)
+        if carried and base > 0:
+            for r in carried:
+                r.ebx_committed = float(r.ebx_committed or 0) + rolled * (float(r.ebx_committed or 0) / base)
+                landed.append(r.tiv_id)
+        elif carried:
+            each = rolled / len(carried)
+            for r in carried:
+                r.ebx_committed = float(r.ebx_committed or 0) + each
+                landed.append(r.tiv_id)
+        # No carried rows: the ledger entry below is the whole record — the
+        # balance is theirs to allocate when the next election opens.
+    db.add(models.Transaction(
+        type="transfer", bucket=CARRYOVER_BUCKET, ben_id=ben_id, mission_id=mission_id,
+        phase="p2", target=next_mid, amount_ebx=int(round(rolled)),
+        new_value=round(rolled, 6),   # exact, so the send floor can't drift
+        note=f"carryover {mission_id}->{next_mid or 'unassigned'} "
+             f"(kept {round(keep, 2)} of {round(total, 2)} EBX)",
+    ))
+    db.commit()
+    recompute_pool(db, mission_id)
+    return {
+        "mission_id": mission_id,
+        "kept_ebx": round(keep, 2),
+        "rolled_ebx": round(rolled, 2),
+        "next_mission_id": next_mid,
+        "landed_on": landed,
+    }
 
 
 def commit_p1(db: Session, ben_id: int, mission_id: str) -> int:
@@ -1455,20 +2205,81 @@ def p1_tally(db: Session, mission_id: str, size_factor: float = 1.0) -> dict:
     }
 
 
+def p2_ebx_by_ben(db: Session, mission_id: str) -> dict[int, float]:
+    """The EBX each benefactor carries into a mission's ORGANIZATION election.
+
+    §1 (2026-08-08). Phase 2 is not funded by a second 10-EBX allowance — it is
+    funded by what phase 1 left behind. When the initiative election closed each
+    backer chose (via the carryover slider) how much of their commitment stays
+    in this mission; whatever stayed is the weight that follows their org vote.
+    Their remaining `VoteP1.ebx_committed` rows for this mission ARE that
+    number, so this is a straight per-benefactor sum.
+
+    structure.md, main.html › Table › Vote dialog › OE: "Votes column needs to
+    have the amount of p2 votes, not p1. That is also the count we route the
+    votes committed after p1 in and the pool."
+    """
+    out: dict[int, float] = {}
+    for v in db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == mission_id)).all():
+        out[v.ben_id] = out.get(v.ben_id, 0.0) + float(v.ebx_committed or 0)
+    return out
+
+
 def p2_tally(db: Session, mission_id: str) -> dict:
     """Per-org net vote count for a mission's phase-2 election. Blocks (harmful)
-    subtract; support (helpful) adds; neutral is 0."""
+    subtract; support (helpful) adds; neutral is 0.
+
+    §2 (2026-08-05): also reports **EBX** per org and the race total. The
+    election cards rank on EBX rather than percentages — "that allows one to
+    estimate the total pool size" (jax notes 2) — and a percentage can't do
+    that. EBX is counted at face value regardless of valence: a block still
+    spent its money, it just pushes the net vote count the other way.
+
+    §1 (2026-08-08) — **the race was reading 0 EBX everywhere.** The only money
+    it counted was `ebx_spent`, and `p2_vote_cost(1)` is 0 by design (the first
+    org vote is free), so a race with real votes and no bought extras totalled
+    zero. An org's EBX is now:
+
+        carried_ebx  the phase-1 commitment its voters kept in this mission
+        bought_ebx   what those voters spent on EXTRA votes
+        ebx          the sum — the money standing behind that organization
+
+    and the race carries an `unassigned_ebx` figure too: EBX kept here by
+    benefactors who have not yet picked an organization. `pool_ebx` (assigned +
+    unassigned) is the whole phase-2 pool, which is what the cards mean by
+    "Race pool". Ranking is by **votes first, EBX second** — the rule the org
+    faces already follow (§4, 2026-08-06).
+    """
     votes = db.scalars(select(models.VoteP2).where(models.VoteP2.mission_id == mission_id)).all()
+    carried = p2_ebx_by_ben(db, mission_id)
     per_org: dict[str, dict] = {}
     for v in votes:
-        e = per_org.setdefault(v.org_id, {"net_votes": 0, "voters": 0})
+        e = per_org.setdefault(v.org_id, {"net_votes": 0, "voters": 0,
+                                          "carried": 0.0, "bought": 0.0})
         e["net_votes"] += int(v.votes) * int(VALENCE_SIGN[v.valence])
         e["voters"] += 1
+        e["bought"] += float(v.ebx_spent or 0)
+        e["carried"] += float(carried.get(v.ben_id, 0.0))
     entries = [
-        {"org_id": oid, "net_votes": s["net_votes"], "voter_count": s["voters"]}
-        for oid, s in sorted(per_org.items(), key=lambda kv: -kv[1]["net_votes"])
+        {"org_id": oid, "net_votes": s["net_votes"], "voter_count": s["voters"],
+         "carried_ebx": round(s["carried"], 2), "bought_ebx": round(s["bought"], 2),
+         "ebx": round(s["carried"] + s["bought"], 2)}
+        for oid, s in sorted(per_org.items(),
+                             key=lambda kv: (-kv[1]["net_votes"],
+                                             -(kv[1]["carried"] + kv[1]["bought"])))
     ]
-    return {"mission_id": mission_id, "entries": entries}
+    voted = {v.ben_id for v in votes}
+    unassigned = sum(ebx for ben, ebx in carried.items() if ben not in voted)
+    assigned = sum(e["ebx"] for e in entries)
+    return {
+        "mission_id": mission_id,
+        "entries": entries,
+        "total_ebx": round(assigned, 2),          # money standing behind an org
+        "unassigned_ebx": round(unassigned, 2),   # kept here, no org picked yet
+        "pool_ebx": round(assigned + unassigned, 2),
+        "total_votes": sum(e["net_votes"] for e in entries),
+        "voter_count": len(voted),
+    }
 
 
 def _carry_losers_forward(db: Session, mission: models.Mission, losers: list[models.Initiative]) -> None:
@@ -1635,6 +2446,40 @@ def recompute_pool(db: Session, mission_id: str) -> models.Pool:
     db.commit()
     db.refresh(pool)
     return pool
+
+
+def resync_p2_tallies(db: Session, mission_id: Optional[str] = None) -> dict[str, int]:
+    """Rebuild `MissionCandidacy.p2_vote_tally` from the live phase-2 vote rows.
+
+    §0 (2026-08-08). The tally is a display cache written once, by `finalize_p2`,
+    for the winner. Nothing rewrote it when the votes underneath changed — so a
+    vote withdrawn, retargeted or deleted with its account left the number
+    frozen at whatever it was on election day. It is derived data; derive it.
+
+    Pass a `mission_id` to rebuild one race, nothing to rebuild every one.
+    Returns {candidacy_key: net_votes} for what actually moved.
+    """
+    q = select(models.MissionCandidacy)
+    if mission_id:
+        q = q.where(models.MissionCandidacy.mission_id == mission_id)
+    cands = db.scalars(q).all()
+    by_mission: dict[str, dict[str, int]] = {}
+    changed: dict[str, int] = {}
+    for cand in cands:
+        counts = by_mission.get(cand.mission_id)
+        if counts is None:
+            counts = {}
+            for v in db.scalars(select(models.VoteP2).where(
+                    models.VoteP2.mission_id == cand.mission_id)).all():
+                counts[v.org_id] = counts.get(v.org_id, 0) + int(v.votes) * int(VALENCE_SIGN[v.valence])
+            by_mission[cand.mission_id] = counts
+        net = int(counts.get(cand.org_id, 0))
+        if int(cand.p2_vote_tally or 0) != net:
+            cand.p2_vote_tally = net
+            changed[f"{cand.mission_id}:{cand.org_id}"] = net
+    if changed:
+        db.commit()
+    return changed
 
 
 # ===========================================================================
@@ -1856,6 +2701,20 @@ def create_post(
                 "you must be a mission member — or agree to become one by committing "
                 "a phase-1 stake — before posting here"
             )
+        # §2a (2026-08-08): a BUDGETING post is a costed suggestion. Without a
+        # setup-time estimate and a cost estimate the budget builder has nothing
+        # to rank it by, so both are required at creation. Replies are exempt —
+        # a reply argues about an estimate, it doesn't restate one.
+        if pcfg.requires_estimates(data.category) and not is_reply:
+            missing = [f for f in pcfg.ESTIMATE_FIELDS if getattr(data, f, None) is None]
+            if missing:
+                raise ValueError(
+                    "a budgeting suggestion needs one estimate for the setup time and "
+                    "one for the cost (missing: " + ", ".join(missing) + ")"
+                )
+            if any((getattr(data, f) or 0) < 0 for f in pcfg.ESTIMATE_FIELDS):
+                raise ValueError("estimates cannot be negative")
+
         if not is_reply:
             dup = db.scalar(
                 select(models.Post).where(
@@ -1872,6 +2731,10 @@ def create_post(
                 )
 
     post = models.Post(**data.model_dump())
+    # Post-support layer: every post is rated on the way in so the mission
+    # annulus never has to deal with an unrated row. The classifier is a stub
+    # and rates everything green; only org-tagged types are read off it.
+    post.flag = pcfg.classify_flag(data.type, data.body, data.title)
     # Normalise the derived mission onto benefactor posts so the per-type limit
     # and the "my posts" history are reliable even when the post targets a tiv.
     if data.category in pcfg.POST_REQUIRES_MEMBERSHIP and post.mission_id is None:
@@ -1917,6 +2780,88 @@ def react_to_post(db: Session, post_id: str, ben_id: int, value: str) -> models.
     db.commit()
     db.refresh(post)
     return post
+
+
+# ===========================================================================
+# Post-support layer — the first layer of the mission annulus.
+# ===========================================================================
+def set_post_flag(db: Session, post_id: str, flag: str,
+                  reason: Optional[str] = None) -> models.Post:
+    """Staff override on a post's post-support rating (green/orange/red)."""
+    if not pcfg.is_flag(flag):
+        raise ValueError(f"unknown flag '{flag}' (expected one of {pcfg.FLAGS})")
+    post = db.get(models.Post, post_id)
+    if post is None:
+        raise ValueError("post not found")
+    post.flag = flag
+    post.flag_reason = reason
+    db.commit()
+    db.refresh(post)
+    return post
+
+
+def post_support_layer(db: Session, mission_id: str) -> dict:
+    """The mission annulus's first layer, per ORGANIZATION.
+
+    Only ORG-TAGGED posts are rated — case, investigation and evaluation are
+    the three types that name an organization (post_config.ORG_TAGGED_TYPES).
+    Everything else on a mission is discussion about the mission, not about a
+    philanthropy, and is not in this layer.
+
+    The philanthropy on the other end gets a weekly digest built from exactly
+    this shape, which is why the counts are grouped by org and every thread
+    carries its own flag rather than an average.
+    """
+    rows = db.scalars(
+        select(models.Post).where(
+            models.Post.mission_id == mission_id,
+            models.Post.type.in_(pcfg.ORG_TAGGED_TYPES),
+            models.Post.parent_id.is_(None),
+        ).order_by(models.Post.created_at.desc())
+    ).all()
+
+    orgs: dict[str, dict] = {}
+    totals = {f: 0 for f in pcfg.FLAGS}
+    for p in rows:
+        flag = p.flag if pcfg.is_flag(p.flag or "") else "green"
+        totals[flag] += 1
+        key = p.org_id or "__untagged__"
+        bucket = orgs.setdefault(key, {
+            "org_id": p.org_id,
+            "org_name": None,
+            "counts": {f: 0 for f in pcfg.FLAGS},
+            "threads": [],
+        })
+        bucket["counts"][flag] += 1
+        bucket["threads"].append({
+            "post_id": p.id,
+            "type": p.type,
+            "title": p.title or (p.body or "")[:70],
+            "flag": flag,
+            "flag_reason": p.flag_reason,
+            "helpful_count": p.helpful_count or 0,
+            "harmful_count": p.harmful_count or 0,
+            "created_at": p.created_at,
+        })
+
+    for key, bucket in orgs.items():
+        if bucket["org_id"]:
+            org = db.get(models.Organization, bucket["org_id"])
+            bucket["org_name"] = org.name if org else bucket["org_id"]
+        else:
+            bucket["org_name"] = "Untagged"
+
+    return {
+        "mission_id": mission_id,
+        "rated_types": list(pcfg.ORG_TAGGED_TYPES),
+        "flag_meaning": dict(pcfg.FLAG_MEANING),
+        "total": len(rows),
+        "counts": totals,
+        # Most-flagged first so the digest leads with what needs an answer.
+        "orgs": sorted(orgs.values(),
+                       key=lambda b: (-b["counts"]["red"], -b["counts"]["orange"],
+                                      -sum(b["counts"].values()))),
+    }
 
 
 def _bump_post_count(post: models.Post, value: str, delta: int) -> None:

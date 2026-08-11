@@ -68,6 +68,28 @@ def resolve_suggestion(
         raise HTTPException(status_code=403, detail=str(e))
 
 
+@router.post("/{post_id}/flag", response_model=schemas.PostRead)
+def set_flag(
+    post_id: str,
+    data: schemas.PostFlagUpdate,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Post-support layer override (staff only) — green | orange | red.
+
+    Posts are rated automatically on creation (`post_config.classify_flag`,
+    a stub that rates everything green). This is how a human moves one: an
+    orange is critical-but-helpful, a red is spam / scam / unsupported slander
+    and is what we apologise to the organization for.
+    """
+    crud.require_staff(user)
+    try:
+        return crud.set_post_flag(db, post_id, data.flag, data.reason)
+    except ValueError as e:
+        msg = str(e)
+        raise HTTPException(status_code=404 if "not found" in msg.lower() else 400, detail=msg)
+
+
 @router.post("/{post_id}/react", response_model=schemas.PostRead)
 def react(
     post_id: str,

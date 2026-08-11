@@ -82,6 +82,7 @@
       <div class="item special" data-view="ledger">Ledger · transactions</div>
       <div class="item special" data-view="mission">Search by mission</div>
       <div class="item special" data-view="gantt">Gantt · mission plan</div>
+      <div class="item special" data-view="accounts">Accounts · remove</div>
     </div>
     <div id="org-nav" class="hidden">
       <div class="group">Your organizations</div>
@@ -524,6 +525,104 @@ async function addGanttStep() {
   } catch (e) { $("#g-msg").textContent = e.message; }
 }
 document.querySelector('[data-view="gantt"]').onclick = selectGanttView;
+
+// ---------- accounts console (2026-08-06) ----------
+// Staff door for removing fraudulent or bug-created accounts. Deleting an
+// account withdraws every vote it cast (so the tallies it inflated go back to
+// the truth), keeps its posts (orphaned — a thread other people answered
+// shouldn't develop holes) and relabels its ledger rows rather than erasing
+// them (the ledger is append-only by design).
+async function selectAccountsView() {
+  current = { kind: "accounts" };
+  setActive((i) => i.dataset.view === "accounts");
+  $("#main").innerHTML = `
+    <div class="toolbar">
+      <span class="title mono">accounts</span>
+      <span class="count" id="rowcount"></span>
+    </div>
+    <div id="grid"><div class="msg">Loading…</div></div>`;
+  await runAccounts();
+}
+
+async function runAccounts() {
+  let rows;
+  try { rows = await api("/admin/accounts"); }
+  catch (e) { $("#grid").innerHTML = `<div class="msg warn">${e.message}</div>`; return; }
+  $("#rowcount").textContent = rows.length + " accounts";
+  const table = el("table");
+  const head = el("thead"), htr = el("tr");
+  ["id", "handle", "email", "role", "created", "p1 votes", "p1 EBX", "p2 votes", "p2 EBX",
+   "posts", "reacts", "coins", ""].forEach((h) => { const th = el("th"); th.textContent = h; htr.appendChild(th); });
+  head.appendChild(htr); table.appendChild(head);
+  const tb = el("tbody");
+  rows.forEach((r) => {
+    const tr = el("tr");
+    [r.id, r.handle, r.email, r.role, (r.created_at || "").slice(0, 10),
+     r.p1_votes, r.p1_ebx, r.p2_votes, r.p2_ebx, r.posts, r.reactions, r.credit_coins]
+      .forEach((v) => { const td = el("td"); td.textContent = v == null ? "" : String(v); tr.appendChild(td); });
+    const td = el("td");
+    // §0d (2026-08-08): recover a locked-out account. No mail transport here,
+    // so staff issues the temporary password and sends it to the address on
+    // the account themselves.
+    const rp = el("button"); rp.textContent = "Reset password";
+    rp.style.cssText = "margin-right:6px;";
+    rp.onclick = () => resetAccountPassword(r);
+    td.appendChild(rp);
+    const b = el("button"); b.textContent = "Remove";
+    b.style.cssText = "color:#f87171;border-color:#f87171;";
+    b.onclick = () => removeAccount(r);
+    td.appendChild(b); tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+  table.appendChild(tb);
+  const g = $("#grid"); g.innerHTML = ""; g.appendChild(table);
+}
+
+// §0d (2026-08-08) — account recovery. A full self-serve "forgot password"
+// flow needs a mail transport (emailed single-use token, expiry, redemption
+// page) and is on the backlog. Until then the trivial path: staff issues a
+// one-off temporary password and sends it to the registered address. The
+// plaintext exists once, here — it is never stored.
+async function resetAccountPassword(r) {
+  if (!confirm(
+    `Issue a temporary password for #${r.id} (${r.handle} · ${r.email})?\n\n` +
+    "Their current password stops working immediately. Send the temporary one " +
+    "to the registered address; they change it from profile settings after signing in."
+  )) return;
+  try {
+    const res = await api("/admin/accounts/" + r.id + "/reset-password", { method: "POST" });
+    window.prompt(
+      "Temporary password for " + res.handle + " (" + res.email + ").\n" +
+      "Copy it now — it is not stored and cannot be shown again.",
+      res.temp_password);
+  } catch (e) { alert("Could not reset that password.\n\n" + e.message); }
+}
+
+async function removeAccount(r) {
+  const what = [
+    r.p1_votes ? r.p1_votes + " initiative vote(s) — " + r.p1_ebx + " EBX" : null,
+    r.p2_votes ? r.p2_votes + " organization vote(s) — " + r.p2_ebx + " EBX" : null,
+    r.reactions ? r.reactions + " reaction(s)" : null,
+    r.memberships ? r.memberships + " membership(s)" : null,
+    r.credit_coins ? r.credit_coins + " credit coin(s)" : null,
+  ].filter(Boolean);
+  const msg =
+    `Remove account #${r.id} (${r.handle} · ${r.email})?\n\n` +
+    (what.length ? "This DELETES:\n  " + what.join("\n  ") + "\n\n" : "This account has cast nothing.\n\n") +
+    (r.posts ? `Its ${r.posts} post(s) stay, with no author.\n` : "") +
+    "Its ledger rows stay, relabelled. This cannot be undone.";
+  if (!confirm(msg)) return;
+  try {
+    const res = await api("/admin/accounts/" + r.id, { method: "DELETE" });
+    alert("Removed #" + res.id + " (" + res.handle + ").\n\n" +
+      "Votes deleted: " + res.p1_votes_deleted + " P1, " + res.p2_votes_deleted + " P2\n" +
+      "Posts orphaned: " + res.posts_orphaned + "\n" +
+      "Ledger rows relabelled: " + res.transactions_relabelled +
+      (res.missions_retallied.length ? "\nMissions re-tallied: " + res.missions_retallied.join(", ") : ""));
+    runAccounts();
+  } catch (e) { alert("Could not remove the account.\n\n" + e.message); }
+}
+document.querySelector('[data-view="accounts"]').onclick = selectAccountsView;
 
 // ==========================================================================
 // ORG SIDE (org-experience restructure, 2026-07-10)

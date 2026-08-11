@@ -61,6 +61,20 @@ def get_budget_range(mission_id: str, db: Session = Depends(get_db)):
     return crud.mission_budget_range(db, mission_id)
 
 
+@router.get("/{mission_id}/post-support", response_model=dict)
+def get_post_support(mission_id: str, db: Session = Depends(get_db)):
+    """The mission annulus, layer 1 — the post-support layer.
+
+    Org-tagged threads (case · investigation · evaluation) grouped by the
+    organization they name, each flagged green (useful) / orange (critical but
+    helpful) / red (spam, scam or unsupported slander). This is the shape of
+    the weekly digest philanthropies receive about what was written about them.
+    """
+    if crud.get_mission(db, mission_id) is None:
+        raise HTTPException(status_code=404, detail="Mission not found")
+    return crud.post_support_layer(db, mission_id)
+
+
 # ── The claim gate (Build Phase 2, D) ───────────────────────────────────────
 @router.post("/{mission_id}/claim", response_model=schemas.OrgClaimRead, status_code=201)
 def claim_mission(

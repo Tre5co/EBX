@@ -64,6 +64,55 @@ def set_role(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/accounts", response_model=list[dict])
+def list_accounts(
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Every account with a footprint summary — what removing it would take
+    with it. Feeds the account console on admin.html (2026-08-06)."""
+    return crud.account_footprints(db)
+
+
+@router.post("/accounts/{ben_id}/reset-password", response_model=dict)
+def reset_password(
+    ben_id: int,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """§0d (2026-08-08): issue a one-off temporary password for a locked-out
+    account. Earthbux has no mail transport, so the plaintext comes back here
+    for staff to send to the address on the account; a real self-serve reset
+    (emailed single-use token) is on the backlog. Returned exactly once."""
+    try:
+        return crud.issue_temp_password(db, ben_id, staff)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/accounts/{ben_id}", response_model=dict)
+def remove_account(
+    ben_id: int,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Delete a fraudulent or bug-created account and everything it cast.
+
+    Staff-only, and deliberately destructive: votes are REMOVED (not zeroed) so
+    the tallies they inflated go back to the truth. Posts are kept but
+    orphaned — an argument someone answered shouldn't vanish from a thread.
+    Returns what was deleted so the console can report it.
+    """
+    try:
+        return crud.remove_account(db, ben_id, staff)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/missions/{mission_id}/distribute", response_model=dict)
 def distribute(
     mission_id: str,

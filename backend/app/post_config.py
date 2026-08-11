@@ -96,6 +96,12 @@ class PostCategory:
 # item is never revoked — its slot frees only when the money is actually paid
 # out. Some fields (the committed cost line, once adopted) cannot be edited.
 # ===========================================================================
+#
+# §2a (2026-08-08): a budgeting post is a SUGGESTION the mission may adopt, so
+# it is not a suggestion until it is costed. Every one of the three types
+# requires two estimates — `est_setup_days` (how long to stand it up) and
+# `est_cost_usd` (what it costs) — enforced in `crud.create_post`.
+# ===========================================================================
 _BUDGETING_TYPES = (
     PostType(
         key="service", label="Service", category="budgeting",
@@ -219,6 +225,68 @@ BENEFACTOR_CATEGORIES = ("budgeting", "mission_support", "review")
 POST_REQUIRES_MEMBERSHIP = frozenset(BENEFACTOR_CATEGORIES)
 
 
+# ---------------------------------------------------------------------------
+# §2a — budgeting estimates. A service/supply/support post is a costed
+# suggestion; without both numbers the budget builder has nothing to rank.
+# ---------------------------------------------------------------------------
+ESTIMATE_CATEGORIES = ("budgeting",)
+ESTIMATE_FIELDS = ("est_setup_days", "est_cost_usd")
+
+
+def requires_estimates(category_key: str) -> bool:
+    """True if a post in this category must carry setup-time + cost estimates."""
+    return category_key in ESTIMATE_CATEGORIES
+
+
+# ===========================================================================
+# POST-SUPPORT LAYER — the first layer of the mission annulus.
+#
+# Philanthropies are sent a weekly digest of what the community wrote about
+# them, so every thread that carries an ORGANIZATION tag is flagged first:
+#
+#   green  — Useful.
+#   orange — CRITICAL, but helpful.
+#   red    — spam, scams, or unsupported slander. We apologise for these and
+#            tell the organization we are working to keep them off the platform.
+#
+# Only org-tagged post types are rated — case, investigation and evaluation are
+# the three that name an organization. Everything else is unrated (`None` on
+# the wire, stored green so the column can stay NOT NULL).
+#
+# `classify_flag` is deliberately a STUB: it rates everything green. The real
+# filter is a content classifier and is not built. Staff override through
+# POST /posts/{id}/flag, which is how a red ever appears today.
+# ===========================================================================
+FLAGS = ("green", "orange", "red")
+FLAG_MEANING = {
+    "green": "Useful.",
+    "orange": "Critical, but helpful.",
+    "red": "Spam, scams, or unsupported slander — we are working to keep it off the platform.",
+}
+# The org-tagged types: these are the posts that name an organization, and the
+# only ones the post-support layer rates. (structure.md, mission.html annulus.)
+ORG_TAGGED_TYPES = ("case", "investigation", "evaluation")
+
+
+def is_org_tagged(type_key: Optional[str]) -> bool:
+    """True if this post type carries an organization tag, i.e. it is rated."""
+    return type_key in ORG_TAGGED_TYPES
+
+
+def is_flag(value: str) -> bool:
+    return value in FLAGS
+
+
+def classify_flag(type_key: Optional[str] = None, body: str = "",
+                  title: Optional[str] = None) -> str:
+    """Rate a post for the post-support layer.
+
+    STUB — rates everything **green**. Kept as the single call site so the real
+    classifier drops in here and every surface picks it up at once.
+    """
+    return "green"
+
+
 def category_requires_membership(category_key: str) -> bool:
     """True if authoring in this category requires mission membership."""
     return category_key in POST_REQUIRES_MEMBERSHIP
@@ -277,6 +345,12 @@ def _validate() -> None:
             assert tk in TYPES and TYPES[tk].category == key, f"{key}: bad member {tk}"
     # Exactly the three mission-support types are rewarded.
     assert REWARDED_TYPES == ("context", "investigation", "analysis"), REWARDED_TYPES
+    # Every org-tagged type must exist in the taxonomy, and the classifier must
+    # only ever return a real flag.
+    for tk in ORG_TAGGED_TYPES:
+        assert tk in TYPES, f"org-tagged type {tk} is not in the taxonomy"
+    assert classify_flag() in FLAGS
+    assert set(FLAG_MEANING) == set(FLAGS)
 
 
 _validate()
