@@ -1,0 +1,5 @@
+# Railway/Nixpacks looks for a requirements.txt at the REPO ROOT to detect a
+# Python app. The real list lives in backend/. The service still runs from the
+# repo root (see railway.json startCommand) because app/main.py resolves the
+# HTML pages and /resources relative to two directories above itself.
+-r backend/requirements.txt

@@ -69,7 +69,15 @@ def _migrate_to_head() -> None:
     try:
         url = settings.database_url
         if url.startswith("sqlite:///"):
-            db_path = (backend_dir / url.replace("sqlite:///", "").lstrip("./")).resolve()
+            # §5 (2026-08-13, Railway volume): an ABSOLUTE sqlite URL has four
+            # slashes — sqlite:////data/earthbucks.db. The old
+            # `.lstrip("./")` ate the leading slash off that path and then
+            # joined it under backend/, so the pre-migrate backup silently
+            # found nothing and never ran. Absolute stays absolute; only a
+            # relative `./name.db` is resolved against backend/.
+            raw = url[len("sqlite:///"):]
+            db_path = (Path(raw) if raw.startswith("/")
+                       else backend_dir / raw.lstrip("./")).resolve()
             if db_path.exists():
                 bak = db_path.with_suffix(db_path.suffix + ".bak_premigrate")
                 if not bak.exists() or bak.stat().st_mtime < db_path.stat().st_mtime:

@@ -12,6 +12,11 @@ venv/
 *.db
 *.sqlite
 *.sqlite3
+# ...including every backup/migration copy of one. These were tracked until
+# 2026-08-13; a public Railway build shouldn't carry real database state.
+*.bak_*
+*.db.bak*
+*.migrated_*
 
 # Environment / secrets
 .env

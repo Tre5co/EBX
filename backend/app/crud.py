@@ -2705,15 +2705,28 @@ def create_post(
         # setup-time estimate and a cost estimate the budget builder has nothing
         # to rank it by, so both are required at creation. Replies are exempt —
         # a reply argues about an estimate, it doesn't restate one.
+        # §1 (2026-08-12): the suggestion is now a COSTED LIST — service rows
+        # carry an hourly rate and a day count, supply rows a cost — so the two
+        # estimates may be DERIVED from `line_items` rather than typed. A post
+        # still cannot be uncosted: it must arrive with either the estimates or
+        # a list the estimates can be computed from.
         if pcfg.requires_estimates(data.category) and not is_reply:
+            derived = pcfg.estimates_from_line_items(data.type, getattr(data, "line_items", None))
+            for field, value in derived.items():
+                if getattr(data, field, None) is None:
+                    setattr(data, field, value)
             missing = [f for f in pcfg.ESTIMATE_FIELDS if getattr(data, f, None) is None]
             if missing:
                 raise ValueError(
-                    "a budgeting suggestion needs one estimate for the setup time and "
-                    "one for the cost (missing: " + ", ".join(missing) + ")"
+                    "a budgeting suggestion needs a costed line item — or one estimate "
+                    "for the setup time and one for the cost (missing: "
+                    + ", ".join(missing) + ")"
                 )
             if any((getattr(data, f) or 0) < 0 for f in pcfg.ESTIMATE_FIELDS):
                 raise ValueError("estimates cannot be negative")
+            bad = pcfg.invalid_line_items(data.type, getattr(data, "line_items", None))
+            if bad:
+                raise ValueError("this budget row is incomplete: " + bad)
 
         if not is_reply:
             dup = db.scalar(

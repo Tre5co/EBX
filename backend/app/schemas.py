@@ -438,6 +438,10 @@ class PostBase(BaseModel):
     # §2a: budgeting posts (service|supply|support) must carry both estimates.
     est_setup_days: Optional[float] = None  # how long to stand it up
     est_cost_usd: Optional[float] = None    # what it costs
+    # §1 (2026-08-12): the costed list a budgeting suggestion is made of —
+    # service {job, hourly_rate, days_needed} · supply {item, supplier, cost} ·
+    # support {item}. The estimates above are derived from it when omitted.
+    line_items: Optional[list[dict]] = None
 
 
 class PostCreate(PostBase):

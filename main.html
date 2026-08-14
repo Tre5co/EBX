@@ -1410,8 +1410,21 @@
        marker between them is the present. */
     .hero__statetoggle {
       display: flex; align-items: center; justify-content: center; gap: 0;
-      margin: 2px 0 10px;
+      margin: 0;
     }
+    /* §1 (2026-08-12): the toggle is the now-marker on a timeline, so a rail
+       runs from its right edge to the edge of the screen. Full-bleed row, ghost
+       rail on the left to keep the toggle centred. */
+    .hero__togglerow {
+      display: flex; align-items: center; gap: 0;
+      width: 100vw; margin: 2px 0 10px calc(50% - 50vw);
+    }
+    .st-rail {
+      flex: 1 1 0; height: 0; min-width: 0;
+      border-top: 1px solid color-mix(in srgb, var(--clr-honey) 55%, transparent);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--clr-honey) 35%, transparent);
+    }
+    .st-rail--ghost { visibility: hidden; box-shadow: none; }
     .st-side {
       font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
       padding: 7px 18px; color: rgba(245,240,232,0.5);
@@ -1435,43 +1448,7 @@
     @media (max-width: 560px) {
       .st-side { padding: 6px 11px; font-size: 0.7rem; }
     }
-    .nextvotes {
-      display: inline-flex; flex-direction: column; gap: 0; min-width: 300px; max-width: 100%;
-      border: 1px solid rgba(245,240,232,0.16); border-radius: 10px; overflow: hidden;
-      background: rgba(10,20,16,0.7);
-    }
-    .nextvotes__label {
-      font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.16em;
-      text-transform: uppercase; color: rgba(245,240,232,0.5);
-      padding: 5px 12px 4px; border-bottom: 1px solid rgba(245,240,232,0.1);
-    }
-    .nextvotes__row {
-      display: flex; align-items: baseline; gap: 8px; padding: 6px 12px;
-      background: color-mix(in srgb, var(--cc) 20%, transparent);
-    }
-    .nextvotes__row + .nextvotes__row { border-top: 1px solid rgba(245,240,232,0.22); }
-    .nextvotes__arrow { color: var(--cc); font-weight: 700; line-height: 1; flex-shrink: 0; }
-    .nextvotes__phase {
-      font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.12em;
-      text-transform: uppercase; color: rgba(245,240,232,0.6); flex-shrink: 0;
-    }
-    .nextvotes__name {
-      flex: 1; min-width: 0; font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700;
-      color: var(--cc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .nextvotes__date { font-family: var(--font-mono); font-size: 0.62rem; color: rgba(245,240,232,0.45); flex-shrink: 0; }
 
-    /* Propose + show-toggle: below the bottom cards, immediately above the
-       table (structure.md backlog) — left and right of that row. */
-    .hero__actionsrow {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: var(--sp-md); margin: var(--sp-md) 0 0; flex-wrap: wrap;
-    }
-    .hero__actionsrow .page-toggle__showing {
-      font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.12em;
-      text-transform: uppercase; color: rgba(245,240,232,0.45); margin-right: 8px;
-    }
-    .hero__actionsright { display: flex; align-items: center; }
 
     /* build-seq §2: propose + show-toggle lodged in the annulus panel's upper
        corners — absolutely positioned overlays, so the panel keeps its exact
@@ -1518,7 +1495,6 @@
         <div class="hero__topcell hero__topcell--b">
           <div id="ebx-top-card-mount-b"></div>
         </div>
-        <div class="hero__controlblock" id="hero-controlblock"></div>
       </div>
 
       <!-- §3 (2026-08-09, structure.md backlog "ME/OE toggle"): the state
@@ -1527,14 +1503,23 @@
            the marker is the present moment between them, so pressing a side
            moves the page to that state rather than "switching" to an unnamed
            other. It used to live in a right-aligned row under the wheel. -->
-      <div class="hero__statetoggle" id="hero-statetoggle">
-        <button type="button" class="st-side st-side--me on" id="st-me" onclick="setMainMode('tiv')">
-          <span class="st-side__label">Mission Election</span>
-        </button>
-        <span class="st-now" aria-hidden="true" title="Now"></span>
-        <button type="button" class="st-side st-side--oe" id="st-oe" onclick="setMainMode('org')">
-          <span class="st-side__label">Organization Election</span>
-        </button>
+      <!-- §1 (2026-08-12): with "Next votes:" gone, the toggle IS the timeline
+           marker — so a rail runs from its right edge to the edge of the
+           screen, the way the mission-start line cuts across cause.html. The
+           ghost rail on the left is invisible and only keeps the toggle
+           centred. -->
+      <div class="hero__togglerow">
+        <span class="st-rail st-rail--ghost" aria-hidden="true"></span>
+        <div class="hero__statetoggle" id="hero-statetoggle">
+          <button type="button" class="st-side st-side--me on" id="st-me" onclick="setMainMode('tiv')">
+            <span class="st-side__label">Mission Elections</span>
+          </button>
+          <span class="st-now" aria-hidden="true" title="Now"></span>
+          <button type="button" class="st-side st-side--oe" id="st-oe" onclick="setMainMode('org')">
+            <span class="st-side__label">Organization Elections</span>
+          </button>
+        </div>
+        <span class="st-rail" id="st-rail" aria-hidden="true"></span>
       </div>
 
       <div class="hero__layout">
@@ -1565,20 +1550,11 @@
            the annulus. -->
       <div class="hero__bottomrow" id="bottom-center-panel"></div>
 
-      <!-- §2 (2026-08-05): Propose (left) and the show-toggle (right) moved out
-           of the annulus corners to sit either side of the row directly above
-           the table (structure.md backlog). -->
-      <!-- §3 (2026-08-09): the state toggle moved UP, beside the now-marker.
-           These two nodes are kept (hidden) because setMainMode() writes its
-           labels into them and several call sites read them; the visible
-           control is .hero__statetoggle above. -->
-      <div class="hero__actionsrow" hidden>
-        <div class="hero__actionsright">
-          <span class="page-toggle__showing" id="main-showing">Mission Election</span>
-          <button class="main-toggle__btn main-toggle__single" id="main-toggle-btn"
-                  onclick="toggleMainMode()" aria-label="Switch between the Mission Election and the Organization Election">Organization Election</button>
-        </div>
-      </div>
+      <!-- §1 (2026-08-12, backlog "Remove old page toggle"): the hidden
+           duplicate of the state toggle that used to sit under the annulus is
+           gone. It was kept after 2026-08-09 only because `setMainMode()` wrote
+           its labels; that function now writes to the visible toggle above and
+           nothing reads these nodes. -->
 
     </div>
   </section>
@@ -1588,9 +1564,9 @@
   <!-- ── INITIATIVE TABLE: all causes — search · filters ── -->
   <section class="tiv-table-section">
     <div class="container">
-      <div role="alert" style="margin:0 0 14px;padding:11px 16px;border:1.5px solid var(--clr-honey);border-radius:8px;background:rgba(214,158,46,0.12);color:var(--clr-cream,rgba(245,240,232,0.95));font-size:0.85rem;line-height:1.45;">
-        <strong style="color:var(--clr-honey);letter-spacing:0.04em;">WARNING</strong> — Earthbux is still in development. Only phase 1 voting is currently active, and initiatives, organizations, and funds are all synthetic.
-      </div>
+      <!-- §5 (2026-08-13): the development warning moved off the table and onto
+           the ME cause-election card, the one piece of this page that does not
+           work yet. The table, the vote dialog and the discussion do. -->
       <!-- §4 (2026-08-10, structure.md Table → Vote dialog → "UX for both"):
            the election dialog was the table's first BODY row, which put it
            under the column keys it has nothing to do with and forced it to
@@ -2157,7 +2133,7 @@
           '<button class="vb-btn" onclick="event.stopPropagation();commitVotes(\'' + causeId + '\')"' +
             (pending ? '' : ' disabled') + '>Commit' + (pending ? ' ' + pending + ' EBX' : '') + '</button>' +
           '<button class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();buyVoteEbx(\'' + causeId + '\')">+ Buy EBX</button>' +
-          '<a class="vb-btn vb-btn--ghost" style="text-decoration:none;" href="cause.html?id=' + causeId + '#phase-recap-1"' +
+          '<a class="vb-btn vb-btn--ghost" style="text-decoration:none;" href="cause.html?id=' + causeId + '#pb"' +
             ' onclick="event.stopPropagation()">Discuss →</a>' +
           '<span class="vb-note">' + (pending ? pending + ' EBX dialed, not yet committed' : 'nothing to commit') + '</span>' +
         '</div>' +
@@ -2507,7 +2483,7 @@
       const faceColor = (holder && holder.color) || c.color;
       const buttons =
         '<button type="button" class="rf-btn" onclick="voteOnCause(\'' + c.id + '\')">Vote</button>' +
-        '<a class="rf-btn rf-btn--ghost" href="cause.html?id=' + c.id + '#phase-recap-1">Discuss</a>';
+        '<a class="rf-btn rf-btn--ghost" href="cause.html?id=' + c.id + '#pb">Discuss</a>';
       return raceFace({
         causeId: c.id, color: faceColor,
         swapFrom: holder ? c.name : null,
@@ -3231,68 +3207,13 @@
     // expose so the main-toggle setter can re-render cards without re-running the whole pipeline
     window.renderCards = renderCards;
 
-    // ── "Next votes:" indicator ───────────────────────────────────────────
-    // structure.md backlog (2026-08-05): the active/upcoming pair used to be
-    // overlaid inside the top card. It now sits BETWEEN the top card and the
-    // top-left side card, reads "Next votes:", and names the two elections in
-    // the order they close — Phase 2 on top pointing UP (the org race, decided
-    // first), Phase 1 below pointing DOWN (the initiative election).
-    function renderControlBlock(activeIndex, upcomingIdx) {
-      const mount = document.getElementById('hero-controlblock');
-      if (!mount) return;
-      const active = EBX.config.causes.find(c => c.index === activeIndex);
-      const upcoming = EBX.config.causes.find(c => c.index === upcomingIdx);
-      if (!active || !upcoming) return;
-      const decision = EBX.Cycle.nextDecisionDate(activeIndex);
-      const isOE = _mainMode === 'org';
-      // §0 (2026-08-06): the indicator sits under the LEFT card in ME and
-      // under the RIGHT card in OE, and it names the two votes that state is
-      // between. ME: Phase 2 (the org race closing next) over Phase 1 (the
-      // upcoming cause's initiative election). OE: Phase 3 (the organization
-      // that just won — budgeting next) over Phase 2 (the mission being
-      // elected this week).
-      mount.className = 'hero__controlblock' + (isOE ? ' hero__controlblock--right' : '');
-      let topRow, botRow;
-      if (isOE) {
-        const budgetCause = EBX.config.causes.find(c => c.index === (activeIndex + 6) % 7) || active;
-        const done = (EBX.config.missions || [])
-          .filter(x => x.cause_id === budgetCause.id && x.winning_org_id)
-          .sort((a, b) => (b.cycle_num || 0) - (a.cycle_num || 0))[0] || null;
-        const electing = _electingMission(active.id);
-        const electingTiv = electing
-          ? (EBX.config.initiatives || []).find(i => i.id === electing.winning_tiv_id) : null;
-        topRow = { color: budgetCause.color, arrow: '&uarr;', phase: 'Phase 3',
-                   name: done ? _orgName(done.winning_org_id) : budgetCause.name + ' — no org yet',
-                   date: done ? _fmtShort(new Date(decision.getTime())) : '—' };
-        botRow = { color: active.color, arrow: '&darr;', phase: 'Phase 2',
-                   name: electingTiv ? electingTiv.title : active.name,
-                   date: _fmtShort(_orgCloseDate(electing, activeIndex)) };
-      } else {
-        const p2Mission = _electingMission(active.id);
-        const p2Tiv = p2Mission
-          ? (EBX.config.initiatives || []).find(i => i.id === p2Mission.winning_tiv_id) : null;
-        // §4 (2026-08-10): the date belongs to the mission NAMED on this row —
-        // structure.md ME-Left, "Methane leak detection grid says Aug 11 but
-        // should say sep 29".
-        topRow = { color: active.color, arrow: '&uarr;', phase: 'Phase 2',
-                   name: p2Tiv ? p2Tiv.title : active.name,
-                   date: _fmtShort(_orgCloseDate(p2Mission, activeIndex)) };
-        botRow = { color: upcoming.color, arrow: '&darr;', phase: 'Phase 1',
-                   name: upcoming.name, date: _fmtShort(_nextInitiativeElection(upcomingIdx)) };
-      }
-      const row = r =>
-        '<div class="nextvotes__row" style="--cc:' + r.color + ';">' +
-          '<span class="nextvotes__arrow">' + r.arrow + '</span>' +
-          '<span class="nextvotes__phase">' + r.phase + '</span>' +
-          '<span class="nextvotes__name">' + _esc(r.name) + '</span>' +
-          '<span class="nextvotes__date">' + r.date + '</span>' +
-        '</div>';
-      mount.innerHTML =
-        '<div class="nextvotes">' +
-          '<div class="nextvotes__label">Next votes:</div>' + row(topRow) + row(botRow) +
-        '</div>';
-    }
-    window.renderControlBlock = renderControlBlock;
+    // ── "Next votes:" indicator — DELETED 2026-08-12 ──────────────────────
+    // Jax: "Remove 'next votes' indicator. I can achieve its purpose through
+    // better methods." It named the two races closing next; the top cards name
+    // them with their own dates, and the state toggle now carries the timeline
+    // rail that says where in the cycle you are standing. `renderControlBlock`
+    // and `.nextvotes*` went with it; the topgrid is two cells again.
+    window.renderControlBlock = function () {};
 
     // ── Full-width top card ──
     // The card now spans the hero, so each face carries far more, fully-labeled
@@ -3625,7 +3546,7 @@
       const pctTag = n => '<span class="ce-vote__pct">' + n + '%</span>';
       // "make your case" → the discussion, where the argument for a cause is
       // written. A proposal without an argument is just a name.
-      const caseHref = 'cause.html?id=' + encodeURIComponent(incumbent.id) + '#phase-recap-1';
+      const caseHref = 'cause.html?id=' + encodeURIComponent(incumbent.id) + '#pb';
       // Abbreviated cause names, so all seven toggles fit on ONE row.
       // Initials for multi-word names (Human Rights → HR), the first three
       // letters otherwise (Atmosphere → ATM) — the same shorthand the mission
@@ -3645,6 +3566,14 @@
             '<span class="tc-half__days">' + _fmtShort(meDay) + '</span>' +
           '</div>' +
           '<div class="cause-election">' +
+            // §5 (2026-08-13): the development warning lives HERE now — the
+            // cause election is the part of this page that isn't wired up.
+            '<div role="alert" style="margin:0 0 10px;padding:9px 12px;border:1.5px solid var(--clr-honey);' +
+              'border-radius:8px;background:rgba(214,158,46,0.12);' +
+              'color:var(--clr-cream,rgba(245,240,232,0.95));font-size:0.8rem;line-height:1.4;">' +
+              '<strong style="color:var(--clr-honey);letter-spacing:0.04em;">WARNING</strong>' +
+              ' &mdash; cause election not yet operational.' +
+            '</div>' +
             // §2 — display condition: a settled window is read-only and says so.
             (votable ? '' :
               '<div class="ce-locked">This window is <b>closed to votes</b> — ' + _esc(why) +
@@ -3978,23 +3907,17 @@
   function setMainMode(mode) {
     if (mode !== 'tiv' && mode !== 'org') return;
     _mainMode = mode;
-    // Single toggle button: label shows the mode you'll switch INTO.
-    const toggleBtn = document.getElementById('main-toggle-btn');
-    // §1 (2026-08-06): the two page states are the two elections themselves —
-    // **ME** (Mission Election: everything before an initiative is elected and
-    // the mission starts) and **OE** (Organization Election: the mission's
-    // first 8 weeks). The button names the state you'll switch INTO.
-    if (toggleBtn) toggleBtn.textContent = mode === 'tiv' ? 'Organization Election' : 'Mission Election';
-    // Build-seq 3a — table description.
+    // §1 (2026-08-12): the hidden duplicate toggle (`main-toggle-btn` +
+    // `main-showing`) is deleted, so the only labels to write are the two sides
+    // of the visible one. The elections are named in the PLURAL — a cause runs
+    // several of each over its cycles, and the toggle names the kind, not one
+    // race (backlog: "Mission/OrganizationS elections PLURAL").
     const hint = document.getElementById('main-toggle-hint');
     if (hint) {
       hint.textContent = mode === 'tiv'
         ? 'Select an initiative to learn more'
         : 'Select a mission to vote in its organization election';
     }
-    // Status line above the relocated toggle.
-    const showing = document.getElementById('main-showing');
-    if (showing) showing.textContent = mode === 'tiv' ? 'Mission Election' : 'Organization Election';
     // §3 (2026-08-09): light the active side of the now-marker toggle.
     const stMe = document.getElementById('st-me'), stOe = document.getElementById('st-oe');
     if (stMe) stMe.classList.toggle('on', mode === 'tiv');
@@ -4220,7 +4143,7 @@
               <a href="${causeHref}" class="btn btn-ghost btn-sm">View on cause page →</a>`;
     }
     if (active.length === 0) {
-      return `<a class="btn-entity-vote" href="${causeHref}&vote=1#phase-recap-1" style="text-decoration:none;display:inline-block;">Vote for this initiative →</a>
+      return `<a class="btn-entity-vote" href="${causeHref}&vote=1#pb" style="text-decoration:none;display:inline-block;">Vote for this initiative →</a>
               <a href="${causeHref}" class="btn btn-ghost btn-sm">View on cause page →</a>`;
     }
     if (active.includes(init.id) && active.length === 1) {
@@ -4549,7 +4472,7 @@
              href="${entity.mission_id ? `mission.html?mission=${entity.mission_id}` : `mission.html?id=${entity.id}`}"
              onclick="event.stopPropagation()">Mission →</a>
           <a class="btn btn-ghost btn-sm" style="text-decoration:none;"
-             href="cause.html?id=${entity.cause_id || ''}#phase-recap-1" onclick="event.stopPropagation()">Discuss →</a>
+             href="cause.html?id=${entity.cause_id || ''}#pb" onclick="event.stopPropagation()">Discuss →</a>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();rowConvert('${entity.id}')">⇄ Convert</button>
           <button class="btn btn-forest btn-sm" onclick="event.stopPropagation();rowDonate('${entity.id}')">Donate</button>
         </div>` : ''}

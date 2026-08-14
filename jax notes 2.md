@@ -1,15 +1,15 @@
-The 10 EBX lands in each account on ME-open
+## I start here
 
-Case - for/against
+**Broad (ongoing changes)**
+- [ ] Replace org/organization replace with "philanthropy"
+- [ ] Replace misison support with "research"
 
-Context - tiv-research
-Investigation - org-research
-Analysis - Combined-research
+**Specific (enactable now)**
 
-Evaluation - star-rating
+**Specific (future)**
+- Image attachments on posts —Image generation technology? Build an image search tool that finds/creates a good open source picture to represent the mission.
 
-S/S/S - Specific suggestions - P3 onward
-
+**Conceptual**
 How a cause changes
 
 The seven causes are meant to be hard to change — they are the standing subjects the whole system elects inside, so a week of enthusiasm should not move one. A challenger has to win the same window 7 weeks in a row. Lose a single week and the streak resets, and the swap date moves back by a full rotation.
@@ -20,6 +20,57 @@ Anyone can propose a cause. A cause worth standing up is a ubiquitously essentia
 
  — something nearly everyone lives through, that someone would donate to see optimized, and that is resistant to capture. Propose one, pick its colour, and make your case in the discussion: the cause election is on the Context page →
 The fine print, in four lines
+
+1, 2, 3, & 4 above correspond to a, b, c, & d in the drawing below. It would be helpful to have a better structural representation of both of these elements combined.
+ __________________________________________________
+|________________________k_           _____________| 
+|______a_____|______b_____||_____c____||______d____| tabs
+|                                                  |
+|                       i                          |
+|__________________________________________________|
+|                       h                          |
+|__________________________________________________|
+|_______e________|_______f________|_______g________| tabs
+|                      j                           |
+|__________________________________________________|
+
+k. Results of previous section - note design edit (assume we are post initiative election and pre philanthropy election for this example)- Whichever section has the most recent date should be connected to this area visually.
+a. Cause confirmed
+b. Mission open - when toggled, explain context in research and tiv case in reviews
+c. Initiative elected - When toggled, explain investigation in research and phl case in reviews - also explain s/s/s in budgeting
+d. Philanthropy elected - When toggled, explain analysis in research and evaluation in reviews - also explain budgeting in s/s/s
+e. Research (Grayed until cause confirmed) (Context only in a-b, Context&Investigation in c, Context&Investigation&Analysis in d)
+f. Reviews (tiv cases in a-b, phl cases in c, evaluations in d)
+g. Budgeting (Grayed out until tiv elected) - Explain each of s/s/s
+h. Explanation area - with the exception of budgeting, there is only 1 explanation per conbined-tab-toggle
+i. Input dialogue
+j. Leading post in that category for that mission
+
+SECTIONS H + I DETAILED
+ ____________________________________________________________
+|  __c______________________________________________         |
+| |                                                 |    e   |
+| | d                                               |    f   |
+| |                                                 |    g   |
+| |                                                 |    h   |
+| |_________________________________________________|    i   |
+|______________________ b              ______________________|
+|  _______________________________________________________   |
+| |                                                       |  |
+| |_______________________a_______________________________|  |
+|____________________________________________________________|
+
+a. about (including reward, voting)
+b. Selection between different posts where applicable (Context/Investigation/Analysis)
+c. Post title
+d. Main post dialogue
+e. Linked tivs
+f. linked phls
+g. linked budget items
+h. linked media
+i. external links
+
+- **PHL addition from cause.html** Users need to be able to suggest organizations even before the initiative has been decided. In this case, they do not need to be associated with any particular initiative or cause. This is so they can tailor their page depending on how they want to fit into our structure, without being forced to make commitments they don't yet understand. There will be links elsewhere to register/nominate an org. These will take you to profile page, but when nominating for a mission currently in OE, the whole experience stays in main.html.
 
 A token is a vote, not yet a donation.
     Earthbucks are all identical and transferable — one Earthbux dime, worth 10¢, the same in anyone's hands. None of them is a donation until it is labelled with an organization.
@@ -45,6 +96,26 @@ the organization — elected in phase 2, the pooled donation recipient the initi
                                         | 7 causes toggle*                      | *Abbreviate so they all fit in one row
                                         | horizontal bars display               |
                                         |<i>____________________________________|i. ✅ 2026-08-10 — moved to `index.html#cause-change` ("How a cause changes"), which also clears the landing backlog's "Add cause change explanation". The card links to it.
+
+
+     ______________________________________________________date_
+    |winning_tiv Organization Election      |total fund   |     |         
+    | ______________________ |  my_vote | my_commit     |vote  || This row shows which organization the logged-in benefactor has their vote going towards
+p2  ||Leaderboards*         | _______  ______   _______        || *Not the recap, which it currently says. this is the organization race which will be elected at the date above
+    ||                      ||sent   ||Limbo  ||wdrawn ||wdraw || *This row is all totals, not specific to benefactor
+    ||                      ||_______||_______||_______||purchs||
+    ||______________________|___________________________________|
+    | evaluations of selected org or the one they are voting for| if none selected from leaderboard. Links to the expanded table row for that org.
+    | Analysis for this mission                                 |
+    |___________________________________________________________|
+    _______________________________________________________date
+    |"        *                "   |Posts recap:                | *As is
+    | WINNER                       | best case for              |
+p1* | ___my_vote. its_%_of_total__ | leading contex             | *recap
+    || 2nd, 3rd, 4th.*            ||                            |* Only those 3. 
+    ||                            ||                            |
+    ||____________________________||                            |
+    |______________________________|____________________________|
 
 - [x] **Cause election 'cause to replace'** — BUILT 2026-08-06. Toggle moved to the bottom under "Select cause to replace"; the threshold is now **7 weeks in a row** (one per streak column). Still framed — the ballot, the suggestions and the streak are local to the page until the cause vote has a backend (README §4).
 

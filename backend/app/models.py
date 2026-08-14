@@ -31,6 +31,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Float,
@@ -526,6 +527,16 @@ class Post(Base):
     # Required for the budgeting category, null everywhere else.
     est_setup_days: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     est_cost_usd: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # §1 (2026-08-12) — the budgeting suggestion is a COSTED LIST, not prose.
+    # One object per row, shaped by the post's type:
+    #   service  {kind, job, hourly_rate, days_needed}
+    #   supply   {kind, item, supplier, cost}
+    #   support  {kind, item}
+    # The two estimates above are derived from these when they are not given,
+    # so a costed list satisfies the budgeting rule on its own. Null outside
+    # the budgeting category.
+    line_items: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
 
     # ── Post-support layer (the first layer of the mission annulus) ──────────
     # Every post carrying an ORGANIZATION tag (case · investigation ·

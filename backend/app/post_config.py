@@ -238,6 +238,80 @@ def requires_estimates(category_key: str) -> bool:
     return category_key in ESTIMATE_CATEGORIES
 
 
+# ---------------------------------------------------------------------------
+# §1 (2026-08-12) — THE COSTED LIST. A budgeting suggestion is a list of rows,
+# and the row's shape is the kind of thing being asked for:
+#
+#   service  🛠 Labor required        job    · hourly_rate · days_needed
+#   supply   📦 Commodities required  item   · supplier    · cost
+#   support  🤝 Connections required  item
+#
+# Support carries no money on purpose: it is a CONNECTION — an approval from a
+# government or community, professional help, legal help in a conflict — and
+# pricing it would invite a bill for something nobody is buying.
+# ---------------------------------------------------------------------------
+LINE_ITEM_FIELDS: dict[str, tuple[str, ...]] = {
+    "service": ("job", "hourly_rate", "days_needed"),
+    "supply": ("item", "supplier", "cost"),
+    "support": ("item",),
+}
+LINE_ITEM_LABEL = {
+    "service": ("🛠", "Labor required"),
+    "supply": ("📦", "Commodities required"),
+    "support": ("🤝", "Connections required"),
+}
+# A working day, for turning an hourly rate into a cost. Named rather than
+# inlined because it is an assumption, not a fact about the world.
+HOURS_PER_DAY = 8.0
+
+
+def invalid_line_items(type_key: str | None, rows) -> str:
+    """'' if every row is complete for this type, else why the first bad one is."""
+    if not rows:
+        return ""
+    fields = LINE_ITEM_FIELDS.get(type_key or "")
+    if fields is None:
+        return f"'{type_key}' does not take line items"
+    for i, row in enumerate(rows, 1):
+        if not isinstance(row, dict):
+            return f"row {i} is not a row"
+        for f in fields:
+            v = row.get(f)
+            if v is None or (isinstance(v, str) and not v.strip()):
+                return f"row {i} is missing {f}"
+            if f in ("hourly_rate", "days_needed", "cost"):
+                try:
+                    if float(v) < 0:
+                        return f"row {i} has a negative {f}"
+                except (TypeError, ValueError):
+                    return f"row {i} has a non-numeric {f}"
+    return ""
+
+
+def estimates_from_line_items(type_key: str | None, rows) -> dict[str, float]:
+    """Derive (est_setup_days, est_cost_usd) from a costed list.
+
+    service — days = Σ days_needed, cost = Σ rate × days × HOURS_PER_DAY
+    supply  — cost = Σ cost, days = 0 (a purchase has no setup of its own)
+    support — both 0: a connection costs nothing to ask for.
+    Returns only the fields it can actually compute.
+    """
+    if not rows or type_key not in LINE_ITEM_FIELDS:
+        return {}
+    num = lambda v: float(v or 0)
+    try:
+        if type_key == "service":
+            days = sum(num(r.get("days_needed")) for r in rows)
+            cost = sum(num(r.get("hourly_rate")) * num(r.get("days_needed")) * HOURS_PER_DAY
+                       for r in rows)
+            return {"est_setup_days": days, "est_cost_usd": cost}
+        if type_key == "supply":
+            return {"est_setup_days": 0.0, "est_cost_usd": sum(num(r.get("cost")) for r in rows)}
+        return {"est_setup_days": 0.0, "est_cost_usd": 0.0}
+    except (TypeError, ValueError, AttributeError):
+        return {}
+
+
 # ===========================================================================
 # POST-SUPPORT LAYER — the first layer of the mission annulus.
 #
