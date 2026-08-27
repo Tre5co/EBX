@@ -22,8 +22,10 @@ from .routers import (
     missions,
     organizations,
     posts,
+    stats,
     transactions,
     votes,
+    wallet,
 )
 
 settings = get_settings()
@@ -174,6 +176,8 @@ app.include_router(candidacies.router)
 app.include_router(votes.router)
 app.include_router(posts.router)
 app.include_router(benefactors.router)
+app.include_router(stats.router)
+app.include_router(wallet.router)
 app.include_router(transactions.router)
 app.include_router(admin.router)
 

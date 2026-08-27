@@ -57,17 +57,30 @@ def p2_vote_cost(votes: int) -> int:
 # everything a ben commits stays in the pool until the credit-release phase, when
 # the non-guaranteed REMAINDER is released to the org or back to benefactors.
 # These rates are the basis for that later return calc, not a resolution refund.
-P1_SEND_WIN = 0.20           # your tiv won
-P1_SEND_LOSE = 0.10          # your tiv lost
-P2_SEND_WIN = 1.00           # your org won
-P2_SEND_LOSE = 0.20          # your org lost
+# These MIRROR `token_model.py`, which is the source of truth.
+# 2026-08-20 — **there is one skim now, and it falls after the organization
+# election** (Jax: "There will only be 1 'skim' after the OE"). So both phase-1
+# rates go to ZERO: the initiative election stopped being a settlement and
+# became a routing step, moving every backer's stake — the winner's and the
+# losers' alike — whole into the winning initiative's organization election.
+# Two consequences worth naming, because they are visible to a benefactor:
+#   * `_send_floor` is 0, so nothing is irrevocable while phase 2 runs. A
+#     withdrawal before the philanthropy is elected returns everything, which is
+#     what "one skim, after the OE" has to mean.
+#   * being right no longer buys a cheaper skim; it buys INFLUENCE — 2x in the
+#     organization election, 2x on budgeting, 1.5x each on research
+#     (`token_model.influence_mult`).
+P1_SEND_WIN = 0.0            # your tiv won   (= token_model.ME_SKIM)
+P1_SEND_LOSE = 0.0           # your tiv lost  (= token_model.ME_SKIM)
+P2_SEND_WIN = 1.00           # your org won   (= token_model.OE_SEND_WIN)
+P2_SEND_LOSE = 0.10          # your org lost  (= token_model.OE_SEND_LOSE — the one skim)
 
-# Loser carryover (Jax pass): a losing initiative re-enters its cause's NEXT-cycle
-# election automatically, carrying each backer's commitment forward at (1 - skim).
-# The skim is booked to a single global "commitment fund" ledger bucket. These are
-# placeholder rates — tune later. (The 80% locked behind a winning vote stays in
-# the won mission and is untouched by this path.)
-COMMITMENT_FUND_SKIM = 0.10          # 10% of a loser's commitment → commitment fund
+# The commitment fund took its cut as a losing initiative's stake rolled to the
+# next election of the same cause. NOTHING ROLLS ANY MORE — the stake goes to
+# the winning initiative's organization election, in this same mission — so the
+# skim has nowhere to stand and the rate is 0. The bucket name survives for the
+# historical rows already in the ledger.
+COMMITMENT_FUND_SKIM = 0.0
 COMMITMENT_FUND_BUCKET = "commitment_fund"
 
 # Pool allocation, expressed in 32nds of the mission pool. The four top-level
@@ -266,6 +279,21 @@ CAUSE_STREAK_WEEKS = 7          # columns to win
 CAUSE_LOOKBACK_WEEKS = 6        # weeks folded into column 1
 CAUSE_MAJORITY = 0.5            # strictly greater than
 
+# §1 (2026-08-21) — **all seven replaceable windows are votable at once.**
+# "Once the election card is created, the cause is confirmed", and six cards
+# exist at any moment, so the first six windows are settled and the seven after
+# them are the ones still up for decision. The ballot used to open exactly ONE
+# of those — slot 7, the active cause's own next appearance — which meant a
+# benefactor who wanted to argue about the window five weeks past that had
+# nowhere to say so, and the streak clock for it could never start.
+#
+#   slots 1 .. CAUSE_CONFIRMED_SLOTS      confirmed: an election card exists
+#   slots CAUSE_CONFIRMED_SLOTS+1 .. CAUSE_SLOTS   open, one rotation of them
+CAUSE_CONFIRMED_SLOTS = CAUSE_STREAK_WEEKS - 1        # 6
+CAUSE_SLOTS = CAUSE_CONFIRMED_SLOTS + CAUSE_STREAK_WEEKS   # 13
+# The first window a new cause could take. Everything from here out is open.
+CAUSE_FIRST_OPEN_SLOT = CAUSE_CONFIRMED_SLOTS + 1     # 7
+
 
 def _week_start(when: Optional[datetime] = None) -> datetime:
     """Monday 00:00 UTC of the week `when` falls in — the unit a majority is
@@ -293,7 +321,10 @@ def _slot_is_open(db: Session, slot: int) -> tuple[bool, Optional[str]]:
     """Is this window open to a cause vote this week, and who (if anyone) has
     already been elected into it? See `cause_slate` for the rule."""
     slot = int(slot)
-    if slot == CAUSE_STREAK_WEEKS:
+    # §1 (2026-08-21): every window past the confirmed six is open — "all 7
+    # ballots should be votable at once". A confirmed window is not, because its
+    # election card is already made and the cause it names is running.
+    if CAUSE_FIRST_OPEN_SLOT <= slot <= CAUSE_SLOTS:
         return True, None
     idx = (active_cause_index() + slot) % CAUSE_STREAK_WEEKS
     incumbent = db.scalar(select(models.Cause).where(models.Cause.index == idx,
@@ -357,13 +388,28 @@ def suggest_cause(
 def cast_cause_vote(db: Session, ben_id: int, slot: int, cause_id: str) -> models.CauseVote:
     """One vote, one benefactor, one window, THIS week. Voting again this week
     replaces the earlier vote rather than stacking."""
-    if not (1 <= int(slot) <= 7):
-        raise ValueError("slot must be 1..7")
+    if not (1 <= int(slot) <= CAUSE_SLOTS):
+        raise ValueError(f"slot must be 1..{CAUSE_SLOTS}")
     cause = db.get(models.Cause, cause_id)
     if cause is None:
         raise ValueError("Cause not found")
     if cause.status == "retired":
         raise ValueError("That cause has been retired")
+    # §1 (2026-08-21) — **a cause can only be replaced by a NEW one.** "A cause
+    # can not be replaced by a preexisting cause, only by a new, user generated
+    # cause." The seven active causes are the rotation; swapping two of them
+    # around inside it changes the order and nothing else, and would let a
+    # window be "won" by a cause already guaranteed to run six weeks later. The
+    # incumbent itself is exempt: voting to KEEP it is not a replacement.
+    idx_ = (active_cause_index() + int(slot)) % CAUSE_STREAK_WEEKS
+    incumbent_ = db.scalar(select(models.Cause).where(
+        models.Cause.index == idx_, models.Cause.status == "active"))
+    if cause.status == "active" and (incumbent_ is None or cause.id != incumbent_.id):
+        raise ValueError(
+            "A window can only be taken by a cause benefactors have proposed. "
+            "The seven active causes already hold windows of their own; vote to "
+            "keep this one, or nominate a new cause to challenge it."
+        )
     # §2 (2026-08-08): a window that is not open this week cannot be voted in,
     # and the client is not the authority on which those are. Slot 7 — the
     # active cause's own next appearance, seven weeks out — is always open; any
@@ -372,9 +418,9 @@ def cast_cause_vote(db: Session, ben_id: int, slot: int, cause_id: str) -> model
     open_, _elected = _slot_is_open(db, int(slot))
     if not open_:
         raise ValueError(
-            f"That window is settled. This week's cause vote decides the window "
-            f"{CAUSE_STREAK_WEEKS} weeks out — the active cause's replacement. A window "
-            f"reopens only once a replacement has been elected into it."
+            f"That window is settled — its election card is already made, so the "
+            f"cause is confirmed. The {CAUSE_STREAK_WEEKS} windows from "
+            f"{CAUSE_FIRST_OPEN_SLOT} weeks out are the ones still open."
         )
     wk = _week_start()
     row = db.scalar(select(models.CauseVote).where(
@@ -451,10 +497,21 @@ def cause_ballot_state(db: Session, slot: int, incumbent_id: Optional[str] = Non
 
     # The streak: consecutive columns from the LEFT (this week backwards), all
     # won by one challenger that isn't the incumbent.
+    #
+    # §1 (2026-08-21): …and that COULD hold the window. Only a proposed cause can
+    # take one — "a cause can not be replaced by a preexisting cause, only by a
+    # new, user generated cause" — so a column won by one of the seven active
+    # causes is not a challenger's column. Votes cast before that rule existed
+    # are still in the table; this stops them accruing a streak toward a swap
+    # the server would now refuse to accept a vote for.
+    def _eligible(cid: str) -> bool:
+        c = db.get(models.Cause, cid) if cid else None
+        return bool(c is not None and c.status == "suggested")
+
     challenger, streak = None, 0
     for col in columns:
         w = col["winner"]
-        if w is None or w == incumbent_id:
+        if w is None or w == incumbent_id or not _eligible(w):
             break
         if challenger is None:
             challenger = w
@@ -520,7 +577,11 @@ def cause_slate(db: Session, active_index: Optional[int] = None) -> dict:
         ).all() if c.index is not None
     }
     slots = []
-    for slot in range(1, CAUSE_STREAK_WEEKS + 1):
+    # §1 (2026-08-21): thirteen windows, not seven — six confirmed and one full
+    # rotation open behind them. The table has drawn thirteen rows since
+    # 2026-08-21; before this the slate stopped at seven and rows 8–13 had to
+    # say "beyond the ballot horizon" because the server did not model them.
+    for slot in range(1, CAUSE_SLOTS + 1):
         incumbent = by_index.get((active_index + slot) % 7)
         incumbent_id = incumbent.id if incumbent else None
         state = cause_ballot_state(db, slot, incumbent_id)
@@ -541,21 +602,26 @@ def cause_slate(db: Session, active_index: Optional[int] = None) -> dict:
             "holder_id": holder_id,
             "holder_name": holder.name if holder else None,
             "holder_color": holder.color if holder else None,
-            # The two conditions above, and which one applies.
-            "votable": bool(slot == CAUSE_STREAK_WEEKS or elected_id),
+            # §1 (2026-08-21): confirmed, or open. Nothing else — the old
+            # "settled until it comes back around" described windows 1..6 and
+            # 8..13 alike, and only one of those two groups is actually settled.
+            "confirmed": bool(slot <= CAUSE_CONFIRMED_SLOTS),
+            "votable": bool(slot >= CAUSE_FIRST_OPEN_SLOT or elected_id),
             "votable_reason": (
-                "the active cause's replacement — decided seven weeks before it runs"
-                if slot == CAUSE_STREAK_WEEKS else
-                "a replacement has been elected for this window, so it is open again"
-                if elected_id else
-                "this window is settled until it comes back around"
+                "its election card is already made, so the cause is confirmed"
+                if slot <= CAUSE_CONFIRMED_SLOTS and not elected_id else
+                "open — a new cause can take this window with "
+                f"{CAUSE_STREAK_WEEKS} weeks in a row"
             ),
             "swapped": bool(elected_id and elected_id != incumbent_id),
         })
     return {
         "active_index": active_index,
         "weeks_required": CAUSE_STREAK_WEEKS,
-        "default_slot": CAUSE_STREAK_WEEKS,
+        "default_slot": CAUSE_FIRST_OPEN_SLOT,
+        "confirmed_slots": CAUSE_CONFIRMED_SLOTS,
+        "first_open_slot": CAUSE_FIRST_OPEN_SLOT,
+        "total_slots": CAUSE_SLOTS,
         "slots": slots,
     }
 
@@ -1845,15 +1911,28 @@ def commit_p1_ebx(
 
 
 def withdraw_p1(db: Session, ben_id: int, mission_id: str) -> dict:
-    """Phase-2 withdrawal: a benefactor pulls back their phase-1 commitment in a
-    mission, **minus the send** (the irrevocable donation slice). The send is
-    20% if they backed the winning tiv, 10% otherwise; the rest is refunded.
+    """Phase-2 withdrawal — **CLOSED as of 2026-08-20b.**
 
-    Allowed only during phase 2 — i.e. an initiative has been elected
-    (`winning_tiv_id`) but the org race is still open (no `winning_org_id`, phase
-    not yet `budget`). Once budgeting begins the pool locks. Returns the total
-    refunded and the EBX left as the send.
+    This let a benefactor pull their phase-1 commitment back out of a live race,
+    minus a send that is now 0, which under the current model would be a full
+    refund of committed money mid-race. "Users can no longer move tokens from an
+    OE to unallocated": committing is one way, and the two exits are a
+    CONVERSION into another race (`wallet.convert_stake`, one of three) or the
+    settlement at the end of the race, where a loss returns 90% as cash.
+
+    Kept as a named refusal rather than deleted, because `cause.html` still has
+    a Withdraw button wired to it and a 404 would read as a bug rather than as a
+    rule. Removing both is a backlog item.
     """
+    raise ValueError(
+        "Committed tokens cannot be withdrawn from a live race. Convert them to "
+        "another organization election, or wait for this one to settle — if your "
+        "philanthropy loses, 90% comes back as cash.")
+
+
+def _withdraw_p1_legacy(db: Session, ben_id: int, mission_id: str) -> dict:
+    """The pre-2026-08-20b withdrawal, unreachable. Kept for one pass so the
+    ledger rows it wrote can still be read against the code that wrote them."""
     mission = db.get(models.Mission, mission_id)
     if mission is None:
         raise ValueError("Mission not found")
@@ -1887,12 +1966,17 @@ CARRYOVER_BUCKET = "carryover"
 
 
 def _rolled_so_far(db: Session, ben_id: int, mission_id: str) -> float:
-    """EBX this benefactor has already rolled out of this mission.
+    """EBX this benefactor has NET rolled out of this mission.
 
     Summed from `new_value` (the exact float) rather than `amount_ebx` (whole
     EBX, for the human-readable ledger) — rounding the roll and then deriving
     the send floor from it would let the floor drift every time the slider
     moves. Cf. the open "skim ledger rounding" item in the backlog.
+
+    §1 (2026-08-14): a reclaim books a NEGATIVE row in the same bucket, so this
+    sum is the net position, not a running total of every move. That is what
+    makes the slider two-way: drag right, the ledger cancels itself out and the
+    original commitment is whole again.
     """
     return float(db.scalar(
         select(sqlfunc.sum(sqlfunc.coalesce(models.Transaction.new_value,
@@ -1918,15 +2002,57 @@ def _send_floor(rows, winner_id: Optional[str], original: float, current: float)
     )
 
 
+def _next_cycle_mission(db: Session, mission: models.Mission):
+    """(next_mission_id, next_mission_or_None) for the cause's following cycle."""
+    from . import bootstrap
+    if mission.cause_id not in bootstrap.CAUSE_PREFIX:
+        return None, None
+    next_mid = bootstrap.mission_id(mission.cause_id, (mission.cycle_num or 0) + 1)
+    return next_mid, db.get(models.Mission, next_mid)
+
+
+def _reclaimable(db: Session, ben_id: int, mission: models.Mission, already: float) -> float:
+    """How much of what has already rolled forward can still be pulled back.
+
+    §1 (2026-08-14) — **the slider was a ratchet.** Every PUT moved money out
+    and nothing moved it back, so a benefactor who dragged too far had
+    permanently cut the weight their organization vote carries, with seven weeks
+    of the phase-2 window still to run. structure.md, main.html backlog: "Roll to
+    next mission slider should remain editable until the phl is elected."
+
+    Editable does not mean the money is free to travel. Rolled EBX lands on the
+    benefactor's rows in the NEXT cycle's initiative election and becomes votes
+    there; once that election is decided it has been spent on a result and
+    cannot be unspent. So the split is two-way for exactly as long as the
+    destination race is open — which, on the normal cadence, is the first seven
+    of the eight weeks between the initiative and the philanthropy. The last
+    week it is one-way, and the panel says so rather than silently clamping.
+
+    Capped by what is actually sitting on those rows: EBX is fungible once it
+    lands, so a reclaim can only take back what is there to take.
+    """
+    if already <= 0:
+        return 0.0
+    next_mid, nxt = _next_cycle_mission(db, mission)
+    if nxt is None or nxt.winning_tiv_id:
+        return 0.0
+    held = sum(float(r.ebx_committed or 0) for r in get_p1_votes(db, ben_id, next_mid))
+    return max(0.0, min(already, held))
+
+
 def p1_carryover_state(db: Session, ben_id: int, mission_id: str) -> dict:
     """What a benefactor's phase-1 commitment looks like once the initiative
     election is over — the numbers behind the OE carryover slider (2026-08-06).
 
-    After `finalize_p1`, the losing initiatives (and the vote rows behind them)
-    have already rolled to the cause's next cycle via `_carry_losers_forward`.
-    What is still sitting in THIS mission is what backed the winner. Of that, the
-    **send** is irrevocable — it went to the pool the moment the election closed
-    — and the rest is the benefactor's to keep here or roll forward.
+    LEGACY as of 2026-08-20, and reported as such. This described the world in
+    which a losing initiative dragged its backers' money into the cause's next
+    election, so a benefactor had to be asked what share of it to keep here.
+    Nothing rolls now: `finalize_p1` carries every stake — winners' and losers'
+    — into this mission's organization election, `_relist_losers` moves only the
+    idea, and the **send floor is 0** because the single skim falls after the
+    philanthropy is elected. The numbers below stay correct for missions
+    finalized under the old rules; the panel that consumed them is already gone
+    from the dialog.
     """
     mission = db.get(models.Mission, mission_id)
     if mission is None:
@@ -1947,8 +2073,8 @@ def p1_carryover_state(db: Session, ben_id: int, mission_id: str) -> dict:
          "share": round(float(r.share or 0), 4), "won": r.tiv_id == winner_id}
         for r in sorted(rows, key=lambda r: -(float(r.ebx_committed or 0)))
     ]
-    next_mid = bootstrap.mission_id(mission.cause_id, (mission.cycle_num or 0) + 1) \
-        if mission.cause_id in bootstrap.CAUSE_PREFIX else None
+    next_mid, nxt = _next_cycle_mission(db, mission)
+    reclaim = _reclaimable(db, ben_id, mission, already)
     return {
         "mission_id": mission_id,
         "cause_id": mission.cause_id,
@@ -1957,24 +2083,39 @@ def p1_carryover_state(db: Session, ben_id: int, mission_id: str) -> dict:
         "my_picks": my_picks,
         "total_ebx": round(total, 2),
         "original_ebx": round(original, 2),
-        "sent_to_pool_ebx": round(send, 2),     # irrevocable, already in the pool
+        "sent_to_pool_ebx": round(send, 2),     # irrevocable, and part of `total`
         "movable_ebx": round(max(0.0, total - send), 2),
         "kept_here_ebx": round(total, 2),       # everything still here is "kept"
         "already_rolled_ebx": round(float(already), 2),
+        # §1 (2026-08-14) — the two-way range the slider actually has. Floor is
+        # the send (irrevocable); ceiling is what is here plus what can still be
+        # pulled back out of the next cycle.
+        "min_keep_ebx": round(send, 2),
+        "max_keep_ebx": round(total + reclaim, 2),
+        "reclaimable_ebx": round(reclaim, 2),
         "next_mission_id": next_mid,
+        "next_mission_open": bool(nxt is not None and not nxt.winning_tiv_id),
         "open": bool(winner_id and not mission.winning_org_id and mission.current_phase == "initiative"),
     }
 
 
 def carryover_p1(db: Session, ben_id: int, mission_id: str, keep_ebx: float) -> dict:
-    """Keep `keep_ebx` of this mission's phase-1 commitment here; roll the rest
-    into the next iteration of the same cause.
+    """Set the split: keep `keep_ebx` of this mission's phase-1 commitment here,
+    roll the rest into the next iteration of the same cause.
+
+    §1 (2026-08-14) — **this sets a position, it no longer takes a step.**
+    `keep_ebx` is where the slider is, not how much to move, so asking for MORE
+    than is currently here pulls EBX back out of the next cycle instead of
+    failing. The whole point of the control is that a benefactor can change
+    their mind while the philanthropy election runs; a one-way roll meant the
+    first drag was final and the remaining weeks of the window were a lie.
 
     The **send** can never be rolled — it is the irrevocable slice that made the
-    election real (20% behind the winner, 10% behind the rest), so `keep_ebx` is
-    clamped to at least that. Rolled EBX lands on the benefactor's carried rows
-    in the next-cycle mission when they have any, and is booked to the ledger
-    either way so the balance is auditable.
+    election real (20% behind the winner, 10% behind the rest) — and it stays on
+    the vote rows, so it keeps counting as commitment and as organization-vote
+    weight. The reclaim ceiling is `_reclaimable`. Every move is booked to the
+    ledger, a reclaim as a negative row, so the balance nets out and is
+    auditable.
 
     Open during phase 2 only — the same window as `withdraw_p1`. Once an
     organization is elected the pool locks.
@@ -1987,64 +2128,108 @@ def carryover_p1(db: Session, ben_id: int, mission_id: str, keep_ebx: float) -> 
                          "(after the initiative is elected, before budgeting)")
     from . import bootstrap
 
-    rows = [r for r in get_p1_votes(db, ben_id, mission_id) if float(r.ebx_committed or 0) > 0]
+    # Zero rows are kept in the list: after a full roll they are all that is
+    # left, and they are where a reclaim has to land.
+    rows = list(get_p1_votes(db, ben_id, mission_id))
     total = sum(float(r.ebx_committed or 0) for r in rows)
-    if total <= 0:
-        raise ValueError("You have no commitment in this mission")
     already = float(_rolled_so_far(db, ben_id, mission_id))
+    if total <= 0 and already <= 0:
+        raise ValueError("You have no commitment in this mission")
     send = _send_floor(rows, mission.winning_tiv_id, total + already, total)
+    reclaim_cap = _reclaimable(db, ben_id, mission, already)
     try:
         keep = float(keep_ebx)
     except (TypeError, ValueError):
         raise ValueError("keep_ebx must be a number")
-    keep = max(send, min(total, keep))
-    rolled = total - keep
-    if rolled <= 0:
-        return {"mission_id": mission_id, "kept_ebx": round(total, 2), "rolled_ebx": 0.0,
-                "next_mission_id": None, "landed_on": []}
+    keep = max(send, min(total + reclaim_cap, keep))
+    delta = keep - total          # < 0 roll forward, > 0 pull back
 
-    # Take the rolled amount off each row proportionally, never below its share
-    # of the send floor.
-    for r in rows:
-        committed = float(r.ebx_committed or 0)
-        floor = send * (committed / total) if total else 0.0
-        take = min(rolled * (committed / total), max(0.0, committed - floor))
-        r.ebx_committed = committed - take
-
-    next_mid = bootstrap.mission_id(mission.cause_id, (mission.cycle_num or 0) + 1) \
-        if mission.cause_id in bootstrap.CAUSE_PREFIX else None
+    next_mid, nxt = _next_cycle_mission(db, mission)
     landed: list[str] = []
-    if next_mid is not None:
-        if db.get(models.Mission, next_mid) is None:
-            bootstrap.ensure_mission(db, mission.cause_id, (mission.cycle_num or 0) + 1)
-        # If they already hold carried rows there (losing initiatives that rolled
-        # forward), the money lands on them proportionally and becomes votes.
-        carried = [r for r in get_p1_votes(db, ben_id, next_mid)]
+    rolled = reclaimed = 0.0
+
+    if delta < -0.005:
+        rolled = -delta
+        # Take the rolled amount off each row proportionally, never below its
+        # share of the send floor.
+        for r in rows:
+            committed = float(r.ebx_committed or 0)
+            floor = send * (committed / total) if total else 0.0
+            take = min(rolled * (committed / total), max(0.0, committed - floor))
+            r.ebx_committed = committed - take
+        if next_mid is not None:
+            if nxt is None:
+                bootstrap.ensure_mission(db, mission.cause_id, (mission.cycle_num or 0) + 1)
+            # If they already hold carried rows there (losing initiatives that
+            # rolled forward), the money lands on them proportionally and
+            # becomes votes.
+            carried = list(get_p1_votes(db, ben_id, next_mid))
+            base = sum(float(r.ebx_committed or 0) for r in carried)
+            if carried and base > 0:
+                for r in carried:
+                    r.ebx_committed = float(r.ebx_committed or 0) + rolled * (float(r.ebx_committed or 0) / base)
+                    landed.append(r.tiv_id)
+            elif carried:
+                each = rolled / len(carried)
+                for r in carried:
+                    r.ebx_committed = float(r.ebx_committed or 0) + each
+                    landed.append(r.tiv_id)
+            # No carried rows: the ledger entry below is the whole record — the
+            # balance is theirs to allocate when the next election opens.
+    elif delta > 0.005:
+        # The reclaim. Take proportionally off the next cycle's rows, never
+        # below zero, and put back exactly what came off.
+        carried = list(get_p1_votes(db, ben_id, next_mid)) if next_mid else []
         base = sum(float(r.ebx_committed or 0) for r in carried)
-        if carried and base > 0:
-            for r in carried:
-                r.ebx_committed = float(r.ebx_committed or 0) + rolled * (float(r.ebx_committed or 0) / base)
-                landed.append(r.tiv_id)
-        elif carried:
-            each = rolled / len(carried)
-            for r in carried:
-                r.ebx_committed = float(r.ebx_committed or 0) + each
-                landed.append(r.tiv_id)
-        # No carried rows: the ledger entry below is the whole record — the
-        # balance is theirs to allocate when the next election opens.
-    db.add(models.Transaction(
-        type="transfer", bucket=CARRYOVER_BUCKET, ben_id=ben_id, mission_id=mission_id,
-        phase="p2", target=next_mid, amount_ebx=int(round(rolled)),
-        new_value=round(rolled, 6),   # exact, so the send floor can't drift
-        note=f"carryover {mission_id}->{next_mid or 'unassigned'} "
-             f"(kept {round(keep, 2)} of {round(total, 2)} EBX)",
-    ))
+        for r in carried:
+            amt = float(r.ebx_committed or 0)
+            take = min(amt, delta * (amt / base)) if base > 0 else 0.0
+            if take <= 0:
+                continue
+            r.ebx_committed = amt - take
+            reclaimed += take
+            landed.append(r.tiv_id)
+        # Back onto this mission's rows: proportional to what is there, and if a
+        # full roll left them all at zero, onto the initiative that won — which
+        # is the only row a decided mission still has.
+        if reclaimed > 0:
+            if total > 0:
+                for r in rows:
+                    amt = float(r.ebx_committed or 0)
+                    r.ebx_committed = amt + reclaimed * (amt / total)
+            else:
+                home = [r for r in rows if r.tiv_id == mission.winning_tiv_id] or rows
+                each = reclaimed / len(home)
+                for r in home:
+                    r.ebx_committed = float(r.ebx_committed or 0) + each
+        keep = total + reclaimed
+    else:
+        return {"mission_id": mission_id, "kept_ebx": round(total, 2), "rolled_ebx": 0.0,
+                "reclaimed_ebx": 0.0, "now_rolled_ebx": round(already, 2),
+                "next_mission_id": next_mid, "landed_on": []}
+
+    moved = rolled - reclaimed
+    if abs(moved) > 0.0005:
+        db.add(models.Transaction(
+            type="transfer", bucket=CARRYOVER_BUCKET, ben_id=ben_id, mission_id=mission_id,
+            phase="p2", target=next_mid, amount_ebx=int(round(moved)),
+            new_value=round(moved, 6),   # exact and SIGNED, so the split nets out
+            note=(f"carryover {mission_id}->{next_mid or 'unassigned'} "
+                  f"(kept {round(keep, 2)} of {round(total + already, 2)} EBX)"
+                  if moved > 0 else
+                  f"carryover reclaim {next_mid or 'unassigned'}->{mission_id} "
+                  f"(kept {round(keep, 2)} of {round(total + already, 2)} EBX)"),
+        ))
     db.commit()
     recompute_pool(db, mission_id)
+    if next_mid and db.get(models.Mission, next_mid) is not None:
+        recompute_pool(db, next_mid)
     return {
         "mission_id": mission_id,
         "kept_ebx": round(keep, 2),
         "rolled_ebx": round(rolled, 2),
+        "reclaimed_ebx": round(reclaimed, 2),
+        "now_rolled_ebx": round(already + moved, 2),
         "next_mission_id": next_mid,
         "landed_on": landed,
     }
@@ -2225,6 +2410,41 @@ def p2_ebx_by_ben(db: Session, mission_id: str) -> dict[int, float]:
     return out
 
 
+def p2_stake_by_ben(db: Session, mission_id: str) -> dict[int, float]:
+    """What each benefactor actually has standing in this ORGANIZATION election,
+    in tokens — the number the race pool is made of.
+
+    §0 (2026-08-21) — **the race pool did not move when a vote was committed.**
+    `p2_tally` measured phase-2 weight with `p2_ebx_by_ben`, which sums surviving
+    `VoteP1.ebx_committed` rows: the money phase 1 left behind. That was the
+    whole story until 2026-08-19, when `VoteP2.stake_ct` arrived and
+    `POST /wallet/commit` began writing tokens straight into a race. Nothing
+    taught the tally about the new column, so a benefactor could commit, watch
+    their own row and their allocations bar move, and see the race pool sit
+    exactly where it was — the commit was real, the reported total was stale.
+
+    `wallet.stake_ct_of` is the one place that already knows how to read a stake
+    (the column when it has been written, the derived phase-1 figure when it has
+    not), so this asks it rather than restating the rule. A benefactor with no
+    phase-2 row at all still counts for whatever phase 1 left them here, which is
+    what was correct before and stays correct now.
+    """
+    from .wallet import stake_ct_of        # local: wallet imports crud back
+
+    carried = p2_ebx_by_ben(db, mission_id)
+    out: dict[int, float] = {}
+    seen: set[int] = set()
+    for v in db.scalars(select(models.VoteP2).where(
+            models.VoteP2.mission_id == mission_id)).all():
+        seen.add(v.ben_id)
+        # UNIQUE(ben_id, mission_id), so this assigns rather than accumulates.
+        out[v.ben_id] = stake_ct_of(v, carried.get(v.ben_id, 0.0)) / 100.0
+    for ben_id, ebx in carried.items():
+        if ben_id not in seen:
+            out[ben_id] = float(ebx)
+    return out
+
+
 def p2_tally(db: Session, mission_id: str) -> dict:
     """Per-org net vote count for a mission's phase-2 election. Blocks (harmful)
     subtract; support (helpful) adds; neutral is 0.
@@ -2251,9 +2471,21 @@ def p2_tally(db: Session, mission_id: str) -> dict:
     faces already follow (§4, 2026-08-06).
     """
     votes = db.scalars(select(models.VoteP2).where(models.VoteP2.mission_id == mission_id)).all()
-    carried = p2_ebx_by_ben(db, mission_id)
+    # §0 (2026-08-21): the STAKE, not the phase-1 carry. See `p2_stake_by_ben` —
+    # committing tokens into a race used to leave this number untouched.
+    carried = p2_stake_by_ben(db, mission_id)
     per_org: dict[str, dict] = {}
     for v in votes:
+        # 2026-08-20b — **an UNASSIGNED stake is not a candidate.** `org_id` has
+        # been nullable since the initiative election started creating stakes
+        # with no philanthropy named, and this loop keyed on it regardless: the
+        # tally grew an entry whose org_id was None, which inflated the race's
+        # vote count and reached the dialog as a pick button labelled "null".
+        # Their money is already reported as `unassigned_ebx` below, which is
+        # exactly where silence belongs — it funds the mission and carries no
+        # weight.
+        if v.org_id is None:
+            continue
         e = per_org.setdefault(v.org_id, {"net_votes": 0, "voters": 0,
                                           "carried": 0.0, "bought": 0.0})
         e["net_votes"] += int(v.votes) * int(VALENCE_SIGN[v.valence])
@@ -2268,7 +2500,13 @@ def p2_tally(db: Session, mission_id: str) -> dict:
                              key=lambda kv: (-kv[1]["net_votes"],
                                              -(kv[1]["carried"] + kv[1]["bought"])))
     ]
-    voted = {v.ben_id for v in votes}
+    # §0 (2026-08-21): a benefactor whose stake is committed but not yet pointed
+    # at a philanthropy is UNASSIGNED, not absent. `carried` is now the stake
+    # map, so a row with tokens in it and no org named contributes them here —
+    # it used to contribute the benefactor's phase-1 carry, which for a stake
+    # committed straight out of the allocations bar is zero, and the tokens
+    # simply disappeared from the pool.
+    voted = {v.ben_id for v in votes if v.org_id is not None}
     unassigned = sum(ebx for ben, ebx in carried.items() if ben not in voted)
     assigned = sum(e["ebx"] for e in entries)
     return {
@@ -2282,13 +2520,33 @@ def p2_tally(db: Session, mission_id: str) -> dict:
     }
 
 
-def _carry_losers_forward(db: Session, mission: models.Mission, losers: list[models.Initiative]) -> None:
-    """Roll losing initiatives into their cause's NEXT-cycle election.
+def _ceil_ct_ebx(ebx: float) -> int:
+    """Round an EBX amount UP to the next centitoken, expressed in whole ct.
 
-    Each loser is re-listed (status 'suggested') under the cause's cycle+1 mission
-    (created if it doesn't exist yet). Every backer's phase-1 commitment moves with
-    it at (1 - COMMITMENT_FUND_SKIM); the skim is booked to the global commitment
-    fund as a `transfer` to bucket 'commitment_fund'. Idempotent per finalize call.
+    `Transaction.amount_ebx` is an integer column, so a fractional skim had
+    nowhere to go and `int(round())` sent it to zero. Booking ct keeps the
+    ledger exact at 0.1c resolution without a migration.
+    """
+    from .token_model import ct_from_tokens
+    return ct_from_tokens(max(0.0, float(ebx or 0.0)))
+
+
+def _relist_losers(db: Session, mission: models.Mission, losers: list[models.Initiative]) -> None:
+    """Re-list losing initiatives in their cause's NEXT-cycle election.
+
+    **The IDEA moves; the money does not** (2026-08-20). Until today this
+    function also dragged every backer's vote row into the next cycle, minus a
+    10% skim — which is the mechanism the one-skim rule removes. A losing
+    initiative is still worth arguing for next time, so it is re-listed as a
+    fresh candidate; the ct that backed it stays in this mission and funds the
+    organization election that the winning initiative is about to run, exactly
+    like the winner's ct (`_open_oe_stakes`).
+
+    That also fixes something the old path got wrong by accident: a benefactor
+    who backed a loser used to vanish from the mission they had actually funded,
+    and the phase-2 pool under-reported itself by everything the losers held.
+
+    Idempotent per finalize call.
     """
     from . import bootstrap  # local import avoids a module-load cycle
 
@@ -2300,26 +2558,79 @@ def _carry_losers_forward(db: Session, mission: models.Mission, losers: list[mod
     for tiv in losers:
         tiv.mission_id = next_mid
         tiv.status = "suggested"   # re-listed as a fresh candidate next cycle
-        for v in db.scalars(select(models.VoteP1).where(models.VoteP1.tiv_id == tiv.id)).all():
-            committed = float(v.ebx_committed or 0)
-            skim = committed * COMMITMENT_FUND_SKIM
-            v.ebx_committed = committed - skim          # 90% carries to next cycle
-            v.mission_id = next_mid
-            v.committed = False                          # carried, but adjustable next cycle
-            if skim > 0:
-                db.add(models.Transaction(
-                    type="transfer", bucket=COMMITMENT_FUND_BUCKET,
-                    ben_id=v.ben_id, mission_id=mission.id, phase="p1",
-                    target=tiv.id, amount_ebx=int(round(skim)),
-                    note=f"loser carryover skim {COMMITMENT_FUND_SKIM:.0%} {mission.id}->{next_mid}",
-                ))
+
+
+def _open_oe_stakes(db: Session, mission: models.Mission, winner_id: str) -> int:
+    """Carry every phase-1 backer into this mission's organization election.
+
+    This is the ME half of settlement, and since 2026-08-20 it is BOOKED rather
+    than derived — because the coin's first element is written here and a
+    history cannot be recomputed from a balance:
+
+        "once the ME hits … they become marked with the cause, initiative and
+        date it was converted, as well as the winning initiative. This is the
+        first element on the credit coin."
+
+    One `VoteP2` row per benefactor (the table's unique key), holding the whole
+    of what they committed — no skim, win or lose — with no philanthropy named.
+    Such a stake funds the mission, carries no vote weight until they pick one,
+    and at close follows the winner of this race (`wallet.settles_as_won`).
+
+    One provenance element per initiative they backed, so a coin remembers the
+    argument its money lost as well as the one it won. Idempotent: a row that
+    already carries a `settle_me` event for this mission is left alone.
+    """
+    from . import wallet as wallet_mod
+    from .token_model import coin_element_me, ct_from_tokens
+
+    week = wallet_mod.current_week()
+    per_ben: dict[int, list[models.VoteP1]] = {}
+    for r in db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == mission.id)).all():
+        if float(r.ebx_committed or 0) > 0:
+            per_ben.setdefault(r.ben_id, []).append(r)
+
+    opened = 0
+    for ben_id, rows in per_ben.items():
+        total_ct = sum(ct_from_tokens(float(r.ebx_committed or 0)) for r in rows)
+        if total_ct <= 0:
+            continue
+        v = db.scalars(
+            select(models.VoteP2).where(models.VoteP2.ben_id == ben_id,
+                                        models.VoteP2.mission_id == mission.id)
+        ).first()
+        if v is not None and any((e or {}).get("kind") == "settle_me"
+                                 for e in (v.provenance or [])):
+            continue                       # already carried over
+        if v is None:
+            v = models.VoteP2(ben_id=ben_id, mission_id=mission.id, org_id=None,
+                              votes=1, ebx_spent=0, valence="helpful", committed=False,
+                              conversions=0)
+            db.add(v)
+        v.stake_ct = max(int(v.stake_ct or 0), total_ct)
+        v.origin_mission_id = mission.id   # the race these ct were created within
+        if v.born_week is None:
+            v.born_week = week
+        chain = list(v.provenance or [])
+        for r in sorted(rows, key=lambda r: -float(r.ebx_committed or 0)):
+            chain.append(coin_element_me(
+                week=week, mission_id=mission.id, cause_id=mission.cause_id,
+                backed_tiv_id=r.tiv_id, winning_tiv_id=winner_id,
+                amount_ct=ct_from_tokens(float(r.ebx_committed or 0)),
+            ).as_dict())
+        v.provenance = chain
+        opened += 1
+    return opened
 
 
 def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
-    """Elect the leading phase-1 tiv. Sets mission.winning_tiv_id, marks the
-    winner 'active', and rolls every losing initiative (with 90% of its committed
-    EBX) into the cause's next-cycle election — skimming 10% to the commitment
-    fund. Returns the winning tiv id, or None if there's no vote signal yet."""
+    """Elect the leading phase-1 tiv.
+
+    Sets `mission.winning_tiv_id`, marks the winner 'active', carries every
+    backer's stake into this mission's organization election (`_open_oe_stakes`
+    — no skim, winners and losers alike, first coin element written), and
+    re-lists the losing initiatives as candidates in the cause's next cycle
+    (`_relist_losers` — the idea, not the money). Returns the winning tiv id, or
+    None if there's no vote signal yet."""
     mission = db.get(models.Mission, mission_id)
     if mission is None:
         raise ValueError("Mission not found")
@@ -2345,8 +2656,12 @@ def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
         ).all()
         if t.id != winner_id
     ]
+    # Money first, then the re-listing: `_open_oe_stakes` reads the vote rows as
+    # they stand at the close, and the old order (relist first) is what used to
+    # move them out from under it.
+    _open_oe_stakes(db, mission, winner_id)
     if losers:
-        _carry_losers_forward(db, mission, losers)
+        _relist_losers(db, mission, losers)
     db.commit()
     return winner_id
 

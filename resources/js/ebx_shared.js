@@ -432,35 +432,17 @@
         dateLine.textContent = "\u2026";
         labelGroup.appendChild(dateLine);
         group.appendChild(labelGroup);
-        // §2 (2026-08-05, jax notes 2: "Colored sectors ray outwards") — each
-        // cause throws short rays past the outer edge in its own color. They
-        // ride the rotating group, so they stay welded to their sector, and
-        // _update() brightens the active + upcoming cause's rays.
-        const rayGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        rayGroup.setAttribute("pointer-events", "none");
-        const RAYS = 5;
-        for (let k = 0; k < RAYS; k++) {
-          const a = startAngle + anglePerSeg * ((k + 0.5) / RAYS);
-          const edge = k === 0 || k === RAYS - 1;
-          const r0 = outerR + 2;
-          const r1 = outerR + (edge ? 6 : 11);   // stays inside the 400×400 box
-          const ray = document.createElementNS("http://www.w3.org/2000/svg", "line");
-          ray.setAttribute("x1", String(cx + r0 * Math.cos(a)));
-          ray.setAttribute("y1", String(cy + r0 * Math.sin(a)));
-          ray.setAttribute("x2", String(cx + r1 * Math.cos(a)));
-          ray.setAttribute("y2", String(cy + r1 * Math.sin(a)));
-          ray.setAttribute("stroke", cause.color);
-          ray.setAttribute("stroke-width", edge ? "1.2" : "2");
-          ray.setAttribute("stroke-linecap", "round");
-          ray.setAttribute("opacity", "0.32");
-          rayGroup.appendChild(ray);
-        }
-        group.appendChild(rayGroup);
+        // §2 (2026-08-27) — **the rays are gone from this wheel.** They were
+        // added on 2026-08-05 for the home page, which does not mount this
+        // annulus any anymore; on the discussion page, where it lives now, the
+        // sectors are the cause TOGGLE and short spikes around them read as
+        // decoration on a control. The election page's pie carries the rays
+        // instead, drawn as chevrons that point the way the wheel turns.
         Annulus._segments.push({
           innerPath,
           outerGroup,
           labelGroup,
-          rayGroup,
+          rayGroup: null,
           midX: lx,
           midY: ly
         });
@@ -588,15 +570,21 @@
   };
   // Curved-chevron sector (build-seq: arrow wheel). Each sector is two
   // parallelograms mirrored across the mid-radius spine, giving a 90° tip at
-  // the a1 (clockwise) end and a 90° notch at the a0 end. The 45° edges come
-  // from offsetting the inner/outer arcs by `al` = ringThickness/2 ÷ midRadius,
-  // so the slanted edges rise one radial half-thickness over an equal tangential
-  // run (≈45°). Tips point clockwise — opposite the wheel's rotation.
+  // one end and a 90° notch at the other. The 45° edges come from offsetting
+  // the inner/outer arcs by `al` = ringThickness/2 ÷ midRadius, so the slanted
+  // edges rise one radial half-thickness over an equal tangential run (≈45°).
+  //
+  // §1 (2026-08-27b) — **the tips point CLOCKWISE**, toward a1: the same way
+  // the now-marker travels on the election page's annulus, and the same way
+  // every ray on it points. They were flipped to a0 for one day on 2026-08-27
+  // ("reverse the direction the svg annulus sections are pointing"), which put
+  // them at odds with the only moving thing on either wheel; "discussion
+  // sectors still pointing wrong way" is that flip being undone.
   function chevronSectorPath(cx, cy, rOuter, rInner, a0, a1) {
     const rMid = (rOuter + rInner) / 2;
     const al = (rOuter - rInner) / (rOuter + rInner); // angular offset ≈ 45° edges
     const P = (r, a) => [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-    const A = P(rMid, a1);        // tip (points toward a1)
+    const A = P(rMid, a1);        // tip (points toward a1 — clockwise)
     const B = P(rOuter, a1 - al); // outer front
     const C = P(rOuter, a0);      // outer back
     const D = P(rMid, a0 + al);   // back notch (on the spine)
@@ -741,7 +729,21 @@
   // fractional EBX exists in the ledger (a 0.5 skim is real) but "39.429 EBX"
   // in a card footer is noise, not information.
   var formatEBX = (n) => `${formatNumber(Math.round(Number(n) || 0))} EBX`;
-  var EBX_PER_VOTE = 10;   // 10 EBX = 1 vote (≈ $1), matching the backend p1 tally
+  // §0 (2026-08-21) — **voting is counted in TOKENS.** "Voting no longer happens
+  // in EBX. It happens in tokens… it's confusing because votes and ebx appear to
+  // be separate." They are the same quantity — 1 EBX = 1 token = 10¢ — so this
+  // formats the same number under the name the voting surfaces use. `formatEBX`
+  // stays for the surfaces that are not the voting area (the credit badge and
+  // the ledger still speak in EBX); main.html uses this one throughout.
+  var formatTokens = (n) => {
+    const v = Math.round(Number(n) || 0);
+    return `${formatNumber(v)} token${v === 1 ? "" : "s"}`;
+  };
+  // The same amount as money. Voting IS donating, and a benefactor reading a
+  // balance is entitled to know what it cost: 1 token = 10¢.
+  var USD_PER_TOKEN = 0.1;
+  var formatTokenUSD = (n) => `$${((Number(n) || 0) * USD_PER_TOKEN).toFixed(2)}`;
+  var EBX_PER_VOTE = 10;   // 10 tokens = 1 vote (≈ $1), matching the backend p1 tally
   function voteWeight(baseVotes, committedEbx) {
     return Math.max(baseVotes || 0, (committedEbx || 0) / EBX_PER_VOTE);
   }
@@ -1590,8 +1592,8 @@
           '<span style="color:' + d.color + ';font-weight:700;flex-shrink:0;">' + (d.myChoice ? _ebx(_myEbx) : "--") + '</span>' +
         '</div>' +
         '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-family:var(--font-mono);font-size:' + fFoot + ';color:' + INK + ';">' +
-          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:' + INK_MUTED + ';font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatEBX(d.myCommit) : "--") + '</span>' +
-          '<span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:' + INK_MUTED + ';font-weight:400;font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatEBX(d.pool) : "--") + '</span>' +
+          '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span style="color:' + INK_MUTED + ';font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">My commitment</span> ' + (d.myCommit > 0 ? formatTokens(d.myCommit) : "--") + '</span>' +
+          '<span style="color:' + d.color + ';font-weight:700;flex-shrink:0;"><span style="color:' + INK_MUTED + ';font-weight:400;font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">pool</span> ' + (d.pool > 0 ? formatTokens(d.pool) : "--") + '</span>' +
         '</div>' + _uncommittedStrip(d) +
       '</div>' + (d.noFooter ? "" : _electionCardFooter(d)) + '</div>';
   }
@@ -1904,6 +1906,79 @@
       };
       return bg;
     },
+    /** §1 (2026-08-21) — Nominate a cause. opts: { slot, onCreated }
+     *
+     * "Proposing a cause should be similar to proposing an initiative." It was
+     * a name box and a colour swatch wedged into one row of the cause ballot,
+     * which asked for the two things a cause is least defined by and no room
+     * for the one it is most: what it is for. Same shell as `propose` above,
+     * same fields, same submit-and-report behaviour — a cause is a proposal
+     * like any other.
+     */
+    causePropose(opts) {
+      opts = opts || {};
+      const bg = _dlgShell("ebx-dlg-cause",
+        "Nominate a Cause" +
+          (opts.slot ? ' <span style="opacity:0.5;font-size:0.8rem;">· the window ' +
+            opts.slot + " week" + (opts.slot === 1 ? "" : "s") + " out</span>" : ""),
+        '<p style="font-size:0.82rem;line-height:1.5;color:rgba(245,240,232,0.6);margin:0 0 4px;">' +
+          "A cause runs a mission every seven weeks. It should be an experience " +
+          "everyone has, resistant to capture, and something a year of funded " +
+          "work could actually move." +
+        "</p>" +
+        '<label>Name *</label><input type="text" id="ebx-dlg-cname" placeholder="e.g. Fresh Water" />' +
+        '<label>What it covers *</label><textarea id="ebx-dlg-cdesc" ' +
+          'placeholder="What falls under this cause, and what a mission for it would look like…"></textarea>' +
+        '<label>Colour</label><input type="color" id="ebx-dlg-ccolor" value="#39c0c8" ' +
+          'style="width:64px;height:34px;padding:2px;cursor:pointer;" />' +
+        '<div class="ebx-dlg__actions">' +
+          '<button class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
+          '<button class="ebx-dlg__btn" data-act="submit">Nominate</button>' +
+        '</div><p class="ebx-dlg__msg" id="ebx-dlg-msg"></p>');
+      const msg = bg.querySelector("#ebx-dlg-msg");
+      bg.querySelector('[data-act=cancel]').onclick = () => Dialogs.close("ebx-dlg-cause");
+      bg.querySelector('[data-act=submit]').onclick = async (ev) => {
+        const name = (bg.querySelector("#ebx-dlg-cname").value || "").trim();
+        const desc = (bg.querySelector("#ebx-dlg-cdesc").value || "").trim();
+        const color = bg.querySelector("#ebx-dlg-ccolor").value || "#39c0c8";
+        if (!name || !desc) {
+          msg.style.color = "#e8a84c";
+          msg.textContent = "A name and a description are required.";
+          return;
+        }
+        if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) {
+          msg.style.color = "#e8a84c";
+          msg.textContent = "Please log in to nominate a cause.";
+          if (Auth && Auth.openModal) Auth.openModal("login");
+          return;
+        }
+        ev.target.setAttribute("disabled", "true");
+        msg.style.color = ""; msg.textContent = "Submitting…";
+        try {
+          const res = await Auth.fetchAuthed("/causes/suggest", {
+            method: "POST",
+            body: JSON.stringify({ name, color, description: desc }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            msg.style.color = "#e07b6b";
+            msg.textContent = data.detail ? "Couldn't submit: " + data.detail
+                                          : "Couldn't submit (HTTP " + res.status + ").";
+            return;
+          }
+          msg.style.color = "#5abd6c";
+          msg.textContent = '"' + name + '" is on the ballot.';
+          if (typeof opts.onCreated === "function") { try { opts.onCreated(data); } catch (e) {} }
+          setTimeout(() => Dialogs.close("ebx-dlg-cause"), 1400);
+        } catch (e) {
+          msg.style.color = "#e07b6b";
+          msg.textContent = "Cannot reach the server. Is the API running?";
+        } finally {
+          ev.target.removeAttribute("disabled");
+        }
+      };
+      return bg;
+    },
     /** Nominate or register an organization. opts: { causeId, onDone } */
     orgRegister(opts) {
       opts = opts || {};
@@ -2047,6 +2122,9 @@
     renderEmpty,
     formatNumber,
     formatEBX,
+    formatTokens,
+    formatTokenUSD,
+    USD_PER_TOKEN,
     formatVotes,
     voteWeight,
     formatPercent,

@@ -1,0 +1,34 @@
+# What `railway up` must NOT upload.
+#
+# §5 (2026-08-13): backend/.venv is a LINUX virtualenv (it has bin/, not
+# Scripts/), so backend/.venv/bin/python is a symlink Windows cannot read —
+# `railway up` died on it with "os error 1920". Railway rebuilds dependencies
+# from requirements.txt anyway, so the venv has no business in the upload.
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Node — rebuilt on the server, and huge.
+node_modules/
+
+# Database state belongs on the VOLUME, not in the deploy. Shipping these
+# would risk overwriting live data with a stale local copy.
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.bak_*
+*.db.bak*
+*.migrated_*
+
+# Local-only config and history.
+.env
+.env.local
+.env.*.local
+.git/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

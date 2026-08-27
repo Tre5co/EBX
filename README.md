@@ -232,13 +232,15 @@ post-mission performance phases (4–5); evaluation = pre-vote.
 
 ### Withdrawals
 
-- **Phase-2 withdrawal (implemented):** after the tiv is elected but before
-  budgeting locks the pool, a benefactor may withdraw their phase-1 commitment
-  **minus the send** (20% if they backed the winner, 10% otherwise). `POST
-  /missions/{id}/p1/withdraw` → `crud.withdraw_p1`; refund booked to the
-  `refund` bucket, the send stays in the pool.
+- **Phase-2 withdrawal (CLOSED 2026-08-20b):** it let a benefactor pull a live
+  commitment back out of a race minus a send that is now 0 — i.e. a full refund
+  mid-race, which is exactly what one-way commitment forbids. `crud.withdraw_p1`
+  raises a named refusal pointing at the two real exits: convert into another
+  organization election (one of three), or wait for this one to settle, where a
+  loss returns 90% **as cash**. `cause.html` still shows the button; removing it
+  is a backlog item.
 - **Phase-3 org-loss withdrawal (deferred):** once orgs are decided, a
-  benefactor whose org **loses** should have their 80% immediately
+  benefactor whose org **loses** should have their 90% immediately
   withdrawable, but only after **acknowledging they don't trust the winning
   organization** (wording/flow TBD). Tune after phase 2 settles.
 
@@ -700,37 +702,39 @@ send rates `P1 20/10` and `P2 100/20` (win/lose).
   just `suggested | active | resolved`** (losers stay `suggested`; the winner is
   `active` through phases 2-4, then `resolved` at `distribute_mission`). The phase
   a tiv is in comes from its mission, not its status.
-- **Loser carryover** (`_carry_losers_forward`): every non-winning initiative is
-  **re-listed automatically into its cause's next-cycle mission** (`status` back to
-  `suggested`, created on demand), carrying each backer's commitment forward at
-  `1 − COMMITMENT_FUND_SKIM` (**90%**). The **10% skim** is booked to a global
-  `commitment_fund` ledger bucket. The 80% locked behind a *winning* vote stays in
-  the won mission and is untouched. (Rates are placeholders — tune later.)
+- **Loser re-listing** (`_relist_losers`, renamed 2026-08-20): every non-winning
+  initiative is **re-listed automatically into its cause's next-cycle mission**
+  (`status` back to `suggested`, created on demand). **The idea moves; the money
+  does not.** Until 2026-08-20 this also dragged each backer's vote row into the
+  next cycle minus a 10% skim; there is one skim now and it falls after the
+  organization election, so `COMMITMENT_FUND_SKIM` is 0 and nothing rolls.
+- **Carrying the money forward** (`_open_oe_stakes`, 2026-08-20): every backer —
+  the winner's and the losers' alike — gets a `VoteP2` stake in THIS mission's
+  organization election holding the whole of what they committed, with no
+  philanthropy named, plus the credit coin's **first element** (cause,
+  initiative backed, date, winning initiative). Idempotent per mission.
 
-### Carryover — what happens to a commitment once phase 1 closes
+### What happens to a commitment once phase 1 closes
 
-A phase-1 commitment doesn't simply vanish into the winner. When the election
-closes (2026-08-06):
+Rewritten 2026-08-20 (build-seq §1) — **one skim, and the initiative election is
+not it**. `docs/token_model.md` is the full statement; the short version:
 
-- **Losing initiatives roll forward automatically.** `_carry_losers_forward`
-  re-lists each loser under the cause's next-cycle mission and moves its backers'
-  commitments with it at **90%** — the 10% skim books to the global commitment
-  fund.
-- **What backed the winner stays put**, minus nothing — but a slice of it is
-  already spent: the **send** (`P1_SEND_WIN` 20% behind the winner,
-  `P1_SEND_LOSE` 10% behind the rest) is the irrevocable donation that made the
-  election real.
-- **The rest is the benefactor's choice.** During phase 2 they can keep it in
-  this mission or roll it into the next election of the same cause —
-  `GET/PUT /missions/{id}/p1/carryover`, surfaced as a slider in the Context
-  page's OE voting area. The send is the floor; the slider can never go below
-  it. The send is measured against the **original** commitment (the exact float
-  is kept in the ledger row's `new_value`), so repeated moves can't erode money
-  already in the pool. Rolled EBX lands on the benefactor's carried rows in the
-  next-cycle mission when they hold any, and is booked to a `carryover` bucket
-  in the ledger either way.
-- `withdraw_p1` is the all-or-nothing version of the same window and still
-  exists; the carryover is the graduated one.
+- **Nothing is skimmed and nothing rolls to another cause.** The whole
+  commitment — winners' and losers' backers alike — moves into the winning
+  initiative's organization election, in the same mission, as an unassigned
+  stake. It funds the mission immediately and carries no vote weight until the
+  benefactor names a philanthropy.
+- **The reward for backing the winner is influence, not a discount**: 2× weight
+  in that organization election, and 1.5× on research voting
+  (`token_model.influence_mult`).
+- **The one skim falls when the philanthropy is elected**: won → 100% donated,
+  lost → 10% donated and 90% the benefactor's, to redirect or take back as cash.
+- **`P1_SEND_WIN` / `P1_SEND_LOSE` are 0**, so the phase-2 "send floor" is 0 and
+  a withdrawal while the org race is open returns everything.
+- **The pre-2026-08-20 carryover machinery still exists** —
+  `GET/PUT /missions/{id}/p1/carryover`, `_send_floor`, the `carryover` ledger
+  bucket — and still describes races finalized under the old rules honestly. Its
+  UI is gone from the vote dialog; removing the endpoints is a backlog item.
 
 ### Phase 2 — organization election (`VoteP2`, one row per `(ben, mission)`)
 
@@ -749,8 +753,9 @@ closes (2026-08-06):
   `budget`. No-op without a positive signal.
 - **Phase-2 withdrawal** (`withdraw_p1`, `POST /missions/{id}/p1/withdraw`): while
   the org race is open (after the tiv is elected, before `budget`), a benefactor
-  can pull back their phase-1 commitment **minus the send** (20% if they backed the
-  winning tiv, 10% otherwise). The refund is booked to the `refund` bucket; the
+  can pull back their phase-1 commitment **minus the send** — which is **0**
+  since 2026-08-20, so the whole of it comes back. That is what "one skim, after
+  the OE" means: nothing is irrevocable until the philanthropy is elected. The refund is booked to the `refund` bucket; the
   send stays in the pool. (Phase-3 "org loses → 80% withdrawable with a distrust
   acknowledgment" is **deferred** — see [§3 Withdrawals](#withdrawals).)
 

@@ -279,6 +279,43 @@ class BenefactorAccount(Base):
     vvv: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)  # set after first p2 vote
     watched_tiv_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON list
 
+    # ── the wallet (2026-08-19, token_model.py) ────────────────────────────
+    # Money is held in CENTITOKENS: 1 token = 100 ct = 10c, so 1 ct = 0.1c.
+    # Integers end to end — the float EBX in votes_p1 is why the live db holds
+    # 123.7142858 and why a 0.5-EBX skim books as 0 in the ledger.
+    #   free_ct  the UNCOMMITTED balance. "Your uncommitted balance is topped up
+    #            to 10 every week": the grant is 10 - free_ct, floored at 0. A
+    #            top-up, not a reward and not a forfeiture.
+    #   cash_ct  refunds land here and NEVER back in tokens, which is what keeps
+    #            the grant arithmetic honest — nobody is billed a grant for money
+    #            handed back to them.
+    #            2026-08-20b: free_ct is UNALLOCATED, and unallocated contains
+    #            exactly two things — granted and purchased. Committed ct never
+    #            comes back to it, so the granted part is `free_ct -
+    #            purchased_ct` and there is no third category to track.
+    free_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cash_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Cycle week index of the last top-up. Grants are idempotent per week: a
+    # page load must never be able to pay one twice.
+    last_grant_week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    #   purchased_ct  the part of free that was BOUGHT, not granted (2026-08-20).
+    #            "Purchased tokens are the same as granted tokens except they do
+    #            not have a deadline to commit" — and they carry no two-door
+    #            restriction either, so they behave like returned balance. Held
+    #            apart only so the unallocated strip can say which uncommitted
+    #            tokens are on a clock.
+    #   grant_commit_by_week  the week by which fresh_ct must be committed. A
+    #            missed deadline is not a forfeiture: it takes next week's date
+    #            (token_model.roll_commit_by), because the cap on hoarding is the
+    #            top-up formula, not a punishment.
+    #   purchased_ct  the part of free that was BOUGHT rather than granted.
+    #            Authoritative; the granted part is derived from it. Purchased ct
+    #            carries no deadline and may enter any race, granted ct carries a
+    #            date and this week's two doors — that difference is the only
+    #            reason the two are counted apart.
+    purchased_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    grant_commit_by_week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
     credit_coins: Mapped[list["CreditCoin"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
     )
@@ -435,10 +472,41 @@ class VoteP2(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     ben_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"))
     mission_id: Mapped[str] = mapped_column(ForeignKey("missions.id"))
-    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"))
+    # NULLABLE since 2026-08-19: when an initiative election closes, every
+    # backer's non-claimed remainder moves into the WINNING initiative's OE
+    # automatically and arrives with no philanthropy named. Such a stake funds
+    # the mission, carries no vote weight, and defaults to the winner of the
+    # race it landed in unless the benefactor picks one.
+    org_id: Mapped[Optional[str]] = mapped_column(ForeignKey("organizations.id"), nullable=True)
 
     votes: Mapped[int] = mapped_column(Integer, default=1, nullable=False)  # 1 + bought
     ebx_spent: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # ── the explicit stake (2026-08-19, token_model.py) ────────────────────
+    # Phase-2 weight used to be DERIVED — p2_ebx_by_ben summed the benefactor's
+    # surviving VoteP1 rows for this mission. That holds only while phase-2
+    # money can arrive by one route and never move again. The OE table is now
+    # eight rows with a slider each and a stake can move between them, so the
+    # stake is stored. Authoritative when > 0; the derived figure is the
+    # fallback for rows written before this column existed.
+    stake_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Where these ct entered the system. The initiative election puts them in
+    # ONE organization election — the winning initiative's — and that race is
+    # this stake's default: "if they don't [vote for a philanthropy elsewhere],
+    # the token defaults to the OE from the tiv it was created within."
+    origin_mission_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    born_week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    # 2026-08-20 — the conversion budget that replaced the 15-week fuse. Moving
+    # a stake to a race other than its origin costs one of three, and a
+    # conversion is only SPENT when a philanthropy is actually voted for there;
+    # parking ct on another row and never voting is not a conversion, it is a
+    # stake that will fall back to its origin.
+    conversions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # "Every token maintains a record of its transactions." A list of registered
+    # votes these ct have supported; it survives a split and the mint, so a
+    # credit coin still knows which initiative its money backed. Only COMMITTED
+    # votes are recorded — second thoughts before a commit leave nothing behind.
+    provenance: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
     valence: Mapped[str] = mapped_column(String, default="helpful", nullable=False)  # helpful|neutral|harmful(=block)
     committed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

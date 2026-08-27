@@ -1,33 +1,45 @@
 ## AI TUNING
 @CLAUDE Stop process now if there are any lines in between here and ## BUILD SEQUENCE
 ## BUILD SEQUENCE
+*Everything below was BUILT 2026-08-27b — the entry at the top of the backlog
+says what landed and what was deliberately left for you. Replace this queue when
+you set the next one.*
+
 0. Resolve if any
 - (a) **Errors**
 - (b) **Blockers**
 - (c) **Inconsistencies** 
 - (d) **Not blocking** Acknowledge but only fix if trivial.
 
+Leave the top left card as the upcoming eleciton in the ME. Dont toggle the card, but do keep toggling the middle. For both elections, make the top left card glow brighter/thicker and create a bar at the top that says "This Weeks Election".
+Clicking on the cards should have the same exact function as clicking on the cause toggle.
+When the Mission elections toggle is clicked, the table should filter by the active cause too. 
 
-1. [ ] **Discussion edits**
-I made numerous refinements to the discussion experience in the structure.
-
-2. [ ] **Budgeting details**
-I detailed the interface for budgeting too.
-
-3. [ ] **main.html**
-Various refinements to improve the user experience on main.html.
+1. **More Election page UX**
+- Default election panel to upcoming election
+- Ray < pointers pointing wrong way (Should pont same way as glowy one)
+- Cause election box should be below the table.
+- Move the cause selection toggle to below the ME/OE toggle, above the election panel. 
+- Lock bottom of 3 side cards to top of cause toggle, and top of 3 to bottom of the top cards. Middle one halfway in between. 
+- Now, the position of the upcoming election is enough to identify that it is upcoming. We can make the glow indicative of which election is selected. 
+- Discussion sectors still pointing wrong way 
 
 ## CONVERSATION
+Maybe we just get rid of the onclick for the sectors and move the cause selection bar so it is the same across both pages?
+- This weeks elections should have a discussion snippet.
+  *(absorbed into the backlog ▶ NEXT on 2026-08-21b — the two cards for THIS
+  week now have room for one, since the buttons came off them.)*
+
 - Without permission, only execute build sequence.
 - Absorb amd modify backlog items and update structure as you see fit.
 - note - s/s/s items can be suggested any time, but they can't be voted on until the budgeting opens.
 - Until I make enough to hire security, I need to hide earthbux from corrupt organizations.
 - Does calling an organization a "philanthropy" make sense?
 - Need to start thinking about where the money lives.
-
 - Kids accounts need a dedicated adult account to authorize any transactions.
-Security rule: The first time an account signs in, they are told they can't vote in any org elections except the first (most recently electeed tiv) org election. - This prevents from creating accounts just to vote your org in.
-
+- Security rule: The first time an account signs in, they are told they can't vote in any org elections except the first (most recently electeed tiv) org election. - This prevents from creating accounts just to vote your org in. - edit - they can vote in whatever election they want, but they are not allowed to buy extra votes until they've been a member long enough. 
+- I need to set goals and plan - what am I going to do when and in what order?
+- I wonder if I can create an animated diagram - kind of like a prezi - showing each step of the process.
 ## BACKLOG (for backlog management - ignore this section during build task)
 *The single backlog. Absorbed `docs/backlog.md` + prior loose items on 2026-07-17.*
 *Ordered by the current plan: **master the posting + newsfeed experience for phases
@@ -35,125 +47,302 @@ Security rule: The first time an account signs in, they are told they can't vote
 lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
 
 ### ▶ NOW — posting & newsfeed (phases 1–2, the focus)
-- [x] **§2 DISCUSSION EDITS · BUDGETING DETAIL · main.html (2026-08-12)** —
-  build-seq §1, §2 and the EASY half of §3.
-  - **§0 The error was mine, and it was the first thing fixed.** "My dialogue is
-    deleting every time I try to link something." The box repaints as a whole
-    and an `innerHTML` swap discards whatever is in an input, so linking wiped
-    the post being written. Every repaint now captures title/body/row fields
-    into the cell's draft, re-renders from it and restores the caret; each
-    (category, phase, type) cell owns its draft, so leaving and returning finds
-    the text intact. Three assertions guard it.
-  - **§1 Research links itself.** A context/investigation/analysis post is about
-    the mission you are reading, so nothing has to be picked: the mission rides
-    on the payload and the composer says which links were made for you. Analysis
-    also auto-links the elected initiative and philanthropy. Only reviews still
-    require a link. The rails read **Linked Initiatives / Linked Organizations**
-    in full, and research carries an *edit it on your profile →* link.
-  - **§2 The type toggle moved into k**, beside the result, and now always shows
-    every type the category has — the ones this stage has not opened are drawn
-    but dead, with the reason on hover. The ladder a benefactor climbs is
-    legible from any stage instead of appearing a tab at a time.
-  - **§3 Budgeting is a costed LIST, not prose.** Toggling s/s/s swaps a row
-    that REPLACES the title — service `|Job|hourly rate|days needed|`, supply
-    `|Item|Supplier|Cost|`, support `|Item|` — **+ Add** appends it, and the
-    area below prints the three tables across every budgeting post on the
-    mission, each row approvable. No link rails, no target/open/reward/rating
-    chips, no examples: a budget item is not judged, it is bought.
-    - **New column, and it is the right call.** `posts.line_items` (JSON),
-      migration `a1f6b3c92d47`, applies at server start — verified applying
-      cleanly and round-tripping through `GET /posts`. An hourly rate that only
-      exists inside prose cannot be totalled, and the mission page has to sum
-      these to build a plan.
-    - **The costing rule survives, derived instead of typed.**
-      `post_config.estimates_from_line_items`: service = Σ days and
-      Σ rate × days × **8h** (`HOURS_PER_DAY` — an assumption, named rather than
-      inlined), supply = Σ cost, support = 0. `crud.create_post` fills the
-      estimates from the rows and validates each row, so "a suggestion is costed
-      or it is not a suggestion" still holds. Legacy budgeting posts render as
-      one row from their title + estimates rather than vanishing.
-  - **§4 main.html, the EASY three plus the rail.** "Next votes:" deleted —
-    markup, renderer and every `.nextvotes*` rule; the hidden duplicate page
-    toggle under the annulus deleted with the two `setMainMode` writes that fed
-    it; the state toggle names the elections in the **plural** (a card naming
-    ONE race stays singular); and the toggle now sits in a full-bleed row with a
-    lit rail running from its right edge to the edge of the screen.
-  - **§5 Two more from the cause backlog.** The header's phase chip became the
-    ACTION — **[Vote]** *to elect an initiative / a philanthropy*, pointed at the
-    Context table filtered to this cause — and the right-hand cards order by the
-    mission's own anchor, newest first, so two simultaneous elected initiatives
-    stop depending on array order.
-  - **Not built, and why**: *phl vote onclick* and *OE voting UX* are the same
-    mechanism — row selection and the vote bar — and rewriting the selection
-    path without a test that drives a real vote would risk the only working
-    voting surface. They are the next main.html pass, together. Also open: the
-    philanthropy side of a budget thread (an org-authored budgeting post has no
-    composer), and the two unwired rails.
-  - **Verified**: `posts_box_check.js` extended to 82 assertions — the repaint
-    regression, research's auto-links and missing requirement, the type toggle
-    showing all three with two dead, budgeting's three titled tables and empty
-    meta, the row editor adding/keeping/removing a row across a kind switch, and
-    the stage-4 mission where budgeting is actually open. POSTS BOX CLEAN.
-    `render_check` re-pointed at the new main.html toggle and clean on all five
-    page/states; `date_audit` CONSISTENT; migration applied and read back.
+- [x] **§1 SEVEN SMALL MOVES ON THE ELECTION PAGE (2026-08-27b)**
+  - **The OE election panel opens on a race.** It wanted an explicit pick and
+    said "Pick a mission below" until it got one, so the OE side of the page
+    started empty while the ME side started on a race. `voteMissionId()` already
+    knew the answer — the open race for the cause the page is pointed at, else
+    the one closing soonest — and the panel asks it now.
+  - **Every arrow points the way the clock moves.** The election annulus's
+    chevron rays and the discussion wheel's chevron SECTORS both point
+    **clockwise**, with the glowing marker. The sectors were flipped the other
+    way on 2026-08-27 and that is what "still pointing wrong way" undoes: the
+    marker is the only moving thing on either wheel, so it is what direction
+    means.
+  - **The cause election box moved below the table**, and the cause toggle moved
+    below the ME/OE toggle at the foot of the hero. The reading order down the
+    page is now: what won → what is running → pick a cause → vote in it → the
+    field → and, last, the vote that decides a cause seven weeks out.
+  - **The side cards lock to the furniture around them.** Each column runs the
+    full height of the hero row: first card flush with the bottom of the top
+    cards, last flush with the top of the cause toggle, the middle one exactly
+    between. `justify-content: space-between` on a stretched column IS that
+    instruction.
+  - **The glow means SELECTED.** It marked the upcoming election, which the
+    layout already says by putting it first; it marks the cause the page is
+    pointed at now — a side card when you pick one, the top-left card otherwise.
+  - **Verified**: `render_check` **CLEAN** · `ce_check` **80** (the panel is
+    asserted BELOW the table now) · `oe_check` **83** · `posts_box_check`
+    **CLEAN** · `landing_check` **43**.
+  - **Answered, not built** (CONVERSATION, "maybe we just get rid of the onclick
+    for the sectors and move the cause selection bar so it is the same across
+    both pages?"): yes — that is one bar in one place on both pages, and it is
+    the smaller surface. The sector click and the tab row do the same job on
+    cause.html today, which is one too many ways to change cause. It needs your
+    word before it lands, because it also decides whether the discussion page
+    keeps a wheel at all or just a header bar.
+- [x] **§1–§2 THE CE PANEL, AND ME/OE IN ONE SHAPE (2026-08-27)**
+  - **§1 The cause election is an AREA above the election panel**, in the shape
+    of the drawing: the streak down the left as **one column of seven lines**
+    (it was seven columns of one-to-seven lines, which drew the RULE rather than
+    the progress), *Show / Hide Cause Table* on the right, and in the middle the
+    title row, then **Nominate a Cause · make your case · Commit · Cancel**,
+    then keep-or-replace, then the pager. It **persists across ME and OE** —
+    that is the whole reason it is a panel and not a card.
+    - **The CE has no toggle of its own.** "It is toggled by the main page cause
+      toggle." That works because every cause holds exactly ONE open window —
+      the active cause's is slot 7, everybody else's is 8..13 — so the seven
+      tabs and the seven replaceable windows are the same seven things. The
+      panel carries `data-slot` / `data-cause` so a check can ask which.
+    - **A vote is dialled, then committed.** Clicking keep-or-replace used to
+      POST; it marks a draft now, Commit sends it, Cancel drops it. `ce_check`
+      asserts the middle state: after the click and before Commit, the server
+      still has nothing.
+    - A row of the cause table now selects the CAUSE that holds that window, so
+      the panel can never be pointed at a confirmed window and show a ballot
+      with every button disabled.
+  - **§2 The rest of the election page.**
+    - **The ME/OE toggle moved BELOW the annulus** and lost the glowing rail;
+      **the 7 cause tabs took its place** between the top cards and the annulus.
+      (They spent one day in the top bar, where they read as site navigation.)
+      They drive the annulus, the centre panel, the CE panel, the left top card
+      and the table.
+    - **The two top cards say the same thing in ME and OE now**: LEFT is the
+      race still running, RIGHT is the race that just closed. The just-elected
+      mission moved to the right and wears two bars — **"Winner of \<cause\>"**
+      over it, **"Elected \<date\>"** under it — and the budgeting card wears the
+      same pair for the organization election one race back. The how-to line is
+      on the left card only, and reads *"Select a cause, and vote."*
+    - **The ME ring shifted one place clockwise**: the upcoming election left it
+      for the top-left card, everything moved up one, and a new card came in at
+      the top right — **+7, the active cause's own next initiative election**,
+      which had no card at all while the active cause sat in the top card. The
+      OE ring kept its orientation.
+    - **The allocations panel is parked at the bottom of the page** until its
+      design is settled; the side cards run flush to the election panel.
+    - **The filter under the table is a "Show all Initiatives" button.** The
+      select survives hidden — it is still the field every filter path reads.
+    - **Rays**: the election annulus has them now, as **chevrons pointing the
+      way the queue moves** ("<" at the top); the discussion wheel lost its
+      rays, and its chevron sectors point the other way — toward the cause whose
+      turn comes next rather than the one whose turn has passed.
+    - **Cancel beside Commit, everywhere**: the initiative slate, the
+      organization amounts, and the cause ballot.
+    - cause.html gained the line the wheel needed: *"Click on a cause to
+      participate in the discussion."*
+  - **Verified** against a copy of the live db: `render_check` **CLEAN** ·
+    `ce_check` **80** (rewritten for the panel: the card and its seven toggles
+    are gone, the panel sits above the election panel and survives the ME/OE
+    switch, each of the seven tabs points it at that cause's own open window,
+    the draft-then-commit path, and the way back out of the cause table) ·
+    `oe_check` **83** (the allocations panel is asserted at the BOTTOM now, with
+    a Cancel beside its Commit) · `posts_box_check` **CLEAN** ·
+    `landing_check` **43**.
+  - **Judgement calls, flagged rather than guessed:**
+    - "The upcoming ME election is now the top lhs card" is read as the hero's
+      top-LEFT CARD, and it follows the cause TOGGLE (defaulting to the upcoming
+      cause, which is what the page opens on). If you meant the top-left SIDE
+      card, the ring is one rotation away from that.
+    - The CE panel's default window follows that same selection, so in ME it
+      opens on the upcoming cause's window rather than the nearest open one
+      (slot 7, the active cause's). A fresh OE load does open on slot 7.
+  - **Not built**: the ME right card still shows the ACTIVE cause's winner while
+    the left card follows the toggle — one card on the clock, one on the
+    selection. It reads right today (this week we elected X, next week we decide
+    Y) but it is a split brain, and if the pair should move together, say so.
+- [x] **§1–§4 THE ELECTION PAGE, THE ANNULUS SWAP, AND THE CE DATES (2026-08-26)**
+  - **§1 main.html is the ELECTION PAGE.** Title, top-bar tag and structure.md
+    agree. The ME top-left card lost the propose-an-initiative dialogue (the
+    table's propose row is still one click away) and lost the sentence that
+    named the mission; the sentence is the card's CAPTION now, under it, in the
+    words asked for: **"Winner of \<cause\>: \<tiv\>. Elected \<date\>."** Above
+    the card, the page finally says how to vote, and the name of the other
+    election in that line is the button that switches to it.
+  - **§2 THE TWO ANNULI CHANGED PLACES.** The seven-sector WHEEL left main.html
+    for cause.html; the PIE left cause.html for main.html; no card on either
+    page moved. The wheel was always a cause SELECTOR, so it went to the page
+    whose seven tabs it replaces — clicking a sector is how the discussion page
+    changes cause now. The pie is a RACE, so it went to the page where the
+    voting happens: initiative shares in ME, the philanthropy tally in OE,
+    behind main.html's own centre panel (their radii agree, so the ring frames
+    it). The **7 cause tabs** came with it into the election page's top bar and
+    point the annulus, the centre and the table at one cause without touching a
+    card and without scrolling the page. cause.html's centre stack, which the
+    pie used to draw in SVG, is an HTML panel over the wheel's core.
+    - One real bug found in the port: a **lone front-runner** is a 360° slice,
+      and an SVG arc whose ends coincide draws NOTHING — the ring went blank on
+      every race with one candidate, which is most of them this early. It is a
+      circle now.
+  - **§3 Allocations — DIAGNOSED, NOT FIXED** ("only discuss until you are sure
+    about the solution"). Three separate things wear one word:
+    1. **"Unallocated 10 while my vote is already allocated" is the ME side not
+       being one-way.** Committing a phase-1 slate writes `VoteP1` rows and
+       nothing else — `free_ct` is untouched — while the panel paints
+       *Unallocated* from `free_ct` AND *Committed → initiatives* from those same
+       rows (`_meAllocatedCt`). The same tokens are counted twice and the
+       header total overstates the holding by exactly the ME commitment. The fix
+       is the standing backlog item **"Make the ME table one-way too"**: route
+       the p1 commit through `wallet.commit_stake` the way `/wallet/commit`
+       does. Nothing smaller is honest.
+    2. **The 10 that "carried into the OE from the ME" is not unallocated — it
+       is UNASSIGNED**, which is a different state and a different word.
+       `finalize_p1` ran on for1 this morning and wrote a `VoteP2` row of
+       1000 ct with `org_id` NULL: staked in the organization election, no
+       philanthropy named. It counts under *Committed → organizations* in the
+       panel and shows as the race's `unassigned_ebx` chip in the vote bar. Two
+       words one letter apart for two states is the actual defect here.
+    3. **"0 tokens committable to any org in wolf habitat" is the rule, not a
+       bug** — but the page never says so. `wallet.oe_rows` gives a row
+       `headroom = free_ct` only for the race that finalizes soonest ("2 options,
+       not 9"); every other row's ceiling is `purchased_ct`, and purchasing is
+       still a localStorage simulation, so that is always 0. Wolf habitat (wil0)
+       is not this week's race, so it offers 0 whatever the balance says.
+    - **The grant clock, for the question in the queue**: the grant is topped up
+      to 10 tokens per cycle week (`WEEKLY_GRANT_CT`) and carries a deadline one
+      week out (`GRANT_COMMIT_BY_WEEKS = 1`) that ROLLS if it is missed. It is
+      not issued seven weeks ahead of the election it can be spent in.
+    - **Still to decide** (Jax): the split of the panel into **This week** and
+      **Total**, with the detail on profile.html.
+  - **§4 CE dates: one clock, one date per window.** A window is a WEEK — slot
+    s is the week beginning s weeks after the week running now — but the date
+    was derived from a MISSION (`_nextInitiativeElection`) plus a rotation for
+    the far half of the table. That agreed with the clock only while the cause's
+    next mission had not opened yet; the scheduler opens one every Tuesday, so
+    the nearest open window (slot 7, always the active cause's own next
+    appearance) had already jumped a cycle and then had a rotation added on top
+    — seven weeks out and out of date order in the toggle row. The card was
+    wrong the other way: it added no rotation at all, so card and table dated
+    the same window differently. Both read `_windowRunsDay(slot)` now. The seven
+    toggles read **FOR Oct 13 · WIL Oct 20 · HR Oct 27 · HP Nov 3 · ATM Nov 10 ·
+    OCE Nov 17 · LAN Nov 24**, nearest first.
+    - **Open question for Jax**: this makes the printed date the TUESDAY the
+      window opens — the day that cause becomes active, its mission opens and
+      the previous cycle's initiative election is decided. If "1 week early"
+      meant you want the day the window CLOSES instead, that is a one-line
+      change in `_windowRunsDay`; say which and it moves.
+  - **Verified** against a copy of the live db: `render_check` **CLEAN** (with
+    new assertions for the pie, the tabs, the wheel, the two captions) ·
+    `ce_check` **67** · `oe_check` **82** · `posts_box_check` **CLEAN** ·
+    `landing_check` **43**.
+  - **Also fixed**: `ce_check` asserted that slot 11 refuses `atmosphere` as a
+    challenger, which was only true in the week it was written — slot s is held
+    by the cause at (active + s) % 7, and this week atmosphere IS slot 11's
+    incumbent, so the post was a KEEP and correctly returned 200. The check asks
+    the slate who holds the window now.
+  - **§0d — acknowledged, not fixed: the two clocks disagree for four hours
+    every Tuesday.** The browser reads `cycleStart` as `new Date("2026-04-28T12:00:00")`,
+    which has no zone and is therefore LOCAL noon; the server counts weeks from
+    the same wall-clock string as UTC (`datetime.utcnow()`). East of UTC the
+    week rolls on the server first, west of it the browser rolls first — a
+    window in which the page and the API name different active causes, and
+    `cause_slate` is asked for a slot the client numbered against a different
+    week. It is four hours wide in America/New_York and it has never been hit in
+    a check, because the checks do not run at 8am on a Tuesday. Fixing it moves
+    every date for somebody: either the browser's anchor becomes `…T12:00:00Z`
+    (the week boundary shifts to 8am ET) or the server's becomes zone-aware.
+    Jax's call, so it is written down rather than chosen.
+  - **Not built**: `_proposeDialogue` / `togglePropose` survive in main.html
+    with no caller (the card that used them is clean; the propose ROW still
+    opens the shared dialog) — dead code, deliberately left rather than swept in
+    a UX pass. cause.html's `selectInitByAnnulus` is likewise unreachable now
+    that the pie's slices are on the other page.
+- [x] **§0–§2 TOKENS, THE RACE POOL, AND THE PAGE AROUND THE WHEEL (2026-08-21b)**
+  - **§0a Voting is counted in TOKENS.** "It's confusing because votes and ebx
+    appear to be separate." Every visible EBX on main.html is now *tokens* —
+    88 replacements across the cards, both dialogs, both table heads, the buy
+    flow and the carryover panel — via `EBX.formatTokens`. `formatEBX` survives
+    for the credit badge and the ledger, which are not the voting area. The
+    other three pages still say EBX; that is a decision, not an oversight (see
+    structure.md › Backend).
+  - **§0b The race pool did not move when a vote was committed.** Real bug,
+    reproduced and fixed. `p2_tally` measured phase-2 weight with
+    `p2_ebx_by_ben` — the money phase 1 left behind — and knew nothing about
+    `VoteP2.stake_ct`, which is what `POST /wallet/commit` has written since
+    2026-08-19. The commit was real; the reported total was two days stale.
+    `crud.p2_stake_by_ben` asks `wallet.stake_ct_of`, the function that already
+    knows how to read a stake, rather than restating the rule. It took a second
+    bug with it: `unassigned_ebx` was summed from the phase-1 carry, which for a
+    stake committed straight out of the balance is ZERO — so tokens committed
+    without a philanthropy named disappeared from the pool entirely. `oe_check`
+    now guards both, in tokens, against the live server.
+  - **§0c Allocations says what it cost.** `Allocations 88 tokens $8.80`.
+  - **§1 The cause election, second pass.** All **7** replaceable windows are
+    votable at once (the server opened exactly one and capped the slot at 7, so
+    six of the seven toggles were locks and six streak clocks could never
+    start). The card's seven toggles are those seven windows **in the order they
+    run**, each carrying its own date — LAN Oct 6 · FOR Oct 13 · WIL Oct 20 · …
+    — which is what fixes "this is correct in the CE table, but not in the top
+    card": both are built from `_causeWindows()` now. The ballot is keep-or-swap
+    with a **click-through pager** over challengers, and a challenger can only
+    be a **nominated** cause — swapping two active causes inside the rotation
+    reorders it and nothing else, so the server refuses it and the streak query
+    stops crediting historical votes toward a swap it would refuse. Nominating a
+    cause is a **dialog** now, like proposing an initiative, and it asks what the
+    cause is FOR rather than just its name and a colour.
+  - **§2 The page around the wheel.** Cards: no vote counts — **Leader:** and
+    **My vote:**, two lines each, no buttons, and the card itself is the click
+    target. Layout: **two columns of three**, the bottom row and its Help and
+    Commit gone, and the **allocations panel** nestled under the annulus in BOTH
+    states — two sets of two (Unallocated: granted · purchased | Committed:
+    initiatives · organizations), no explanation, Commit inside it and
+    mode-aware. The OE panel took the three links (Mission page → **View
+    Organizations**), narrowed the ballot to the **ranked top 3**, and gained
+    the **add-more-vote** control: unallocated · purchase · **from another OE**.
+    That last one is the first way in to `POST /wallet/convert`, which has
+    existed since 2026-08-20 with no UI — a benefactor could not move a stake
+    they had changed their mind about at all. Two rows in the annulus centre.
+  - **Verified**: `token_model_check` **101** · `wallet_check` **118** ·
+    `oe_check` **82** (rewritten: the panel under the annulus, the links in the
+    dialog, the two sets, the source dropdown, the top-3 ballot, a sweep proving
+    no visible "EBX" survives on the voting surface, and the race-pool
+    regression in both its forms) · `ce_check` **67** (the seven toggles in date
+    order with the nearest first, all seven windows open, an active cause
+    refused as a challenger while keeping the incumbent is allowed, the pager,
+    the dialog) · `render_check` **CLEAN** · `landing_check` **43** ·
+    `date_audit` · `posts_box_check` · `carryover_check` — no regression.
+  - **Not built**: `slot` is RELATIVE to the active cause, so the same slot
+    number names a different calendar window each week while `_week_winner`
+    compares the same slot across weeks to build a streak. That predates this
+    pass and the seven-weeks-in-a-row rule is written in those terms; if a
+    streak should follow a fixed DATE, that is `CauseVote` and the streak query,
+    not the UI. Purchasing is still the localStorage simulation, so the
+    "Purchase" source routes to it. The ME side of the allocations bar is still
+    derived client-side, because the ME table is still not one-way.
+- [x] **§0–§2 THE CAUSE ELECTION TABLE, AND THE ALLOCATIONS BAR (2026-08-21)**
+  - **§0 The Commit button was invisible, not missing.**
+  - **§1 The cause election is a table now, and the card is a report.**
+  - **§2 The allocations bar.**
+- [x] **§1 THE ONE-WAY COMMITMENT, AND THE OE SURFACE (2026-08-20b)** —
+  - **§1 Committing is ONE WAY.** 
+  - **§2 Unallocated is granted + purchased, and nothing else.** 
+- [x] **§1 THE ONE SKIM, THE GRANT CLOCK, AND THE CONVERSION BUDGET
+  (2026-08-20)**
+  - **§1 One skim, and the initiative election is not it.**
+  - **§2 Being right pays in INFLUENCE, not in a cheaper skim.**
+  - **§3 Nothing rolls to the next election of a cause any more.**
+  - **§4 The grant carries a date; the date rolls; purchased tokens carry none.**
+  - **§5 Three conversions replace the 15-week fuse.** `MAX_CONVERSIONS = 3`
+  - **§6 The OE table: eight rows, and they do not expand.** 
+  - **Not built**: the OE half of settlement is still derived rather than booked;
+    nothing sweeps an unvoted foreign stake home at close (the read treats it
+    correctly, no row moves); the multipliers drive the wallet's reported weight
+    but are not wired into `p1_tally` / `p2_tally`, and budget/research voting do
+    not tally weight at all yet; the mint still does not exist; the ME table
+    still spends the old localStorage budget. `docs/token_model.md` §10.
+- [x] **§1 THE GRANT, THE WALLET, AND THE OE TABLE (2026-08-19)**
+- [x] **§1 THE LANDING PAGE IS THE OUTLINE (2026-08-18)**
+  - **§1 Five sections, and only five.**
+- [x] **§1 THE OE VOTE ROLLOVER, AND THE SELECTION PATH (2026-08-14)** —
+  - **§1 The slider was a ratchet.**
+- [x] **§2 DISCUSSION EDITS · BUDGETING DETAIL · main.html (2026-08-12)**
+  - **§1 Research links itself.** 
+  - **§2 The type toggle moved into k**
+  - **§3 Budgeting is a costed LIST, not prose.**
 - [x] **§1 THE DISCUSSION BOX (2026-08-12)**
-  - **§0 Checks, before anything moved.**
-  - **§1 One box replaces four systems.** The four-section accordion
-    (2026-08-10), the three-band P3 box (2026-08-08), the dual panels
-    (2026-08-02) and the per-phase checkbox threads (2026-08-01) are deleted —
-    ~1,000 lines. Each was the same three jobs (explain the post type, take a
-    post, show the best one) wired to a different idea of where you were. The
-    matrix states both axes explicitly, so the three jobs are written once and
-    all twelve cells get them. `renderTimeline`/`renderSections`/`_ctBody1-4`/
-    `_ctThread`/`_ctComposer`/`renderP3Bands`/`_p3Band{A,B,C}`/`_bindP3`/
-    `_p3Suggest`/`_p3Approve` and the `_CT_HOME` migration table are gone;
-    `renderPostsBox` is the entry point.
-  - **§2 The second drawing, in order.** k (results, notched onto its tab) · a–d
-    (dated stages) · i (composer) · b (type selector) · h (about) · e–g
-    (categories) · j (leading post + pager). The tabs sit BELOW h on purpose: h
-    is about the post you are writing in i, and e–g switches what j shows under
-    it. Detail written up in `docs/structure.md`.
-  - **§3 The five link rails are three.** Linked tivs → `posts.tiv_id`, linked
-    phls → `posts.org_id`, media → `posts.image_url`; each picker lists real
-    entities and attaches a removable chip, and the required one (`*`) blocks the
-    send. **Budget items and external links have no column on a post** — drawn,
-    disabled, and labelled as such rather than faked. Jax: the links point at a
-    specific entity, "I'm talking about THIS"; stub for now.
-  - **§4 A cause runs two elections at once, and this page only knew about one.**
-    "Phl consistency across pages": the philanthropy race was read off
-    `_v2Mission` — the INITIATIVE-election mission, which never has a race — so
-    cause.html showed no philanthropies while main.html showed Earthbux ahead of
-    River Cleanup Collective on the same cause. Garbage Patch Analysis is
-    **oce0**; the page was reading **oce2**. New `_v2OrgMission()` picks the
-    selected mission if it has its own result, else the OLDEST open race (the
-    same `_finalizingMission` rule main.html's OE card follows), else the newest
-    elected one — and the selection re-reads it. Both pages now print the same
-    two philanthropies.
-  - **§5 A TDZ crash, caught by moving one declaration.** `_v2OrgMission` reads
-    `_missionRefId`, which the async bootstrap reached before its `let` ran —
-    "Cannot access '_missionRefId' before initialization", the same class of bug
-    as mission.html's 2026-08-08 blank page. Declared with the rest of the page
-    state instead.
+  - **§1 One box replaces four systems.**
   - **§6 Also cleared from the cause backlog**: the header moved above the
     annulus, "View initiatives →" deleted with **Vote** promoted into the left
-    column's header (ME or OE, per the selected mission's race), the eyebrow
-    renamed *Leading Philanthropies*, and the box titled **Discussion**.
-    `#phase-recap-1` — an id deleted on 2026-08-10 — was still the scroll target
-    of three handlers here and five links on main.html; all nine now point at
-    `#pb`.
-  - **Verified**: new `scripts/posts_box_check.js` (replacing
-    `timeline_check.js`) drives all twelve cells in a headless DOM — tab keys
-    a–d/e–g, one selection per row, the gray rules, one explanation per cell and
-    three for budgeting, the notch tracking the stage and not the browsed tab,
-    the five rails with two disabled, a pick→chip→unpick round trip, a shut
-    composer that says why, and zero survivors of the four deleted systems —
-    then loads oceans and asserts the philanthropy cards match
-    `/candidacies?mission_id=oce0`. POSTS BOX CLEAN. `render_check` extended to
-    the new selectors and clean on all five page/state combinations;
-    `date_audit` still CONSISTENT.
-  - **Left for Jax**: the two unwired rails (above), the rhs card ordering (same
-    oldest-vs-newest rule), moving the cause suggestor off main.html, and the
-    philanthropy-vocabulary rename outside this page.
+    column's header
 - [x] **§8 LANDING + CONTEXT REFINEMENTS + CAUSE NAMING (2026-08-10)**
   - **§0 The OE annulus centre named the wrong race.**
     **"{cause} Confirmed for {mission start} Mission"**
@@ -179,13 +368,9 @@ lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
 - [x] **§3 ME / OE (2026-08-06)**
   - **§0d — annulus centre** 
   - **§1 — ME / OE.** **Mission Election**-**budgeting card** 
-  - **§2 — cause logic folded into the README** (§4 *ME and OE*, §4)
   - **§3 — glow logic**
-  - **§4 — registered organizations**
   - **Accounts console**`GET /admin/accounts` + `DELETE /admin/accounts/{id}`*Accounts · remove*
 - [x] **§2 CARDS + THE REST OF main.html (2026-08-05)**
-  - **Side cards**
-  - **Top card** - **Upcoming Causes**
   - **Annulus** — Rays
     (`localStorage.ebx_purchased_ebx`).
 - [x] **§0a Oceans p1-commit 500 FIXED (2026-08-05)**
@@ -219,44 +404,6 @@ lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
   in `cast_p2`, plus the first-run notice on the client.
 
 ### Bugs (clear these for a clean phase-1/2 experience)
-- [x] **P2 finalization was a week early everywhere** — FIXED 2026-08-09.
-  Jax's rule: *missions in p2 remain in p2 until the end of their ACTIVE CAUSE
-  WEEK.* The trap is a misleading name — `EBX.Cycle.nextDecisionDate(idx)`
-  returns the **start** of that cause's next active week, not the decision.
-  Today (Aug 9, week 14) Atmosphere is active and its `nextDecisionDate` is
-  **Aug 4**, already past, because that is when its week opened. So:
-  Atmosphere's week is Aug 4 → Aug 11 and Carbon Capture Expansion finalizes
-  **Aug 11**; Oceans' is Aug 11 → Aug 18 and Garbage Patch Analysis finalizes
-  **Aug 18** — not Aug 11 alongside it, which was the worry, and which any
-  surface reading `nextDecisionDate` as "the decision" would have printed.
-  One named helper `_phlFinalizeDate(causeIndex)` = `nextDecisionDate + 1 week`
-  now owns it, and the OE card, the p2 overview and the vote-bar header all go
-  through it. Verified against all seven causes.
-  *Open:* `nextDecisionDate` keeps its misleading name and is read directly in
-  ~10 other places. Renaming it (`causeWeekStart`?) and auditing those is its
-  own pass.
-- [x] **atm0 is elected when it should not be.** `winning_org_id = org-001`,
-  `current_phase = budget` — but its philanthropy election does not finalize
-  until Aug 11. While it looks closed there is only ONE open race for
-  atmosphere, so the ME and OE cards collapse onto the same mission and OE
-  reads Methane Leak Detection Grid instead of Carbon Capture Expansion.
-  **Fix: run `python ../scripts/unelect_atm0.py --apply` from `backend/`.**
-  Cannot be applied from the agent sandbox — the mount does not support the
-  file locking SQLite needs and every write fails at commit.
-  — RESOLVED: verified against the live db 2026-08-10 (§5). `atm0` now reads
-  `winning_org_id = None`, `current_phase = initiative`; atm0 and atm1 are both
-  open philanthropy races, so `_finalizingMission` (atm0 · Carbon Capture
-  Expansion) and `_orgMissionsFor().newest` (atm1 · Methane Leak Detection Grid)
-  resolve to different missions and the ME/OE cards no longer collapse. The
-  script appears to have been run (`earthbucks.db.bak_premigrate`, Aug 10 09:41).
-- [x] Org election recap showed "Organization (record missing)" as winner (upcoming cause) — legacy `init.winning_org` field; now resolved from `mission.winning_org_id` (2026-07-31).
-- [x] `cause.html` p2-area date rendered a full cause-cycle (7 wks) late — FIXED 2026-08-01 (build-seq §0b). The org decision falls ON the cause's next decision day (org close = its mission's p1 + 7wk, and the cause recurs every 7wk), so the old `decision + 7wk` double-counted the cycle: hpr showed Nov 3 / atm Sep 22 instead of Sep 15 / Aug 4 (hmr's Sep 8 was coincidentally right). Org pill now = the annulus-center date. NOTE: the `missionPhaseDates` (+8wk) path for a SELECTED past mission still disagrees with the weekly cadence by 1 wk — fold into the back-half phase-enum redesign.
-- [x] `main.html` profile badge wrapped to a second topbar line — FIXED 2026-08-01 (build-seq §0d): the topbar grid override said `auto 1fr` (2 columns) for 3 children (brand · pagetag · badge); now `auto auto 1fr`.
-- [x] `cause.html` rhs top card looked like the tiv had already won — FIXED
-  2026-08-08 (§7 §0b). The card names the top-weighted CANDIDATE; its eyebrow
-  and badge now read **leading** ("Phase 1 · leading initiative" ·
-  "Leading · election open"). The phase-1 *header* was already correct
-  (`{cause.name} {cycle}: Initiative Election`) — the card was the problem.
 - [x] `mission.html` rendered nothing at all on any mission that had a
   candidacy — FIXED 2026-08-08 (§7 §0a): `let _openOrgId` was declared below the
   `render()` that reads it (TDZ ReferenceError on first paint).
@@ -277,6 +424,57 @@ lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
   can never be a 500 again. Verified against a copy of the live db.
 
 ### ▶ NEXT — cause / election UI (phases 1–2)
+- [ ] **A discussion snippet on this week's elections** (absorbed from
+  CONVERSATION, 2026-08-21b). The two top cards are the races running THIS week,
+  and since 2026-08-21b they have the room: their buttons came off. One line of
+  the leading post for that race, linking into `cause.html`, is what would turn
+  a card from a scoreboard into a reason. Reads from the same `/posts` query the
+  discussion box already runs; the open question is which post — the top-rated
+  one, or the most recent.
+- ◑ **The top cards and the third tab** (absorbed from CONVERSATION,
+  2026-08-20 — Jax's own words kept, with what each one touches):
+  - [x] "The table should have a **third tab — 'Cause Election'** — which
+    absorbs much of the cause election top card." BUILT 2026-08-21 (build-seq
+    §1). The third head, the third row renderer and the third dialog all exist;
+    what is left of the card is the state and the way in. It is reached by
+    **Decide the Cause** on the card and by `?state=ce`, and it is `_tableTab`
+    rather than `_mainMode` — the tab had to change the table without touching
+    the cards.
+  - "The **OE votes must not carry over** across elections like the ME votes do.
+    Every OE should start with no philanthropies nominated/registered and 0 votes
+    across the board." Touches `finalize_p2` (or the mission opening it), and it
+    is the phase-2 twin of the roll-forward that §1 (2026-08-20) removed from
+    phase 1 — worth doing in the same shape.
+  - "**Remove** the 'Propose an initiative' dialogue in the ME lhs top card. Also
+    remove the 'Open the mission page'. Remove the 'Propose a cause' on the rhs
+    ME top card."
+  - "**Move** 'Mission \<tiv_name\> was initiated \<date\>…' to below the card and
+    add '… The next mission election is for \<Cause_x\>' and point down to the
+    card below."
+  - "In the **OE rhs top card**, below the budgeting card, say '\<Phl\> was elected
+    to run \<tiv\> on \<date\>. The next organization election is for \<tiv\>' and
+    point to the left."
+- [ ] **Each benefactor's EBX available to donate should always be visible**
+  (CONVERSATION, 2026-08-20). The unallocated strip does this, but only on the OE
+  table; it belongs in the header on every page. Spec'd in `structure.md`
+  › profile.html.
+- [ ] **Make the ME table one-way too.** The initiative slate still spends the
+  old client-side `10 + localStorage.ebx_purchased_ebx` budget and still lets a
+  commitment be dialled back down. Since 2026-08-20b the OE side cannot: ct
+  leaves the unallocated bar for a race and only a conversion moves it. Same
+  wallet, two rules, until this lands.
+- [ ] **Buying tokens.** `buyVoteEbx` is still a localStorage simulation, so
+  `purchased_ct` — the undated, goes-anywhere slice the model already
+  distinguishes — is never actually written outside the checks.
+- [ ] **Retire the phase-1 carryover machinery.** Nothing rolls to a cause's next
+  election since 2026-08-20, so `GET/PUT /missions/{id}/p1/carryover`,
+  `_send_floor`, `_reclaimable`, the `carryover` ledger bucket and the
+  unreachable `carryoverPanel` in main.html describe a world that no longer
+  exists. They still explain races finalized under the old rules, which is why
+  they survived this pass — remove them once no open mission predates the change,
+  and retire `scripts/carryover_check.js` with them. `crud.withdraw_p1` joined
+  them on 2026-08-20b: it is a named refusal with its legacy body kept beside
+  it, and `cause.html` still shows a Withdraw button wired to it.
 - [ ] **Org election experience redesign** (jax notes 2: "it's ugly"; build-seq §3: "p2 needs a strong redesign").
 - ◑ **Active cause / active mission top card** has many errors (jax notes 2) — audit every stat on the main.html top card.
   Two found and fixed 2026-08-10 (§5): the org-election close date named one
@@ -287,7 +485,7 @@ lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
   exercised against real numbers yet. Re-audit once a race has votes in it.
 - [ ] **7-causes bottom row**: space left + right — add a **Help** link (→ `index.html`) on the left; the right-side link is still undecided (jax notes 2 cuts off mid-sentence — ask Jax).
 - [ ] Election-card nav buttons: View (jump to table row) · Explore (cause page) · Vote.
-- [ ] Move overview into the table; clicking a row expands it and filters discussion.
+- [ ] Move overview into the table; clicking a row expands it and filters discussion. **ME side only** — the OE side was decided the other way on 2026-08-20 ("the OE table rows should not be expandable"), where a click selects the race and points the dialog at it instead.
 - [ ] Pool metrics: "guaranteed pool" vs "committed pool".
 - [ ] Vote visualization (count + relative commit size per vote).
 - [ ] Start dates on every mission card; show future dates after the cause shift.
@@ -298,9 +496,10 @@ lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
 - [ ] Propose / nominate dialogs shared between context page and cause page.
 
 ### Elections / voting model
-- [ ] **Tie-break rule** (from the hpr0 analysis, 2026-08-01, build-seq §3 — analyzed, nothing changed): a p1 tie is currently broken by *vote-row insertion order* (`p1_tally` sorts stably; `finalize_p1` takes `entries[0]`). Jax's 5/5 split on GEAG vs Solar Grids → GEAG won only because its vote row (id 26) predates Solar's. The "4.5 committed" is CORRECT behavior, not corruption: the losing tiv rolled to hpr1 via `_carry_losers_forward` with the 10% commitment-fund skim (5 EBX → 4.5 EBX, uncommitted); "total fund 5" = only the winner's 5 EBX remains in hpr0. Decide an explicit tie-break (earliest commit? most voters? sudden-death week?).
-- [ ] **Skim ledger rounding bug** (same analysis): `_carry_losers_forward` books the skim as `int(round(skim))` — a 0.5-EBX skim logs a **0-EBX** transaction (tx #322) while the vote row really lost 0.5. Commitment fund undercounts on small commitments; store fractional EBX or round the vote row to match the ledger.
-- [ ] Winner-backer perk: cheaper bonus votes in phase 2 — same doubling, but the 1st extra vote costs **$2.50**, so a winner-backer's 3rd extra vote = everyone else's 1st.
+- [ ] **Tie-break rule** (from the hpr0 analysis, 2026-08-01, build-seq §3 — analyzed, nothing changed): a p1 tie is currently broken by *vote-row insertion order* (`p1_tally` sorts stably; `finalize_p1` takes `entries[0]`). Jax's 5/5 split on GEAG vs Solar Grids → GEAG won only because its vote row (id 26) predates Solar's. The "4.5 committed" was CORRECT behavior for its day, not corruption: the losing tiv rolled to hpr1 via the old `_carry_losers_forward` with the 10% commitment-fund skim (5 EBX → 4.5 EBX). **That path is gone as of 2026-08-20** — nothing rolls and nothing is skimmed at the initiative election, so a loser's 5 EBX now stays in hpr0 and funds its organization election in full. Still open: decide an explicit tie-break (earliest commit? most voters? sudden-death week?).
+- [x] **Skim ledger rounding bug** — CLOSED 2026-08-20. Fixed on 2026-08-19 (round UP at centitoken granularity), and then made moot: `COMMITMENT_FUND_SKIM` is **0** and nothing rolls to a cause's next election, so there is no loser-carryover skim left to round. The one skim, at the organization election, is computed in integer ct by `token_model.settle_oe`.
+- [x] **Winner-backer perk** — SUPERSEDED 2026-08-20. The cheaper-bonus-vote version died with the price ladder; the reward for being right is now INFLUENCE, published per arena in `token_model.influence_mult` (2x OE · 2x budgeting · 1.5x each on research, 2.25x for both). What remains open is wiring it into `p1_tally` / `p2_tally`, which is its own line below.
+- [ ] **Wire weight into the tallies.** `p1_tally` is linear and `p2_tally` counts integer votes, so neither reads `token_model.weight_ct` or the influence multipliers — today they only drive the per-row weight the wallet reports. Budget and research voting do not tally weight at all yet, which is where 2x-on-budget and 2.25x-on-research have to land.
 - [ ] Negative/block (`harmful`) org votes — schema exists; UI deferred (reputationally sensitive).
 - [ ] Beneficiary voice surface at the **start of phase 2**.
 

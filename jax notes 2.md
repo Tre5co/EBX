@@ -1,5 +1,4 @@
 ## I start here
-
 **Broad (ongoing changes)**
 - [ ] Replace org/organization replace with "philanthropy"
 - [ ] Replace misison support with "research"
@@ -17,6 +16,52 @@ The seven causes are meant to be hard to change — they are the standing subjec
 A replacement is elected at least one full rotation (7+ weeks) before the ME.
 
 Anyone can propose a cause. A cause worth standing up is a ubiquitously essential human experience
+
+1. **CE**
+Replace the cause election as an area on top of the election panel. It can persist across ME/OE. Design:
+ _________________________________________________________________________
+|      |    c                                                      |      |
+|   a  |    f          g        h             i                    |  b   |
+|      |    d                                                      |      |
+|      |    e                                                      |      |
+|______|___________________________________________________________|______|
+
+a. We only need 1 column of 7 horizontal lines that get colored as the weeks go by
+b. Show Cause Table
+c. "Cause Election - ..." This row is good.
+d. Keep [x] or replace with [y]
+e. Clickthrough of possible causes
+f. Nominate a Cause
+g. Make your case
+h. Commit
+i. Cancel
+
+note: the cause toggle in the CE is no longer necessary - it is toggled by the main page cause toggle (see below)
+
+2. **More Election Page**
+Move the ME/OE toggle from above to below the annulus, and remove the horizontal line to its right.
+
+Move the 7-cause page toggle from the top of the page to in between the top of the annulus and the top cards. This will function as a toggle for the ME table and the CE panel as well as the election panel.
+
+Move the just-elected mission from the lhs to the rhs top card. instead of "Winner of Forests: Invasive species removal in vermont. Elected Aug 25, 2026.", add a bar at the top of the card with "Winner of Forests" and a bar at the bottom with "Elected Aug 25, 2026."
+Similarly, add a bar at the top of the budgeting card saying "Winner of Indiginous Land Title Fund" and a bar at the bottom saying "Elected <date>"
+
+Add a new ME card below (top right side card), and shift each other card clockwise so that the upcoming ME election is now the top lhs card. Keep the orientation of the OE cards the same.
+
+The "To vote" line should only be on the lhs top card. Make it say "Select a cause, and vote."
+
+Replace the filter below the table with a button "Show all Initiatives"
+
+For now, move the allocations panel to the very bottom of the page until its design is complete. The bottom of the side cards should now be flush with the top of the election panel.
+
+Add the rays to the election annulus, but turn them into '<' symbols to indicate the direction of the dot & cards. 
+
+Remove the rays from the Discussion page annulus, and reverse the direction the svg annulus sections are pointing.
+
+Add to the discussion page above the annulus "Click on a cause to participate in the discussion."
+
+Need a deselect or cancel button next to commit everywhere.
+
 
  — something nearly everyone lives through, that someone would donate to see optimized, and that is resistant to capture. Propose one, pick its colour, and make your case in the discussion: the cause election is on the Context page →
 The fine print, in four lines
@@ -69,6 +114,61 @@ f. linked phls
 g. linked budget items
 h. linked media
 i. external links
+
+Context page should be called the "Election" page.
+
+Swap the annuli between the election and discussion pages. Also move the page toggles across the top from the discussion to the eleciton page. 
+
+Now the pie chart annulus is on the election page, which makes more sense. We can add pie-chart vote counting for the OE and CE. 
+
+Maybe we should move the annulus from the discussion page onto the main page? Swap the 2 annuli? Move the 7 tabs also to the election page?
+
+Dates in the cause cards are still wrong.
+
+Seperating user choices from total tallies.
+
+Ok. Major page swap incoming. Move the table to the profile page. This is the same as the choices table. Move the discussion to the main page. 
+
+**News on discussion page** - Headlines on the election cards?
+1. **Profile page buildout**
+- You have your general profile, which is used to elect. You also have your mission profile, which gives you access to active missions.
+  - You receive minted EBX when you receive org membership
+  - You elevate yourself to higher roles in the organization though participation.
+    - Valid posts, budget item approval, donation threshold, etc. 
+- Token/EBX conversion hub
+  - Tokens can be converted to EBX at rate. 
+  - Any ongoing mission may receive ebx. Newer missions less likely to be funded.
+  - That's okay because of projected app growth. 
+- Globe with benefactor at center. Geolocate different initiatives/organizations.
+- 1 mission at a time, always?
+ - 1 at a time when in org mode
+- Page is sorted by recent activity. 
+- We need the page to be usable by an org rep and a personal profile. This is to emphasize that both share the same goal. Earthbux admin should also use these pages to build membership roles. Some of the user-specific items can be removed from the main page. 
+
+
+- I need a better solution to deal with the possibility but not abuse of reallocation of tokens. Maybe: tokens can only be moved forward in time? Yes. I like this. So scrap the 3 total transactions, and we don't need to assign tokens with a date. Just a rule. You can only move tokens from newer to older causes and not the other way around. So yes, a user could, week after week, add every new dollar to a maturing mission. But they can't, even with purchased tokens, move them from a preexisting mission to a newly created one. We will be able to visualize this nicely with the election cards because of their arrangement by graying out those behind the selected card while the user is transferring tokens.
+
+The issue with this is that all cash eventually ends up at the front mission, which gives unfair precedence to the oldest mission - the earliest mission automatically receives ridiculous amounts of money. BUT users are able to take money out of missions once they are into the budgeting stage, which will then be able to be put back into new missions. 
+
+
+- The top card left area has room for a short description/instructions on how to vote. "Propose an initiative" should be removed from this area. The "Mission x was initiated..." should say "Winner of for1: x initiated y" and this chould be below the card. The description/instructions should be above the card. 
+It should say. "To vote, select the election type, and click on one of the 7 cards. Then allocate your tokens."
+
+- Main needs to indicate that this page is for the first 2 phases of the election, before the mission really starts. Instead of "Context" at the top, say "Voting phase"
+- Admin should be able to remove initiatives, posts, orgs, etc. by the same mechanism which removes benefactors.
+
+Voting no longer happens in EBX. It happens in tokens. We need to remove "EBX" everywhere from the voting area. It's confusing because votes and ebx appear to be seperate. (They kind of are, votes can carry more or less weight depending on how many tokens are behind them).
+
+The OE race pool is not updating when I commit votes.
+
+Allocations should be 
+Allocations: 88 tokens - $8.80 - 
+
+
+
+1. **CE Work** More updates in structure.md top card section.
+2. **OE** It's starting to crystallize. Redesign and updates in structure.md main.html backlog.
+
 
 - **PHL addition from cause.html** Users need to be able to suggest organizations even before the initiative has been decided. In this case, they do not need to be associated with any particular initiative or cause. This is so they can tailor their page depending on how they want to fit into our structure, without being forced to make commitments they don't yet understand. There will be links elsewhere to register/nominate an org. These will take you to profile page, but when nominating for a mission currently in OE, the whole experience stays in main.html.
 

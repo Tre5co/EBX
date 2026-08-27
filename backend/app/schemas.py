@@ -51,7 +51,9 @@ class CauseSuggest(BaseModel):
 
 
 class CauseVoteCast(BaseModel):
-    slot: int          # which upcoming window, 1..7
+    # §1 (2026-08-21): 1..13 — the six confirmed windows and the seven open ones
+    # behind them. `crud.cast_cause_vote` is the authority on which accept a vote.
+    slot: int
     cause_id: str
 
 
@@ -379,12 +381,22 @@ class VoteP2Read(BaseModel):
     id: int
     ben_id: int
     mission_id: str
-    org_id: str
+    # OPTIONAL since 2026-08-19. A stake can exist with no philanthropy named:
+    # the initiative election moves every backer's remainder into the winning
+    # initiative's organization election automatically, and nobody chose an org
+    # for them. A required `str` here made `GET /benefactors/me/p2-votes` return
+    # 500 the moment one of those rows existed — the response model, not the
+    # database, was the last thing still insisting a stake must have a vote.
+    org_id: Optional[str] = None
     votes: int = 1
     ebx_spent: int = 0
     valence: Valence = "helpful"
     committed: bool = False
     created_at: datetime
+    # The explicit stake and its own 15-week clock (token_model.py).
+    stake_ct: int = 0
+    origin_mission_id: Optional[str] = None
+    born_week: Optional[int] = None
 
 
 # ---------------------------------------------------------------------------
