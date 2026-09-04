@@ -699,15 +699,6 @@
     .toggle.on::after { transform: translateX(18px); }
 
     /* ── Pass 34 overhaul — drawing layout ── */
-    .pf-grid {
-      display: grid;
-      grid-template-columns: 260px 1fr 220px;
-      gap: var(--sp-xl);
-      align-items: start;
-      padding: var(--sp-2xl) 0;
-    }
-    @media (max-width: 1100px) { .pf-grid { grid-template-columns: 240px 1fr; } .pf-right { grid-column: 1 / -1; flex-direction: row; align-items: center; } }
-    @media (max-width: 720px)  { .pf-grid { grid-template-columns: 1fr; } .pf-right { flex-direction: column; } }
 
     .pf-left { display: flex; flex-direction: column; gap: var(--sp-lg); }
 
@@ -746,27 +737,8 @@
       font-size: 0.72rem; color: var(--clr-ink-light); text-align: center; line-height: 1.6;
     }
 
-    /* Annulus 3 (center) */
-    .annulus3-card {
-      background: #0f1a14; border: 1px solid rgba(255,255,255,0.07);
-      border-radius: var(--radius-lg); padding: var(--sp-xl);
-      display: flex; flex-direction: column; align-items: center; gap: var(--sp-md);
-    }
-    .annulus3-svg { width: 100%; max-width: 360px; height: auto; }
-    .annulus3-toggle { display: flex; gap: 4px; }
-    .annulus3-toggle button {
-      padding: 4px 14px; font-family: var(--font-mono); font-size: 0.62rem;
-      letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
-      border: 1px solid rgba(255,255,255,0.15); border-radius: 3px;
-      background: none; color: rgba(245,240,232,0.45);
-    }
-    .annulus3-toggle button.active {
-      background: rgba(232,168,76,0.12); color: var(--clr-honey); border-color: var(--clr-honey);
-    }
-    .annulus3-caption {
-      font-size: 0.72rem; color: rgba(245,240,232,0.3);
-      text-align: center; line-height: 1.6; max-width: 300px;
-    }
+    /* The Annulus-3 placeholder that stood in the middle of this page is gone
+       (§1, 2026-08-28): the centre is the globe now, and it is real. */
 
     /* Right rail: gear (b), badge (a), org mode (c) */
     .pf-right { display: flex; flex-direction: column; gap: var(--sp-lg); }
@@ -798,6 +770,192 @@
       font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400;
       color: var(--clr-ink-light);
     }
+
+
+    /* ══════════════════════════════════════════════════════════════════
+       §1 (2026-08-28) — THE PROFILE PAGE, to the drawing in the build
+       sequence. Three cards across the top (c wallet · b allocations ·
+       a profile), then SEVEN weekly-window cards around the globe, then
+       the feed. The old three-column `pf-grid` is gone: it was a wallet,
+       a placeholder ring and a button rail, and none of the three said
+       what this benefactor had chosen.
+
+       The seven cards ARE the choices table. "Each represents a weekly
+       window from the election page. Each box has one initiative and one
+       organization" — which is why each one carries TWO cause colours:
+       the initiative election closing that week and the organization
+       election closing that week belong to different causes, always.
+       ══════════════════════════════════════════════════════════════════ */
+    .pf2 { display: flex; flex-direction: column; gap: var(--sp-lg); }
+
+    /* ── the top row: c | b | a ── */
+    .pf2-top {
+      display: grid; gap: var(--sp-md);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 0.9fr);
+      align-items: stretch;
+    }
+    @media (max-width: 980px) { .pf2-top { grid-template-columns: 1fr; } }
+    .pf2-card {
+      background: #fff; border: 1px solid var(--clr-border, #e3ddd0);
+      border-radius: var(--radius-md, 10px); padding: var(--sp-md, 12px);
+      display: flex; flex-direction: column; min-width: 0;
+    }
+    .pf2-card__title {
+      font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700;
+      letter-spacing: 0.11em; text-transform: uppercase;
+      color: var(--clr-ink-light); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pf2-card__title .pf2-spacer { margin-left: auto; }
+
+    /* (a) profile — badge over three actions: aa settings · ab mode · ac out */
+    .pf2-me { align-items: center; text-align: center; }
+    .pf2-me__handle { font-weight: 700; font-size: 0.9rem; margin-top: 6px; }
+    .pf2-me__type {
+      font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--clr-ink-light);
+    }
+    .pf2-me__acts { display: flex; gap: 6px; margin-top: auto; padding-top: 10px; width: 100%; }
+    .pf2-act {
+      flex: 1 1 0; min-width: 0; cursor: pointer;
+      background: var(--clr-surface, #f6f3ec); border: 1px solid var(--clr-border, #e3ddd0);
+      border-radius: 6px; padding: 6px 4px; font-size: 0.62rem; line-height: 1.2;
+      font-family: var(--font-mono); letter-spacing: 0.04em; color: var(--clr-ink);
+    }
+    .pf2-act:hover:not(:disabled) { background: #fff; border-color: var(--clr-moss, #4e7a4e); }
+    .pf2-act:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pf2-act__k {
+      display: block; font-size: 0.5rem; opacity: 0.5; letter-spacing: 0.14em;
+    }
+
+    /* (c) the wallet strip — a coin is SELECTABLE now, because ab is gated on
+       one being picked ("must have a coin in c. selected"). */
+    .coin-chip.is-picked {
+      outline: 2px solid var(--clr-moss, #4e7a4e); outline-offset: 2px;
+    }
+
+    /* (b) allocations — the same three sets of two as the election page, so a
+       benefactor reads one bar in one shape wherever they are. */
+    .pf2-alloc { display: flex; gap: var(--sp-md); flex-wrap: wrap; }
+    .pf2-set { flex: 1 1 150px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .pf2-set__head { display: flex; align-items: baseline; gap: 6px; }
+    .pf2-set__name {
+      font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--clr-ink-light);
+    }
+    .pf2-set__n { font-size: 0.82rem; }
+    .pf2-set__usd { font-size: 0.62rem; color: var(--clr-ink-light); margin-left: auto; }
+    .pf2-bar {
+      display: flex; height: 9px; border-radius: 5px; overflow: hidden;
+      background: rgba(20,26,22,0.06);
+    }
+    .pf2-seg { display: block; height: 100%; }
+    .pf2-seg--fresh { background: #d8a13a; }
+    .pf2-seg--buy   { background: #74c476; }
+    .pf2-seg--tiv   { background: #6baed6; }
+    .pf2-seg--org   { background: #9a7fd0; }
+    .pf2-seg--ebx   { background: #e0a458; }
+    .pf2-seg--don   { background: #6f8f7a; }
+    .pf2-key { display: flex; gap: 10px; font-size: 0.6rem; color: var(--clr-ink-light); }
+    /* The legend marks are DOTS, not bar segments — they shared a class until
+       2026-08-28, which made ".pf2-alloc .pf2-seg" count twelve things when the
+       bar has six. */
+    .pf2-dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 4px; }
+    .pf2-conv { margin-top: 10px; border-top: 1px dashed var(--clr-border); padding-top: 8px; }
+    .pf2-conv__row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 0.7rem; }
+    .pf2-conv select, .pf2-conv input {
+      font: inherit; font-size: 0.7rem; padding: 3px 5px;
+      border: 1px solid var(--clr-border); border-radius: 5px; background: #fff; min-width: 0;
+    }
+    .pf2-conv select { max-width: 190px; }
+    .pf2-conv input { width: 66px; }
+    .pf2-conv__msg { font-size: 0.65rem; color: var(--clr-ink-light); }
+
+    /* ── the ring: top card, two columns of three, globe in the middle ── */
+    .pf2-ring {
+      display: grid; gap: var(--sp-md);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr) minmax(0, 1fr);
+      grid-template-areas: ".  top  ." "left globe right";
+    }
+    .pf2-ring__top   { grid-area: top; }
+    .pf2-ring__left  { grid-area: left; }
+    .pf2-ring__right { grid-area: right; }
+    .pf2-ring__globe { grid-area: globe; display: flex; align-items: center; justify-content: center; }
+    .pf2-ring__col { display: flex; flex-direction: column; gap: var(--sp-md); justify-content: space-between; }
+    @media (max-width: 980px) {
+      .pf2-ring { grid-template-columns: 1fr; grid-template-areas: "top" "globe" "left" "right"; }
+    }
+
+    /* ── (e) one weekly window ── */
+    .pf2-win {
+      border: 1px solid var(--clr-border, #e3ddd0); border-radius: var(--radius-md, 10px);
+      background: #fff; overflow: hidden; display: flex; flex-direction: column;
+      cursor: pointer; transition: box-shadow 0.12s, transform 0.12s;
+      /* the two colours of the week, as one hairline across the top */
+      border-top: 3px solid transparent;
+      border-image: linear-gradient(90deg, var(--c-o) 0 50%, var(--c-i) 50% 100%) 1;
+    }
+    .pf2-win:hover { box-shadow: 0 4px 14px rgba(20,26,22,0.10); }
+    .pf2-win.is-selected { box-shadow: 0 0 0 2px var(--clr-moss, #4e7a4e); }
+    .pf2-win__wk {
+      font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--clr-ink-light);
+      padding: 5px 9px 3px; display: flex; gap: 8px; align-items: baseline;
+    }
+    .pf2-win__wk b { color: var(--clr-ink); font-weight: 700; }
+    .pf2-win__wk .pf2-spacer { margin-left: auto; }
+    .pf2-win__body { display: flex; min-height: 0; }
+    .pf2-win--rows .pf2-win__body { flex-direction: column; }
+    .pf2-win--cols .pf2-win__body { flex-direction: row; }
+    .pf2-half {
+      flex: 1 1 0; min-width: 0; padding: 7px 9px 9px;
+      border-top: 1px solid rgba(20,26,22,0.07);
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .pf2-win--cols .pf2-half + .pf2-half { border-left: 1px solid rgba(20,26,22,0.07); }
+    .pf2-half__kind {
+      font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.1em;
+      text-transform: uppercase; display: flex; align-items: center; gap: 5px;
+    }
+    .pf2-half__kind i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+    .pf2-half__pick {
+      font-size: 0.76rem; font-weight: 600; line-height: 1.25;
+      overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .pf2-half__pick--none { font-weight: 400; font-style: italic; color: var(--clr-ink-light); }
+    .pf2-half__mine { font-family: var(--font-mono); font-size: 0.6rem; color: var(--clr-ink-light); }
+    .pf2-half__mine b { color: var(--clr-ink); }
+
+    /* ── (d) the globe ── */
+    .pf2-globe {
+      width: 100%; max-width: 360px; aspect-ratio: 1 / 1;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .pf2-globe svg { width: 100%; height: auto; display: block; }
+    .pf2-globe__cap {
+      font-size: 0.62rem; color: var(--clr-ink-light); text-align: center; line-height: 1.4;
+    }
+
+    /* ── (f) the feed ── */
+    .pf2-feed__tabs { display: flex; gap: 6px; margin-left: auto; }
+    .pf2-feed__tabs button {
+      font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 3px 8px; cursor: pointer;
+      border: 1px solid var(--clr-border); background: var(--clr-surface); border-radius: 5px;
+    }
+    .pf2-feed__tabs button.active { background: var(--clr-moss, #4e7a4e); color: #fff; border-color: transparent; }
+    .pf2-post {
+      border-bottom: 1px solid var(--clr-border); padding: 9px 0; display: flex; gap: 10px;
+    }
+    .pf2-post:last-child { border-bottom: none; }
+    .pf2-post__type {
+      font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--clr-ink-light); flex: 0 0 84px; padding-top: 2px;
+    }
+    .pf2-post__t { font-weight: 600; font-size: 0.8rem; }
+    .pf2-post__b { font-size: 0.74rem; color: var(--clr-ink-light); margin-top: 2px; }
+    .pf2-post__m { font-family: var(--font-mono); font-size: 0.58rem; color: var(--clr-ink-light); margin-top: 3px; }
 
   </style>
 </head>
@@ -837,6 +995,16 @@
             const e = window._myP1ByCause[cid] || (window._myP1ByCause[cid] = { shares: {}, ebx: 0 });
             e.shares[v.tiv_id] = v.share;
             e.ebx += (v.ebx_committed || 0);
+            // …and by MISSION, which is what a window card is.
+            const mm = window._myP1ByMission[v.mission_id]
+              || (window._myP1ByMission[v.mission_id] = { shares: {}, ct: 0, topTiv: null, topShare: 0 });
+            mm.shares[v.tiv_id] = v.share;
+            // `stake_ct` is the finalized model's field; `ebx_committed` is the
+            // legacy float behind it (see wallet.p1_stake_ct_of, §0a).
+            mm.ct += (v.stake_ct != null ? Number(v.stake_ct) : Math.round((v.ebx_committed || 0) * 100));
+            if ((Number(v.share) || 0) > mm.topShare) {
+              mm.topShare = Number(v.share) || 0; mm.topTiv = v.tiv_id;
+            }
           });
         }
       } catch (e) {}
@@ -852,6 +1020,78 @@
         const r = await EBX.Auth.fetchAuthed('/benefactors/me/credit-coins');
         if (r && r.ok) window._myCoins = await r.json();
       } catch (e) {}
+    }
+
+    // §1 (2026-08-28) — the profile page needs the SAME two reads the election
+    // page makes, because the seven window cards are the election page seen
+    // from one benefactor's side: `GET /wallet` for the four states in the
+    // allocations panel, `GET /wallet/rows` for what they are standing behind
+    // in each open organization election. The old choices table had no org
+    // data at all — `orgVotes` was an empty object with a comment saying so.
+    window._myWallet = null;
+    window._walletRows = [];
+    window._walletRowByMission = {};
+    async function loadMyWallet() {
+      window._myWallet = null; window._walletRows = []; window._walletRowByMission = {};
+      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn() && EBX.Auth.fetchAuthed)) return;
+      try {
+        const r = await EBX.Auth.fetchAuthed('/wallet');
+        if (r && r.ok) {
+          const j = await r.json();
+          // `GET /wallet` answers `{wallet: {...}, week, grant_cause_id, rows}`.
+          // The rows come from HERE, not from `GET /wallet/rows`: that one is the
+          // SIGNED-OUT variant and reports `my_stake_ct: 0` for every race, which
+          // is why the organization half of every window card said "no vote yet"
+          // for an account with fifty tokens standing in three of them.
+          window._myWallet = Object.assign({}, j.wallet || j,
+            { grant_cause_id: j.grant_cause_id || (j.wallet || {}).grant_cause_id,
+              week: j.week });
+          window._walletRows = Array.isArray(j.rows) ? j.rows : [];
+        }
+      } catch (e) {}
+      if (!window._walletRows.length) {          // signed out, or /wallet failed
+        try {
+          const r = await fetch('/wallet/rows');
+          if (r && r.ok) window._walletRows = await r.json();
+        } catch (e) {}
+      }
+      (window._walletRows || []).forEach(row => {
+        window._walletRowByMission[row.mission_id] = row;
+      });
+    }
+
+    // Phase-1 votes per MISSION as well as per cause. A window card is a
+    // mission, not a cause — two missions of the same cause are in flight at
+    // once, so grouping by cause cannot say which race a commitment is in.
+    window._myP1ByMission = {};
+
+    // §1 (2026-08-28) — the FEED (f). "When in benefactor mode, it shows the
+    // users recent posts and comments. When in member mode, it shows the users
+    // research posts and other research posts they have contributed to."
+    window._myPosts = [];
+    window._myResearch = [];
+    window._contributedResearch = [];
+    async function loadMyActivity(benId) {
+      window._myPosts = []; window._myResearch = []; window._contributedResearch = [];
+      if (benId == null) return;
+      const get = async (qs) => {
+        try { const r = await fetch('/posts?' + qs); return (r && r.ok) ? await r.json() : []; }
+        catch (e) { return []; }
+      };
+      window._myPosts = await get('ben_author_id=' + benId + '&limit=50');
+      window._myResearch = window._myPosts.filter(
+        x => ['context', 'investigation', 'analysis'].indexOf(x.type) >= 0);
+      // "…and other research posts they have contributed to": a contribution is
+      // a comment of theirs on somebody else's research, so the parent is what
+      // the member sees, not their own reply.
+      const parents = Array.from(new Set(window._myPosts
+        .filter(x => x.parent_id).map(x => x.parent_id)));
+      if (parents.length) {
+        const all = await get('type=context,investigation,analysis&limit=200');
+        const mine = new Set(window._myResearch.map(x => x.id));
+        window._contributedResearch = all.filter(
+          x => parents.indexOf(x.id) >= 0 && !mine.has(x.id));
+      }
     }
 
     // Shared nav: home mark + user badge on every page
@@ -886,6 +1126,8 @@
       };
       await loadMyChoices();
       try { await loadMyCoins(); } catch (e) {}   // build-seq 9: seed choices table + wallet
+      try { await loadMyWallet(); } catch (e) {}          // §1 (2026-08-28): b + the OE half of e
+      try { await loadMyActivity(apiUser.id); } catch (e) {}  // §1 (2026-08-28): f
       renderProfile(profile);
       return;
     }
@@ -1359,6 +1601,255 @@
         return;
       }
 
+      /* ══════════════════════════════════════════════════════════════
+         §1 (2026-08-28) — (e) THE SEVEN WEEKLY WINDOWS.
+
+         "Each represents a weekly window from the election page. Each box
+         has one initiative and one organization."
+
+         A window is a WEEK, not a cause. In any one week exactly one
+         initiative election closes (a mission reaching T) and exactly one
+         organization election closes (a mission reaching T + 8wk), and
+         because 8 is not 7 those two always belong to different causes —
+         which is where "each will have 2 colors" comes from.
+
+         "Time rotates clockwise": the top card is this week and reads
+         left-to-right, organization then initiative. Going clockwise from
+         it you fall down the RIGHT column, so those cards read top-to-
+         bottom, organization then initiative; you come back UP the left
+         column, so those read initiative then organization. The org half
+         is always the one you have already passed.
+         ══════════════════════════════════════════════════════════════ */
+      const _WKMS = 7 * 24 * 60 * 60 * 1000;
+      function buildWindows() {
+        const byWeek = {};
+        const put = (key, side, obj) => {
+          const w = byWeek[key] || (byWeek[key] = { key: key, me: null, oe: null });
+          if (!w[side] || obj.date < w[side].date) w[side] = obj;
+        };
+        (EBX.config.missions || []).forEach(m => {
+          let d; try { d = EBX.Cycle.missionDates(m); } catch (e) { return; }
+          if (!m.winning_tiv_id) {
+            put(Math.round(d.missionStarted.getTime() / _WKMS), 'me',
+                { mission: m, date: d.missionStarted });
+          } else if (!m.winning_org_id) {
+            put(Math.round(d.phlElected.getTime() / _WKMS), 'oe',
+                { mission: m, date: d.phlElected });
+          }
+        });
+        // Yesterday, not now: a race decided this morning is still the week a
+        // benefactor is looking at.
+        const floor = Date.now() - 24 * 60 * 60 * 1000;
+        return Object.keys(byWeek).map(k => byWeek[k])
+          .map(w => {
+            w.date = (w.me && w.me.date) || (w.oe && w.oe.date) || null;
+            return w;
+          })
+          .filter(w => w.date && w.date.getTime() >= floor)
+          .sort((a, b) => a.date - b.date)
+          .slice(0, 7);
+      }
+
+      const causeById = {}; causes.forEach(c => { causeById[c.id] = c; });
+      const _tk = ct => EBX.formatTokens ? EBX.formatTokens((ct || 0) / 100)
+                                         : (((ct || 0) / 100).toFixed(2) + ' tokens');
+      const _short = d => d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+
+      // One half of a window card. `kind` is 'oe' or 'me'.
+      function winHalf(side, kind) {
+        const m = side && side.mission;
+        const c = m ? (causeById[m.cause_id] || { name: m.cause_id, color: '#999' }) : null;
+        const label = kind === 'oe' ? 'Organization' : 'Initiative';
+        if (!m) {
+          return `<div class="pf2-half">
+            <div class="pf2-half__kind"><i style="background:#ccc"></i>${label}</div>
+            <div class="pf2-half__pick pf2-half__pick--none">no race this week</div>
+          </div>`;
+        }
+        let pick = null, mine = '';
+        if (kind === 'oe') {
+          const row = (window._walletRowByMission || {})[m.id] || null;
+          const orgId = row && row.my_org_id;
+          pick = orgId ? (orgById[String(orgId)] ? orgById[String(orgId)].name : orgId) : null;
+          const ct = row ? Number(row.my_stake_ct || 0) : 0;
+          mine = ct > 0 ? `<b>${_tk(ct)}</b> committed` : '';
+          if (!pick && ct > 0) pick = null;   // staked with nobody named yet
+        } else {
+          const mm = (window._myP1ByMission || {})[m.id] || null;
+          const tiv = mm && mm.topTiv ? initById[String(mm.topTiv)] : null;
+          pick = tiv ? tiv.title : (mm && mm.topTiv ? mm.topTiv : null);
+          const ct = mm ? Number(mm.ct || 0) : 0;
+          const nShares = mm ? Object.keys(mm.shares || {}).length : 0;
+          mine = ct > 0
+            ? `<b>${_tk(ct)}</b>${nShares > 1 ? ` across ${nShares}` : ''}`
+            : '';
+        }
+        const href = kind === 'oe'
+          ? `main.html?state=oe&cause=${m.cause_id}`
+          : `main.html?state=me&cause=${m.cause_id}`;
+        return `<div class="pf2-half">
+          <div class="pf2-half__kind" style="color:${c.color}">
+            <i style="background:${c.color}"></i>${label} · ${c.name}
+          </div>
+          ${pick
+            ? `<a class="pf2-half__pick" href="${href}" style="color:inherit;text-decoration:none;">${pick}</a>`
+            : `<a class="pf2-half__pick pf2-half__pick--none" href="${href}" style="text-decoration:none;">${
+                 mine ? 'committed — no pick named' : 'no vote yet'}</a>`}
+          <div class="pf2-half__mine">${mine || '&nbsp;'}</div>
+        </div>`;
+      }
+
+      // `place` is 'top' | 'right' | 'left' and decides both the axis and the
+      // order of the two halves — the clockwise rule above.
+      function winCard(w, place, idx) {
+        const oc = w.oe && causeById[w.oe.mission.cause_id];
+        const ic = w.me && causeById[w.me.mission.cause_id];
+        const halves = [winHalf(w.oe, 'oe'), winHalf(w.me, 'me')];
+        if (place === 'left') halves.reverse();          // coming back up: i on top
+        const when = w.date;
+        const days = when ? Math.max(0, Math.round((when - Date.now()) / 86400000)) : null;
+        return `<div class="pf2-win pf2-win--${place === 'top' ? 'cols' : 'rows'}"
+                     data-week="${idx}"
+                     style="--c-o:${(oc && oc.color) || '#ccc'};--c-i:${(ic && ic.color) || '#ccc'};"
+                     onclick="selectWindow(${idx})">
+          <div class="pf2-win__wk">
+            <b>${idx === 0 ? 'This week' : 'Week +' + idx}</b>
+            <span class="pf2-spacer"></span>
+            <span>${_short(when)}${days != null ? ' · ' + days + 'd' : ''}</span>
+          </div>
+          <div class="pf2-win__body">${halves.join('')}</div>
+        </div>`;
+      }
+
+      /* ── (d) THE GLOBE ────────────────────────────────────────────────
+         "3D globe display that rotates depending on which mission is
+         selected. It will mark the locations relevant to this mission."
+
+         Missions carry no geography yet — there is no lat/lon on any model
+         — so this marks the seven CAUSE ANCHORS and spins the selected
+         window's two causes to the front. It is drawn as a real sphere
+         (orthographic projection, its own graticule, day terminator) so
+         that when a mission does get coordinates the only thing that
+         changes is where the markers come from, and so mission.html can
+         take the same component. The caption says exactly this rather
+         than implying the dots are places.                              */
+      const CAUSE_ANCHOR = {   // stable points on the sphere, one per cause
+        'atmosphere':     [ 38,  -20], 'oceans':      [-10,  -150],
+        'land':           [ 10,   25], 'forests':     [ -5,   -60],
+        'wildlife':       [-20,   30], 'human-rights':[ 45,    10],
+        'human-progress': [ 20,   80]
+      };
+      // The rAF handle lives on `window` because `renderProfile` re-runs on
+      // every mode switch and would otherwise leave the previous loop turning
+      // a globe that is no longer in the document.
+      let _globeLon = 0, _globeTarget = 0;
+      function globeSVG() {
+        return `<div class="pf2-globe">
+          <svg viewBox="0 0 320 320" id="pf2-globe-svg" role="img"
+               aria-label="Globe marking the causes in the selected week">
+            <defs>
+              <radialGradient id="gl-sea" cx="35%" cy="30%">
+                <stop offset="0%" stop-color="#2b4c63"/>
+                <stop offset="70%" stop-color="#16303f"/>
+                <stop offset="100%" stop-color="#0b1c25"/>
+              </radialGradient>
+              <radialGradient id="gl-glow" cx="50%" cy="50%">
+                <stop offset="70%" stop-color="rgba(120,190,220,0)"/>
+                <stop offset="100%" stop-color="rgba(120,190,220,0.28)"/>
+              </radialGradient>
+            </defs>
+            <circle cx="160" cy="160" r="132" fill="url(#gl-sea)"/>
+            <g id="gl-grid" stroke="rgba(160,210,235,0.20)" fill="none" stroke-width="0.8"></g>
+            <g id="gl-marks"></g>
+            <circle cx="160" cy="160" r="132" fill="url(#gl-glow)" pointer-events="none"/>
+          </svg>
+          <div class="pf2-globe__cap" id="pf2-globe-cap"></div>
+        </div>`;
+      }
+      function _project(latDeg, lonDeg, lon0) {
+        const la = latDeg * Math.PI / 180, lo = (lonDeg - lon0) * Math.PI / 180;
+        const x = Math.cos(la) * Math.sin(lo);
+        const y = Math.sin(la);
+        const z = Math.cos(la) * Math.cos(lo);          // z > 0 = facing us
+        return { x: 160 + x * 132, y: 160 - y * 132, z: z };
+      }
+      function drawGlobe() {
+        const grid = document.getElementById('gl-grid');
+        const marks = document.getElementById('gl-marks');
+        if (!grid || !marks) return;
+        const path = [];
+        for (let lat = -60; lat <= 60; lat += 30) {          // parallels
+          const pts = [];
+          for (let lon = -180; lon <= 180; lon += 6) {
+            const q = _project(lat, lon, _globeLon);
+            if (q.z >= 0) pts.push((pts.length ? 'L' : 'M') + q.x.toFixed(1) + ' ' + q.y.toFixed(1));
+            else pts.push('');
+          }
+          path.push('<path d="' + pts.filter(Boolean).join(' ').replace(/L(?=\s*$)/, '') + '"/>');
+        }
+        for (let lon = -180; lon < 180; lon += 30) {          // meridians
+          const pts = [];
+          for (let lat = -90; lat <= 90; lat += 4) {
+            const q = _project(lat, lon, _globeLon);
+            if (q.z >= 0) pts.push((pts.length ? 'L' : 'M') + q.x.toFixed(1) + ' ' + q.y.toFixed(1));
+          }
+          if (pts.length > 1) path.push('<path d="' + pts.join(' ') + '"/>');
+        }
+        grid.innerHTML = path.join('');
+        const w = _windows[_selWindow];
+        const items = [];
+        if (w) {
+          [['oe', w.oe], ['me', w.me]].forEach(([kind, side]) => {
+            if (!side) return;
+            const cid = side.mission.cause_id;
+            const a = CAUSE_ANCHOR[cid]; if (!a) return;
+            const c = causeById[cid] || { color: '#fff', name: cid };
+            const q = _project(a[0], a[1], _globeLon);
+            const front = q.z >= 0;
+            items.push(`<g opacity="${front ? 1 : 0.18}">
+              <circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${front ? 7 : 4}"
+                      fill="${c.color}" stroke="rgba(255,255,255,0.85)" stroke-width="1.4"/>
+              ${front ? `<text x="${q.x.toFixed(1)}" y="${(q.y - 12).toFixed(1)}"
+                     text-anchor="middle" fill="rgba(255,255,255,0.9)"
+                     style="font-family:var(--font-mono);font-size:9px;">${c.name}</text>` : ''}
+            </g>`);
+          });
+        }
+        marks.innerHTML = items.join('');
+      }
+      function _spin() {
+        const d = _globeTarget - _globeLon;
+        _globeLon += (Math.abs(d) > 0.4 ? d * 0.08 : 0.12);   // ease to target, then drift
+        if (Math.abs(d) <= 0.4) _globeTarget = _globeLon;
+        drawGlobe();
+        window._globeRaf = requestAnimationFrame(_spin);
+      }
+      function aimGlobe() {
+        const w = _windows[_selWindow];
+        const side = w && (w.oe || w.me);
+        const a = side && CAUSE_ANCHOR[side.mission.cause_id];
+        if (a) _globeTarget = a[1];
+        const cap = document.getElementById('pf2-globe-cap');
+        if (cap) {
+          const names = [w && w.oe, w && w.me].filter(Boolean)
+            .map(x => (causeById[x.mission.cause_id] || {}).name).filter(Boolean);
+          cap.innerHTML = names.length
+            ? `${names.join(' · ')} — cause anchors. Missions carry no coordinates yet,
+               so these mark the causes in this week, not places on the ground.`
+            : 'No race in this window.';
+        }
+      }
+      window.selectWindow = function (i) {
+        _selWindow = i;
+        document.querySelectorAll('.pf2-win').forEach(el => {
+          el.classList.toggle('is-selected', Number(el.dataset.week) === i);
+        });
+        aimGlobe();
+      };
+
+      const _windows = buildWindows();
+      let _selWindow = 0;
+
       const initials = (p.display || p.handle || '?')
         .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
 
@@ -1393,8 +1884,9 @@
                    ebx: cc.amount_ebx, value: cc.value || 1, mission: cc.mission_id, real: true };
         });
         walletHTML = coins.map(coin => `
-            <a class="coin-chip" href="${coin.cause.id ? 'cause.html?id=' + coin.cause.id : 'mission.html?mission=' + coin.mission}"
-               title="${coin.mission} credit coin${_isAdminCoin ? ' (admin/test — not real money)' : ''}"
+            <a class="coin-chip" data-coin="${coin.mission}" onclick="pickCoin('${coin.mission}', event)"
+               href="${coin.cause.id ? 'cause.html?id=' + coin.cause.id : 'mission.html?mission=' + coin.mission}"
+               title="${coin.mission} credit coin${_isAdminCoin ? ' (admin/test — not real money)' : ''} — click to select for member mode"
                style="${_isAdminCoin ? 'filter:grayscale(0.8);opacity:0.75;outline:1px dashed #999;' : ''}">
               ${EBX.creditBadge([{ causeIndex: coin.cause.index, amount: coin.ebx }], 40)}
               <div class="coin-chip__name">🪙 ${coin.cause.name}</div>
@@ -1409,7 +1901,9 @@
         }).filter(Boolean);
         walletHTML = coins.length
           ? coins.map(coin => `
-              <a class="coin-chip" href="cause.html?id=${coin.cause.id}" title="${coin.cause.name} mission — committed (coin mints at election settlement)">
+              <a class="coin-chip" data-coin="${coin.cause.id}" onclick="pickCoin('${coin.cause.id}', event)"
+                 href="cause.html?id=${coin.cause.id}"
+                 title="${coin.cause.name} mission — committed (coin mints at election settlement)">
                 ${EBX.creditBadge([{ causeIndex: coin.cause.index, amount: coin.ebx }], 40)}
                 <div class="coin-chip__name">${coin.cause.name}</div>
                 <div class="coin-chip__ebx">${EBX.formatEBX(coin.ebx)} committed</div>
@@ -1461,24 +1955,142 @@
       const holdings = coins.map(c => ({ causeIndex: c.cause.index, amount: c.ebx }));
       const hasCoin  = coins.length > 0;
 
-      /* ── posts history (kept below the drawing's fold) ── */
-      const allPosts  = EBX.config.feed || [];
-      const userPosts = allPosts
-        .filter(post => post.author === p.handle || post.author === `@${p.handle}`)
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      const feedHistoryHTML = userPosts.length
-        ? userPosts.map(post => `
-            <div class="activity-item">
-              <div class="activity-item__icon" style="font-size:0.75rem;background:var(--clr-surface);">💬</div>
-              <div class="activity-item__body">
-                ${post.title ? `<div style="font-size:0.82rem;font-weight:600;color:var(--clr-ink);margin-bottom:2px;">${post.title}</div>` : ''}
-                <div class="activity-item__text">${(post.body || '').slice(0, 120)}${post.body?.length > 120 ? '…' : ''}</div>
-                <div class="activity-item__time">${EBX.timeAgo(post.created_at)}</div>
-              </div>
-            </div>`).join('')
-        : `<div style="color:var(--clr-ink-light);font-size:0.82rem;padding:var(--sp-lg) 0;">
-             No posts yet. <a href="main.html" style="color:var(--clr-moss);">Browse the missions →</a>
-           </div>`;
+      /* ── (b) ALLOCATIONS ─────────────────────────────────────────────
+         The four states in one bar, three sets of two — the same shape the
+         election page draws, because a benefactor should not have to learn
+         their own balance twice. Below it, the CONVERSION row: `POST
+         /wallet/move` is the only way ct changes race now that the
+         three-conversion budget is retired.                              */
+      const _W = window._myWallet || {};
+      const _free = Number(_W.unallocated_ct != null ? _W.unallocated_ct : (_W.free_ct || 0)) || 0;
+      const _buy  = Number(_W.purchased_ct || 0) || 0;
+      const _cmt  = Number(_W.committed_ct || 0) || 0;
+      const _mint = Number(_W.minted_ct || 0) || 0;
+      const _don  = Number(_W.donated_ct || 0) || 0;
+      // Split the committed bin the way the window cards do: initiative
+      // elections vs organization elections. Both read what is already loaded,
+      // so the panel and the cards can never disagree.
+      let _tivCt = 0;
+      Object.keys(window._myP1ByMission || {}).forEach(mid => {
+        const m = (EBX.config.missions || []).find(x => x.id === mid);
+        if (m && !m.winning_tiv_id) _tivCt += Number(window._myP1ByMission[mid].ct || 0);
+      });
+      const _orgCt = Math.max(0, _cmt - _tivCt);
+      const _usd = ct => '$' + ((ct || 0) / 1000).toFixed(2);   // 1 token = 10c
+      const _pctw = (tot, part) => (tot > 0 ? (100 * part / tot).toFixed(2) : '0') + '%';
+      // "The grant carries its CAUSE, not a deadline" — so the panel says which
+      // cause this week's ten were granted against, which is the only thing
+      // that limits where they may be spent.
+      const _grantCause = _W.grant_cause_id ? (causeById[_W.grant_cause_id] || null) : null;
+      const allocTotalLabel = _tk(_free + _cmt + _mint) + ' total'
+        + (_grantCause ? ` · granted against <b style="color:${_grantCause.color}">${_grantCause.name}</b>` : '');
+      const _set = (name, total, segs, keys) => `
+        <div class="pf2-set">
+          <div class="pf2-set__head">
+            <span class="pf2-set__name">${name}</span>
+            <b class="pf2-set__n">${_tk(total)}</b>
+            <span class="pf2-set__usd">${_usd(total)}</span>
+          </div>
+          <div class="pf2-bar">${segs.map(sg =>
+            `<i class="pf2-seg pf2-seg--${sg[0]}" style="width:${_pctw(total, sg[1])}"></i>`).join('')}</div>
+          <div class="pf2-key">${keys.map(k =>
+            `<span><i class="pf2-dot pf2-seg--${k[0]}"></i>${_tk(k[1])} ${k[2]}</span>`).join('')}</div>
+        </div>`;
+      const _movable = (window._walletRows || []).filter(r => r.movable && Number(r.my_stake_ct || 0) > 0);
+      const _allRaces = (window._walletRows || []);
+      const allocHTML = `
+        <div class="pf2-alloc">
+          ${_set('Unallocated', _free, [['fresh', Math.max(0, _free - _buy)], ['buy', _buy]],
+                 [['fresh', Math.max(0, _free - _buy), 'granted'], ['buy', _buy, 'purchased']])}
+          ${_set('Committed', _cmt, [['tiv', _tivCt], ['org', _orgCt]],
+                 [['tiv', _tivCt, 'initiatives'], ['org', _orgCt, 'organizations']])}
+          ${_set('EBX', _mint + _don, [['ebx', _mint], ['don', _don]],
+                 [['ebx', _mint, 'held'], ['don', _don, 'donated']])}
+        </div>
+        <div class="pf2-conv">
+          <div class="pf2-conv__row">
+            <span class="pf2-set__name">Convert</span>
+            <select id="pf2-conv-from" ${_movable.length ? '' : 'disabled'}>
+              ${_movable.length
+                ? _movable.map(r => `<option value="${r.mission_id}">${r.tiv_title} — ${_tk(r.my_stake_ct)}</option>`).join('')
+                : '<option>nothing movable this week</option>'}
+            </select>
+            <span>&rarr;</span>
+            <select id="pf2-conv-to" ${_allRaces.length ? '' : 'disabled'}>
+              ${_allRaces.map(r => `<option value="${r.mission_id}">${r.tiv_title}</option>`).join('')}
+            </select>
+            <input id="pf2-conv-amt" type="number" min="0" step="0.1" placeholder="0" />
+            <button class="pf2-act" style="flex:0 0 auto;" onclick="pfConvert()"
+                    ${_movable.length ? '' : 'disabled'}>Move</button>
+          </div>
+          <div class="pf2-conv__msg" id="pf2-conv-msg">
+            Moving tokens between races is free and unlimited inside the week they were
+            committed. At the week roll a standing allocation becomes EBX and stays with its mission.
+          </div>
+        </div>`;
+
+      /* ── (f) THE FEED ─────────────────────────────────────────────────
+         "When in benefactor mode, it shows the users recent posts and
+         comments. When in member mode, it shows the users research posts
+         and other research posts they have contributed to."             */
+      const _postHTML = (post, note) => {
+        const m = (EBX.config.missions || []).find(x => x.id === post.mission_id);
+        const c = m ? causeById[m.cause_id] : (post.cause_id ? causeById[post.cause_id] : null);
+        const href = c ? `cause.html?id=${c.id}`
+                       : (post.mission_id ? `mission.html?mission=${post.mission_id}` : '#');
+        const when = post.created_at
+          ? new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+        const body = String(post.body || '');
+        return `<div class="pf2-post">
+          <div class="pf2-post__type" style="${c ? 'color:' + c.color : ''}">
+            ${post.parent_id ? 'comment' : (post.type || post.category || 'post')}
+          </div>
+          <div style="min-width:0;flex:1 1 auto;">
+            <a class="pf2-post__t" href="${href}" style="color:inherit;text-decoration:none;">${
+              post.title || body.slice(0, 70) || '(untitled)'}</a>
+            ${post.title && body ? `<div class="pf2-post__b">${body.slice(0, 160)}</div>` : ''}
+            <div class="pf2-post__m">${[c && c.name, post.mission_id, when, note].filter(Boolean).join(' · ')}</div>
+          </div>
+        </div>`;
+      };
+      const _emptyFeed = t => `<div style="font-size:0.78rem;color:var(--clr-ink-light);padding:10px 0;">${t}</div>`;
+      if (!window._pfFeedTab) window._pfFeedTab = orgMode ? 'research' : 'all';
+      function feedFor(tab) {
+        const mine = window._myPosts || [];
+        if (tab === 'research') {
+          const own = (window._myResearch || []).map(x => _postHTML(x, 'yours'));
+          const other = (window._contributedResearch || []).map(x => _postHTML(x, 'you contributed'));
+          return (own.length + other.length)
+            ? own.concat(other).join('')
+            : _emptyFeed('No research yet. Context, investigation and analysis posts land here.');
+        }
+        if (tab === 'comments') {
+          const cs = mine.filter(x => x.parent_id);
+          return cs.length ? cs.map(x => _postHTML(x)).join('') : _emptyFeed('No comments yet.');
+        }
+        const rs = mine.filter(x => !x.parent_id);
+        return rs.length ? rs.map(x => _postHTML(x)).join('')
+                         : _emptyFeed('No posts yet. <a href="cause.html" style="color:var(--clr-moss);">Join a discussion &rarr;</a>');
+      }
+      const _tabs = orgMode
+        ? [['research', 'Research']]
+        : [['all', 'Posts'], ['comments', 'Comments'], ['research', 'Research']];
+      const feedTabsHTML = _tabs.map(t =>
+        `<button class="${window._pfFeedTab === t[0] ? 'active' : ''}" onclick="pfFeedTab('${t[0]}')">${t[1]}</button>`).join('');
+      window.pfFeedTab = function (k) {
+        window._pfFeedTab = k;
+        const body = document.getElementById('pf2-feed-body');
+        if (body) body.innerHTML = feedFor(k);
+        document.querySelectorAll('.pf2-feed__tabs button').forEach((b, i) => {
+          b.classList.toggle('active', _tabs[i] && _tabs[i][0] === k);
+        });
+      };
+      // §1 (2026-08-28) — what stood here filtered the global 50-post feed on
+      // `post.author === p.handle`, but `author` is `author_type` ("ben" /
+      // "org"), so it never matched: "Your posts" was empty for every account
+      // that had ever posted. The page asks the server for this benefactor's
+      // own rows now (`GET /posts?ben_author_id=`).
+      const feedHistoryHTML = feedFor(window._pfFeedTab);
 
       /* ── build-seq 5 (pass 35) → Build Phase 2 (B): org-mode face content.
          Backed by REAL Membership rows + the org profile bundle now
@@ -1576,97 +2188,86 @@
       root.innerHTML = `
         <div style="background:var(--clr-bg);">
           <div class="container">
-            <div class="pf-grid">
+            <div class="pf2">
 
-              <!-- ── Left: CreditCoin Wallet + choices table ── -->
-              <aside class="pf-left">
-                <div class="wallet-strip-card">
-                  <div class="wallet-strip-card__head">
-                    <span class="choices-col-title">${orgMode ? 'Initiative Coins' : 'CreditCoin Wallet'}</span>
-                    <span class="wallet-strip-card__nav">
-                      <button onclick="walletScroll(-1)" aria-label="Scroll wallet left">‹</button>
-                      <button onclick="walletScroll(1)" aria-label="Scroll wallet right">›</button>
-                    </span>
-                  </div>
-                  <div class="wallet-strip" id="wallet-strip">${orgMode ? initiativeCoinsHTML : walletHTML}</div>
+            <!-- ══ the top row: (c) wallet · (b) allocations · (a) profile ══ -->
+            <div class="pf2-top">
+
+              <!-- (c) EBX wallet (credit coins). A coin here is SELECTABLE:
+                   (ab) is gated on one being picked. -->
+              <div class="pf2-card">
+                <div class="pf2-card__title">
+                  ${orgMode ? 'Initiative coins' : 'EBX wallet · credit coins'}
+                  <span class="pf2-spacer"></span>
+                  <span class="wallet-strip-card__nav">
+                    <button onclick="walletScroll(-1)" aria-label="Scroll wallet left">‹</button>
+                    <button onclick="walletScroll(1)" aria-label="Scroll wallet right">›</button>
+                  </span>
                 </div>
+                <div class="wallet-strip" id="wallet-strip">${orgMode ? initiativeCoinsHTML : walletHTML}</div>
+              </div>
 
-                ${orgMode ? tasklistCardHTML : `<div class="choices-col-card">
-                  <div class="choices-col-header">
-                    <div class="choices-col-title">Your choices</div>
-                    <div class="choices-toggle">
-                      <button class="active" id="toggle-inits" onclick="toggleChoicesView('inits')">Initiatives</button>
-                      <button id="toggle-orgs" onclick="toggleChoicesView('orgs')">Orgs</button>
-                    </div>
-                  </div>
-                  <table class="choices-table" id="choices-table-inits">
-                    <tbody>${choiceRows.map(r => choiceRowHTML(r, 'tiv')).join('')}</tbody>
-                  </table>
-                  <table class="choices-table" id="choices-table-orgs" style="display:none;">
-                    <tbody>${choiceRows.map(r => choiceRowHTML(r, 'org')).join('')}</tbody>
-                  </table>
-                </div>`}
-              </aside>
-
-              <!-- ── Center: Annulus 3 (benefactor-specific; empty for now) ── -->
-              <main class="pf-center">
-                <div class="annulus3-card">
-                  <div class="annulus3-toggle">
-                    <button id="a3-front" class="active" onclick="a3Flip('front')">Front</button>
-                    <button id="a3-back" onclick="a3Flip('back')">Back</button>
-                  </div>
-                  <svg viewBox="0 0 320 320" class="annulus3-svg" aria-label="Annulus 3 placeholder">
-                    <circle cx="160" cy="160" r="130" fill="none" stroke="rgba(245,240,232,0.12)" stroke-width="26" stroke-dasharray="4 7"/>
-                    <circle cx="160" cy="160" r="92"  fill="none" stroke="rgba(245,240,232,0.07)" stroke-width="18" stroke-dasharray="3 8"/>
-                    <text x="160" y="152" text-anchor="middle" fill="rgba(245,240,232,0.55)"
-                          style="font-family:var(--font-display);font-size:17px;font-weight:700;">Annulus ${orgMode ? 4 : 3}</text>
-                    <text id="a3-face-label" x="160" y="176" text-anchor="middle" fill="rgba(245,240,232,0.3)"
-                          style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;">FRONT · COMING SOON</text>
-                  </svg>
-                  <div class="annulus3-caption">${orgMode
-                    ? 'The organization ring — fills as your missions progress. Almost identical to Annulus 3.'
-                    : 'Your personal ring — fills as you vote and commit across the seven causes.'}</div>
+              <!-- (b) allocations — "This section will also be used for
+                   conversions." Same three sets of two as the election page. -->
+              <div class="pf2-card">
+                <div class="pf2-card__title">Allocations
+                  <span class="pf2-spacer"></span>
+                  <span style="text-transform:none;letter-spacing:0;font-size:0.6rem;">${allocTotalLabel}</span>
                 </div>
-              </main>
+                ${allocHTML}
+              </div>
 
-              <!-- ── Right: (b) settings · (a) credit badge · (c) org mode ── -->
-              <aside class="pf-right">
-                <div class="pf-right-row">
-                  <button class="pf-gear" onclick="openSettingsModal()" title="Settings" aria-label="Open settings">⚙</button>
-                  <div class="pf-badge-card">
-                    <div class="pf-badge-card__ring">
-                      ${hasCoin
-                        ? EBX.creditBadge(holdings, 56)
-                        : `<div class="profile-card__avatar" style="width:56px;height:56px;margin:0 auto;font-size:1.1rem;">${initials}</div>`}
-                    </div>
-                    <div class="pf-badge-card__handle">@${p.handle}</div>
-                    <div class="profile-card__type">${orgMode ? 'Organization mode' : (p.type === 'org' ? 'Organization' : 'Benefactor')}</div>
-                  </div>
+              <!-- (a) profile · aa settings · ab mode · ac sign out -->
+              <div class="pf2-card pf2-me">
+                <div>${hasCoin
+                    ? EBX.creditBadge(holdings, 56)
+                    : `<div class="profile-card__avatar" style="width:56px;height:56px;margin:0 auto;font-size:1.1rem;">${initials}</div>`}</div>
+                <div class="pf2-me__handle">@${p.handle}</div>
+                <div class="pf2-me__type">${orgMode ? 'Member mode' : (p.type === 'org' ? 'Organization' : 'Benefactor')}</div>
+                <div class="pf2-me__acts">
+                  <button class="pf2-act" onclick="openSettingsModal()" title="Settings">
+                    <span class="pf2-act__k">aa</span>Settings</button>
+                  ${orgMode
+                    ? `<button class="pf2-act" onclick="switchProfileMode('benefactor')">
+                         <span class="pf2-act__k">ab</span>Benefactor</button>`
+                    : `<button class="pf2-act" id="pf2-membermode"
+                          ${hasCoin && window._pickedCoin ? '' : 'disabled'}
+                          title="${hasCoin ? 'Pick a coin in the wallet, then enter member mode' : 'You need a credit coin to hold a membership'}"
+                          onclick="enterMemberMode()">
+                         <span class="pf2-act__k">ab</span>Member</button>`}
+                  <button class="pf2-act" onclick="if(confirm('Log out?')){EBX.Auth.clear();localStorage.removeItem('ebx_profile');location.reload();}">
+                    <span class="pf2-act__k">ac</span>Sign out</button>
                 </div>
-                ${orgMode
-                  ? `<button class="pf-orgmode" onclick="switchProfileMode('benefactor')">
-                       Switch to Benefactor mode
-                     </button>`
-                  : `<button class="pf-orgmode"
-                        title="Open organization mode — backed by your org memberships"
-                        onclick="switchProfileMode('org')">
-                  Switch to Organization mode
-                </button>`}
-                ${isStaff
-                  ? `<button class="pf-orgmode" style="margin-top:8px;" onclick="switchProfileMode('admin')"
-                        title="Open the admin data console (staff only)">
-                       Switch to admin mode
-                     </button>`
-                  : ''}
-              </aside>
-
+                ${isStaff ? `<button class="pf2-act" style="margin-top:6px;width:100%;"
+                      onclick="switchProfileMode('admin')">Admin console</button>` : ''}
+              </div>
             </div>
 
-            <div class="profile-feed-history" style="max-width:760px;margin:0 auto var(--sp-2xl);">
-              <div class="profile-feed-eyebrow">Your posts</div>
-              <div style="background:white;border:1px solid var(--clr-border);border-radius:var(--radius-md);padding:var(--sp-lg);">
-                ${feedHistoryHTML}
+            <!-- ══ (e) the seven weekly windows around (d) the globe ══ -->
+            <div class="pf2-ring">
+              <div class="pf2-ring__top">${_windows[0] ? winCard(_windows[0], 'top', 0) : ''}</div>
+              <div class="pf2-ring__col pf2-ring__left">${
+                /* coming back UP the left side: weeks 6, 5, 4 read top-to-bottom */
+                [6, 5, 4].map(i => _windows[i] ? winCard(_windows[i], 'left', i) : '').join('')
+              }</div>
+              <div class="pf2-ring__globe">${globeSVG()}</div>
+              <div class="pf2-ring__col pf2-ring__right">${
+                /* falling DOWN the right side: weeks 1, 2, 3 */
+                [1, 2, 3].map(i => _windows[i] ? winCard(_windows[i], 'right', i) : '').join('')
+              }</div>
+            </div>
+
+            ${orgMode ? `<div class="pf2-card">${tasklistCardHTML}</div>` : ''}
+
+            <!-- ══ (f) THE FEED ══ -->
+            <div class="pf2-card">
+              <div class="pf2-card__title">${orgMode ? 'Research' : 'Your activity'}
+                <span class="pf2-spacer"></span>
+                <span class="pf2-feed__tabs">${feedTabsHTML}</span>
               </div>
+              <div id="pf2-feed-body">${feedHistoryHTML}</div>
+            </div>
+
             </div>
           </div>
 
@@ -1754,22 +2355,87 @@
         localStorage.setItem('ebx_org_tasks', JSON.stringify(done));
         renderProfile(window._lastProfileData);
       };
-      window.toggleChoicesView = function (view) {
-        document.getElementById('choices-table-inits').style.display = view === 'inits' ? '' : 'none';
-        document.getElementById('choices-table-orgs').style.display  = view === 'orgs'  ? '' : 'none';
-        document.getElementById('toggle-inits').classList.toggle('active', view === 'inits');
-        document.getElementById('toggle-orgs').classList.toggle('active',  view === 'orgs');
+      /* §1 (2026-08-28) — `toggleChoicesView` is gone with the two tables it
+         flipped between. Both columns of the choices table are on every window
+         card now, side by side, which is the whole point of the drawing: you
+         see the organization and the initiative of a week together instead of
+         switching between two lists of seven. */
+
+      /* (c) → (ab). "Member mode — must have a coin in c. selected." */
+      window._pickedCoin = window._pickedCoin || null;
+      window.pickCoin = function (key, ev) {
+        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+        window._pickedCoin = (window._pickedCoin === key) ? null : key;
+        document.querySelectorAll('#wallet-strip .coin-chip').forEach(el => {
+          el.classList.toggle('is-picked', el.dataset.coin === window._pickedCoin);
+        });
+        const b = document.getElementById('pf2-membermode');
+        if (b) {
+          b.disabled = !window._pickedCoin;
+          b.title = window._pickedCoin
+            ? 'Enter member mode for this coin\u2019s mission'
+            : 'Pick a coin in the wallet first';
+        }
+      };
+      window.enterMemberMode = function () {
+        if (!window._pickedCoin) {
+          alert('Pick a credit coin in the wallet first — a membership belongs to a mission.');
+          return;
+        }
+        switchProfileMode('org');
+      };
+
+      /* (b) → the conversion row. One move, `POST /wallet/move`. */
+      window.pfConvert = async function () {
+        const msg = document.getElementById('pf2-conv-msg');
+        const from = document.getElementById('pf2-conv-from');
+        const to   = document.getElementById('pf2-conv-to');
+        const amt  = document.getElementById('pf2-conv-amt');
+        if (!from || !to || !amt) return;
+        const ct = Math.round((Number(amt.value) || 0) * 100);
+        const say = t => { if (msg) msg.textContent = t; };
+        if (ct <= 0) { say('Enter an amount to move.'); return; }
+        if (from.value === to.value) { say('Pick two different races.'); return; }
+        try {
+          const r = await EBX.Auth.fetchAuthed('/wallet/move', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from_mission_id: from.value, to_mission_id: to.value, ct: ct })
+          });
+          if (r && r.ok) {
+            say('Moved.');
+            await loadMyWallet();
+            renderProfile(window._lastProfileData);
+          } else {
+            let d = ''; try { d = (await r.json()).detail || ''; } catch (e) {}
+            say(d || ('Move refused (HTTP ' + (r ? r.status : '?') + ').'));
+          }
+        } catch (e) { say('Move failed.'); }
       };
       window.walletScroll = function (dir) {
         const strip = document.getElementById('wallet-strip');
         if (strip) strip.scrollBy({ left: dir * 132, behavior: 'smooth' });
       };
-      window.a3Flip = function (face) {
-        const lbl = document.getElementById('a3-face-label');
-        if (lbl) lbl.textContent = (face === 'back' ? 'BACK' : 'FRONT') + ' · COMING SOON';
-        document.getElementById('a3-front').classList.toggle('active', face === 'front');
-        document.getElementById('a3-back').classList.toggle('active',  face === 'back');
-      };
+      /* `a3Flip` is gone with the Annulus-3 placeholder it flipped. The centre
+         of this page is the globe now (d), and it has no faces — it turns. */
+      // §1 (2026-08-28) — the globe starts turning once the markup is in the
+      // document, and re-aims whenever a window card is selected. One rAF loop
+      // for the page; `renderProfile` can run again without stacking loops.
+      if (window._globeRaf) cancelAnimationFrame(window._globeRaf);
+      requestAnimationFrame(function () {
+        if (!document.getElementById('gl-grid')) return;
+        selectWindow(_selWindow);
+        _spin();
+        // Reinstate the coin selection across a repaint. `pickCoin` TOGGLES, so
+        // this paints the classes directly rather than calling it.
+        if (window._pickedCoin) {
+          document.querySelectorAll('#wallet-strip .coin-chip').forEach(el => {
+            el.classList.toggle('is-picked', el.dataset.coin === window._pickedCoin);
+          });
+          const b = document.getElementById('pf2-membermode');
+          if (b) b.disabled = false;
+        }
+      });
+
       window.openSettingsModal = function () {
         const bg = document.getElementById('settings-modal-bg');
         if (bg) bg.style.display = 'flex';

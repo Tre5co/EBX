@@ -45,6 +45,21 @@ def run_due(db: Session, now: datetime | None = None) -> list[str]:
     except Exception:  # noqa: BLE001
         db.rollback()
 
+    # (a2) THE WEEK ROLL. Every standing organization-election allocation that
+    # names a philanthropy and was made before this week hardens into EBX
+    # (2026-08-27c, `wallet.harden_due`). It runs before the phase advance on
+    # purpose: `finalize_p2` settles what is in a race, and what is in a race
+    # has to be booked correctly first. Idempotent — a row with nothing unminted
+    # is skipped — and also applied lazily on `GET /wallet`, so a benefactor who
+    # opens the page before the scheduler wakes sees the same numbers.
+    try:
+        from . import wallet as wallet_mod
+        n = wallet_mod.harden_due(db, None, now)
+        if n:
+            log.append(f"week roll: {n} allocation(s) minted to EBX")
+    except Exception:  # noqa: BLE001
+        db.rollback()
+
     # (b) advance phases.
     for m in db.scalars(select(models.Mission)).all():
         if not m.started_at:

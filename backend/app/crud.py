@@ -52,28 +52,25 @@ def p2_vote_cost(votes: int) -> int:
     doubling curve — total = 10 × (2^(votes−1) − 1)."""
     return P2_EXTRA_VOTE_BASE * (2 ** (max(1, int(votes)) - 1) - 1)
 
-# Phase send rates — the fraction of a ben's contribution treated as the
-# irrevocable (locked-donation) part. NOTE: money is NOT refunded at resolution;
-# everything a ben commits stays in the pool until the credit-release phase, when
-# the non-guaranteed REMAINDER is released to the org or back to benefactors.
-# These rates are the basis for that later return calc, not a resolution refund.
-# These MIRROR `token_model.py`, which is the source of truth.
-# 2026-08-20 — **there is one skim now, and it falls after the organization
-# election** (Jax: "There will only be 1 'skim' after the OE"). So both phase-1
-# rates go to ZERO: the initiative election stopped being a settlement and
-# became a routing step, moving every backer's stake — the winner's and the
-# losers' alike — whole into the winning initiative's organization election.
-# Two consequences worth naming, because they are visible to a benefactor:
-#   * `_send_floor` is 0, so nothing is irrevocable while phase 2 runs. A
-#     withdrawal before the philanthropy is elected returns everything, which is
-#     what "one skim, after the OE" has to mean.
-#   * being right no longer buys a cheaper skim; it buys INFLUENCE — 2x in the
-#     organization election, 2x on budgeting, 1.5x each on research
-#     (`token_model.influence_mult`).
+# Phase send rates — the fraction of a ben's contribution that is DONATED when
+# an election closes. These MIRROR `token_model.py`, which is the source of
+# truth; nothing here computes, it only names.
+#
+# 2026-08-27c — **A CLEAN 10%, ACROSS THE BOARD.** Jax: "It's a clean 10% across
+# the board, winners and losers pay the same, the difference comes after
+# (special ebx for ME, special mission membership for OE)." So the win/lose fork
+# is gone entirely, and with it `P2_SEND_WIN` / `P2_SEND_LOSE`. One rate, paid
+# by every ct that entered the race, and the other 90% becomes the benefactor's
+# EBX for that mission — held, mission-tied, and donated in tranches as the
+# mission runs.
+#
+# The initiative election still takes nothing. It is a routing step, not a
+# settlement: every backer's stake moves whole into the winning initiative's
+# organization election, the winner's as EARLY EBX and the losers' as marked
+# tokens that can still choose a race.
 P1_SEND_WIN = 0.0            # your tiv won   (= token_model.ME_SKIM)
 P1_SEND_LOSE = 0.0           # your tiv lost  (= token_model.ME_SKIM)
-P2_SEND_WIN = 1.00           # your org won   (= token_model.OE_SEND_WIN)
-P2_SEND_LOSE = 0.10          # your org lost  (= token_model.OE_SEND_LOSE — the one skim)
+P2_SKIM = 0.10               # everyone, at the OE (= token_model.OE_SKIM)
 
 # The commitment fund took its cut as a losing initiative's stake rolled to the
 # next election of the same cause. NOTHING ROLLS ANY MORE — the stake goes to
@@ -1790,38 +1787,59 @@ def replace_p1_shares(
     shares: dict[str, float],
     ebx_total: int = 0,
     valences: Optional[dict[str, str]] = None,
+    commit_ct: Optional[int] = None,
 ) -> Sequence[models.VoteP1]:
-    """Replace a ben's soft (uncommitted) phase-1 vote shares for a mission.
+    """Set a benefactor's slate AND their commitment to this initiative election.
 
-    `shares` maps tiv_id -> share (each >= 0.1, sum <= 1.0). Committed rows are
-    immutable and any attempt to overwrite one raises. ebx_committed on each row
-    is preserved (set it via commit_p1_ebx). Logs vote Transactions.
+    TWO QUANTITIES, ONE CALL (2026-08-27c). Jax: *"the vote commit is the total
+    amount committed to that election, and the weight is the percentage given to
+    each tiv within it."*
+
+        shares      a split across up to `MAX_SPLIT_TIVS` initiatives. The VOTE.
+                    It needs no tokens — a slate can stand before the grant that
+                    will back it, and when the grant lands it flows through
+                    whatever split is standing.
+        commit_ct   ONE number: the ct committed to this election. The AMOUNT.
+
+    A row's `stake_ct` is `commit x share`, largest-remainder, so the mission's
+    rows sum to the commit exactly. `ebx_committed` is kept in step for the
+    reports and the pool math still reading the float.
+
+    This is also where the ME table stopped being a client-side budget. The
+    commitment is reconciled against the WALLET: raising it spends unallocated
+    ct, lowering it hands the difference back. An initiative-election allocation
+    is soft until `finalize_p1` — the mission identity is not final until the
+    election is, and EBX cannot predate its mission — so unlike the OE side this
+    one stays revisable right up to the close, and no week roll hardens it.
+
+    Granted ct may only enter the initiative election of the cause it was
+    granted against; purchased ct may enter any. Committed rows are still
+    immutable, and every change is logged.
     """
+    from . import wallet as wallet_mod
+    from . import token_model as tm
+
     valences = valences or {}
     mission = db.get(models.Mission, mission_id)
     if mission is None:
         raise ValueError("Mission not found")
+    ben = db.get(models.BenefactorAccount, ben_id)
+    if ben is None:
+        raise ValueError("Benefactor not found")
 
-    cleaned: dict[str, float] = {}
-    total = 0.0
-    for tiv_id, raw in shares.items():
-        try:
-            v = float(raw)
-        except (TypeError, ValueError):
-            raise ValueError(f"Share for {tiv_id} is not numeric")
-        if v <= 0:
-            continue
-        cleaned[tiv_id] = v   # continuous sliders — no 0.1 floor, no rounding
-        total += v
-    if total > SHARE_SUM_CAP + 1e-6:
-        raise ValueError(f"Total share {total:.2f} exceeds {SHARE_SUM_CAP}")
+    # The slate. `normalize_shares` refuses an 11-way split and scales the rest
+    # to 1.0, so a partial slate is a proportion of the commit rather than a
+    # silent under-spend.
+    try:
+        cleaned = tm.normalize_shares(shares)
+    except ValueError as e:
+        raise ValueError(str(e))
 
     # Every tiv must belong to this mission.
     # §0a (2026-08-05): the old predicate was `mission_id != mission_id`, which
     # in SQL is NULL — never TRUE — for an orphaned initiative. Orphans therefore
     # passed the guard, were inserted under an arbitrary mission, and collided
-    # with UNIQUE(ben_id, tiv_id) as an unhandled IntegrityError (the "Exception
-    # in ASGI application" Jax hit committing an Oceans vote). Match NULLs
+    # with UNIQUE(ben_id, tiv_id) as an unhandled IntegrityError. Match NULLs
     # explicitly, and treat an unknown id as out-of-mission too.
     if cleaned:
         wanted = list(cleaned.keys())
@@ -1836,20 +1854,59 @@ def replace_p1_shares(
             raise ValueError(f"Initiatives {bad} are not in mission {mission_id}")
 
     existing = {row.tiv_id: row for row in get_p1_votes(db, ben_id, mission_id)}
-    # Pilot: a benefactor may change their slate at will, even after committing.
-    # A vote carries weight without buying EBX: a no-EBX vote holds the base.
-    if cleaned and ebx_total < BASE_VOTE_EBX:
-        ebx_total = BASE_VOTE_EBX
+
+    # The amount. `commit_ct` is the model's unit; `ebx_total` is the tokens the
+    # older clients send, and one is converted into the other in exactly one
+    # place so the two cannot mean different things.
+    if commit_ct is None:
+        commit_ct = tm.ct_from_tokens(max(0.0, float(ebx_total or 0)))
+    commit_ct = max(0, int(commit_ct))
+    if cleaned and commit_ct <= 0:
+        # A vote with no amount behind it is a preference, not an error — but a
+        # slate that has never carried anything still gets the base weight a
+        # vote has always carried, so voting without buying is possible.
+        commit_ct = tm.ct_from_tokens(BASE_VOTE_EBX)
+    if not cleaned:
+        commit_ct = 0
+
+    held = sum(max(0, int(getattr(r, "stake_ct", 0) or 0)) for r in existing.values())
+
+    # Which door this ct comes through. A granted token may only be spent in the
+    # elections of the cause it was granted against; a purchased one may go
+    # anywhere. `grant_cause_id` is that cause, and it falls back to the week's
+    # active cause for accounts granted before the column existed.
+    door_cause = getattr(ben, "grant_cause_id", None) or wallet_mod.active_cause_id()
+    granted_allowed = (mission.cause_id == door_cause)
+    free = int(ben.free_ct or 0)
+    purchased = min(int(ben.purchased_ct or 0), free)
+    granted = max(0, free - purchased)
+    ceiling = held + (free if granted_allowed else purchased)
+    commit_ct = min(commit_ct, ceiling)
+
+    delta = commit_ct - held
+    if delta > 0:
+        from_granted = min(delta, granted) if granted_allowed else 0
+        ben.free_ct = free - delta
+        ben.purchased_ct = max(0, purchased - (delta - from_granted))
+    elif delta < 0:
+        back = -delta
+        ben.free_ct = free + back
+        if not granted_allowed:
+            ben.purchased_ct = purchased + back
+
+    per_row = tm.split_ct(commit_ct, cleaned) if cleaned else {}
 
     # Upsert.
     for tiv_id, share in cleaned.items():
         row = existing.get(tiv_id)
         valence = _valence_ok(valences.get(tiv_id, row.valence if row else "helpful"))
-        ebx = ebx_total * share   # holdings split by share — float, no rounding
+        row_ct = int(per_row.get(tiv_id, 0))
+        ebx = row_ct / tm.CT_PER_TOKEN
         if row is None:
             row = models.VoteP1(
                 ben_id=ben_id, mission_id=mission_id, tiv_id=tiv_id,
-                share=share, ebx_committed=ebx, valence=valence, committed=False,
+                share=share, ebx_committed=ebx, stake_ct=row_ct,
+                valence=valence, committed=False,
             )
             db.add(row)
             _log_vote(db, ben_id=ben_id, mission_id=mission_id, phase="p1",
@@ -1860,9 +1917,10 @@ def replace_p1_shares(
                           action="UPDATE", target=tiv_id, old_value=row.share, new_value=share)
             row.share = share
             row.ebx_committed = ebx
+            row.stake_ct = row_ct
             row.valence = valence
 
-    # Remove dropped rows — full replace, so withdrawing a vote drops its EBX too.
+    # Remove dropped rows — full replace, so withdrawing a vote drops its ct too.
     for tiv_id, row in existing.items():
         if tiv_id not in cleaned:
             _log_vote(db, ben_id=ben_id, mission_id=mission_id, phase="p1",
@@ -1911,23 +1969,26 @@ def commit_p1_ebx(
 
 
 def withdraw_p1(db: Session, ben_id: int, mission_id: str) -> dict:
-    """Phase-2 withdrawal — **CLOSED as of 2026-08-20b.**
+    """Phase-2 withdrawal — **CLOSED**, and the reason changed on 2026-08-27c.
 
-    This let a benefactor pull their phase-1 commitment back out of a live race,
-    minus a send that is now 0, which under the current model would be a full
-    refund of committed money mid-race. "Users can no longer move tokens from an
-    OE to unallocated": committing is one way, and the two exits are a
-    CONVERSION into another race (`wallet.convert_stake`, one of three) or the
-    settlement at the end of the race, where a loss returns 90% as cash.
+    It used to be closed because committing was one way. It is closed now
+    because of what committed ct BECOMES: inside its own week an allocation is a
+    draft and the way to undo it is to set it back down (`wallet.set_stake`),
+    and after the week roll it is EBX, which is mission-tied and does not come
+    back at all. There is no state in between for a withdrawal to act on.
+
+    The only exit from the token bin is `wallet.withdraw`, and it is open only
+    to PURCHASED ct that has not entered an election — a granted token was never
+    both real and free, and a vote is not a purchase you can return.
 
     Kept as a named refusal rather than deleted, because `cause.html` still has
     a Withdraw button wired to it and a 404 would read as a bug rather than as a
     rule. Removing both is a backlog item.
     """
     raise ValueError(
-        "Committed tokens cannot be withdrawn from a live race. Convert them to "
-        "another organization election, or wait for this one to settle — if your "
-        "philanthropy loses, 90% comes back as cash.")
+        "Committed tokens cannot be withdrawn. Inside the week you can set the "
+        "amount back down or move it to another election; after the week change "
+        "it is EBX, and EBX stays with its mission.")
 
 
 def _withdraw_p1_legacy(db: Session, ben_id: int, mission_id: str) -> dict:
@@ -2561,39 +2622,55 @@ def _relist_losers(db: Session, mission: models.Mission, losers: list[models.Ini
 
 
 def _open_oe_stakes(db: Session, mission: models.Mission, winner_id: str) -> int:
-    """Carry every phase-1 backer into this mission's organization election.
+    """Carry every phase-1 backer into this mission's organization election —
+    and split them the two ways rule 4 splits them.
 
-    This is the ME half of settlement, and since 2026-08-20 it is BOOKED rather
-    than derived — because the coin's first element is written here and a
-    history cannot be recomputed from a balance:
+        backed the WINNING initiative -> **early EBX**. Those ct mint on the
+            spot, into this mission, a week ahead of everybody else's. They are
+            locked in this organization election until it finalizes, and for the
+            purposes of voting in it they count exactly as tokens. This is the
+            reward for having been right, and it is not money: it is the same
+            money, sooner, in a mission the benefactor chose.
 
-        "once the ME hits … they become marked with the cause, initiative and
-        date it was converted, as well as the winning initiative. This is the
-        first element on the credit coin."
+        backed a LOSER -> a **marked token**. Still a token, still movable,
+            carrying the initiative it voted for. It may go to any open
+            organization election by voting for a philanthropy there, or come
+            back to the initiative election of its cause (rule 7); if it does
+            neither, it commits to whoever wins the race it is sitting in.
 
-    One `VoteP2` row per benefactor (the table's unique key), holding the whole
-    of what they committed — no skim, win or lose — with no philanthropy named.
-    Such a stake funds the mission, carries no vote weight until they pick one,
-    and at close follows the winner of this race (`wallet.settles_as_won`).
+    One `VoteP2` row per benefactor (the table's unique key) holding the whole
+    of what they committed — no skim, either way, because the initiative
+    election is a routing step and not a settlement. `minted_ct` is the winning
+    share, `marked_tiv_id` names the largest losing one, and `stake_ct` is both.
 
     One provenance element per initiative they backed, so a coin remembers the
     argument its money lost as well as the one it won. Idempotent: a row that
     already carries a `settle_me` event for this mission is left alone.
     """
     from . import wallet as wallet_mod
-    from .token_model import coin_element_me, ct_from_tokens
+    from .token_model import coin_element_me, coin_element_oe, ct_from_tokens
 
     week = wallet_mod.current_week()
+
+    def _row_ct(r: models.VoteP1) -> int:
+        ct = int(getattr(r, "stake_ct", 0) or 0)
+        return ct if ct > 0 else ct_from_tokens(float(r.ebx_committed or 0))
+
     per_ben: dict[int, list[models.VoteP1]] = {}
     for r in db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == mission.id)).all():
-        if float(r.ebx_committed or 0) > 0:
+        if _row_ct(r) > 0:
             per_ben.setdefault(r.ben_id, []).append(r)
 
     opened = 0
     for ben_id, rows in per_ben.items():
-        total_ct = sum(ct_from_tokens(float(r.ebx_committed or 0)) for r in rows)
+        total_ct = sum(_row_ct(r) for r in rows)
         if total_ct <= 0:
             continue
+        won_ct = sum(_row_ct(r) for r in rows if r.tiv_id == winner_id)
+        lost_rows = [r for r in rows if r.tiv_id != winner_id]
+        lost_ct = total_ct - won_ct
+        biggest_loss = (max(lost_rows, key=_row_ct).tiv_id if lost_rows and lost_ct > 0
+                        else None)
         v = db.scalars(
             select(models.VoteP2).where(models.VoteP2.ben_id == ben_id,
                                         models.VoteP2.mission_id == mission.id)
@@ -2604,19 +2681,28 @@ def _open_oe_stakes(db: Session, mission: models.Mission, winner_id: str) -> int
         if v is None:
             v = models.VoteP2(ben_id=ben_id, mission_id=mission.id, org_id=None,
                               votes=1, ebx_spent=0, valence="helpful", committed=False,
-                              conversions=0)
+                              conversions=0, minted_ct=0, donated_ct=0)
             db.add(v)
         v.stake_ct = max(int(v.stake_ct or 0), total_ct)
         v.origin_mission_id = mission.id   # the race these ct were created within
+        v.committed_week = week
         if v.born_week is None:
             v.born_week = week
+        # Early EBX for the winning share; a mark on the rest.
+        v.minted_ct = max(int(getattr(v, "minted_ct", 0) or 0), won_ct)
+        v.marked_tiv_id = biggest_loss
         chain = list(v.provenance or [])
-        for r in sorted(rows, key=lambda r: -float(r.ebx_committed or 0)):
+        for r in sorted(rows, key=lambda r: -_row_ct(r)):
             chain.append(coin_element_me(
                 week=week, mission_id=mission.id, cause_id=mission.cause_id,
                 backed_tiv_id=r.tiv_id, winning_tiv_id=winner_id,
-                amount_ct=ct_from_tokens(float(r.ebx_committed or 0)),
+                amount_ct=_row_ct(r),
             ).as_dict())
+        if won_ct > 0:
+            # The mint has no philanthropy to name yet — the race it mints INTO
+            # has not been decided. That is what early means.
+            chain.append(coin_element_oe(week=week, mission_id=mission.id,
+                                         org_id=None, amount_ct=won_ct).as_dict())
         v.provenance = chain
         opened += 1
     return opened
@@ -2666,6 +2752,72 @@ def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
     return winner_id
 
 
+def _settle_oe_stakes(db: Session, mission: models.Mission, winner_org: str) -> dict:
+    """Close the organization election on every stake in it.
+
+    Two things happen, in this order, and neither of them asks who you backed:
+
+    1. **Everything still a token becomes EBX.** An unvoted stake follows the
+       winner of the race it is sitting in — silence is not a losing vote, it is
+       a stake that funded the mission and never named a philanthropy — and a
+       MARKED token that never moved commits here too, which is rule 7's
+       default. After this there is nothing left in the race that is not EBX.
+
+    2. **The first donation tranche crosses.** A clean 10% of every stake, and
+       the same 10% whoever it backed. It is not a penalty on a losing side; it
+       is the opening instalment of the donation, which is why "the 10% skim is
+       added to the pool" and "the tax deduction happens when the ebx is
+       donated" are the same sentence. More tranches follow as the mission runs.
+
+    Booked per benefactor, not derived. The OE half of settlement was the last
+    thing being recomputed on every read — the right number in the wrong place —
+    and `minted_ct` / `donated_ct` are where it lives now.
+    """
+    from . import wallet as wallet_mod
+    from . import token_model as tm
+
+    week = wallet_mod.current_week()
+    minted = donated_ct = 0
+    rows = db.scalars(
+        select(models.VoteP2).where(models.VoteP2.mission_id == mission.id)
+    ).all()
+    for v in rows:
+        derived = p2_ebx_by_ben(db, mission.id).get(v.ben_id, 0.0)
+        total = wallet_mod.stake_ct_of(v, derived)
+        if total <= 0:
+            continue
+        unminted = max(0, total - int(getattr(v, "minted_ct", 0) or 0))
+        # Silence follows the winner of the race it is sitting in — and so does
+        # EARLY EBX, which minted before this race had a philanthropy to name.
+        # Set outside the mint branch for exactly that reason: a winner's backer
+        # has nothing left unminted, and would otherwise end the race still
+        # reading as unassigned.
+        if v.org_id is None:
+            v.org_id = winner_org
+        if unminted > 0:
+            v.stake_ct = total
+            v.minted_ct = int(getattr(v, "minted_ct", 0) or 0) + unminted
+            v.marked_tiv_id = None
+            _p2_record(v, tm.coin_element_oe(week=week, mission_id=mission.id,
+                                             org_id=v.org_id, amount_ct=unminted))
+            minted += unminted
+        already = int(getattr(v, "donated_ct", 0) or 0)
+        first = tm.settle_oe(total).donated_ct
+        if first > already:
+            crossing = first - already
+            v.donated_ct = already + crossing
+            _p2_record(v, tm.coin_donation(week=week, mission_id=mission.id,
+                                           amount_ct=crossing, note="oe_close"))
+            donated_ct += crossing
+    return {"minted_ct": minted, "donated_ct": donated_ct, "rows": len(rows)}
+
+
+def _p2_record(v: models.VoteP2, event) -> None:
+    chain = list(v.provenance or [])
+    chain.append(event.as_dict())
+    v.provenance = chain
+
+
 def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
     """Elect the winning org. Sets mission.winning_org_id, flips the winning
     candidacy to 'won' (others 'lost'), advances to the budget phase.
@@ -2700,8 +2852,14 @@ def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
         cand.status = "won" if cand.org_id == winner_org else "lost"
         if cand.org_id == winner_org:
             cand.p2_vote_tally = winner_entry["net_votes"]
-    # §1a: settlement mints the mission's credit coins — every benefactor who
-    # voted gets coins sized by their remaining stake.
+    # Settlement, booked: everything still a token becomes EBX (silence follows
+    # the winner of its own race), then the clean 10% crosses as the first
+    # donation tranche. `_settle_oe_stakes` is the OE half that used to be
+    # recomputed on every wallet read.
+    _settle_oe_stakes(db, mission, winner_org)
+    # §1a: the mission's credit coins. The COIN is the receipt — its issuance
+    # timing is unchanged by the 2026-08-27c model, which moved the mint (EBX at
+    # mission identity) and not the coin.
     mint_mission_coins(db, mission_id)
     db.commit()
     return winner_org
@@ -2914,9 +3072,21 @@ def list_posts(
     category: Optional[str] = None,
     parent_id: Optional[str] = None,
     roots_only: bool = False,
+    ben_author_id: Optional[int] = None,
+    type: Optional[str] = None,
     limit: int = 50,
 ) -> Sequence[models.Post]:
     stmt = select(models.Post)
+    # §1 (2026-08-28) — the profile FEED asks for one benefactor's activity, and
+    # there was no way to ask. profile.html filtered the global 50-post feed on
+    # `post.author === handle`, but `author` is `author_type` ("ben" / "org"),
+    # so the comparison was never true and "Your posts" was permanently empty
+    # however much the account had written. `type` comes along because the feed
+    # in member mode is the RESEARCH types only.
+    if ben_author_id is not None:
+        stmt = stmt.where(models.Post.ben_author_id == ben_author_id)
+    if type:
+        stmt = stmt.where(models.Post.type.in_([t for t in str(type).split(",") if t]))
     if mission_id:
         stmt = stmt.where(models.Post.mission_id == mission_id)
     if tiv_id:

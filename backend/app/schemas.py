@@ -361,6 +361,10 @@ class VoteP1Read(BaseModel):
     tiv_id: str
     share: float = 1.0
     ebx_committed: float = 0   # holdings x share (continuous — not rounded)
+    # §1 (2026-08-28): the finalized model's field, so a client reads the same
+    # integer the server does instead of re-deriving it from the legacy float.
+    # `wallet.p1_stake_ct_of` is the fallback for rows written before it.
+    stake_ct: int = 0
     valence: Valence = "helpful"
     committed: bool = False
     created_at: datetime

@@ -112,6 +112,26 @@ def _adopt_orphan_initiatives() -> None:
 
 
 @app.on_event("startup")
+def _backfill_p1_stake_ct() -> None:
+    """§0a (2026-08-28): give every phase-1 row written before the finalized
+    model the `stake_ct` the migration added but never filled in. Until this
+    ran, `read_wallet` counted those rows as zero — 65 tokens standing in six
+    open initiative elections reported as 0 committed. Idempotent: it only
+    writes rows whose `stake_ct` is still 0."""
+    from .database import SessionLocal
+    from . import wallet as _wallet
+    db = SessionLocal()
+    try:
+        written = _wallet.backfill_p1_stake_ct(db)
+        if written:
+            print(f"[startup] backfilled stake_ct on {len(written)} phase-1 vote row(s)")
+    except Exception as e:   # never block boot on a backfill
+        print(f"[startup] phase-1 stake_ct backfill skipped: {e}")
+    finally:
+        db.close()
+
+
+@app.on_event("startup")
 def _resync_derived_tallies() -> None:
     """§0 (2026-08-08): rebuild the two caches derived from the vote rows —
     `MissionCandidacy.p2_vote_tally` and `Pool` — so a race can never keep

@@ -394,7 +394,7 @@
       <div class="mh-note" id="mh-approval-note" style="display:none;">
         Any organization can run and receive votes without registering — a first vote nominates it.
         Leading organizations will be <b>approved or rejected soon</b>. Until an org is approved it's capped at
-        <b>1 vote (10 EBX)</b> per benefactor; if an org is rejected, every EBX committed to it is <b>returned</b>
+        <b>1 vote (10 tokens)</b> per benefactor; if an org is rejected, every token committed to it is <b>returned</b>
         to its backers. An org must submit a <b>mission statement</b> to be <b>elected</b>.
       </div>
     </div>
@@ -616,7 +616,7 @@
       } catch (e) {}
       const committed = (mine || []).reduce((s, v) => s + (v.ebx || v.ebx_committed || 0), 0);
       el.innerHTML = committed > 0
-        ? 'Membership: <b>contributor</b> — ' + EBX.formatEBX(committed) + ' committed to this mission.'
+        ? 'Membership: <b>contributor</b> — ' + EBX.formatTokens(committed) + ' committed to this mission.'
         : 'Membership: <b>observer</b> — commit a phase-1 stake to become a contributor.';
     }
 
@@ -834,7 +834,10 @@
       const spent = mission ? (mission.spent || 0) : 0;
       el.innerHTML =
         '<div class="mp-pool__stat"><div class="mp-pool__label">In the pool</div><div class="mp-pool__value">' + EBX.formatEBX(inPool) + '</div><div class="mp-pool__sub">locked to this mission</div></div>' +
-        '<div class="mp-pool__stat"><div class="mp-pool__label">Committed</div><div class="mp-pool__value">' + EBX.formatEBX(committed) + '</div><div class="mp-pool__sub">phase-1 + phase-2 commitments</div></div>' +
+        // §3 (2026-08-28): "In the pool" and "spent" are minted, mission-tied money —
+        // EBX. "Committed" is the live allocations behind the two elections, which
+        // are still tokens until the roll. Three stats, two units, on purpose.
+        '<div class="mp-pool__stat"><div class="mp-pool__label">Committed</div><div class="mp-pool__value">' + EBX.formatTokens(committed) + '</div><div class="mp-pool__sub">phase-1 + phase-2 commitments</div></div>' +
         '<div class="mp-pool__stat"><div class="mp-pool__label">Withdrawn / spent</div><div class="mp-pool__value">' + EBX.formatEBX(spent) + '</div><div class="mp-pool__sub">consumed by the mission so far</div></div>';
       const rate = (mission && mission.guaranteed_pool_rate != null) ? mission.guaranteed_pool_rate : 0.20;
       document.getElementById('mp-rate-line').innerHTML = claims.length
@@ -909,14 +912,16 @@
           '<span class="ml-row__name">' + (r.emoji ? r.emoji + ' ' : '') + esc(r.title) +
             (won ? '<span class="ml-row__won">elected</span>' : '') + '</span>' +
           '<span class="ml-row__bar"><i style="width:' + pct + '%;"></i></span>' +
-          '<span class="ml-row__ebx">' + Math.round(r.ebx).toLocaleString() + ' EBX</span>' +
+          '<span class="ml-row__ebx">' + Math.round(r.ebx).toLocaleString() + ' tokens</span>' +
           '<span class="ml-row__pct">' + pct + '%</span>' +
         '</div>';
       }).join('') + '</div>';
       if (note) {
         const voted = rows.filter(r => r.share > 0).length;
-        note.innerHTML = 'Ranked by <b>weighted vote share</b>; the EBX column is each ' +
-          'initiative’s share of the <b>' + Math.round(pool).toLocaleString() + ' EBX</b> ' +
+        // §3 (2026-08-28): a phase-1 pool is tokens — the initiative election
+        // has not settled, so none of it has been minted.
+        note.innerHTML = 'Ranked by <b>weighted vote share</b>; the token column is each ' +
+          'initiative’s share of the <b>' + Math.round(pool).toLocaleString() + ' token</b> ' +
           'phase-1 pool. <b>' + voted + '</b> of <b>' + rows.length + '</b> initiatives drew a vote. ' +
           'Voting happens on the <a href="main.html?cause=' + (cause ? cause.id : '') +
           '" style="color:var(--clr-honey);">Context page</a>; the discussion is on the ' +

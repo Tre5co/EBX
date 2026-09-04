@@ -315,6 +315,15 @@ class BenefactorAccount(Base):
     #            reason the two are counted apart.
     purchased_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     grant_commit_by_week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    #   grant_cause_id  the cause this week's grant was issued against
+    #            (2026-08-27c). "Tokens aren't granted until election week when
+    #            it's too late to transfer or withdraw" — so a granted token has
+    #            no free window and needs no deadline; what it carries instead is
+    #            the cause whose races it may enter, and whose NEXT window it
+    #            waits for if this one does not spend it. `grant_commit_by_week`
+    #            above is the retired deadline, left unread rather than dropped
+    #            so races settled under it can still be explained.
+    grant_cause_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     credit_coins: Mapped[list["CreditCoin"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"
@@ -451,6 +460,14 @@ class VoteP1(Base):
 
     share: Mapped[float] = mapped_column(Float, default=1.0, nullable=False)  # >=0.1
     ebx_committed: Mapped[float] = mapped_column(Float, default=0, nullable=False)  # holdings x share (continuous, no rounding)
+    # ── the amount, apart from the vote (2026-08-27c) ──────────────────────
+    # "The vote commit is the total amount committed to that election, and the
+    # weight is the percentage given to each tiv within it." `share` is the
+    # vote and it needs no tokens to stand; `stake_ct` is this row's slice of
+    # the election-level commit — `commit x share`, largest-remainder, so a
+    # mission's rows sum to the commit exactly. `ebx_committed` is the float it
+    # replaces, kept in step for rows and reports written against it.
+    stake_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     valence: Mapped[str] = mapped_column(String, default="helpful", nullable=False)  # helpful|neutral|harmful
     committed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
@@ -502,6 +519,25 @@ class VoteP2(Base):
     # parking ct on another row and never voting is not a conversion, it is a
     # stake that will fall back to its origin.
     conversions: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # ── the week change, and the two states after `committed` (2026-08-27c) ──
+    # committed_week  the week this allocation was made. Inside its own week it
+    #     is a DRAFT — move it as often as you like, at no cost; at the roll it
+    #     hardens. This one column is the whole of the rule that replaced both
+    #     the conversion budget (above, now unread) and one-way commitment.
+    # minted_ct  the part of this stake that has hardened into EBX: mission-tied,
+    #     immovable, the benefactor's holding. Booked, not derived — a history
+    #     cannot be recomputed from a balance.
+    # donated_ct  the part that has crossed over to the mission and Earthbux, in
+    #     tranches, deductible at the date of each. The 10% at the organization
+    #     election is the first one, not a separate charge outside the flow.
+    # marked_tiv_id  set when this benefactor's initiative LOST: these ct are
+    #     still tokens, marked with what they backed, and may move to another
+    #     organization election by voting for a philanthropy there. A row with no
+    #     mark in a decided ME is early EBX — the winner's reward.
+    committed_week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    minted_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    donated_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    marked_tiv_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     # "Every token maintains a record of its transactions." A list of registered
     # votes these ct have supported; it survives a split and the mint, so a
     # credit coin still knows which initiative its money backed. Only COMMITTED

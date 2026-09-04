@@ -61,7 +61,10 @@ function ok(cond, what, detail) {
   ok(active === stats.active_members, '#Activeusers displayed', active + ' vs ' + stats.active_members);
   ok(note.includes('$' + stats.committed_usd.toFixed(2)), 'committed $ in the divisor line');
   ok(note.includes('$' + stats.weekly_cost_usd.toFixed(2)), 'weekly cost in the divisor line');
-  ok(/10 EBX per week/.test(note), 'the grant sentence §1c asks for');
+  // §3 (2026-08-28): the grant is TOKENS. It was written as EBX before EBX
+  // became a state rather than a unit — a granted token has not been minted
+  // and may never be, so it cannot be EBX.
+  ok(/10 tokens per week/.test(note), 'the grant sentence §1c asks for');
   const lit = d.querySelectorAll('.ld-runway__bar.on').length;
   ok(lit === Math.min(12, stats.runway_weeks), 'bars lit = weeks (cap 12)', String(lit));
 

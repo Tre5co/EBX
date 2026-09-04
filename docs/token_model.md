@@ -1,59 +1,51 @@
 # The money model
 
-*Settled 2026-08-19 over three passes; **revised 2026-08-20** when Jax resolved
-the confusion that had been driving the model in two directions at once
-(build-seq §1). `backend/app/token_model.py` is the executable version of this
-file — if the two ever disagree, the code is right and this is stale.
+*Rewritten **2026-08-27c** when Jax finalized the ME/OE experience. The eight
+questions the model left open were put and answered the same day; the record of
+what was asked and what came back is `docs/ME_OE_FINALIZATION.md`, and this file
+is the model those answers make. `backend/app/token_model.py` is the executable
+version — if the two ever disagree, the code is right and this is stale.
 `scripts/token_model_check.py` asserts every number below.*
 
-**What changed on 2026-08-20, in four sentences.** There is **one skim** and it
-falls after the organization election — the initiative election takes nothing.
-The reward for voting correctly is **influence, not a discount**: 2× in the
-organization election, 2× on budgeting, 1.5× each on research (2.25× for both).
-A token's life is bounded by a **conversion count (3)** rather than a 15-week
-fuse. And — the second pass of the same day — **committing is one way**:
-"users can no longer move tokens from an OE to unallocated", so ct leaves a race
-only by converting into another one, and the sliders went with the rule.
+**The sentence the whole model turns on: tokens are convertible, EBX is not.**
 
 ---
 
-## 1. One asset, four states, three bins
+## 1. Two units, four states
+
+| | what it is | movable | tied to |
+|---|---|---|---|
+| **Token** ◇ | the voting unit | inside its own week | nothing |
+| **EBX** ● | a token committed to a mission | **no** | one mission |
 
 ```
-$ CASH ──buy (only inside a commit)──▶ ◇ TOKENS ──stake──▶ ◇ staked
-                                                              │
-                          initiative election closes ─────────┤
-                          nothing claimed · 100% forward into
-                          the WINNING initiative's organization
-                          election (arriving with no philanthropy
-                          named, carrying coin element 1)
-                                                              │
-                       organization election closes ──────────┤   ← the one skim
-                          phl won  → 100% claimed
-                          phl lost →  10% claimed, 90% still committed
-                                                              │
-                                  + 7 weeks (budget set) ─────▶ ● MINT → COIN
-                                                                mission-tied,
-                                                                deductible
-       committed & undecided ──▶ resolved as budget items roll through
-       committed & refunded  ──▶ back to $ CASH   (never to ◇ TOKENS)
+$ CASH ──buy──▶ ◇ TOKEN ──commit──▶ ◇ committed ──week roll──▶ ● EBX ──tranche──▶ ✓ DONATED
+                   ▲                     │                        │
+                   └── purchased ct, ────┘                        └─ 10% at the OE close,
+                      movable and                                    more as the mission runs
+                      withdrawable until
+                      it enters a race
 ```
 
-One wallet bar, four segments: **unallocated │ committed │ claimed │ minted**.
+    unallocated  →  committed  →  minted  →  donated
+    free tokens     to a tiv       to a       consumed by the
+                    or a phl       mission    org, or by Earthbux
 
-| Bin | State | Movable? | Donation? | Deductible? |
-|---|---|---|---|---|
-| **Cash** $ | at the door | yes | no | no |
-| **Tokens** ◇ | **unallocated** — granted or purchased; topped up to 10 weekly | into a race, one way | no | no |
-| **Tokens** ◇ | **committed** to an open race | only by conversion (3 max) | no | no |
-| — | **claimed** — the settled share | no | yes | not yet |
-| **Coins** ● | **minted** at OE + 7 weeks | convert only | yes | yes |
+**EBX cannot exist before its mission does.** A token becomes EBX only when its
+**mission identity is final**, which is why an allocation sitting in an
+initiative election is still a token however long it sits there: the initiative
+it backs may never become a mission.
 
-Refunds land in **Cash**, never in Tokens. That is what keeps `grant = 10 −
-free` honest: nobody is ever billed a grant for money handed back to them — and
-since 2026-08-20b it is the ONLY way money leaves a race early, because the
-route back to the unallocated bar is closed. `crud.withdraw_p1` is a named
-refusal now rather than a live endpoint.
+**`claimed` is not a wallet state.** It is the word for an organization
+*claiming* a mission, and the wallet gave it back on 2026-08-27c. What follows
+`committed` is `minted`, and what follows that is `donated`.
+
+**Donated and spent are different metrics, and each applies to both parties.** A
+benefactor DONATES, once per EBX, and what is donated is split by percentage
+between Earthbux and the organization. Each of those two then SPENDS its share
+incrementally over the life of the mission. This wallet counts the donation; the
+two spending ledgers are theirs. A benefactor can watch their donation being
+used without their donation changing size.
 
 ---
 
@@ -63,96 +55,222 @@ refusal now rather than a live endpoint.
 1 token = 100 ct = 10¢        1 ct = 0.1¢
 ```
 
-Every stored quantity is an **integer count of ct**. The pilot database holds
-values like `123.7142858`; the loser-carryover skim booked `int(round(skim))`,
-which writes **0** for a 0.5 skim; and the new OE table splits one balance
-across eight races. Floats lose exactly this shape of problem.
-
-Rounding is always **up, to the nearest ct**, and always against the benefactor
-— the *claimed* share is what gets rounded up. At ct granularity that is a 0.1¢
-bias. The same rule applied at whole-token granularity would round a 0.1-token
-skim up to a full token: a 10× overcharge. The unit matters more than the
-direction.
+Every stored quantity is an **integer count of ct**. Rounding is always **up, to
+the nearest ct**, and always against the benefactor — the donated share is what
+gets rounded up. At ct granularity that is a 0.1¢ bias; the same rule at
+whole-token granularity would round a 0.1-token skim up to a full token, a 10×
+overcharge. The unit matters more than the direction.
 
 ---
 
 ## 3. The grant
 
-> **Your uncommitted balance is topped up to 10 every week.**
+> **10 tokens appear in your account each week. These tokens can only be used in
+> this week's elections.**
 
-`grant = max(0, 10 − free)`. Hold 6 and the grant is 4; hold 10 or more and it
-is 0. Nothing is ever taken away — what stops voting power piling up is the
-**cap**, not a penalty, which is why the sentence above is the honest way to say
-it and "uncommitted tokens = less grant" is not.
+**Ten is a floor, not a ration.** `grant = max(0, 10 − free)`, which is the same
+rule as `available = max(10, held)` read from the other end. Hold six and four
+arrive; hold twenty and twenty are votable and none are taken away. Both
+functions are in the code so neither the wallet nor the UI has to derive one
+from the other and get the direction wrong.
 
-Paid on `GET /wallet` — opening the page is what tops you up — and idempotent
-per cycle week, so a refresh cannot pay one twice.
+**The grant does not exist until its week.**
 
-**The grant carries a date** (2026-08-20).
+> "Tokens aren't granted until election week when it's too late to transfer or
+> withdraw. You can vote beforehand, but the tokens aren't there yet."
 
-> "These granted tokens are marked with the date that they must be committed by
-> (or expire). If they are not committed to one of these 2 missions by that
-> date, the date changes 1 week forward."
+So there is no window in which granted ct is both real and free, and therefore
+nothing for a deadline to threaten. `GRANT_COMMIT_BY_WEEKS`, `commit_by_week`
+and `roll_commit_by` are gone with the rule they enforced. What a granted token
+carries instead is the **cause** it was granted against
+(`BenefactorAccount.grant_cause_id`) — its races this week, and if it goes
+unspent, that cause's next window seven weeks on. A granted token can be neither
+transferred nor withdrawn.
 
-So the deadline is real on the face of the token and soft in effect: it is the
-end of the week the grant was paid in, and an uncommitted grant simply takes
-next week's date (`roll_commit_by`). Nothing is confiscated, because what caps a
-hoard is the top-up formula, not a punishment — and a benefactor who thinks for
-a week has not done anything wrong. The date is stored on the account
-(`grant_commit_by_week`), sent to the client as a **date** rather than a week
-index, and printed under the honey segment of the unallocated strip.
-
-The arithmetic is stated once so a benefactor who opens the page monthly is
-treated exactly like one who opens it weekly: the date on their uncommitted
-grant is the end of the *current* week either way. A loop would have made the
-answer depend on how often the code ran.
-
-**Purchased tokens carry no date, and no door.** "Users can commit purchased
-tokens anywhere. Purchased tokens are the same as granted tokens except they do
-not have a deadline to commit." They may enter any race, and
-`purchased_ct` exists so the strip can say which uncommitted tokens are on a
-clock and which are not.
-
-**Two doors for new money.** Granted ct may go to the initiative slate **or** to
-the one active-cause organization election. Not to all nine races: "2 options,
-not 9". **Purchased** ct carries no such restriction and may enter any of the
-eight rows. Same tokens, different permissions — which is why the wallet tracks
-`purchased_ct` and the unallocated bar draws two colours. On the active race the
-grant is spent first, so a benefactor never loses the wider permission by
-accident; on any other row only purchased ct can go at all.
-
-There is no third kind. Unallocated is granted + purchased, full stop —
-`grant_held_ct = free_ct − purchased_ct` — because nothing comes back out of a
-race to sit there. The `fresh_ct` column and the `returned_lots` ledger that
-tracked the third kind were dropped the same day they were added (migration
-`a3b81d42c7e9`).
+**Purchased tokens are the only mobile money in the model.** They exist the
+moment they are bought, may enter any race, and may be transferred or withdrawn
+right up until they enter this week's election — at which point they behave
+exactly like granted ones. Withdrawal returns face value to **Cash**, never to
+the token bin, which is what keeps the grant arithmetic honest: nobody is ever
+billed a grant for money handed back to them.
 
 ---
 
-## 4. Vote weight
+## 4. The vote is a split; the commit is an amount
 
-The old model priced extra organization votes on a doubling ladder,
-`p2_vote_cost(v) = 10 × (2^(v−1) − 1)`. Paying 2× for the same marginal vote is
-arithmetically identical to receiving ½ the weight for the same marginal
-payment, so the ladder becomes a **weight curve** with no change to the
-economics:
+> "The vote commit is the total amount committed to that election, and the weight
+> is the percentage given to each tiv within it."
+
+| | what it is | when it can be set |
+|---|---|---|
+| **the vote** | a split across up to `MAX_SPLIT_TIVS` initiatives, in percentages | any time — it needs no tokens |
+| **the commit** | one number: total ct committed to that election | when the tokens exist |
+
+A tiv's weight is `commit × that tiv's percentage`. A vote standing with no
+commit behind it is **a preference with no funding yet** — not a pledge, not a
+promissory note, not a third state of anything. When the grant lands it flows
+through whatever split is standing.
+
+`split_ct` applies the amount by largest remainder, so a mission's rows sum to
+the commit exactly.
+
+> `MAX_SPLIT_TIVS` and the weekly grant are both **ten by coincidence** (Jax,
+> 2026-08-27c). They are independent numbers: a grant of 12 would not widen the
+> slate, and an 8-way cap would not shrink the grant. Neither is defined in
+> terms of the other, and the docs must not explain one with the other.
+
+---
+
+## 5. The week change is the ratchet
+
+> "The conversion only happens at a week-change. Users will be able to convert as
+> many times as they want within the same week." … "All OE allocations."
+
+Inside a week an allocation is a **draft**: set it, unset it, move it between
+races as often as you like, at no cost. At the roll, **every standing
+organization-election allocation hardens** — those ct become EBX for that
+mission and stop moving.
+
+**ME allocations do not harden at the roll.** The mission identity is not final
+until the initiative election is, so a slate stays revisable right up to the
+close; what ends it is `finalize_p1`, not the calendar.
+
+Two rows are also left alone by the roll:
+
+* one that **names no philanthropy** — there is nothing to harden into. An
+  unvoted stake is a token sitting in a race, and it commits to that race's
+  winner when the race finalizes.
+* one that is **marked** (§7) — it hardens when its benefactor votes for a
+  philanthropy and the next roll comes.
+
+**This retires two mechanisms at once**, and it is better than either. The
+`MAX_CONVERSIONS = 3` budget (2026-08-20) priced the hop and made a
+benefactor's remaining freedom a private number nobody else could see. One-way
+commitment (2026-08-20b) priced deliberation itself. A week boundary prices
+nothing, punishes nothing, and gives everybody the same deadline.
+
+---
+
+## 6. Settlement — a clean 10%, across the board
 
 ```
-flat 1:1 for the first block of 10 tokens,
-then each further block of 10 counts for r × the block before it,   r = 0.5
+ME_SKIM  = 0.0      the initiative election claims nothing
+OE_SKIM  = 0.10     the one skim, paid by everyone
+```
 
+> "It's a clean 10% across the board, winners and losers pay the same, the
+> difference comes after (special ebx for ME, special mission membership for
+> OE)." — Jax, 2026-08-27c
+
+| you backed | the skim | what being right pays |
+|---|---|---|
+| the winning initiative | **10%** | **early EBX** (§7) |
+| a losing initiative | **10%** | — |
+| the winning philanthropy | **10%** | an **upgraded mission membership** |
+| a losing philanthropy | **10%** | — |
+
+The four-path table is gone, and with it `OE_SEND_WIN`, `OE_SEND_LOSE`, and the
+buyer's sentence that needed a clause for each path. What replaces it fits on a
+card:
+
+> **10% of whatever you commit is the skim. The other 90% becomes your EBX for
+> that mission. What you win is standing, not a rebate.**
+
+**And the 90% is not withheld from the mission — it changes form.** The ct stop
+being a balance and become mission-tied credit: the coin of `models.CreditCoin`,
+the donation receipt, the thing whose worth tracks how well the organization
+runs what it was elected to run. The mission spends against it; the benefactor
+holds the record of having funded it.
+
+### Donation is an event, and it happens more than once
+
+> "The tax deduction happens when the ebx is donated (included in the skim).
+> Throughout the mission, more ebx will be donated."
+
+EBX is not donated in a lump at some week-number. It crosses **in tranches as
+the mission runs**, and each tranche is deductible when it crosses. The 10% at
+the organization election is simply **the first one** — which is what "included
+in the skim" means: the skim is not a separate charge outside the donation flow,
+it is the opening instalment of it.
+
+`MINT_LAG_WEEKS` therefore does not survive as a mint or as a deduction date.
+Seven weeks names the point at which the **budget is set**, and it is called
+`BUDGET_SET_WEEKS` now. Nothing expires on a clock any more; `TOKEN_LIFE_WEEKS`
+is gone.
+
+> **Out of scope, and named rather than assumed:** what *triggers* each donation
+> tranche after the first (a budget release? a resolved step? the org drawing
+> funds?), and whether every tranche carries the same Earthbux/organization
+> percentage the first one does. Both belong to the resolutions phase, which is
+> parked. `tranche_ct` is the arithmetic those rules will call, and nothing more.
+
+---
+
+## 7. When the initiative election closes, backers split two ways
+
+**Backed the winning initiative → early EBX.** Those ct mint on the spot, into
+this mission, a week ahead of everybody else's. They are locked in this
+organization election until it finalizes, and for the purposes of voting in it
+they count exactly as tokens. This is the reward for having been right, and it
+is not money: it is the same money, sooner, in a mission the benefactor chose.
+
+**Backed a loser → a marked token.** Still a token, still movable, carrying the
+initiative it voted for (`VoteP2.marked_tiv_id`). It may go to any open
+organization election **by voting for a philanthropy there** — the vote is the
+commitment — or come back to its cause's initiative election (§8). If it does
+neither, it commits to whoever wins the race it is sitting in.
+
+So the losing backer is not punished and not stranded; they are handed a live
+token with a mark on it. The winning backer is paid early instead.
+
+**A split ME vote makes different tokens — and then it doesn't.** Splitting a
+slate leaves a benefactor holding tokens with different marks. Once those are
+committed to an OE and minted, **the mark is forgotten in the balance** and
+lives only in the provenance chain.
+
+### The field: eight open, fourteen over a token's life
+
+> "8 options at the beginning, if the user waits 6 weeks 6 new options will
+> appear. 8 at any given moment."
+
+A mission enters phase 2 every week and leaves eight weeks later, so **exactly
+eight races are open at any instant** — that is the eight-row table. What grows
+is a marked token's cumulative reach: wait a week and the oldest race closes
+while a new one opens. Six weeks of waiting is six new options, and 8 + 6 = 14,
+which is the model's "7 elected before, the current one, and 6 elected later."
+**Fourteen is a lifetime, not a screen.**
+
+---
+
+## 8. The way back, and the default
+
+If a marked token is **still a token** when its OE week arrives, it may be
+transferred back to the initiative election and added to that week's grant,
+still locked to the initiative it originally voted for. The benefactor has to
+choose this deliberately; there is no automatic sweep.
+
+**The default is the opposite**: a token left in an OE is committed to whichever
+philanthropy wins it. Silence is not a withdrawal, and it is not a losing vote
+either — an unassigned stake funds the mission, carries no vote weight, and
+follows the winner of the race it is sitting in.
+
+`VoteP2.org_id` is nullable for exactly this state. Inventing an org id instead
+is how the orphaned-initiative 500 happened in August.
+
+---
+
+## 9. Vote weight, and what being right is worth
+
+Weight is 1:1 for the first block of 10 tokens, then each further block of 10
+counts for `r ×` the block before it, `r = 0.5`:
+
+```
 10 tk → 10.00      20 tk → 15.00      30 tk → 17.50      40 tk → 18.75
 ```
 
-`r` is the one knob: 0.5 reproduces today's economics exactly, higher is
-gentler, 1 is linear.
-
-### Influence — what being right is worth
-
-> "The result of the ME is that 'correct' voters get twice as much influence in
-> the OE. 'Correct' OE voters get twice as much influence on budget voting. Both
-> get 1.5x as much influence on research voting (so if you got both right, you
-> get 2.25x)."
+That reproduces the old doubling price ladder exactly — paying 2× for the same
+marginal vote is arithmetically identical to receiving ½ the weight for the same
+marginal payment — with `r` as the one knob.
 
 | you were right in… | organization election | budget voting | research voting |
 |---|---|---|---|
@@ -161,230 +279,80 @@ gentler, 1 is linear.
 | the organization election | — | **2×** | **1.5×** |
 | both | **2×** | **2×** | **2.25×** |
 
-The research column **multiplies** (1.5 × 1.5 = 2.25); the other two do not
-stack, because each names one earlier decision. An organization-election vote
-cannot reward itself — the race it would weight is the race it is in — which is
-why `influence_mult("oe", …)` ignores `oe_correct` rather than quietly counting
-it.
+The research column multiplies (1.5 × 1.5 = 2.25); the other two do not stack,
+because each names one earlier decision. An organization-election vote cannot
+reward itself — the race it would weight is the race it is in.
 
-This is the whole reward for being right, and it is deliberately **not money**.
-Yesterday's model paid for correctness with a cheaper skim; today one skim falls
-on everyone at the same rate, and the prize compounds into the thing a
-benefactor actually came for — the next decision — instead of into their own
-balance.
-
-> ⚠️ The curve is *implemented* (`token_model.weight_ct`) — worth saying,
-> because the previous weight formula, `1 + b/(pool−b × size_factor)`, existed
-> only in `p1_tally`'s docstring and in `config.size_factor`. The body of
-> `p1_tally` is plain linear. Wiring the new curve into the two tallies is the
-> next pass; today it drives the per-row weight the wallet reports.
+**These survive the flat skim** (Jax, 2026-08-27c: both), and they are joined by
+the two rewards §6 names. None of the three is money, which is the point: one
+skim falls on everyone at the same rate, so the prize for being right compounds
+into the next decision rather than into a balance.
 
 ---
 
-## 5. Settlement — one skim, and the ME is not it
-
-```
-ME_SKIM      = 0.0      the initiative election claims nothing
-OE_SEND_WIN  = 1.00
-OE_SKIM_LOSE = 0.10     ← the one skim
-```
-
-> "There will only be 1 'skim' after the OE." — Jax, 2026-08-20
-
-**The initiative election is a routing step, not a settlement.** Every backer's
-stake — the winner's and the losers' alike — moves whole into the winning
-initiative's organization election. Two reasons this is the right shape:
-
-* A benefactor who is talked out of their first choice has still funded the
-  cause. Charging them on the way past made the initiative vote feel like a toll
-  booth, and it double-counted the loss for anyone who then backed a losing
-  philanthropy too.
-* The promise reads in one clause. "The most you can lose is 10%" is now simply
-  **true**, rather than "10% twice = 19%" with an asterisk.
-
-The four paths, per token staked in an initiative election:
-
-| initiative | organization | donated | yours |
-|---|---|---|---|
-| won | won | **100%** | 0% |
-| lost | won | **100%** | 0% |
-| won | lost | **10%** | 90% |
-| lost | lost | **10%** | 90% |
-
-Money committed **straight to an organization election** settles identically —
-there is no longer any toll for arriving through an initiative election, and
-`token_model_check` asserts the two are equal rather than assuming it.
-
-> The buyer's sentence, final. **"If your philanthropy wins, 100% of what you
-> spent is donated. If it loses, 10% is donated and 90% is yours — to redirect
-> to another mission or take back as cash."** It now reads the same whichever
-> door the money came in through.
-
-**Two consequences worth naming**, because a benefactor can see both:
-
-* `crud.P1_SEND_WIN` and `P1_SEND_LOSE` are **0**, so the phase-1 "send floor"
-  is 0 and a withdrawal during phase 2 returns everything. That is what one
-  skim, after the OE, has to mean.
-* `COMMITMENT_FUND_SKIM` is **0** and nothing rolls to a cause's next election.
-  `finalize_p1` carries the money into this mission's organization election
-  (`_open_oe_stakes`) and re-lists losing initiatives as next-cycle candidates
-  (`_relist_losers`) — the idea moves, the money stays with the mission it
-  funded. The phase-2 pool is bigger and more honest for it: it used to
-  under-report itself by everything the losing initiatives held.
-
----
-
-## 6. Conversions — three, and no clock
-
-> "The token can now be converted to any OE. There is no time limit on the
-> token, but there is a limit to the amount of times it can be converted (3),
-> which puts a de facto limit on the time."
-
-This **replaces the 15-week fuse**. The problem both mechanisms solve is the
-same: a new mission enters phase 2 every week, so there is always a farther race
-to hop to, and a benefactor could stay permanently committed — never donating,
-collecting the full grant throughout, carrying weight in whichever race has the
-least scrutiny. A count is the better instrument. A deadline punishes a
-benefactor for deliberating; a conversion budget prices the hop itself, which is
-the thing that needed pricing. Three conversions at eight weeks a race is a de
-facto life of about thirty weeks.
-
-**A conversion is the only way ct leaves a race** (2026-08-20b), and it is a
-single transaction: `POST /wallet/convert` carries the amount, the destination
-race and the philanthropy together. It never passes through the unallocated
-balance, so there is no moment at which a thrice-moved token looks like a fresh
-one — which is what the FIFO lot ledger existed to prevent, and why that ledger
-could be deleted.
-
-**A conversion is spent by VOTING, not by parking.**
-
-> "In order for the user to convert their token to a different OE, they need to
-> vote on a phl for it. If they don't, the token defaults to the OE from the tiv
-> it was created within."
-
-`POST /wallet/convert` REQUIRES an `org_id`: moving ct between races without
-saying who it now backs is exactly what the rule forbids. After the move the
-destination is home — an unvoted stake there would follow ITS winner, not the
-race it left.
-
-`votes_p2.conversions` holds the count and `origin_mission_id` the race these ct
-were created in. `merge_conversion` takes the HIGHER count of the two rows plus
-the move itself, so splitting a stake across races cannot buy extra moves.
-
-`TOKEN_LIFE_WEEKS` (15) survives as the natural life of one ct from commitment
-to mint — the date on the tax receipt — but it is a projection now, not an
-expiry.
-
----
-
-## 7. Provenance
+## 10. Provenance
 
 > "Every token maintains a record of its transactions."
 
 A balance cannot carry a history, so the unit that does is the **lot**: ct that
-have always moved together. Split a lot and both halves inherit the whole
-record — and so the whole conversion count. The chain survives the mint: a
-credit coin still knows which initiative and which philanthropy its ct backed on
-the way there.
+have always moved together. Split a lot and both halves inherit the record. The
+chain survives the mint — a credit coin still knows which initiative and which
+philanthropy its ct backed on the way there.
 
-**The coin has two elements**, and Jax's naming of them is the specification.
+**Only a registered vote is recorded, and the week change sharpens what that
+means:** what is registered is what **stands at the roll**. A benefactor who
+moves an allocation three times on a Thursday leaves one event behind, not
+three, because the first two were drafts.
 
-*Element 1* is written when the initiative election hits: "they become marked
-with the cause, initiative and date it was converted, as well as the winning
-initiative." One `settle_me` event per initiative the benefactor backed, each
-carrying the cause, the amount, the date, and the initiative that **won** — so a
-losing coin still remembers the argument that made the mission, instead of being
-retconned into having always backed the winner. Written by `_open_oe_stakes` at
-`finalize_p1`, and idempotent: finalizing twice does not write it twice.
+**The coin has two elements.**
 
-*Element 2* is the conversions — a `commit_oe` for a philanthropy voted for in
-the race the ct was born in, a `move_oe` for each of the (at most three) moves
-elsewhere.
+*Element 1* (`settle_me`) is written when the initiative election hits: the
+cause, the amount, the date, the initiative this benefactor backed, and the one
+that **won** — so a losing coin still remembers the argument that made the
+mission instead of being retconned into having always backed the winner.
 
-Only a **registered** vote is recorded. Typing an amount and changing it before
-pressing Commit leaves nothing behind: a benefactor's second thoughts are not
-part of the public record of what their money supported.
+*Element 2* (`mint_ebx`) is the philanthropy these ct minted behind, written at
+the roll. It carries **no org id in one real case**: early EBX mints the moment
+the initiative election closes, when the mission is known and its organization
+has not been elected yet. That is what early means.
 
----
-
-## 8. Unassigned stakes
-
-When an initiative election closes, every backer's remainder moves into the
-winning initiative's organization election **automatically**, and arrives with
-no philanthropy named. Such a stake:
-
-- **funds** the mission (it is in the pool);
-- carries **no vote weight** — silence must not be able to change a result;
-- **defaults to the winner** of the race it was born in, so it is never
-  orphaned — silence is not a losing vote, and reading it as one (which the code
-  did until 2026-08-20, against this section) charged silence a 10% penalty;
-- **goes home** if it is sitting in a race that is not its origin and no
-  philanthropy was voted for there. Unreachable by design since 2026-08-20b —
-  a conversion carries its vote, so ct cannot arrive in a foreign race silently
-  — but `wallet.settles_as_won` keeps the rule for rows written before that.
-
-`VoteP2.org_id` is nullable for exactly this state. Inventing an org id instead
-is how the orphaned-initiative 500 happened in August.
+A donation tranche (`donate`) is its own event, dated for the deduction.
 
 ---
 
-## 9. The OE surface
+## 11. The surfaces
 
-Three things stacked, in the order the decision has: **what I have** → **which
-race** → **the eight deadlines**.
+### The allocations panel — three sets of two
 
-### The action row (2026-08-20b)
+**Unallocated** (granted · purchased) → **Committed** (initiatives ·
+organizations) → **EBX** (held · donated). The bar carries the whole of what a
+benefactor holds, and the pairs are pairs because the two halves of each are not
+interchangeable: granted ct is bound to its cause, purchased ct goes anywhere;
+an initiative allocation is soft to the close, an organization allocation
+hardens at the roll; held EBX is still theirs, donated EBX is gone and
+deductible.
 
-> "Discuss, register/nominate, and mission page should all be in the row with
-> the unallocated slider, which should be above the cause-toggled OE race area."
-> "Commit should be all-encompassing, not race-specific."
+The granted segment prints the **cause** it was granted for, where the commit-by
+date used to be.
 
-The unallocated balance used to be a row INSIDE the table, which made a
-benefactor's whole wallet look like a property of one race's leaderboard; Commit
-and the three links lived in the race dialog's foot, which made all four look
-race-specific — and Commit actually was, so a benefactor who had dialled three
-races had to press three buttons for one decision.
+### The initiative election — one amount, one slate
 
-One row, above the dialog: the balance (one bar, two colours — honey granted
-with its commit-by date, moss purchased with none), **one Commit** that writes
-every pending amount across every race, and Discuss · Register an Organization ·
-Mission page.
+The ME table spends the **wallet** now, not `10 + localStorage`. Raising the
+election's amount spends unallocated ct; lowering it hands the difference back,
+because an initiative allocation is soft until the close. The rows are
+percentages of that one amount.
 
-### The dialog
+### The organization election — eight rows, and a position
 
-The nominated philanthropies, the pool, and — since the sliders went — **the
-amount**: a number field beside the choice, because one-way money should be
-typed deliberately rather than dragged past. Its ceiling is the server's, so a
-benefactor cannot dial ct the two-door rule forbids.
+Eight rows, one per mission with an open philanthropy election, sorted by
+deadline, no scrollbar and no filter: the count is fixed by the calendar, so the
+shape is fixed too. A row is titled by its **initiative** and merely coloured by
+its cause — two missions of the same cause are open at once.
 
-### The table
-
-Eight rows, one per mission with an open organization election — a mission
-enters phase 2 every week and leaves eight weeks later. Two of them share a
-cause, because the rotation is seven weeks and the window is eight, which is why
-a row is titled by its **initiative** and merely coloured by its cause.
-
-| column | |
-|---|---|
-| ☆ | watch |
-| **My commitment** | read-only: "*4.5 committed to CarbonBridge Foundation*", plus anything dialled and any conversions left |
-| **Initiative** | title · cause · `THIS WEEK` on the active race |
-| **Total pool** | the race's phase-2 pool and vote count |
-| **Vote date** | the day this race is decided — replaces "Week 0" |
-
-Five rules the table obeys, all of them from 2026-08-20:
-
-- **No Vote column.** "Clicking on the row is sufficient" — a column whose
-  button repeats the row's own behaviour is a column of noise.
-- **Rows do not expand.** A panel unfolding under one row pushes the other seven
-  down the page, destroying the comparison the table exists to make.
-- **No scrollbar.** "It should be a consistent size to fit the 8 races." The
-  count is fixed by the calendar, so the shape is fixed too.
-- **Sorted by deadline, soonest first**, on entry to the mode. The headers still
-  re-sort once you are there.
-- **No filter and no search.** On a table of exactly eight rows a filter can only
-  hide races a benefactor still has money in — which is what pressing Vote on a
-  card used to do, so that button is gone from the OE cards.
+The dialog's number is **this race's total**, not an amount to add, with a floor
+of whatever has already minted. What the row reports is which state its money is
+in: EBX and staying, marked and movable to any open race, or movable until the
+week changes.
 
 The conservation law both tables share:
 
@@ -392,51 +360,47 @@ The conservation law both tables share:
 Σ(ME rows) + Σ(OE rows) + unallocated = tokens owned
 ```
 
-Unallocated is the only cell either table spends, and since 2026-08-20b it only
-ever goes DOWN (the weekly top-up aside). Neither table can reach into the
-other's committed rows, and neither can reach back into its own.
+Minted EBX is deliberately outside that sum — it has left the token bin, which
+is what minting means.
 
 ---
 
-## 10. What is built, and what is not
+## 12. What is built, and what is not
 
-**Built and asserted** (`token_model_check` 101 · `wallet_check` 118 ·
-`oe_check` 58):
+**Built and asserted** (`token_model_check` **108** · `wallet_check` **123**):
 
-- the arithmetic, end to end, in `backend/app/token_model.py`;
-- `free_ct` / `fresh_ct` / `cash_ct` / `last_grant_week` on the account, and
-  `stake_ct` / `origin_mission_id` / `born_week` / `provenance` / nullable
-  `org_id` on `votes_p2` (migration `d4e7b91c3a52`);
-- `purchased_ct` / `grant_commit_by_week` on the account and `conversions` on
-  `votes_p2` (migrations `f2c6a80d91b4` and `a3b81d42c7e9`, 2026-08-20);
-- `GET /wallet` · `GET /wallet/rows` · `POST /wallet/commit` ·
-  `POST /wallet/convert` · `PUT /wallet/org`. `PUT /wallet/stake` is gone: it
-  set a position, and positions are what one-way commitment removes;
-- the organization-election surface: action row, dialog with an amount, and a
-  fixed eight-row table with no sliders, no scroll, no filter, no Vote column;
-- **the ME half of settlement is booked** — `finalize_p1` carries every backer
-  into the organization election and writes coin element 1.
+- the arithmetic end to end in `backend/app/token_model.py`;
+- `grant_cause_id` on the account; `stake_ct` on `votes_p1`; `committed_week`,
+  `minted_ct`, `donated_ct` and `marked_tiv_id` on `votes_p2` (migration
+  `c5d8f2a91e67`);
+- `GET /wallet` · `GET /wallet/rows` · `POST /wallet/commit` (a position) ·
+  `POST /wallet/move` · `POST /wallet/withdraw` · `PUT /wallet/org`.
+  `POST /wallet/convert` is gone with the budget it spent;
+- the week roll, `wallet.harden_due`, applied by the scheduler and lazily on
+  `GET /wallet`;
+- **both halves of settlement are booked.** `finalize_p1` mints the winner's
+  backers and marks the rest; `finalize_p2` mints what is left and books the
+  first donation tranche. The OE half used to be recomputed on every read — the
+  right number in the wrong place — and `minted_ct` / `donated_ct` ended that;
+- the ME table on the wallet: one amount, one slate, refunded when lowered.
 
 **Not built yet** — named here so nobody assumes otherwise:
 
-- **The OE half of settlement is still derived.** `finalize_p2` books nothing
-  per benefactor, so `claimed` is recomputed from closed races on every read
-  rather than written once. Correct number, wrong place.
-- **Nothing sweeps a stake home at close.** `settles_as_won` returns `None` for
-  an unassigned stake in a foreign race, so the read treats it as still
-  committed — right answer, but no row is actually moved back to its origin.
-  Unreachable for anything committed under the current rules, since a conversion
-  cannot happen without a vote.
-- **Buying tokens is still the localStorage simulation.** `purchased_ct` is the
-  column the real thing will write; nothing writes it yet but the checks.
+- **The later donation tranches.** Only the first one is booked; what triggers
+  the rest is the parked resolutions work.
+- **The Earthbux/organization split of a donation.** The model says each gets a
+  percentage and each spends its share incrementally; the percentages are not
+  set, so nothing divides a tranche yet.
+- **Buying tokens.** `purchased_ct` is the column the real thing will write, and
+  the localStorage simulation on main.html was retired rather than left to
+  invent a budget the account does not hold.
+- **The rule-8 way back to the ME.** A marked token can move between
+  organization elections and can wait; nothing yet transfers it back into an
+  initiative election with its mark intact.
 - **The influence multipliers are not wired into the tallies.** `p1_tally` is
   linear and `p2_tally` counts integer votes; today the multipliers drive the
-  per-row weight the wallet reports (`my_influence` · `my_weight`). Budget and
-  research voting do not read them yet, because neither surface tallies weight.
-- **The mint does not exist.** Nothing yet moves a claimed stake into a credit
-  coin at OE + 7 weeks.
-- **The ME table's fresh-token door.** The initiative table still spends the old
-  client-side `10 + localStorage.ebx_purchased_ebx` budget; only the OE side
-  reads the wallet.
-- **Buying tokens inside a commit.** `buyVoteEbx` is still the localStorage
-  simulation.
+  per-row weight the wallet reports.
+- **The coin's issuance timing.** `mint_mission_coins` still runs at
+  `finalize_p2`; the model says EBX at mission identity, **coin at budget**.
+- **The phase-1 carryover machinery** still exists and describes a world that
+  ended on 2026-08-20.

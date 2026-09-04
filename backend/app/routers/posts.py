@@ -22,12 +22,15 @@ def list_posts(
     category: Optional[str] = None,
     parent_id: Optional[str] = None,
     roots_only: bool = False,
+    ben_author_id: Optional[int] = None,
+    type: Optional[str] = None,
     limit: int = 50,
     db: Session = Depends(get_db),
 ):
     return crud.list_posts(db, mission_id=mission_id, tiv_id=tiv_id,
                            cause_id=cause_id, category=category,
-                           parent_id=parent_id, roots_only=roots_only, limit=limit)
+                           parent_id=parent_id, roots_only=roots_only,
+                           ben_author_id=ben_author_id, type=type, limit=limit)
 
 
 @router.get("/{post_id}/comments", response_model=list[schemas.PostRead])

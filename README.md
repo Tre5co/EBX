@@ -1,22 +1,14 @@
 # Earthbucks — System Overview (v2, mission-centric)
 
 Earthbux is a weekly charity pool elected by its community. Each week a **mission**
-for one of seven rotating **causes** (Atmosphere · Oceans · Land · Forests ·
-Wildlife · Human Rights · Human Progress) (a new cause can be initiated) opens and runs through **three phases**:
+for one of seven rotating **causes** opens and runs through **two elections**:
 an **initiative election** (which idea?), an **organization election** (who runs
-it?), and **resolutions** (the entire post-election back half — budgeting, credit
-release, and the ongoing stream of small resolved outcomes — folded into one
-continuous phase).
+it?).
 
-**Posts and discussion drive every phase.** Each phase is a structured discussion
-with its own post types; the community's reactions to those posts decide which
-initiative wins, which org runs it, and how the money is spent, and the best posts
-win rewards. **Earthbux News (EN)**, funded by a cut of the pool, supervises,
-publicizes, and helps organize the missions by stimulating that discussion,
-connecting parties, and pooling resources.
+**Earthbux News (EN)**, funded by a cut of the pool, supervises,
+publicizes, and helps organize the missions by creating a social network around each mission.
+Stimulating discussion, connecting parties, and pooling resources.
 
-The **causes themselves are votable** — a cause that holds a majority for long
-enough replaces the one that would have come next (§4, *Changing a cause*).
 
 **Doc map** — three canonical docs; supporting files are folded into them.
 - **README.md** (this file) — the system model: architecture, data model, APIs,
@@ -24,9 +16,6 @@ enough replaces the one that would have come next (§4, *Changing a cause*).
 - **docs/structure.md** — the page-by-page build spec (one section per route).
 - **docs/INSTRUCTIONS.md** — the build queue (`## BUILD SEQUENCE`) plus the
   living `## BACKLOG`.
-- *(Merged in and deleted: `docs/mission_lifecycle.md` → §3/§5 (2026-07-15);
-  `docs/posts.md` → §5 discussion model, and `docs/backlog.md` → INSTRUCTIONS
-  `## BACKLOG` (2026-07-17).)*
 
 ---
 
@@ -64,6 +53,8 @@ enough replaces the one that would have come next (§4, *Changing a cause*).
   money-in action; votes from unfunded kid accounts still carry
   `BASE_VOTE_EBX` weight. Legal review (COPPA/GDPR-K) before build — see the
   INSTRUCTIONS `## BACKLOG`.
+- **Railway** https://ebx-production.up.railway.app/ 
+
 
 ---
 
@@ -232,13 +223,18 @@ post-mission performance phases (4–5); evaluation = pre-vote.
 
 ### Withdrawals
 
-- **Phase-2 withdrawal (CLOSED 2026-08-20b):** it let a benefactor pull a live
-  commitment back out of a race minus a send that is now 0 — i.e. a full refund
-  mid-race, which is exactly what one-way commitment forbids. `crud.withdraw_p1`
-  raises a named refusal pointing at the two real exits: convert into another
-  organization election (one of three), or wait for this one to settle, where a
-  loss returns 90% **as cash**. `cause.html` still shows the button; removing it
-  is a backlog item.
+- **Phase-2 withdrawal (CLOSED 2026-08-20b, restated 2026-08-28):**
+  `crud.withdraw_p1` raises a named refusal. What it points at has changed with
+  the finalized model, and the old wording here — "convert into another
+  organization election (**one of three**)" and "a loss returns 90% **as cash**"
+  — described two mechanisms that no longer exist: the three-conversion budget
+  (retired with `MAX_CONVERSIONS`) and the loser's cash refund (there is one
+  clean 10% skim for everybody now, and the other 90% is EBX, not cash). The two
+  real exits today are: **set the allocation back down** inside its own week
+  (`POST /wallet/commit` is a position, not an addition), or **move it** to
+  another open race (`POST /wallet/move`, free and unlimited until the roll).
+  After the roll there is no exit — it is EBX and it stays with its mission.
+  `cause.html` still shows the button; removing it is a backlog item.
 - **Phase-3 org-loss withdrawal (deferred):** once orgs are decided, a
   benefactor whose org **loses** should have their 90% immediately
   withdrawable, but only after **acknowledging they don't trust the winning
@@ -348,61 +344,74 @@ mission.
 
 ---
 
-## 5. The money model
+## 5. The money model (in the early stages)
 
-### At a glance — money in = money out
+### At a glance — one rate, four states
 
-Benefactors commit EBX and vote in Phase 1; their combined commitments form the
-mission **pool** (money *in*). After Phase 1, **every committed EBX lands in
-exactly one of two buckets** (money *out*) — nothing is unaccounted for:
+*Finalized 2026-08-27c. `docs/token_model.md` is the full statement and
+`docs/ME_OE_FINALIZATION.md` is the record of the decisions; this is the short
+version.*
 
-| Bucket | What it is | Size |
-|---|---|---|
-| **a + b — committed to a mission** | Stays committed to a mission's pool — the winning mission, with or without an org registered to it. Loser commitments roll forward to the cause's next-cycle initiative. | the remainder |
-| **c — pool minimum (sent)** | The irrevocable send, taken the moment Phase 1 resolves. | **20%** if your initiative won, **10%** if it lost |
+**In the early stages, Tokens are convertible; EBX is not.** That is the whole model, and everything
+else follows from it.
 
-So for any benefactor `commitment = (committed to mission) + (pool minimum)`, and
-across everyone `pool = Σ committed-to-mission + Σ pool-minimum`. (a and b are
-tracked separately only for org attribution; for the money math they combine.)
+```
+unallocated  →  committed  →  minted  →  donated
+free tokens     to a tiv       to a       consumed by the
+                or a phl       mission    org, or by Earthbux
+```
 
-Phase 2 applies the same shape to the org race: **100%** of your commitment is
-sent if your organization wins, **20%** if not.
+- **Ten tokens appear each week**, against that week's cause, and can only be
+  spent in its elections. Ten is a floor, not a ration: hold six and four
+  arrive, hold twenty and twenty are votable. A granted token has no free window
+  — it appears in its election week — so it can be neither transferred nor
+  withdrawn. **Purchased tokens are the only mobile money**: any race, and
+  withdrawable at face value until they enter one.
+- **The vote is a split; the commit is an amount.** Percentages across up to ten
+  initiatives, and one number for the whole election. A slate can stand before
+  the tokens that will back it.
+- **The week change is the ratchet.** Inside its own week an allocation is a
+  draft — move it as often as you like, at no cost. At the roll, every standing
+  organization-election allocation becomes EBX for that mission and stops
+  moving. Initiative allocations stay soft until the election closes, because
+  EBX cannot predate its mission.
+- **A clean 10%, across the board.** Winners and losers pay the same skim. The
+  other 90% becomes the benefactor's EBX for that mission — held, mission-tied,
+  and donated in tranches as the mission runs, each deductible when it crosses.
+- **Being right is worth standing, not money**: early EBX for backing the
+  winning initiative, an upgraded mission membership for backing the winning
+  philanthropy, and influence in the next decision (2× / 2× / 1.5×).
+
+The promise, in one clause: **10% of whatever you commit is the skim; the other
+90% becomes your EBX for that mission.**
 
 ### Where a donation goes
 
-A benefactor's weekly contribution is **100% a donation** — nothing is held back
-as a fee on the way in. It lands in three places (Jax, 2026-08-06). At $20/week:
+A commitment is **10% donated and 90% held**, and the held part is donated later,
+in tranches, as the mission runs. Two words that are easy to run together and
+must not be:
 
-| Slice | Range at $20 | What it is |
-|---|---|---|
-| Researchers | **$2** | paid to the best researchers on the platform — the posts that actually moved a decision (see *Post rewards*) |
-| Earthbux | **$0–6** | the platform's own cut: supervision, publication, organizing |
-| The mission | **$6–18** | the pool the elected organization draws against |
+- **Donate** is the benefactor's act, and each EBX crosses that line **once**.
+  What is donated is split by percentage between **Earthbux** and the elected
+  **organization**.
+- **Spend** is what each of those two does with its share afterwards,
+  **incrementally**, over the life of the mission.
 
-The Earthbux and mission slices flex against each other — the more of a
-contribution that is directed (spent on the organization election, or given
-under a *specified-must-donate* instruction), the more of it is bound for a
-mission rather than the platform. **Anything directed that way ends up in _a_
-mission**, even if not the one it was cast in: that is what the phase-2
-carryover does with a commitment the benefactor doesn't keep where it is
-(§6, *Carryover*).
+So a benefactor can watch their donation being used without their donation
+changing size — which is the point of holding a receipt whose worth tracks how
+well the money was spent.
 
-**Not built.** There is no donation intake, no split at the door and no
-researcher payout — the numbers above are the model, and the ledger's `bucket`
-field is where they will land. See the INSTRUCTIONS backlog, *Money / credit /
-donations*.
+**Not built.** There is no donation intake and no researcher payout; the
+Earthbux/organization percentages are not set, and what triggers each tranche
+after the first belongs to the parked resolutions work. The ledger's `bucket`
+field is where they will land.
 
 ### Votes by phase
 
-| Phase | Elects | Vote rule | Send rate (win / lose) | Tally fires |
-|---|---|---|---|---|
-| **1 — Initiative** | which initiative the mission runs | split one vote across initiatives; weight = committed EBX (10 EBX = 1 vote) | 20% / 10% | first day of the cause's active week |
-| **2 — Organization** | which org runs it | 1 vote = 1 org; extra votes at rising prices | 100% / 20% | 8 weeks after the initiative election |
-
-> **Auxiliary** (refines *where the committed-to-mission bucket ends up* — does
-> not change money-in = money-out): the resolution-time EN/org/reward split (the
-> 32nds table below), the 10% loser **commitment-fund** skim, amplified
-> `size_factor` vote weighting, and the Phase-3 distrust withdrawal.
+| Phase | Elects | Vote rule | At the close |
+|---|---|---|---|
+| **1 — Initiative** | which initiative the mission runs | a percentage split across up to 10 initiatives, times one commit | nothing is skimmed. Backers of the winner mint **early EBX**; backers of a loser keep **marked tokens** |
+| **2 — Organization** | which org runs it | one philanthropy per benefactor; weight follows the curve | a clean **10%** of every stake is donated; the rest is EBX |
 
 ### Resolution split
 
@@ -522,26 +531,33 @@ sizes are unchanged. Enforcement reads the rewarded set from `post_config.py`
   concrete figure (its guaranteed 10/32 of today's pool); the **maximum** is
   *uncapped* (guaranteed + the 9/32 flexible, and both grow as new donations
   arrive). The org drafts hypothetical budgets between the two.
-- **Send rates** (phase-1 20%/10% win/lose, phase-2 100%/20% win/lose) define
-  each benefactor's irrevocable-vs-returnable split at credit release — they are
-  **not** a refund at resolution.
-- **Loser carryover & commitment fund**: when an initiative loses, its backers'
-  commitments are **not** spent here — they roll into the cause's next-cycle
-  election at 90%, and a 10% skim is booked to the global `commitment_fund`
-  bucket. See [§6](#6-voting--the-election-algorithm).
+- **The skim** is a clean **10%** of every stake at the organization election,
+  winners and losers alike (2026-08-27c), and it is the first donation tranche
+  rather than a charge outside the flow. The 20%/10% and 100%/20% send rates,
+  and the loser carryover with its `commitment_fund` skim, are **retired** —
+  nothing has rolled to a cause's next election since 2026-08-20. See
+  [§6](#6-voting--the-election-algorithm).
 - Every slice is written to the `transactions` ledger; `pools` is a derived cache.
 
 ### Credits & EBX
 
-- 1 credit = 1 EBX ≈ $1; EBX hold $1 value for 7 weeks post-mint.
-- Coins mint at election settlement (`finalize_p2`), sized by each voter's
-  remaining stake; **holding one = mission membership**. Staff/test coins render
-  greyed in the wallet.
+- **EBX is a state, not a second currency.** A token becomes EBX when its
+  mission identity is final — at the roll after an organization-election
+  allocation, or on the spot for a backer of the winning initiative. It is
+  mission-tied and it does not move.
+- **The mint and the coin are two events.** EBX exists at mission identity; the
+  COIN — `models.CreditCoin`, the receipt — is issued later, at budget
+  (`BUDGET_SET_WEEKS`). `mint_mission_coins` still runs at `finalize_p2`, which
+  is the older timing and a named backlog item. **Holding a coin = mission
+  membership.** Staff/test coins render greyed in the wallet.
 - `GET /coin-value` = global value (net platform flow / `coin_value_scale`);
   `mission.credit_value` moves with resolutions (`resolution_value_bump`).
-- Minted credits become tax-deductible after they are committed to a charity
-  and converted. The amount people keep as EBX (rather than converting /
-  withdrawing) determines the pool available to budget with.
+- Deductibility follows the **donation**, not a conversion: each EBX crosses to
+  Earthbux and the elected organization once, in tranches as the mission runs,
+  and is deductible when it crosses. "Converting" is not a step in the model any
+  more — a move between races is free and changes nothing about what is owed.
+  What determines the pool available to budget with is how much EBX stays held
+  against the mission rather than having crossed already.
 - **Design for failure:** many missions will fail (bad org, extreme costs) —
   the coin model must tolerate that.
 
@@ -626,8 +642,10 @@ decisions to settle before building:
   decoupled?
 
 **2. Availability (when can the benefactor change their mind?)**
-- Which states can money be in: `available → committed → sent → converted`?
-  Define the full state machine and which transitions the benefactor controls.
+- ~~Which states can money be in: `available → committed → sent → converted`?~~
+  **ANSWERED 2026-08-27c** — `unallocated → committed → minted → donated`, and
+  the benefactor controls exactly one transition (commit / move), inside one
+  week. See §5. The rest of this list is still open.
 - At each phase, what fraction is withdrawable? (Today: P2 window minus the
   send; phase-3 distrust withdrawal deferred.) Does targeting change the rates?
 - Can availability be scheduled ("release 10/week"), or only toggled?
@@ -667,21 +685,25 @@ All vote logic lives in `crud.py`; the scheduler (`scheduler.run_due`) decides
 release.
 
 **Constants** (`crud.py`): `EBX_PER_VOTE = 10` (10 EBX = 1 vote), `BASE_VOTE_EBX
-= 10` (a vote carries weight even with no EBX bought), `SHARE_FLOOR = 0.1`,
-`SHARE_SUM_CAP = 1.0`, `VALENCE_SIGN = {helpful:+1, neutral:0, harmful:−1}`,
-send rates `P1 20/10` and `P2 100/20` (win/lose).
+= 10` (a vote carries weight even with no tokens committed), `SHARE_SUM_CAP = 1.0`,
+`VALENCE_SIGN = {helpful:+1, neutral:0, harmful:−1}`, `P1_SEND_* = 0` (the
+initiative election is a routing step) and `P2_SKIM = 0.10` — **one rate, paid
+by everyone**. The win/lose fork went on 2026-08-27c.
 
 ### Phase 1 — initiative election (`VoteP1`, one row per `(ben, tiv)`)
 
-- **Cast / re-slate** (`replace_p1_shares`): a benefactor spreads `share` across
-  several initiatives (continuous sliders, no 0.1 floor enforced on input; shares
-  sum to ≤ 1.0). Each row's `ebx_committed = ebx_total · share`. The slate is
-  editable any time before finalization; every change writes a vote `Transaction`.
-  A no-EBX vote still holds `BASE_VOTE_EBX` of weight.
-  The **UI** for this is the Context table's top row (2026-08-05, structure.md):
-  whole-EBX sliders over a budget of **10 base EBX + purchased**, split across at
-  most **10** initiatives, with the remainder held in an *Uncommitted* bar. The
-  client normalizes its whole-EBX split to `shares` and PUTs one slate per mission.
+- **Cast / re-slate** (`replace_p1_shares`): **one amount and one slate.** The
+  slate is a percentage split across at most `MAX_SPLIT_TIVS` (10) initiatives —
+  the VOTE, which needs no tokens to stand — and the commit is one number for the
+  whole election. Each row's `stake_ct = commit × share`, by largest remainder,
+  so a mission's rows sum to the commit exactly. Editable any time before
+  finalization; every change writes a vote `Transaction`.
+  Since 2026-08-27c the commit is reconciled against the **wallet**: raising it
+  spends unallocated ct, lowering it hands the difference back (an initiative
+  allocation is soft until the close), and granted ct may only enter the
+  elections of the cause it was granted against. The client-side
+  `10 + localStorage` budget that preceded it is gone, along with the double
+  count it caused in the allocations panel.
   Every tiv in a slate **must belong to that mission** — the guard matches ids
   explicitly, so an initiative with a NULL `mission_id` is rejected rather than
   silently inserted (that hole produced a `UNIQUE(ben_id, tiv_id)` 500; §0a
@@ -716,25 +738,29 @@ send rates `P1 20/10` and `P2 100/20` (win/lose).
 
 ### What happens to a commitment once phase 1 closes
 
-Rewritten 2026-08-20 (build-seq §1) — **one skim, and the initiative election is
-not it**. `docs/token_model.md` is the full statement; the short version:
+Rewritten 2026-08-27c. `docs/token_model.md` §7 is the full statement:
 
 - **Nothing is skimmed and nothing rolls to another cause.** The whole
-  commitment — winners' and losers' backers alike — moves into the winning
-  initiative's organization election, in the same mission, as an unassigned
-  stake. It funds the mission immediately and carries no vote weight until the
-  benefactor names a philanthropy.
-- **The reward for backing the winner is influence, not a discount**: 2× weight
-  in that organization election, and 1.5× on research voting
-  (`token_model.influence_mult`).
-- **The one skim falls when the philanthropy is elected**: won → 100% donated,
-  lost → 10% donated and 90% the benefactor's, to redirect or take back as cash.
-- **`P1_SEND_WIN` / `P1_SEND_LOSE` are 0**, so the phase-2 "send floor" is 0 and
-  a withdrawal while the org race is open returns everything.
+  commitment moves into the winning initiative's organization election, in the
+  same mission. The initiative election is a routing step, not a settlement.
+- **Backers of the winner mint EARLY EBX.** Their ct become EBX for this mission
+  on the spot, a week ahead of everybody else's, locked in this organization
+  election until it finalizes and counting exactly as tokens for voting in it.
+  That is the reward for being right: the same money, sooner, in a mission they
+  chose.
+- **Backers of a loser keep MARKED TOKENS.** Still tokens, still movable,
+  carrying the initiative they voted for. They may go to any of the eight open
+  organization elections **by voting for a philanthropy there** — the vote is the
+  commitment — and a token that waits watches six more races open under it, which
+  is the model's fourteen. If it does neither, it commits to whoever wins the
+  race it is sitting in: silence is not a withdrawal.
+- **The one skim falls when the philanthropy is elected**: a clean 10% of every
+  stake, whoever it backed, with the other 90% becoming that benefactor's EBX
+  for the mission.
 - **The pre-2026-08-20 carryover machinery still exists** —
   `GET/PUT /missions/{id}/p1/carryover`, `_send_floor`, the `carryover` ledger
-  bucket — and still describes races finalized under the old rules honestly. Its
-  UI is gone from the vote dialog; removing the endpoints is a backlog item.
+  bucket — and still describes races finalized under the old rules honestly.
+  Removing the endpoints is a backlog item.
 
 ### Phase 2 — organization election (`VoteP2`, one row per `(ben, mission)`)
 
@@ -751,13 +777,17 @@ not it**. `docs/token_model.md` is the full statement; the short version:
 - **Finalize** (`finalize_p2`, fired **8 weeks after the initiative election** = 15
   weeks after the mission opens): elects the top net-vote org, sets `winning_org_id`, advances the mission to
   `budget`. No-op without a positive signal.
-- **Phase-2 withdrawal** (`withdraw_p1`, `POST /missions/{id}/p1/withdraw`): while
-  the org race is open (after the tiv is elected, before `budget`), a benefactor
-  can pull back their phase-1 commitment **minus the send** — which is **0**
-  since 2026-08-20, so the whole of it comes back. That is what "one skim, after
-  the OE" means: nothing is irrevocable until the philanthropy is elected. The refund is booked to the `refund` bucket; the
-  send stays in the pool. (Phase-3 "org loses → 80% withdrawable with a distrust
-  acknowledgment" is **deferred** — see [§3 Withdrawals](#withdrawals).)
+- **Settlement** (`_settle_oe_stakes`, 2026-08-27c): everything still a token
+  becomes EBX — an unvoted stake follows the winner of the race it is sitting in,
+  and a marked token that never moved commits here too — and then the first
+  donation tranche crosses at a clean 10%. Booked per benefactor rather than
+  recomputed on every read, which is what `minted_ct` / `donated_ct` are for.
+- **Phase-2 withdrawal** (`withdraw_p1`) is a **named refusal**. Inside the week
+  an allocation is undone by setting it back down (`POST /wallet/commit` is a
+  position); after the roll it is EBX, and EBX stays with its mission. The only
+  exit from the token bin is `POST /wallet/withdraw`, open to purchased ct that
+  has not entered an election. (Phase-3 "org loses → 80% withdrawable with a
+  distrust acknowledgment" is **deferred** — see [§3 Withdrawals](#withdrawals).)
 
 ---
 
@@ -815,10 +845,36 @@ state. Pages render honest empty vote states.
 
 **Remaining (rebuild):**
 1. ✅ v2 data loaders + cycle anchor.
-2. ⬜ Wire the cause page phase-1/phase-2 widgets to `/missions/{id}/p1|p2`
+2. ✅ Wire the cause page phase-1/phase-2 widgets to `/missions/{id}/p1|p2`
    (read tallies, write votes — server-authoritative).
-3. ⬜ Homepage cards + profile wallet (`/benefactors/me/credit-coins`) from the
+3. ✅ Homepage cards + profile wallet (`/benefactors/me/credit-coins`) from the
    backend.
+
+### The five surfaces, as of 2026-08-28
+
+| Page | What it is | State |
+|---|---|---|
+| `index.html` | About Earthbux — §1a–§1e, the runway off `GET /stats` | built |
+| `main.html` | **The Election Page** — the voting surface | ◑ |
+| `cause.html` | **The Discussion** — the posts box, the wheel, the cause bar | ◑ |
+| `mission.html` | Mission page — grid a–g, post-support annulus layer 1 | ◑ |
+| `profile.html` | **The benefactor's own side of the election page** | ◑ |
+| `admin.html` | Read-only back office over the live DB | ◑ |
+
+Three things landed on 2026-08-28 that change how two of those read:
+
+- **The election cards are the FIELD again.** They carry the top three, and
+  nothing about the reader. "My vote" and "what is left of my budget" were two
+  of a card's three rows and they have moved to `profile.html`, where a
+  benefactor's own position now has a page instead of fourteen fragments of one.
+- **One annulus.** `main.html`'s ring is thin and static: seven sectors, the
+  selected cause coloured, a white glow around **this week's** sector, and the
+  marker travelling clockwise through it. The twenty-one chevron rays are gone —
+  the marker is the only moving thing on the ring, so it is what direction
+  means. The pie is untouched and the ring frames it.
+- **One cause bar, on both pages.** `cause.html` carries the same seven-tab bar
+  as `main.html`, and with it the sentence that used to caption the wheel, plus
+  the step the chosen cause is standing on.
 
 ---
 
@@ -869,7 +925,7 @@ backend/
   seed/                port_v1.py (live-data port), pilot.py (v1 sample)
 frontend/
   src/ebx_shared.ts    shared engine source (esbuild → resources/js/ebx_shared.js)
-index.html  cause.html  profile.html  admin.html
+index.html  main.html  cause.html  mission.html  profile.html  admin.html
 resources/js/ebx_shared.js   built engine
 docs/
   structure.md       page-by-page build spec (per route)
@@ -884,7 +940,7 @@ docs/
 ```bash
 cd backend
 ./.venv/bin/python -m alembic upgrade head        # schema (already applied)
-./.venv/bin/python -m seed.port_v1                # one-off data port (idempotent)
+# ./.venv/bin/python -m seed.port_v1              # GONE — see docs/to_delete.md §B
 ./.venv/bin/python -c "from app.database import SessionLocal; from app import bootstrap; bootstrap.bootstrap(SessionLocal())"   # seed atm0..hpr0
 ./.venv/bin/uvicorn app.main:app --reload --port 8000
 # → http://localhost:8000  (pages) · /admin (console) · /docs (API)
@@ -895,3 +951,50 @@ Rebuild the frontend engine after editing the TypeScript:
 ```bash
 cd frontend && npm run build      # ebx_shared.ts → resources/js/ebx_shared.js
 ```
+
+---
+
+## 14. The checks — what each one is, and how to run it
+
+*Added 2026-08-28. There are eleven, they all pass, and none of them is a unit
+test: each drives the real server and asserts something a person would notice.
+Run them against a server on `127.0.0.1:8000`.*
+
+### Two flavours
+
+**jsdom checks** render a page in a headless DOM and read what it says. Fast,
+no browser, but jsdom cannot drag a slider or click through a flow.
+
+```bash
+node scripts/<name>.js [http://127.0.0.1:8000]
+```
+
+**Playwright checks** drive a real Chromium, because what they guard is a
+*sequence* — sign in, dial an amount, press Commit, read the server back.
+
+```bash
+npx playwright install chromium      # once
+node scripts/<name>.js
+# or point them at a browser you already have:
+PW_CHROME=/path/to/chrome node scripts/oe_check.js
+```
+
+### The eleven
+
+| Check | Browser | What it guards |
+|---|---|---|
+| `render_check` | jsdom | Every page mounts, every expected element is present exactly once, no script errors. The smoke test — run it first. |
+| `landing_check` | jsdom | `index.html`'s §1a–§1e say the words they are supposed to say. 43 assertions. |
+| `posts_box_check` | jsdom | `cause.html`'s discussion box: the phase tabs, the category tabs, what is open when. |
+| `carryover_check` | jsdom | The signed-OUT path still renders — the failure mode where a page only works logged in. |
+| `date_audit` | jsdom | Every mission's five dates, from `EBX.Cycle.missionDates`, against the 7-week rotation. Two of them are FIXED POINTS you gave directly (atm0 → Aug 11, atm1 → Sep 29): if a change breaks either, the change is wrong. |
+| `unit_sweep` | jsdom | **Tokens vs EBX.** Walks the visible text of every page and flags any "EBX" sitting beside a vote or commit word. A source grep cannot do this — `EBX.` is the client namespace. |
+| **`ce_check`** | **Chromium** | **The CAUSE election.** Thirteen dated windows, six already confirmed and seven open; that a row of the cause table points the panel at the cause holding that window; that clicking keep-or-replace only DRAFTS a vote and Commit is what sends it; that the server refuses a confirmed window and an active cause as a challenger; that `?state=ce` deep-links. 80 assertions. |
+| **`oe_check`** | **Chromium** | **The ORGANIZATION election table**, and above all the conservation law: eight races and one unallocated balance share a single pot, so it dials amounts up and down and checks that nothing is created or destroyed on the way. Also: that a commitment is a POSITION (revisable inside its week), that the race pool moves when you commit, that an unassigned stake is still in the pool, that a refresh does not pay the grant twice. 90 assertions. |
+| **`profile_check`** | **Chromium** | The profile page's shape: three cards on top, seven weekly windows around the globe, the clockwise rule (top card in columns, side cards in rows, and the left column reversed), two cause colours per card, the globe actually turning, and that member mode is gated on a coin being *selected*. 42 assertions. |
+| `token_model_check` | — | Pure arithmetic in `token_model.py`. No server. 108 assertions. |
+| `wallet_check` | — | `wallet.py` against a live database: the position, the week roll, unlimited moves, withdrawal, early EBX vs a mark, the flat skim. 123 assertions. |
+
+Both Chromium checks used to carry a hardcoded `executablePath` pointing at a
+directory, so **neither had ever run** until 2026-08-28. They resolve a browser
+properly now — `PW_CHROME`, then the known install paths, then Playwright's own.

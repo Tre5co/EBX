@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earthbux — Investor Deck (working draft)</title>
+<style>
+  :root{
+    --ink:#0d1310;
+    --panel:#131b16;
+    --line:#25342b;
+    --fg:#e8efe9;
+    --dim:#93a89a;
+    --green:#7fd18c;
+    --gold:#e3bc6a;
+    --red:#e08a7a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#070b09;color:var(--fg);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:2vmin 2vmin 4.5vmin;}
+  .slide{
+    display:none; position:relative;
+    width:min(96vw, calc(90vh * 16 / 9));
+    height:min(90vh, calc(96vw * 9 / 16));
+    container-type:size;
+    background:var(--ink);
+    border:1px solid var(--line);
+    border-radius:0.6vmin;
+    overflow:hidden;
+    box-shadow:0 2vmin 6vmin rgba(0,0,0,.55);
+  }
+  .slide.on{display:block}
+  .pad{position:absolute;inset:0;overflow:hidden;padding:6cqw 7cqw 6.5cqw;display:flex;flex-direction:column;}
+  h1{font-size:8.4cqw;line-height:1.02;margin:0;letter-spacing:-0.02em;font-weight:600}
+  h2{font-size:4.7cqw;line-height:1.08;margin:0 0 2.6cqw;letter-spacing:-0.015em;font-weight:600}
+  h3{font-size:2.2cqw;margin:0 0 1cqw;font-weight:600;color:var(--green)}
+  p,li{font-size:2.05cqw;line-height:1.42;margin:0 0 1.3cqw;color:#d5e0d8}
+  .kicker{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    font-size:1.4cqw;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin:0 0 2cqw}
+  .lede{font-size:2.9cqw;line-height:1.35;color:#fff;margin:0 0 2.4cqw}
+  .dim{color:var(--dim)}
+  .green{color:var(--green)}
+  .gold{color:var(--gold)}
+  ul{margin:0 0 1.5cqw;padding-left:3cqw}
+  li{margin-bottom:0.9cqw}
+  li::marker{color:var(--green)}
+  .cols{display:flex;gap:4cqw;flex:1;min-height:0}
+  .cols>*{flex:1;min-width:0}
+  .cols p,.cols li{font-size:1.9cqw;line-height:1.4;margin:0 0 1.1cqw}
+  .rule{height:1px;background:var(--line);margin:2.5cqw 0}
+  .foot{position:absolute;left:8cqw;right:8cqw;bottom:2.4cqw;display:flex;justify-content:space-between;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.35cqw;color:#4e6357;letter-spacing:.1em}
+  /* stat blocks */
+  .stats{display:flex;gap:2.4cqw;margin:.5cqw 0 2cqw}
+  .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-left:0.5cqw solid var(--green);
+    border-radius:0.5cqw;padding:1.9cqw}
+  .stat .n{font-size:4.3cqw;line-height:1;color:#fff;font-weight:600;letter-spacing:-0.02em}
+  .stat .n.warn{color:var(--red)}
+  .stat .l{font-size:1.45cqw;line-height:1.35;color:var(--dim);margin-top:.9cqw}
+  /* flow */
+  .flow{display:flex;align-items:stretch;gap:1.2cqw;margin:1.4cqw 0}
+  .step{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:0.5cqw;padding:1.7cqw}
+  .step .w{font-family:ui-monospace,Menlo,monospace;font-size:1.3cqw;letter-spacing:.14em;color:var(--gold)}
+  .step .t{font-size:1.9cqw;margin:.7cqw 0 .5cqw;color:#fff}
+  .step .d{font-size:1.45cqw;line-height:1.38;color:var(--dim)}
+  .arrow{align-self:center;color:var(--line);font-size:3cqw}
+  /* outline stub styling */
+  .stub .pad{background:
+     repeating-linear-gradient(135deg, transparent 0 14px, rgba(127,209,140,.028) 14px 28px);}
+  .tag{position:absolute;top:2.4cqw;right:7cqw;font-family:ui-monospace,Menlo,monospace;font-size:1.2cqw;
+    letter-spacing:.18em;text-transform:uppercase;padding:.5cqw 1cqw;border-radius:.4cqw;
+    border:1px solid var(--line);color:#5d7367;background:rgba(0,0,0,.25)}
+  .tag.built{color:var(--green);border-color:#2c5b39}
+  .todo{font-size:1.9cqw;line-height:1.45;color:#8fa697;border-left:2px solid var(--line);padding-left:2.2cqw;margin:0 0 1.4cqw}
+  .todo b{color:#cfe0d4;font-weight:600}
+  /* HUD */
+  #hud{position:fixed;bottom:1.2vmin;left:0;right:0;text-align:center;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.5vmin;color:#3f5449;pointer-events:none}
+  #bar{position:fixed;top:0;left:0;height:2px;background:var(--green);width:0;transition:width .18s}
+  /* overview grid */
+  body.overview #stage{display:block;overflow:auto;padding:2vmin;align-items:flex-start}
+  body.overview .slide{display:inline-block!important;width:30.5vw;height:17.15vw;margin:1vmin;vertical-align:top;cursor:pointer}
+  body.overview .slide.on{outline:2px solid var(--green);outline-offset:2px}
+  body.overview #hud{background:#070b09;padding:.6vmin}
+  /* --- added 2026-09-02 for the deck.md revision --- */
+  .angle{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:1.25cqw;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--gold);margin:0 0 .8cqw}
+  .split{display:flex;gap:3.4cqw;min-height:0;flex:0 0 auto}
+  .split.grow{flex:1 1 auto}
+  .split>*{flex:1;min-width:0}
+  .split.thin{gap:2.6cqw}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:.5cqw;padding:1.8cqw;
+    display:flex;flex-direction:column;gap:.7cqw}
+  .card .hd{font-size:1.9cqw;color:#fff;font-weight:600;margin:0}
+  .card .bd{font-size:1.5cqw;line-height:1.42;color:var(--dim);margin:0}
+  .figs{display:flex;flex-direction:column;gap:1.1cqw;margin:0;flex:0 0 auto}
+  .fig{display:flex;gap:1.4cqw;align-items:baseline}
+  .fig .v{font-size:2.5cqw;line-height:1.1;color:#fff;font-weight:600;letter-spacing:-.02em;
+    min-width:9.5cqw;text-align:right;flex:none}
+  .fig .v.warn{color:var(--red)}
+  .fig .v.good{color:var(--green)}
+  .fig .k{font-size:1.5cqw;line-height:1.38;color:var(--dim);margin:0}
+  .band{background:var(--panel);border:1px solid var(--line);border-left:.5cqw solid var(--gold);
+    border-radius:.5cqw;padding:1.6cqw 2cqw;margin:.4cqw 0 1.2cqw}
+  .band p{margin:0;font-size:1.85cqw;line-height:1.42}
+  .barsplit{display:flex;height:4.6cqw;border-radius:.4cqw;overflow:hidden;margin:.6cqw 0 1.4cqw;
+    border:1px solid var(--line)}
+  .barsplit div{display:flex;align-items:center;justify-content:center;font-size:1.4cqw;color:#08110b;
+    font-weight:600;text-align:center;padding:0 .6cqw;line-height:1.2}
+  .tbl{width:100%;border-collapse:collapse;margin:.6cqw 0 1.2cqw}
+  .tbl th,.tbl td{text-align:left;padding:.85cqw 1cqw;font-size:1.5cqw;border-bottom:1px solid var(--line)}
+  .tbl th{font-family:ui-monospace,Menlo,monospace;font-size:1.25cqw;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--dim);font-weight:400}
+  .tbl td.n{text-align:right;font-variant-numeric:tabular-nums;color:#fff}
+  .tbl tr.hl td{color:#fff}
+  .tbl tr.hl td.n{color:var(--green)}
+  .note{font-size:1.3cqw;line-height:1.4;color:#6d8377;margin:.4cqw 0 0}
+  .ladder{display:flex;gap:.9cqw;margin:.8cqw 0 1.2cqw}
+  .rung{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:.4cqw;padding:1.2cqw}
+  .rung .t{font-size:1.5cqw;color:#fff;margin-bottom:.4cqw}
+  .rung .s{font-size:1.35cqw;line-height:1.36;color:var(--dim)}
+  .wheel{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  .wheel svg{width:100%;height:100%;max-height:100%}
+  .wheel text{font-family:"Iowan Old Style",Palatino,Georgia,serif;fill:#d5e0d8}
+  .steps2{display:flex;gap:1.2cqw;margin:.4cqw 0 1.2cqw}
+  /* density scale for content-heavy slides */
+  .slide.dense .pad{padding:4.2cqw 6cqw 6.2cqw}
+  .slide.dense h2{font-size:3.85cqw;margin-bottom:1.5cqw}
+  .slide.dense .kicker{margin-bottom:1.2cqw}
+  .slide.dense p,.slide.dense li{font-size:1.78cqw;margin-bottom:1cqw}
+  .slide.dense .band{padding:1.25cqw 1.7cqw;margin:.3cqw 0 .9cqw}
+  .slide.dense .band p{font-size:1.62cqw;line-height:1.4}
+  .slide.dense .stat{padding:1.4cqw}
+  .slide.dense .stats{margin:.3cqw 0 1.4cqw}
+  .slide.dense .stat .n{font-size:3.6cqw}
+  .slide.dense .stat .l{font-size:1.34cqw}
+  .slide.dense .card{padding:1.25cqw;gap:.5cqw}
+  .slide.dense .card .hd{font-size:1.72cqw}
+  .slide.dense .card .bd{font-size:1.4cqw;line-height:1.38}
+  .slide.dense .step .t{font-size:1.78cqw}
+  .slide.dense .step .d{font-size:1.38cqw}
+  .slide.dense .rung .t{font-size:1.42cqw}
+  .slide.dense .rung .s{font-size:1.26cqw}
+  .slide.dense .fig .v{font-size:2.2cqw;min-width:8.5cqw}
+  .slide.dense .fig .k{font-size:1.4cqw}
+  .slide.dense .tbl th,.slide.dense .tbl td{padding:.58cqw .8cqw;font-size:1.36cqw}
+  .slide.dense .note{font-size:1.24cqw;margin-top:.25cqw}
+  .slide.dense .figs{gap:.68cqw}
+  .slide.dense .barsplit{margin:.4cqw 0 1cqw}
+  .slide.dense h3{font-size:2cqw}
+  /* second density step for the fullest slides */
+  .slide.tight .card{padding:1.1cqw}
+  .slide.tight .card .bd{font-size:1.32cqw;line-height:1.36}
+  .slide.tight .card .hd{font-size:1.62cqw}
+  .slide.tight li,.slide.tight .cols li{font-size:1.6cqw;line-height:1.36;margin-bottom:.65cqw}
+  .slide.tight .band p{font-size:1.52cqw}
+  .slide.tight p{font-size:1.66cqw}
+  .slide.tight .tbl th,.slide.tight .tbl td{padding:.5cqw .8cqw;font-size:1.3cqw}
+  .slide.tight h3{font-size:1.85cqw;margin-bottom:.7cqw}
+  .rolerow{margin:0 0 1.25cqw;font-size:1.62cqw;line-height:1.4;color:var(--dim)}
+  .rolerow b{color:#fff;font-weight:600}
+  /* print */
+  @media print{
+    @page{size:1600px 900px;margin:0}
+    html,body{background:#fff}
+    #stage{position:static;display:block;padding:0}
+    #hud,#bar{display:none}
+    .slide{display:block!important;width:1600px;height:900px;break-after:page;
+      border:0;border-radius:0;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="stage">
+<!-- ============ 01 · TITLE ============ -->
+<section class="slide">
+  <div class="pad">
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+      <h1>Earthbux</h1>
+      <p class="lede" style="margin-top:2cqw">A public forum that directs pooled philanthropic missions &mdash;<br>
+        and an independent newsroom that follows the money.</p>
+      <p class="dim" style="font-size:2.6cqw"><em>You donate, we follow.</em></p>
+      <p style="margin-top:2.6cqw;font-size:1.95cqw;color:#d5e0d8">Elect a philanthropic cause, a specific mission,
+        and the organization that runs it.</p>
+      <p class="note" style="font-size:1.5cqw">First seven causes: atmosphere &middot; oceans &middot; land &middot;
+        forests &middot; wildlife &middot; human rights &middot; human progress</p>
+    </div>
+    <div class="foot"><span>SEED ROUND &middot; CONFIDENTIAL</span><span>[MONTH] 2026</span></div>
+  </div>
+</section>
+
+<!-- ============ 02 · PROBLEM · ANGLE 1 ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <p class="kicker">The problem &middot; angle 1</p>
+    <h2>Charitable money is warehoused,<br>and donors never find out where it went.</h2>
+    <div class="stats">
+      <div class="stat"><div class="n warn">0%</div><div class="l">Legally required annual payout for a commercial donor-advised fund. Fidelity Charitable took in ~$16B in 2024.</div></div>
+      <div class="stat"><div class="n warn">35%</div><div class="l">Share of DAF accounts that paid out <em>nothing</em> in a studied year.</div></div>
+      <div class="stat"><div class="n warn">5%</div><div class="l">The minimum a private foundation must release. Lilly ($79.9B) and Gates ($78.7B) hold ~44% of the top-50's assets.</div></div>
+    </div>
+    <div class="band">
+      <p>The deduction is taken the day the money leaves; the <em>gift</em> can wait forever. Meanwhile it sits
+      invested &mdash; the donor's share and the public's, because a deduction is tax that was never paid. Most people
+      give modestly, at tax time, and never learn that <span class="green">most of what they gave is sitting in
+      corporate equity</span>.</p>
+      <p class="note" style="margin-top:.5cqw">And the totals flatter it: a deposit counts as giving the day it is
+      deducted, not the day it arrives &mdash; while a foundation can meet its 5% by granting into a DAF, which owes
+      nothing. The money moves, and still hasn't gone anywhere.</p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 03 · PROBLEM · ANGLE 2 ============ -->
+<section class="slide">
+  <div class="pad">
+    <p class="kicker">The problem &middot; angle 2</p>
+    <h2>The money that <em>does</em> move<br>is barely policed.</h2>
+    <div class="split thin">
+      <div>
+        <div class="figs">
+          <div class="fig"><div class="v warn">50&cent;</div><p class="k">In half of 588 audited New York campaigns (2024), the charity kept under fifty cents on the dollar. 104 lost money outright.</p></div>
+          <div class="fig"><div class="v warn">$16.25</div><p class="k">Value booked for a deworming pill that costs about 2&cent;. Overvalued goods turn a 65% program ratio into 95%.</p></div>
+        </div>
+      </div>
+      <div>
+        <div class="figs">
+          <div class="fig"><div class="v warn">734%</div><p class="k">One charity's program spending overstated &mdash; $7.75M reported against $929k &mdash; using an accounting rule that permits it.</p></div>
+          <div class="fig"><div class="v warn">10 pts</div><p class="k">How far reported overhead is understated sector-wide (peer-reviewed, 2024) &mdash; the one number donors are told to check.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="band">
+      <p>None of this is hidden. It is disclosed, audited and legal &mdash; the rules permit the valuation, the
+      allocation and the solicitation. <span class="green">What is missing is any consequence for using them.</span></p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 04 · INSIGHT ============ -->
+<section class="slide dense tight">
+  <div class="pad">
+    <p class="kicker">The insight</p>
+    <h2>People are generous &mdash; and hesitant to give<br>without options, control, and a reason to look.</h2>
+    <div class="split thin">
+      <div>
+        <div class="card"><p class="hd">No options, and nobody to tell you</p>
+          <p class="bd">Finding something worth funding is unpaid research. No beat, no critic, no column &mdash; so
+          the winner is whoever asked loudest. Advertising is the only media most causes get.</p></div>
+        <div style="height:.6cqw"></div>
+        <div class="card"><p class="hd">No control, and no follow-up</p>
+          <p class="bd">You cannot vote on the target, and nothing reports back. The only account of your donation
+          is written by the people who took it.</p></div>
+      </div>
+      <div>
+        <div class="card"><p class="hd">Nobody is watching &mdash; and not by accident</p>
+          <p class="bd">A $600B sector with no beat. Maybe the silence isn't because charity is boring &mdash; maybe
+          the people it would embarrass prefer you think so.</p></div>
+        <div style="height:.6cqw"></div>
+        <div class="card"><p class="hd">Attention is the standard now</p>
+          <p class="bd">Everything that wants participation has a network and content behind it. Charity still asks
+          the way institutions asked in 1985.</p></div>
+      </div>
+    </div>
+    <div class="band">
+      <p>An election gives <span class="green">options and control</span>. A newsroom gives
+      <span class="green">feedback and a reason to look</span>. So we built both into the donation itself &mdash; and
+      what makes it worth watching is what keeps it honest.</p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 05 · HOW IT WORKS ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <p class="kicker">How it works</p>
+    <h2>Every mission is elected twice.</h2>
+    <div class="flow">
+      <div class="step"><div class="t">1 &middot; Mission Election</div>
+        <div class="d">Benefactors commit to an <em>initiative</em> inside the week's cause. The winner becomes the
+          mission. Nothing is chosen yet but the idea.</div></div>
+      <div class="arrow">&rsaquo;</div>
+      <div class="step"><div class="t">2 &middot; Organization Election</div>
+        <div class="d">Benefactors elect the organization that will run it &mdash; on its record and its statement,
+          before any plan exists.</div></div>
+      <div class="arrow">&rsaquo;</div>
+      <div class="step"><div class="t">3 &middot; The mission runs</div>
+        <div class="d">Money releases in stages against a published budget, and Earthbux News reports each one.</div></div>
+    </div>
+    <div class="band" style="border-left-color:var(--green)">
+      <p><b>The Forum runs underneath all of it, not between the votes.</b> It elects the causes before any of this
+      begins, argues the initiatives while the race is open, and carries on afterwards as research, itemized budgets
+      and progress review.</p>
+    </div>
+    <div class="band">
+      <p>Then the three of us are bound to one mission: <span class="green">Earthbux reports</span>,
+      <span class="green">the organization executes</span>, <span class="green">the benefactors deliberate</span>
+      &mdash; and <b>every step is approved before it happens</b>. We capture the donor and the media consumer in the
+      same motion.</p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 06 · MONEY MODEL ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <p class="kicker">The money model</p>
+    <h2>Where every dollar sits &mdash; and who still controls it.</h2>
+    <div class="barsplit">
+      <div style="flex:30;background:var(--green)">~30% &nbsp;awarded to the elected organization</div>
+      <div style="flex:30;background:var(--gold)">&le;30% &nbsp;ceiling on what Earthbux can ever consume</div>
+      <div style="flex:40;background:#4d6a58;color:#eaf3ec">~40% &nbsp;stays as benefactor-held EBX, released as the mission proves itself</div>
+    </div>
+    <div class="split thin">
+      <div>
+        <h3>One coin per mission</h3>
+        <p>Donate and your money becomes <span class="gold">mission-specific EBX</span>. Many sources converge on one
+          mission, and you track all of it by looking at that mission's coin &mdash; its value moves with what the
+          mission actually resolves.</p>
+        <p>Only about a tenth crosses at the election. <span class="green">Most of the money stays under the
+          benefactors' control well into the mission</span>, and is released against published budgets and reports.</p>
+      </div>
+      <div>
+        <h3>Power to the small donor</h3>
+        <p>Everyone is granted <span class="gold">$1 a week</span> to allocate &mdash; free, and spendable only in that
+          week's elections. Buying more never buys proportional power: each additional block of ten counts for half
+          the block before it (10 &rarr; 10.00, 20 &rarr; 15.00, 40 &rarr; 18.75).</p>
+        <h3 style="margin-top:1.6cqw">Being early is what pays</h3>
+        <p class="dim" style="font-size:1.75cqw">Right about the initiative &rarr; the lowest cost basis &middot;
+          voted at all &rarr; a middling basis &middot; donating later &rarr; a higher one. Conviction is priced
+          before consensus is.</p>
+      </div>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 07 · WHY IT HOLDS ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <p class="kicker">Why it holds</p>
+    <h2>The newsroom is the moat.</h2>
+    <div class="split thin grow">
+      <div class="wheel">
+        <svg viewBox="-70 -40 540 480" role="img" aria-label="The flywheel: donations, coverage, trust, benefactors, bigger pool, better missions">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#7fd18c"></path>
+            </marker>
+          </defs>
+          <g fill="none" stroke="#7fd18c" stroke-width="2.4" marker-end="url(#ah)" opacity=".85">
+            <path d="M230.2,78.7 A125,125 0 0 1 289.9,113.2"></path>
+            <path d="M320.2,165.5 A125,125 0 0 1 320.2,234.5"></path>
+            <path d="M289.9,286.8 A125,125 0 0 1 230.2,321.3"></path>
+            <path d="M169.8,321.3 A125,125 0 0 1 110.1,286.8"></path>
+            <path d="M79.8,234.5 A125,125 0 0 1 79.8,165.5"></path>
+            <path d="M110.1,113.2 A125,125 0 0 1 169.8,78.7"></path>
+          </g>
+          <g fill="#0d1310" stroke="#7fd18c" stroke-width="2">
+            <circle cx="200" cy="75" r="7"></circle>
+            <circle cx="308.3" cy="137.5" r="7"></circle>
+            <circle cx="308.3" cy="262.5" r="7"></circle>
+            <circle cx="200" cy="325" r="7"></circle>
+            <circle cx="91.7" cy="262.5" r="7"></circle>
+            <circle cx="91.7" cy="137.5" r="7"></circle>
+          </g>
+          <g font-size="19" text-anchor="middle">
+            <text x="200" y="36">Donations</text>
+            <text x="352" y="112">Coverage</text>
+            <text x="352" y="288">Trust</text>
+            <text x="200" y="372">More benefactors</text>
+            <text x="52" y="288">Bigger pool</text>
+            <text x="52" y="112">Better missions</text>
+          </g>
+          <g font-size="16" text-anchor="middle" fill="#93a89a">
+            <text x="200" y="192">the audit is what makes</text>
+            <text x="200" y="214">the next vote worth casting</text>
+          </g>
+        </svg>
+      </div>
+      <div>
+        <p>Anyone can build a voting UI. Almost nobody can build the standing to <em>audit where the money
+          went</em>, and that audit is why the next vote matters.</p>
+        <div class="card"><p class="hd">Every donation passes through layers</p>
+          <p class="bd">Two votes &middot; a signed claim attestation &middot; identity verification by the newsroom
+            &middot; a community-approved budget &middot; release step by step against published reports, ours
+            beside theirs.</p></div>
+        <div style="height:.6cqw"></div>
+        <div class="card"><p class="hd">Leaving is feedback, not leakage</p>
+          <p class="bd">Benefactors keep control of most of their money well into the mission &mdash; and holding
+            it, moving it or taking it back is a public signal no grantmaker has ever had. None of what they build
+            here &mdash; history, coins, memberships &mdash; ports anywhere else.</p></div>
+      </div>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 08 · LANDSCAPE ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <p class="kicker">Landscape</p>
+    <h2>Everyone else moves the money.<br>Nobody covers it.</h2>
+    <table class="tbl">
+      <tr><th>Tier</th><th>Who</th><th>Pays out</th><th>Donor decides?</th><th>Independent reporting?</th></tr>
+      <tr><td>Endowed grantmakers</td><td class="dim">Private foundations</td><td>5% / yr, minimum</td><td>No</td><td>No</td></tr>
+      <tr><td>Pooled pass-throughs</td><td class="dim">Commercial DAFs, giving circles</td><td>No requirement</td><td>Advisory</td><td>No</td></tr>
+      <tr><td>Direct operating</td><td class="dim">GiveDirectly, GlobalGiving</td><td>Continuously</td><td>Pick a project</td><td>Self-reported</td></tr>
+      <tr class="hl"><td><b>Earthbux</b></td><td class="dim">A giving circle crossed with a newsroom</td><td class="n">Weekly</td><td class="n">Votes on both</td><td class="n">In-house, adversarial</td></tr>
+    </table>
+    <div class="split thin">
+      <div>
+        <p>The closest analogues are good organizations. None lets the donor <em>vote</em> on the target and then
+          pays someone independent to <em>go and check</em>.</p>
+        <p class="note">Allies: community foundations, Philanthropy Together, GiveDirectly, GlobalGiving.
+          Investigative subjects: DAF sponsors, low-payout endowments.</p>
+      </div>
+      <div class="band" style="margin:0">
+        <p>Our benchmark isn't a foundation &mdash; <span class="green">it's a feed</span>. People show up to be seen
+          contributing: the post that changed a budget, the research that won the week. The causes matter, and so do
+          the people who show up for them.</p>
+      </div>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 09 · THE PRODUCT ============ -->
+<section class="slide stub">
+  <div class="pad">
+    <span class="tag">Screenshots to come</span>
+    <p class="kicker">The product</p>
+    <h2>Built, and built to be used every week.</h2>
+    <div class="steps2">
+      <div class="rung"><div class="t">Landing</div><div class="s">What Earthbux is, and this week's decision.</div></div>
+      <div class="rung"><div class="t">Elections</div><div class="s">The floor: seven causes, two live races, your allocation.</div></div>
+      <div class="rung"><div class="t">News</div><div class="s">The feed. Scrolling, reactions, articles, argument.</div></div>
+      <div class="rung"><div class="t">Missions</div><div class="s">One mission's status, budget, steps and coin.</div></div>
+      <div class="rung"><div class="t">Profile</div><div class="s">Your wallet, your memberships, your record.</div></div>
+    </div>
+    <div class="band">
+      <p>Engagement is the product, not a growth tactic. Rewards, reactions, content people make and content people
+      consume &mdash; all of it free, all of it seamless. <span class="green">They don't show up to donate. They show
+      up to be included</span>, and the donation is what being included looks like.</p>
+    </div>
+    <p class="todo"><b>To shoot:</b> one screenshot per surface, one line of substance under each &mdash; what a
+      benefactor <em>does</em> there, not what the page contains. A 20-second recording beats all five if the room allows video.</p>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 10 · STATUS ============ -->
+<section class="slide dense tight">
+  <div class="pad">
+    <p class="kicker">Status</p>
+    <h2>The machine is built.<br>It is being run by one person.</h2>
+    <div class="split thin">
+      <div>
+        <h3>Standing today</h3>
+        <ul>
+          <li>Five surfaces live: landing, elections, news, missions, profile.</li>
+          <li>The full election machine &mdash; two elections, seven staggered causes, a self-advancing weekly clock.</li>
+          <li>The wallet and money model, asserted by eleven check scripts.</li>
+          <li>The structured forum: three post categories, rated, rewarded, versioned.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Not yet</h3>
+        <ul>
+          <li>No mission has run end to end. No check has been written.</li>
+          <li>Organization registration, verification and outbound contact are unbuilt.</li>
+          <li>Charitable status unfiled &mdash; money cannot legally flow until it exists.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="band">
+      <p>There is no traction slide, on purpose: numbers before a mission has run would be theatre.
+      <span class="green">What exists is the mechanism</span> &mdash; and the reason it isn't further along is that
+      there is one of me.</p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 11 · WHAT I NEED ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <p class="kicker">What I need</p>
+    <h2>In the order that it blocks me.</h2>
+    <div class="figs" style="flex:1;justify-content:center;gap:1.5cqw">
+      <div class="fig"><div class="v gold">01</div><p class="k"><b style="color:#fff">People.</b> Six roles keep this honest and none of them are filled. Every one of them is a job I am currently doing badly.</p></div>
+      <div class="fig"><div class="v gold">02</div><p class="k"><b style="color:#fff">Charitable status.</b> 501(c)(3) or a fiscal sponsor. Donations cannot reach an organization until it exists, and the clock on it is measured in months, not sprints.</p></div>
+      <div class="fig"><div class="v gold">03</div><p class="k"><b style="color:#fff">Banking and custody.</b> Where pooled money lives between the donation and the check.</p></div>
+      <div class="fig"><div class="v gold">04</div><p class="k"><b style="color:#fff">The first cohort of organizations.</b> Verified, claimed, and on the record &mdash; the counterparties that make the first mission real.</p></div>
+      <div class="fig"><div class="v gold">05</div><p class="k"><b style="color:#fff">Time to run one mission end to end</b> and publish the audit at the end of it.</p></div>
+    </div>
+    <div class="band">
+      <p>Four of those five are not engineering. <span class="green">They are the critical path</span> &mdash; and they
+      are what a check buys that another year of building would not.</p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 12 · WHO I HIRE ============ -->
+<section class="slide dense tight">
+  <div class="pad">
+    <p class="kicker">Who I hire</p>
+    <h2>Six roles keep it honest.</h2>
+    <div class="split thin">
+      <div>
+        <p class="rolerow"><b>Journalist.</b> Turns the scientist's, the relations manager's and the auditor's
+          reporting into the mission's story &mdash; the output everyone else exists to make true.</p>
+        <p class="rolerow"><b>Mission auditor.</b> Tracks whether the money sent is the money spent, and records it.</p>
+        <p class="rolerow"><b>Organization relations manager.</b> Verifies that an organization is who it says, then
+          keeps the relationship worth having.</p>
+      </div>
+      <div>
+        <p class="rolerow"><b>Scientist.</b> Studies the causes and initiatives rigorously, so the ballot isn't a
+          contest between slogans.</p>
+        <p class="rolerow"><b>Site auditor.</b> Keeps research, posts, initiatives and accounts real and within the
+          rules.</p>
+        <p class="rolerow"><b>UI/UX designer.</b> Keeps a complicated machine friendly enough to come back to on a
+          Tuesday.</p>
+      </div>
+    </div>
+    <div class="band">
+      <p>This is where the newsroom's share of every pool goes &mdash; the line item an investor is really funding.
+      <span class="dim">One reward we intend to pay: we send someone to travel with the mission.</span></p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 13 · COST ANALYSIS ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <span class="tag">Illustrative &middot; assumptions below</span>
+    <p class="kicker">Cost analysis</p>
+    <h2>The grant is the cost.<br>Scrutiny is the revenue.</h2>
+    <div class="split thin">
+      <div>
+        <p>Every benefactor is granted <span class="gold">$1.00 a week</span> &mdash; a real cost, not revenue.
+          What comes back is our share of the pool that dollar joins, <em>priced by oversight</em>:
+          <span class="gold">1/16</span> for a dormant mission up to <span class="gold">5/16</span> for one being
+          arbitrated.</p>
+        <table class="tbl" style="margin-bottom:.7cqw">
+          <tr><th>Purchased/wk</th><th>Pooled</th><th>Our share</th><th>Net</th></tr>
+          <tr><td class="dim">$0 &mdash; grant only</td><td class="n">$1.00</td><td class="n">$0.31</td><td class="n" style="color:var(--red)">&minus;$0.69</td></tr>
+          <tr><td class="dim">$2</td><td class="n">$3.00</td><td class="n">$0.94</td><td class="n" style="color:var(--red)">&minus;$0.06</td></tr>
+          <tr class="hl"><td>$5</td><td class="n">$6.00</td><td class="n">$1.88</td><td class="n">+$0.88</td></tr>
+        </table>
+        <p class="note">At the full 5/16 oversight share. Break-even purchased commitment: <b>$2.20</b> a week at 5/16,
+          $4.33 at 3/16, $15.00 at 1/16 &mdash; the quieter the mission, the more it has to be bought.</p>
+      </div>
+      <div>
+        <div class="card"><p class="hd">When does the pool cover the newsroom?</p>
+          <p class="bd">Six roles at <span class="gold">[$450k]</span> a year &mdash; about $8,650 a week &mdash; needs
+            roughly <span class="green">10,000 weekly-active benefactors</span> at the $5 scenario. The $2 scenario
+            never gets there: this does not work on free grants alone.</p></div>
+        <div style="height:1.1cqw"></div>
+        <div class="card"><p class="hd">Two levers, before headcount</p>
+          <p class="bd">A granted token costs nothing until it is committed, so the grant bill only arrives when the
+            product is working. And our share rises with the scrutiny a mission needs &mdash; the missions that cost
+            most to watch pay for the watching.</p></div>
+        <p class="note">Challenge these: salary placeholder, no infrastructure line, unset tranche split.</p>
+      </div>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 14 · MILESTONES ============ -->
+<section class="slide dense">
+  <div class="pad">
+    <span class="tag">Dates to confirm</span>
+    <p class="kicker">Milestones</p>
+    <h2>Four quarters to a closed loop.</h2>
+    <div class="steps2" style="flex:1;align-items:stretch">
+      <div class="rung"><div class="t">Q1 &middot; Standing</div>
+        <div class="s">Entity, charitable-status filing, banking. The mission page ships and the simulation runs
+          against it. <b style="color:#cfe0d4">Gate: the legal track is open, not just the code.</b></div></div>
+      <div class="rung"><div class="t">Q2 &middot; Counterparties</div>
+        <div class="s">Organization registration, verification and outbound contact go live. First cohort signed;
+          first mission <em>claimed</em> under the attestation. <b style="color:#cfe0d4">Gate: a real organization
+          on the record.</b></div></div>
+      <div class="rung"><div class="t">Q3 &middot; Money moves</div>
+        <div class="s">First mission funded end to end: budget published, steps agreed, released in tranches.
+          <b style="color:#cfe0d4">Gate: the first check.</b></div></div>
+      <div class="rung"><div class="t">Q4 &middot; The loop closes</div>
+        <div class="s">First independent audit published by a paid journalist. Retention measured across cycles;
+          <span class="gold">[N]</span> weekly-active benefactors. <b style="color:#cfe0d4">Gate: a story about what
+          the money did.</b></div></div>
+    </div>
+    <div class="band">
+      <p><b>The legal track runs beside all four, not inside them.</b> 501(c)(3) or fiscal sponsorship, the
+      deductibility of each tranche, and the claim agreement itself. It has the longest lead time of anything on this
+      slide and none of it is engineering.</p>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 15 · THE ASK ============ -->
+<section class="slide">
+  <div class="pad">
+    <span class="tag">Numbers pending</span>
+    <p class="kicker">The ask</p>
+    <h2>[$XXX,000] for [18] months of runway.</h2>
+    <div class="cols">
+      <div>
+        <h3>Use of funds</h3>
+        <ul>
+          <li><b>[40%] Newsroom.</b> A journalist and a mission auditor on payroll &mdash; the two roles that make coverage credible.</li>
+          <li><b>[25%] Engineering.</b> Finish the election surfaces, harden the wallet, ship mobile.</li>
+          <li><b>[20%] Organization relations.</b> Verifying organizations and signing the first cohort.</li>
+          <li><b>[15%] Legal &amp; compliance.</b> Charitable status and the deductibility of tranches.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>What it buys</h3>
+        <ul>
+          <li><b>[N] completed missions</b> with published audits, end to end.</li>
+          <li><b>[N] benefactors</b> voting weekly, with retention measured across cycles.</li>
+          <li><b>Proof of the loop:</b> a dollar in, a mission elected, money released in tranches, and a story about what it did.</li>
+        </ul>
+        <div class="rule"></div>
+        <p style="font-size:2cqw">[Name] &middot; [email] &middot; [site]</p>
+      </div>
+    </div>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+<!-- ============ 16 · APPENDIX ============ -->
+<section class="slide stub">
+  <div class="pad">
+    <span class="tag">Holding pen</span>
+    <p class="kicker">Appendix</p>
+    <h2>Loaded, not shown.</h2>
+    <p class="todo"><b>The wallet states in full</b> &mdash; unallocated &rarr; committed &rarr; minted &rarr; donated, and why mission-tied credit can't exist before its mission does.</p>
+    <p class="todo"><b>The seven causes</b> and the replacement rule &mdash; seven consecutive weeks for a challenger.</p>
+    <p class="todo"><b>Risk register</b> &mdash; vote brigading, an organization that takes the money and stalls, and the newsroom auditing a mission its own benefactors chose.</p>
+    <p class="todo"><b>Sources</b> for every figure on slides 2 and 3: <span class="gold">docs/RESEARCH.md</span> (NY AG <em>Pennies for Charity</em> 2024 &middot; gift-in-kind valuations &middot; joint-cost allocation &middot; Kim/Charbonneau/Sowa 2024) and <span class="gold">docs/Donation_Recipient_Landscape.xlsx</span>, Sources tab. <b>Cut, kept in reserve:</b> the enforcement-gap figures &mdash; 666 IRS examinations against 1.8M returns, and $1.8B held by nonprofits that stopped filing.</p>
+    <div class="foot"><span>EARTHBUX</span><span class="pg"></span></div>
+  </div>
+</section>
+
+</div>
+<div id="hud">← → navigate · <b>o</b> overview · <b>p</b> print to PDF</div>
+<script>
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var i = 0;
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function(s, k){ s.classList.toggle('on', k === i); });
+    document.getElementById('bar').style.width = ((i + 1) / slides.length * 100) + '%';
+    try { location.hash = String(i + 1); } catch(e){}
+  }
+  slides.forEach(function(s, k){
+    var pg = s.querySelector('.pg');
+    if (pg) pg.textContent = String(k + 1).padStart(2, '0') + ' / ' + String(slides.length).padStart(2, '0');
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { show(i + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { show(i - 1); e.preventDefault(); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key === 'p') window.print();
+    else if (e.key === 'o') document.body.classList.toggle('overview');
+  });
+  document.getElementById('stage').addEventListener('click', function(e){
+    show(e.clientX < window.innerWidth / 2 ? i - 1 : i + 1);
+  });
+  var start = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1);
+</script>
+</body>
+</html>

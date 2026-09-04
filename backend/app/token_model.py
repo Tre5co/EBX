@@ -1,69 +1,85 @@
 """The money model — one file, pure functions, no database.
 
-Settled 2026-08-19 with Jax over three conceptual passes (see
-`docs/token_model.md`). Everything about what a token IS, what it is worth as a
-vote, and what happens to it when an election closes lives HERE, so that
-`crud.py`, the routers and the front end cannot each carry their own slightly
-different arithmetic. `post_config.py` is the same idea for the discussion
-model.
+Rewritten 2026-08-27c for the finalized ME/OE model
+(`docs/ME_OE_FINALIZATION.md`, answered by Jax the same day). Everything about
+what a token IS, what it is worth as a vote, and what happens to it when an
+election closes lives HERE, so that `crud.py`, the routers and the front end
+cannot each carry their own slightly different arithmetic. `post_config.py` is
+the same idea for the discussion model.
 
-    $ CASH ──buy (only inside a commit)──▶ ◇ TOKENS ──stake──▶ ◇ staked
-                                                                  │
-                                              ME closes ──────────┤
-                                              nothing claimed; ALL of it forward
-                                              into the WINNING initiative's OE
-                                              (coin element 1 written here)
-                                                                  │
-                                              OE closes ──────────┤   ← the one skim
-                                              phl won  → 100% claimed
-                                              phl lost →  10% claimed, 90% still committed
-                                                                  │
-                                              + 7 weeks ──────────▶ ● MINT → COIN
-                                                                    (mission-tied, deductible)
+TWO UNITS, NOT TWO NAMES FOR ONE UNIT
+-------------------------------------
+**Tokens are convertible; EBX is not.** That one sentence is the model.
 
-Revised 2026-08-20 (build-seq §1). Two rules changed and one arrived:
-  * ONE skim, and it falls after the organization election. The initiative
-    election is a routing step now, not a settlement.
-  * Being RIGHT pays in influence, not in a cheaper skim — 2x in the OE, 2x on
-    budgeting, 1.5x each on research (2.25x for both).
-  * A token's life is bounded by a CONVERSION COUNT (3), not by a 15-week fuse.
+    $ CASH ──buy──▶ ◇ TOKEN ──commit──▶ ◇ committed ──week roll──▶ ● EBX ──tranche──▶ ✓ DONATED
+                        ▲                    │                        │
+                        └── purchased ct ────┘                        └─ 10% at OE close,
+                           may still move                                more as the mission runs
+                           until it enters
+                           this week's race
 
-Four states, three bins, one wallet bar: **free │ staked │ claimed │ minted**.
-Refunds land in CASH, never in TOKENS — which is what keeps `grant = 10 −
-free` honest: nobody is ever billed a grant for money handed back to them.
+    unallocated  →  committed  →  minted  →  donated
+    free tokens     to a tiv       to a      consumed by the org
+                    (or a phl)     mission   or by Earthbux
+
+A token becomes EBX only when its **mission identity is final** — which is why
+an allocation sitting in an initiative election is still a token however long it
+sits there: the initiative it backs may never become a mission. `claimed` is NOT
+a wallet state; it is the word for an organization claiming a mission, and the
+wallet gave it back on 2026-08-27c.
+
+WHAT CHANGED, IN FIVE SENTENCES
+-------------------------------
+* The **week change** is the ratchet. Inside a week an allocation is a draft;
+  at the roll every standing OE allocation hardens into EBX. This retires both
+  `MAX_CONVERSIONS = 3` and one-way commitment — the two mechanisms that were
+  doing this job badly between 2026-08-20 and today.
+* The grant **does not exist until its week**. Ten tokens appear against the
+  week's cause, cannot be transferred or withdrawn (there is no moment at which
+  they exist and are free), and if unspent they wait for that cause's next
+  window. Purchase is the only mobile money in the model.
+* A **vote is a split; the commit is an amount.** Up to `MAX_SPLIT_TIVS`
+  percentages, and one number for the whole election. A vote can therefore
+  stand before the tokens that will back it — it is a preference with no
+  funding yet, not a state of anything.
+* **One flat skim.** 10% of every stake, winners and losers alike. Being right
+  pays in early EBX, in an upgraded mission membership, and in influence — never
+  in money.
+* **The other 90% becomes the benefactor's EBX for that mission**, and is
+  donated in tranches as the mission runs. Each tranche is deductible when it
+  crosses; the 10% at OE close is simply the first one.
 
 WHY CENTITOKENS
 ---------------
 Every quantity in this module is an **integer count of centitokens**. The live
-database currently holds values like `123.7142858`, the loser-carryover skim
-books `int(round(skim))` — which silently writes **0** for a 0.5 skim — and the
-new model splits one balance across eight sliders, which is exactly the shape
-of problem floats lose. So:
+database holds values like `123.7142858`; a skim booked with `int(round())`
+silently writes 0 for a 0.5 skim; and one balance is split across a slate and a
+field of races. Floats lose exactly this shape of problem. So:
 
-    1 token = 100 ct = 10¢          1 ct = 0.1¢
+    1 token = 100 ct = 10c          1 ct = 0.1c
 
 Rounding is always **up, to the nearest centitoken**, and always against the
-benefactor (the claimed share is what gets rounded up). At ct granularity that
-is a 0.1¢ bias; the same rule applied at whole-token granularity would round a
-0.1-token skim up to a full token — a 10× overcharge — which is why the unit
-matters more than the direction.
+benefactor (the donated share is what gets rounded up). At ct granularity that
+is a 0.1c bias; the same rule at whole-token granularity would round a 0.1-token
+skim up to a full token — a 10x overcharge — which is why the unit matters more
+than the direction.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from math import ceil
-from typing import Iterable, Literal, Optional
+from typing import Iterable, Literal, Mapping, Optional
 
 # ===========================================================================
 # Units
 # ===========================================================================
 CT_PER_TOKEN = 100                 # 1 token = 100 centitokens
-CENTS_PER_TOKEN = 10               # 1 token = 10¢  → 1 ct = 0.1¢
+CENTS_PER_TOKEN = 10               # 1 token = 10c  -> 1 ct = 0.1c
 USD_PER_CT = CENTS_PER_TOKEN / 100 / CT_PER_TOKEN     # 0.001 USD
 
 
 def tokens(ct: int) -> float:
-    """ct → tokens, for display only. Never feed this back into the math."""
+    """ct -> tokens, for display only. Never feed this back into the math."""
     return ct / CT_PER_TOKEN
 
 
@@ -72,7 +88,7 @@ def usd(ct: int) -> float:
 
 
 def ct_from_tokens(t: float) -> int:
-    """tokens → ct, rounding UP. Entry point for anything a human typed."""
+    """tokens -> ct, rounding UP. Entry point for anything a human typed."""
     return int(ceil(round(t * CT_PER_TOKEN, 6)))
 
 
@@ -89,25 +105,26 @@ def _ceil_ct(x: float) -> int:
 # ===========================================================================
 # The weekly grant
 # ===========================================================================
-# "Your uncommitted balance is topped up to 10 every week." A TOP-UP, not a
-# reward and not a forfeiture: hold 6 free tokens and the grant is 4; hold 10 or
-# more and it is 0. Nothing is ever taken away. What stops voting power piling
-# up is the CAP, not a penalty — which is why the sentence above is the honest
-# way to say it and "uncommitted tokens = less grant" is not.
+# "10 tokens appear in your account each week. These tokens can only be used in
+# this weeks elections." And, when asked what happens to an unspent one:
+#
+#   "If there are <= 10 total tokens, 10 tokens will be available in the next
+#    election for that cause or its replacement. If there are >= 10 total
+#    tokens, that amount of tokens is available in the next election."
+#
+# Which is a FLOOR, not a ration: hold six and four arrive, hold twenty and
+# twenty are votable. `grant_ct` and `available_ct` are the same rule read from
+# opposite ends, and both are here so neither the wallet nor the UI has to
+# derive one from the other and get the direction wrong.
 WEEKLY_GRANT_CT = 10 * CT_PER_TOKEN          # 1000 ct = 10 tokens = $1
 
-# The grant comes with a date on it (2026-08-20): "these granted tokens are
-# marked with the date that they must be committed by (or expire). If they are
-# not committed to one of these 2 missions by that date, the date changes 1 week
-# forward." So the deadline is real on the face of the token and soft in effect —
-# it is the end of the week it was granted in, and an uncommitted grant simply
-# gets next week's date. Nothing is confiscated; what caps a hoard is the top-up
-# formula (grant = 10 − free), which was always the mechanism.
-#
-# PURCHASED tokens carry no date at all — "purchased tokens are the same as
-# granted tokens except they do not have a deadline to commit" — and no
-# two-door restriction either. `commit_by_week(...)` returns None for them.
-GRANT_COMMIT_BY_WEEKS = 1
+# THE GRANT DOES NOT EXIST UNTIL ITS WEEK (2026-08-27c). "Tokens aren't granted
+# until election week when it's too late to transfer or withdraw. You can vote
+# beforehand, but the tokens aren't there yet." So there is no commit-by date to
+# roll and no window in which granted ct is both real and free — the fence and
+# the payment are the same event. `GRANT_COMMIT_BY_WEEKS`, `commit_by_week` and
+# `roll_commit_by` are gone with the rule they enforced; a granted token carries
+# its CAUSE instead, which is a fact a benefactor can act on.
 
 
 def grant_ct(free_ct: int) -> int:
@@ -115,26 +132,75 @@ def grant_ct(free_ct: int) -> int:
     return max(0, WEEKLY_GRANT_CT - max(0, int(free_ct)))
 
 
-def commit_by_week(granted_week: Optional[int], purchased: bool = False) -> Optional[int]:
-    """The cycle week by which a grant must be committed. None if purchased."""
-    if purchased or granted_week is None:
-        return None
-    return int(granted_week) + GRANT_COMMIT_BY_WEEKS
+def available_ct(held_ct: int) -> int:
+    """What is votable in the next election: `max(10, held)`. The same
+    arithmetic as `grant_ct`, said the way Jax said it."""
+    return max(WEEKLY_GRANT_CT, max(0, int(held_ct)))
 
 
-def roll_commit_by(deadline_week: Optional[int], now_week: int) -> Optional[int]:
-    """Move a missed deadline forward one week, as many times as it is missed.
+# ===========================================================================
+# The vote and the amount — two quantities, one election
+# ===========================================================================
+# "Since the maximum amount of tivs you can split your vote into is 10, we can
+# have the vote commit be the total amount committed to that election, and the
+# weight be the percentage given to each tiv within it."
+#
+#   the vote    a split across up to MAX_SPLIT_TIVS initiatives, in percentages.
+#               Settable ANY TIME — it needs no tokens.
+#   the commit  ONE number: total tokens committed to that election. Settable
+#               when the tokens exist.
+#
+# A tiv's weight is `commit x that tiv's percentage`. A vote standing with no
+# commit behind it is not a promissory note or a third state of anything — it is
+# a preference with no funding yet, and when the grant lands it flows through
+# whatever split is standing.
+#
+# NOTE, because it is exactly the kind of thing a later reader derives a rule
+# from: MAX_SPLIT_TIVS and WEEKLY_GRANT_CT are both ten BY COINCIDENCE (Jax,
+# 2026-08-27c). They are independent numbers. A grant of 12 would not widen the
+# slate and an 8-way cap would not shrink the grant, so neither is defined in
+# terms of the other here.
+MAX_SPLIT_TIVS = 10
 
-    Expressed as arithmetic rather than a loop so that a benefactor who does not
-    open the page for a month is treated exactly like one who opened it weekly:
-    the date on their uncommitted grant is the end of the CURRENT week either
-    way. A loop here would make the answer depend on how often the code ran.
+
+def normalize_shares(shares: Mapping[str, float]) -> dict[str, float]:
+    """Clean a slate into percentages that sum to 1.0.
+
+    Drops non-positive entries, refuses more than `MAX_SPLIT_TIVS`, and scales
+    what is left. Normalizing here rather than at the door means the stored
+    slate is always a percentage split, whatever the UI sent — the amount is a
+    separate number and multiplying by it is the only place the two meet.
     """
-    if deadline_week is None:
-        return None
-    if int(now_week) < int(deadline_week):
-        return int(deadline_week)
-    return int(now_week) + GRANT_COMMIT_BY_WEEKS
+    clean = {k: float(v) for k, v in (shares or {}).items() if float(v or 0) > 0}
+    if len(clean) > MAX_SPLIT_TIVS:
+        raise ValueError(f"A vote may be split across at most {MAX_SPLIT_TIVS} "
+                         f"initiatives ({len(clean)} given)")
+    total = sum(clean.values())
+    if total <= 0:
+        return {}
+    return {k: v / total for k, v in clean.items()}
+
+
+def split_ct(commit_ct: int, shares: Mapping[str, float]) -> dict[str, int]:
+    """Apply an amount to a normalized split, in whole ct, losing nothing.
+
+    Largest-remainder: floor every share, then hand the leftover ct out to the
+    biggest remainders. `sum(split_ct(n, s).values()) == n` exactly, which is
+    the property the conservation law downstream depends on.
+    """
+    norm = normalize_shares(shares)
+    total = max(0, int(commit_ct or 0))
+    if not norm or total <= 0:
+        return {k: 0 for k in norm}
+    raw = {k: total * v for k, v in norm.items()}
+    out = {k: int(x) for k, x in raw.items()}
+    short = total - sum(out.values())
+    for k, _r in sorted(raw.items(), key=lambda kv: (kv[1] - int(kv[1])), reverse=True):
+        if short <= 0:
+            break
+        out[k] += 1
+        short -= 1
+    return out
 
 
 # ===========================================================================
@@ -142,49 +208,38 @@ def roll_commit_by(deadline_week: Optional[int], now_week: int) -> Optional[int]
 # ===========================================================================
 # The old phase-2 model priced extra votes on a doubling ladder:
 #
-#     p2_vote_cost(v) = 10 × (2^(v−1) − 1)      # extras cost 10, 20, 40, 80 …
+#     p2_vote_cost(v) = 10 x (2^(v-1) - 1)      # extras cost 10, 20, 40, 80 ...
 #
-# Paying 2× for the same marginal vote is arithmetically identical to receiving
-# ½ the weight for the same marginal payment, so the ladder becomes a WEIGHT
+# Paying 2x for the same marginal vote is arithmetically identical to receiving
+# 1/2 the weight for the same marginal payment, so the ladder becomes a WEIGHT
 # curve with no change to the underlying economics:
 #
 #     weight is 1:1 for the first block of 10 tokens,
-#     then each further block of 10 counts for r× the block before it.
+#     then each further block of 10 counts for r x the block before it.
 #
-#     r = 0.5 → 10 tk = 10.00 · 20 tk = 15.00 · 30 tk = 17.50 · 40 tk = 18.75
-#
-# `r` is the one tunable knob: 0.5 reproduces today's economics exactly, higher
-# is gentler, r = 1 is linear. Weight is returned in ct so callers never have to
-# think about two units.
+#     r = 0.5 -> 10 tk = 10.00 . 20 tk = 15.00 . 30 tk = 17.50 . 40 tk = 18.75
 WEIGHT_BLOCK_CT = 10 * CT_PER_TOKEN          # the flat block: first 10 tokens
 WEIGHT_R = 0.5                               # per-block decay
 
 
 # ---------------------------------------------------------------------------
-# Influence — what being RIGHT is worth (2026-08-20)
+# Influence — what being RIGHT is worth
 # ---------------------------------------------------------------------------
 # "The result of the ME is that 'correct' voters get twice as much influence in
 # the OE. 'Correct' OE voters get twice as much influence on budget voting. Both
 # get 1.5x as much influence on research voting (so if you got both right, you
 # get 2.25x)."
 #
-# This REPLACES the money reward that used to be here. Yesterday's model paid
-# for being right by skimming winners and losers at different rates; today there
-# is one skim and it falls on everyone equally (see Settlement below), so the
-# entire reward for having voted correctly is influence in the NEXT decision.
-# That is a better shape: it compounds into the thing a benefactor came for
-# (deciding where the money goes) instead of into their own balance.
-#
-# Three arenas, and the multipliers do not all stack the same way, so they get
-# named separately rather than folded into one number:
-#
-#   OE       — decided by ME voters. Correct ME vote ⇒ 2x.
-#   BUDGET   — decided by OE voters. Correct OE vote ⇒ 2x.
-#   RESEARCH — decided by everyone. Each correctness ⇒ 1.5x, and they MULTIPLY:
-#              1.5 × 1.5 = 2.25 for a benefactor who got both right.
-ME_CORRECT_OE_MULT = 2.0            # backed the winning initiative → 2x in its OE
-OE_CORRECT_BUDGET_MULT = 2.0        # backed the winning philanthropy → 2x on budget
-RESEARCH_MULT_EACH = 1.5            # each correctness → 1.5x on research (2.25 both)
+# CONFIRMED 2026-08-27c: these survive the flat skim, and they are joined by the
+# two rewards the finalized model names — EARLY EBX for backing the winning
+# initiative (rule 4a: the stake mints the moment the initiative election
+# closes, a week ahead of everyone else's) and an UPGRADED MISSION MEMBERSHIP
+# for backing the winning philanthropy. None of the three is money. That is the
+# point: one skim falls on everyone at the same rate, so the prize for being
+# right compounds into the next decision rather than into a balance.
+ME_CORRECT_OE_MULT = 2.0            # backed the winning initiative -> 2x in its OE
+OE_CORRECT_BUDGET_MULT = 2.0        # backed the winning philanthropy -> 2x on budget
+RESEARCH_MULT_EACH = 1.5            # each correctness -> 1.5x on research (2.25 both)
 
 Arena = Literal["oe", "budget", "research"]
 
@@ -214,11 +269,6 @@ def weight_ct(stake_ct: int, mult: float = 1.0) -> float:
     influence multiplier the benefactor has earned. Returned as a float on
     purpose: weight is a ranking quantity, never money, and never settles into
     anyone's balance.
-
-    `mult` used to be a `backed_winner` boolean. It is a number now because
-    there are three arenas and one of them (research) is 2.25 — a flag cannot
-    express that, and two flags in a weight function would be two chances to
-    pass the wrong one.
     """
     s = max(0, int(stake_ct))
     total = 0.0
@@ -236,127 +286,150 @@ def weight_tokens(stake_ct: int, mult: float = 1.0) -> float:
 
 
 # ===========================================================================
-# Settlement — what an election does to a stake
+# The week change — the ratchet
 # ===========================================================================
-# ONE SKIM, AND IT FALLS AFTER THE ORGANIZATION ELECTION (2026-08-20, Jax:
-# "There will only be 1 'skim' after the OE").
+# "The conversion only happens at a week-change. Users will be able to convert
+# as many times as they want within the same week." And, asked WHICH
+# allocations harden: "All OE allocations."
 #
-# The initiative election takes NOTHING. It is not a settlement at all any more,
-# it is a routing step: every backer's stake — the winner's and the losers'
-# alike — moves whole into the winning initiative's organization election. Two
-# reasons this is the right shape:
+# So inside a week an allocation is a DRAFT — move it between eligible races as
+# often as you like, at no cost, with nothing to buy back. At the roll, every
+# standing organization-election allocation hardens: those ct become EBX for
+# that mission and stop moving.
 #
-#   * A benefactor who is talked out of their first choice has still funded the
-#     cause. Charging them on the way past the ME made the initiative vote feel
-#     like a toll booth, and it double-counted the loss for anyone who then
-#     backed a losing philanthropy too.
-#   * With one skim, the promise finally reads in one clause — "the most you can
-#     lose is 10%" — and it is TRUE, not "10% twice = 19%" with an asterisk.
+# ME allocations do NOT harden at the roll. The mission identity is not final
+# until the initiative election is, and EBX cannot predate its mission — a slate
+# can be redrawn week after week and what ends that is `finalize_p1`, not the
+# calendar. The roll is the ratchet on the ORGANIZATION side only, which is the
+# side where the money picks a recipient.
 #
-# The reward for having been right is no longer a discount on the skim; it is
-# the influence multiplier above.
+# This is a better instrument than either mechanism it replaces. A conversion
+# COUNT priced the hop and made a benefactor's freedom a private number nobody
+# else could see; one-way commitment priced deliberation itself. A week boundary
+# prices nothing, punishes nothing, and gives everybody the same deadline.
+
+
+def hardens_at_week(committed_week: int) -> int:
+    """The week in which an OE allocation made in `committed_week` becomes EBX."""
+    return int(committed_week) + 1
+
+
+def is_soft(committed_week: Optional[int], now_week: int) -> bool:
+    """True while an allocation can still be moved for free — i.e. the week it
+    was made in is the week we are in. `None` (a row from before the column
+    existed) is treated as hardened, because it certainly is by now."""
+    if committed_week is None:
+        return False
+    return int(now_week) <= int(committed_week)
+
+
+# ===========================================================================
+# Settlement — one flat skim, and what the rest becomes
+# ===========================================================================
+# "It's a clean 10% across the board, winners and losers pay the same, the
+# difference comes after (special ebx for ME, special mission membership for
+# OE)." — Jax, 2026-08-27c
+#
+# The four-path table is gone, and with it `OE_SEND_WIN`, `OE_SEND_LOSE` and the
+# buyer's sentence that needed a clause for each path. What is left is one rate
+# and one destination for the rest:
+#
+#   10% of whatever you commit is the skim.
+#   The other 90% becomes your EBX for that mission.
+#
+# The initiative election still takes nothing — it is a routing step, not a
+# settlement — so `ME_SKIM` stays at 0 and stays named, because a rate that
+# lives in one place can be changed in one place.
 ME_SKIM = 0.0                      # the initiative election claims nothing
+OE_SKIM = 0.10                     # the one skim, paid by everyone
 
-# The one skim. Your philanthropy won and all of it is a donation; it lost and
-# 10% is, with the rest yours to redirect to another race or take back as cash.
-OE_SKIM_LOSE = 0.10
-OE_SEND_WIN = 1.00
-OE_SEND_LOSE = OE_SKIM_LOSE
-
-# The claimed share is not minted at the election. It waits out the mission's
-# 7-week budgeting phase and mints when the budget is set — the donation
-# crystallises at the moment the mission knows what it is buying.
-MINT_LAG_WEEKS = 7
+# The field a marked token can reach. Eight races are open at any instant (a
+# mission enters phase 2 every week and leaves eight weeks later); wait six
+# weeks and six more have opened under it, which is the 14 the model names —
+# "7 elected before, the current one, and 6 elected later". Fourteen is a
+# LIFETIME, not a screen: the table is always the eight.
+OE_TABLE_ROWS = 8
+OE_LIFETIME_RACES = 14
 OE_AFTER_ME_WEEKS = 8              # phl elected at T + 8wk
-# A token used to carry a 15-week fuse: without one, a benefactor could hop to
-# the newest organization election every week forever — always committed, never
-# donating, collecting the full grant throughout. 2026-08-20 replaces the fuse
-# with a COUNT: "there is no time limit on the token, but there is a limit to
-# the amount of times it can be converted (3), which puts a de facto limit on
-# the time." Same bound, better mechanic — a deadline punishes a benefactor for
-# deliberating, a conversion budget prices the hop itself. Three conversions at
-# eight weeks a race is a de facto ~32-week life.
-MAX_CONVERSIONS = 3
-# Kept as the natural life of ONE ct from commitment to mint (ME → OE → budget),
-# which is still what the tax receipt is dated by. It is no longer an expiry.
-TOKEN_LIFE_WEEKS = OE_AFTER_ME_WEEKS + MINT_LAG_WEEKS       # 15
 
-
-def conversions_left(used: int) -> int:
-    """How many more times this lot may be moved to a different race."""
-    return max(0, MAX_CONVERSIONS - max(0, int(used or 0)))
-
-
-def can_convert(used: int) -> bool:
-    return conversions_left(used) > 0
+# Seven weeks after the organization election the budget is set. That is what
+# `MINT_LAG_WEEKS` was really measuring, and it is NOT the mint: EBX exists at
+# mission identity, and the deduction rides each donation tranche rather than a
+# date. Renamed for what it is, and nothing now expires on it.
+BUDGET_SET_WEEKS = 7
 
 
 @dataclass(frozen=True)
 class Settlement:
-    """What an election left behind. claimed + carried == the stake, exactly."""
-    claimed_ct: int                # irrevocable; mints at OE close + 7 weeks
-    carried_ct: int                # moves on (ME) or stays withdrawable (OE)
+    """What an election left behind. donated + held == the stake, exactly."""
+    donated_ct: int                # gone, deductible, split between org and Earthbux
+    held_ct: int                   # the benefactor's EBX for this mission
 
     @property
     def total_ct(self) -> int:
-        return self.claimed_ct + self.carried_ct
+        return self.donated_ct + self.held_ct
 
 
 def settle_me(stake_ct: int) -> Settlement:
     """Initiative election closes — and claims nothing.
 
-    The whole stake carries into the winning initiative's organization election,
-    whether this benefactor backed the winner or not. Kept as a function rather
-    than deleted because the ROUTING is still a step the ledger has to record
-    (it is the first element on the credit coin), and because a rate that lives
-    in one named place can be changed in one named place.
+    Kept as a function rather than deleted because the ROUTING is still a step
+    the ledger has to record (it is the first element on the credit coin).
     """
     s = max(0, int(stake_ct))
-    claimed = min(s, _ceil_ct(s * ME_SKIM)) if ME_SKIM else 0
-    return Settlement(claimed_ct=claimed, carried_ct=s - claimed)
+    donated = min(s, _ceil_ct(s * ME_SKIM)) if ME_SKIM else 0
+    return Settlement(donated_ct=donated, held_ct=s - donated)
 
 
-def settle_oe(stake_ct: int, won: bool) -> Settlement:
-    """Organization election closes. Won: all of it is a donation. Lost: 10% is,
-    and `carried_ct` is the benefactor's to redirect to another mission or take
-    back as cash — after the mission's 7-week budgeting phase."""
+def settle_oe(stake_ct: int) -> Settlement:
+    """Organization election closes. 10% is donated — whoever you backed — and
+    the rest becomes EBX for this mission.
+
+    There is deliberately no `won` argument any more. Being right is worth early
+    EBX, a mission membership and influence; it has not been worth money since
+    2026-08-27c, and a boolean here would be the place that quietly re-invented
+    it.
+    """
     s = max(0, int(stake_ct))
-    if won:
-        return Settlement(claimed_ct=s, carried_ct=0)
-    claimed = min(s, _ceil_ct(s * OE_SEND_LOSE))
-    return Settlement(claimed_ct=claimed, carried_ct=s - claimed)
+    donated = min(s, _ceil_ct(s * OE_SKIM))
+    return Settlement(donated_ct=donated, held_ct=s - donated)
+
+
+def tranche_ct(held_ct: int, fraction: float) -> int:
+    """One donation tranche out of a benefactor's remaining EBX.
+
+    Donation is an EVENT and it happens more than once: "the tax deduction
+    happens when the ebx is donated (included in the skim). Throughout the
+    mission, more ebx will be donated." The 10% at the organization election is
+    simply the first tranche, which is what "included in the skim" means — the
+    skim is not a separate charge outside the donation flow, it is the opening
+    instalment of it.
+
+    What TRIGGERS each later tranche, and how each is divided between the
+    organization and Earthbux, belongs to the resolutions phase and is not
+    modelled here. This function is the arithmetic those rules will call, and
+    nothing more.
+    """
+    h = max(0, int(held_ct))
+    return min(h, _ceil_ct(h * max(0.0, float(fraction))))
 
 
 def outcome_table(stake_ct: int = 100 * CT_PER_TOKEN) -> dict:
-    """The four paths a staked token can take, as settled ct.
+    """What a commitment settles into, so the docs, the landing copy and the UI
+    cannot drift from the arithmetic.
 
-    One function so the docs, the landing copy and the UI cannot drift from the
-    arithmetic. Two entry points are still reported, but since 2026-08-20 they
-    settle to the SAME numbers: the initiative election takes nothing, so
-    arriving at a philanthropy election through one costs no more than being
-    committed to it directly. That equality is worth asserting rather than
-    assuming, which is why both halves survive.
+    One row now, where there used to be four. That is the point of the flat
+    skim: the promise no longer needs to know how you voted.
     """
-    via_me = settle_me(stake_ct)
+    oe = settle_oe(stake_ct)
     return {
         "stake_ct": stake_ct,
-        "via_me": {
-            "me_claimed_ct": via_me.claimed_ct,
-            "oe_win": {
-                "donated_ct": via_me.claimed_ct + settle_oe(via_me.carried_ct, True).claimed_ct,
-                "yours_ct": settle_oe(via_me.carried_ct, True).carried_ct,
-            },
-            "oe_lose": {
-                "donated_ct": via_me.claimed_ct + settle_oe(via_me.carried_ct, False).claimed_ct,
-                "yours_ct": settle_oe(via_me.carried_ct, False).carried_ct,
-            },
-        },
-        "straight_to_oe": {
-            "oe_win": {"donated_ct": settle_oe(stake_ct, True).claimed_ct,
-                       "yours_ct": settle_oe(stake_ct, True).carried_ct},
-            "oe_lose": {"donated_ct": settle_oe(stake_ct, False).claimed_ct,
-                        "yours_ct": settle_oe(stake_ct, False).carried_ct},
-        },
+        "skim_rate": OE_SKIM,
+        "donated_ct": oe.donated_ct,
+        "ebx_ct": oe.held_ct,
+        "donated": tokens(oe.donated_ct),
+        "ebx": tokens(oe.held_ct),
+        "usd_donated": usd(oe.donated_ct),
     }
 
 
@@ -364,30 +437,31 @@ def outcome_table(stake_ct: int = 100 * CT_PER_TOKEN) -> dict:
 # Provenance — "every token maintains a record of its transactions"
 # ===========================================================================
 # A benefactor's tokens are a balance, not a hundred little objects, so the unit
-# that can actually carry a history is the **lot**: ct that have always moved
-# together. Split a lot and both halves inherit the history; merge two and you
-# keep two lots rather than losing one's past. The chain survives the mint — a
-# credit coin still knows which initiative and which philanthropy its ct backed
-# on the way here.
+# that can carry a history is the **lot**: ct that have always moved together.
+# Split a lot and both halves inherit the history. The chain survives the mint —
+# a credit coin still knows which initiative and which philanthropy its ct
+# backed on the way here.
 #
-# Only a REGISTERED vote is recorded. Dragging a slider up and down before
-# committing leaves nothing behind: a benefactor's second thoughts are not part
-# of the public record of what their money supported.
+# ONLY A REGISTERED VOTE IS RECORDED, and under the week-change rule that has a
+# sharper meaning than it used to: what is registered is what STANDS AT THE
+# ROLL. A benefactor who moves an allocation three times on a Thursday leaves
+# one event behind, not three, because the first two were drafts. Second
+# thoughts are not part of the public record of what someone's money supported.
 #
-# THE COIN HAS TWO ELEMENTS (2026-08-20). Jax names them, and the naming is the
-# specification:
+# THE COIN HAS TWO ELEMENTS, and Jax's naming of them is the specification:
 #
 #   element 1 — written when the initiative election hits. "They become marked
 #     with the cause, initiative and date it was converted, as well as the
-#     winning initiative." One event, `settle_me`, carrying both the initiative
-#     this benefactor backed and the one that won: on a losing vote those differ,
-#     and a coin that only remembered the winner would erase the argument that
-#     made the mission.
+#     winning initiative." One event per initiative this benefactor backed,
+#     carrying both what they backed and what won: on a losing vote those
+#     differ, and a coin that only remembered the winner would erase the
+#     argument that made the mission.
 #
-#   element 2 — the conversions. Each move to a different organization election
-#     is a `move_oe`, and there are at most MAX_CONVERSIONS of them.
-ProvenanceKind = Literal["commit_me", "commit_oe", "move_oe", "settle_me",
-                         "settle_oe", "mint", "refund"]
+#   element 2 — the philanthropy these ct stand behind, written when the
+#     allocation hardens. A split ME vote leaves a benefactor holding tokens
+#     with different marks; once they are committed to an OE and minted, the
+#     mark is FORGOTTEN in the balance and lives only here.
+ProvenanceKind = Literal["commit_me", "settle_me", "mint_ebx", "donate", "refund"]
 
 
 @dataclass(frozen=True)
@@ -418,20 +492,38 @@ def coin_element_me(week: int, mission_id: str, cause_id: str, backed_tiv_id: st
     )
 
 
-def coin_element_oe(week: int, mission_id: str, org_id: str, amount_ct: int,
-                    converted: bool) -> ProvenanceEvent:
-    """Element 2: a philanthropy this stake stood behind. `converted` marks the
-    ones that spent a conversion — i.e. moved to a race other than the one the
-    initiative election put these ct in."""
-    return ProvenanceEvent(
-        week=week, kind=("move_oe" if converted else "commit_oe"),
-        mission_id=mission_id, amount_ct=int(amount_ct), target_id=org_id,
-    )
+def coin_element_oe(week: int, mission_id: str, org_id: Optional[str],
+                    amount_ct: int) -> ProvenanceEvent:
+    """Element 2: the philanthropy these ct minted behind, at the week roll.
+
+    `org_id` is Optional for one real case: EARLY EBX. A benefactor who backed
+    the winning initiative mints the moment the initiative election closes — a
+    week ahead of everyone else, which is what the reward IS — and at that
+    moment the mission is known but its organization has not been elected yet.
+    The philanthropy is named on the ROW when the race decides, rather than
+    rewritten into this event: the chain records what was true when it happened.
+    """
+    return ProvenanceEvent(week=week, kind="mint_ebx", mission_id=mission_id,
+                           amount_ct=int(amount_ct), target_id=org_id)
 
 
-def count_conversions(history: Iterable[dict]) -> int:
-    """Conversions spent, read back off a stored chain."""
-    return sum(1 for e in (history or []) if (e or {}).get("kind") == "move_oe")
+def coin_donation(week: int, mission_id: str, amount_ct: int,
+                  note: Optional[str] = None) -> ProvenanceEvent:
+    """A donation tranche crossing out of held EBX. Deductible at this date."""
+    return ProvenanceEvent(week=week, kind="donate", mission_id=mission_id,
+                           amount_ct=int(amount_ct), outcome=note)
+
+
+def minted_ct_of(history: Iterable[dict]) -> int:
+    """How much of a chain has hardened into EBX."""
+    return sum(int((e or {}).get("amount_ct") or 0)
+               for e in (history or []) if (e or {}).get("kind") == "mint_ebx")
+
+
+def donated_ct_of(history: Iterable[dict]) -> int:
+    """How much of a chain has been donated, across every tranche."""
+    return sum(int((e or {}).get("amount_ct") or 0)
+               for e in (history or []) if (e or {}).get("kind") == "donate")
 
 
 @dataclass(frozen=True)
@@ -441,26 +533,11 @@ class Lot:
     born_week: int                  # the week this lot's clock started
     history: tuple[ProvenanceEvent, ...] = field(default_factory=tuple)
 
-    @property
-    def conversions_used(self) -> int:
-        return sum(1 for e in self.history if e.kind == "move_oe")
-
-    @property
-    def conversions_left(self) -> int:
-        return conversions_left(self.conversions_used)
-
-    @property
-    def matures_week(self) -> int:
-        """When ct committed at `born_week` would mint if it never converted.
-        A projection, not a deadline — nothing expires any more."""
-        return self.born_week + TOKEN_LIFE_WEEKS
-
     def record(self, event: ProvenanceEvent) -> "Lot":
         return Lot(self.ct, self.born_week, self.history + (event,))
 
     def split(self, take_ct: int) -> tuple["Lot", "Lot"]:
-        """Split off `take_ct`. Both halves keep the whole history — and so the
-        whole conversion count: splitting a lot must not buy three more moves."""
+        """Split off `take_ct`. Both halves keep the whole history."""
         take = max(0, min(int(take_ct), self.ct))
         return (Lot(take, self.born_week, self.history),
                 Lot(self.ct - take, self.born_week, self.history))
@@ -470,147 +547,125 @@ def lots_total_ct(lots: Iterable[Lot]) -> int:
     return sum(l.ct for l in lots)
 
 
-# ---------------------------------------------------------------------------
-# Moving a stake — the only way ct leaves a race
-# ---------------------------------------------------------------------------
-# 2026-08-20, second pass. **Committed ct cannot come back.** Jax: "Users can no
-# longer move tokens from an OE to unallocated. Unallocated is just the tokens
-# they have either purchased or been granted and not yet allocated."
-#
-# That deletes a whole category of state. There is no returned balance, no lot
-# ledger sitting in the wallet waiting to be re-spent, and no way for a stake to
-# launder its history by resting in the bar for a week — because it cannot rest
-# there at all. A committed token has exactly two futures: it stays where it is
-# and settles, or it CONVERTS directly into another organization election,
-# which is one transaction, requires a philanthropy vote at the destination, and
-# spends one of three conversions.
-#
-# The two-way slider went with it. A slider says "this is a position you can
-# revise"; one-way commitment is a decision, and it should cost a deliberate
-# act — an amount, a philanthropy, and a button.
-def merge_conversion(dest_ct: int, dest_conversions: int,
-                     src_conversions: int) -> int:
-    """The conversion count a destination row carries after ct arrives from
-    another race.
-
-    The HIGHER of the two, plus the move itself. Conservative on purpose:
-    merging a thrice-moved stake into a fresh one must not buy back moves, and
-    the count is a property of the ct, not of the row it happens to sit in.
-    """
-    return max(0, int(dest_conversions or 0), int(src_conversions or 0)) + 1
-
-
 # ===========================================================================
 # The wallet
 # ===========================================================================
+# FOUR STATES, and the third one used to be a pun. `claimed` is the word for an
+# organization CLAIMING a mission (the claim flow, the guaranteed-to-pool rate
+# that bumps on claim); the wallet was borrowing it for something that already
+# had a better name. It gave it back on 2026-08-27c.
+#
+#     unallocated -> committed -> minted -> donated
+#
+# DONATED AND SPENT ARE DIFFERENT METRICS, and each applies to both parties:
+# a benefactor DONATES, once per EBX, and what is donated is split by percentage
+# between Earthbux and the organization; each of those two then SPENDS its share
+# incrementally over the life of the mission. This wallet counts the donation.
+# The two spending ledgers are theirs, not the benefactor's, and a benefactor
+# can watch their donation being used without their donation changing size.
 @dataclass(frozen=True)
 class Wallet:
     """The four states, in ct. One bar, four segments, one invariant."""
     cash_ct: int = 0                # bought back or never spent; not a donation
-    free_ct: int = 0               # UNALLOCATED — granted or purchased, not yet
-                                   # committed. Topped up to 10 every week.
-    # The part of free that was BOUGHT rather than granted. Authoritative, and
-    # the grant-held part is derived from it — because after 2026-08-20 those are
-    # the ONLY two things unallocated can contain ("unallocated is just the
-    # tokens they have either purchased or been granted and not yet allocated"),
-    # so tracking both would be tracking one number twice.
-    #
-    # They differ in exactly two ways: granted ct carries a commit-by date and
-    # may only enter this week's two doors (the ME slate or the ONE active-cause
-    # OE); purchased ct carries no date and may enter any race.
+    free_ct: int = 0                # UNALLOCATED — granted or purchased
+    # The part of free that was BOUGHT rather than granted, and the only mobile
+    # money in the model. A GRANTED token appears in its cause's election week,
+    # cannot be transferred or withdrawn (there is no moment at which it exists
+    # and is free), and if unspent waits for that cause's next window. A
+    # PURCHASED token exists the moment it is bought and may be transferred or
+    # withdrawn right up until it enters this week's election, at which point it
+    # behaves exactly like a granted one.
     purchased_ct: int = 0
-    staked_ct: int = 0             # committed to a race — one-way, until it settles
-    claimed_ct: int = 0            # irrevocable, awaiting mint at OE + 7 weeks
-    minted_ct: int = 0             # credit coins, mission-tied, deductible
-    # Cycle week by which the granted part must be committed, or it takes next
-    # week's date. Never a forfeiture.
-    commit_by_week: Optional[int] = None
+    committed_ct: int = 0           # in an election, still a token, still soft
+    minted_ct: int = 0              # EBX: mission-tied, immovable
+    donated_ct: int = 0             # crossed over, deductible, being spent
+    # The cause this week's grant was issued against. Not a deadline and not a
+    # tag on mobile money — it is the only place a granted token was ever able
+    # to go.
+    grant_cause_id: Optional[str] = None
 
     @property
     def grant_held_ct(self) -> int:
-        """Unallocated ct that came from a grant: dated, and two doors."""
+        """Unallocated ct that came from a grant: cause-bound, immobile."""
         return max(0, self.free_ct - max(0, self.purchased_ct))
 
     @property
     def tokens_ct(self) -> int:
-        """The Tokens bin: free + staked. Claimed has left it; minted is a coin."""
-        return self.free_ct + self.staked_ct
+        """The Tokens bin: free + committed. Minted ct are EBX, not tokens."""
+        return self.free_ct + self.committed_ct
+
+    @property
+    def ebx_ct(self) -> int:
+        """Held EBX — minted and not yet donated."""
+        return self.minted_ct
 
     @property
     def next_grant_ct(self) -> int:
         return grant_ct(self.free_ct)
-
-    @property
-    def donated_ct(self) -> int:
-        return self.claimed_ct + self.minted_ct
 
     def as_dict(self) -> dict:
         purchased = min(max(0, self.purchased_ct), self.free_ct)
         return {
             "cash_ct": self.cash_ct,
             "free_ct": self.free_ct,
-            # Unallocated is grant + purchased, and nothing else: ct committed to
-            # a race never comes back to it.
             "grant_held_ct": self.grant_held_ct,
             "purchased_ct": purchased,
-            "commit_by_week": self.commit_by_week,
-            "staked_ct": self.staked_ct,
-            "claimed_ct": self.claimed_ct,
+            "grant_cause_id": self.grant_cause_id,
+            "committed_ct": self.committed_ct,
             "minted_ct": self.minted_ct,
+            "donated_ct": self.donated_ct,
             "tokens_ct": self.tokens_ct,
             "next_grant_ct": self.next_grant_ct,
-            "donated_ct": self.donated_ct,
+            "available_ct": available_ct(self.tokens_ct),
             # display copies — the front end should never divide by 100 itself
             "cash": tokens(self.cash_ct),
             "free": tokens(self.free_ct),
             "grant_held": tokens(self.grant_held_ct),
             "purchased": tokens(purchased),
-            "staked": tokens(self.staked_ct),
-            "claimed": tokens(self.claimed_ct),
+            "committed": tokens(self.committed_ct),
             "minted": tokens(self.minted_ct),
+            "donated": tokens(self.donated_ct),
             "next_grant": tokens(self.next_grant_ct),
             "usd_donated": usd(self.donated_ct),
             "ct_per_token": CT_PER_TOKEN,
             "weekly_grant_ct": WEEKLY_GRANT_CT,
-            "max_conversions": MAX_CONVERSIONS,
+            "max_split_tivs": MAX_SPLIT_TIVS,
+            "oe_skim": OE_SKIM,
         }
 
 
 # ===========================================================================
-# Allocation — the conservation law, and the one direction it runs in
+# Allocation — the conservation law, and the week it runs in
 # ===========================================================================
-# The ME table and the OE table both spend ONE cell: `free_ct`. Neither can
-# reach into the other's committed rows, and — since 2026-08-20 — neither can
-# reach into its OWN:
+# The ME slate and the OE field both spend ONE cell: `free_ct`.
 #
-#     Σ(ME rows) + Σ(OE rows) + free = tokens owned        (still true)
-#     free only ever goes DOWN, except when the weekly grant tops it up
+#     sum(ME rows) + sum(OE rows) + free = tokens owned
 #
-# "Users can no longer move tokens from an OE to unallocated. Unallocated is
-# just the tokens they have either purchased or been granted and not yet
-# allocated." So allocation is a one-way door: ct leaves the bar for a race and
-# the only way it moves again is a CONVERSION straight into another race.
+# Minted EBX is NOT in that sum — it has left the token bin for a mission, which
+# is exactly what minting means.
 #
-# New tokens still have two doors — this week's grant may enter the ME slate or
-# the ONE active-cause OE, per "2 options, not 9" — while PURCHASED ct may enter
-# any race, which is why the unallocated bar still draws two colours. They are
-# grant and purchase now, not grant and returned; there is no returned.
+# Inside the week the allocation is a POSITION, revisable at no cost, which is
+# why `set_allocation` sets rather than adds. At the roll the OE side of it
+# hardens and stops being an allocation at all. The one-way `allocate` that
+# lived here from 2026-08-20b to 2026-08-27c is gone with the rule it enforced.
 def allocation_ok(me_rows_ct: Iterable[int], oe_rows_ct: Iterable[int],
                   free_ct: int, owned_ct: int) -> bool:
     return sum(me_rows_ct) + sum(oe_rows_ct) + int(free_ct) == int(owned_ct)
 
 
-def allocate(rows_ct: dict[str, int], key: str, add_ct: int,
-             free_ct: int) -> tuple[dict[str, int], int]:
-    """Commit `add_ct` more to one row, out of free. One direction only.
+def set_allocation(rows_ct: Mapping[str, int], key: str, target_ct: int,
+                   free_ct: int) -> tuple[dict[str, int], int]:
+    """Set one row to `target_ct`, funding it from (or returning it to) free.
 
-    Returns the new rows and the new free balance. The amount is CLAMPED to what
-    free can pay rather than rejected, and a negative request is a no-op rather
-    than a refund: this replaced `rebalance`, whose whole purpose was to let a
-    slider give money back. It cannot, now — committing is a decision, and the
-    way out of a race is `merge_conversion` into another one.
+    Returns the new rows and the new free balance. Clamped, never rejected: a
+    target above what free can pay lands at the ceiling, and a negative target
+    lands at zero. This is a draft being revised, and a draft that throws is a
+    draft that loses work.
     """
     rows = dict(rows_ct)
-    add = max(0, min(int(add_ct), max(0, int(free_ct))))
-    rows[key] = int(rows.get(key, 0)) + add
-    return rows, int(free_ct) - add
+    have = max(0, int(rows.get(key, 0)))
+    free = max(0, int(free_ct))
+    want = max(0, int(target_ct or 0))
+    delta = min(want - have, free)          # cannot spend more than free holds
+    rows[key] = have + delta
+    return rows, free - delta

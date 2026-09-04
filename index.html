@@ -355,7 +355,11 @@
         </li>
       </ol>
 
-      <p class="ld-sect__body">Benefactors vote by donating Earthbucks. <b>1 EBX = 10&cent;</b>.</p>
+      <!-- §3 (2026-08-28) — the landing page says TOKENS wherever it means the
+           unit a vote is cast in. EBX is a STATE (minted, mission-tied) and this
+           page never talks about that state: everything on it is the grant, the
+           vote and the pool, all of which are tokens. -->
+      <p class="ld-sect__body">Benefactors vote by donating Earthbucks. <b>1 token = 10&cent;</b>.</p>
       <div class="ld-dime" id="ld-dime-viz"></div>
 
       <div class="ld-runway" id="ld-runway"></div>
@@ -439,7 +443,7 @@
         'font-size:9px;fill:#e8a84c;">10¢</text></svg>';
       dimeEl.innerHTML =
         '<div class="ld-dime__row">' + Array.from({ length: 10 }, coin).join('') + '</div>' +
-        '<div class="ld-dime__cap">10 EBX &middot; ten dimes &middot; $1 &middot; every week</div>';
+        '<div class="ld-dime__cap">10 tokens &middot; ten dimes &middot; $1 &middot; every week</div>';
     }
 
     let s = null;
@@ -467,7 +471,7 @@
         '<div class="ld-runway__members" id="ld-active-users">' +
           '<b>' + active + '</b> active member' + (active === 1 ? '' : 's') +
         '</div>' +
-        '<div class="ld-runway__note">Everyone is granted <b>10 EBX per week</b> between the ' +
+        '<div class="ld-runway__note">Everyone is granted <b>10 tokens per week</b> between the ' +
           'two elections. Committed <b>$' + usd.toFixed(2) + '</b> &divide; <b>$' +
           weekly.toFixed(2) + '</b> per week = <b>' + weeks + '</b> week' +
           (weeks === 1 ? '' : 's') + '. ' +
@@ -475,7 +479,7 @@
             ? 'Live figures are unavailable right now.'
             : weeks === 0
               ? 'It reads zero because no money has been donated yet.'
-              : 'That pool is <b>simulated pilot EBX</b> — no money has been donated yet, so ' +
+              : 'That pool is <b>simulated pilot money</b> — no money has been donated yet, so ' +
                 'treat this as the shape of the number, not the number.') + '</div>';
     }
   })();

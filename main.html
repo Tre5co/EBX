@@ -870,6 +870,18 @@
     .unalloc__seg--org { background: #9a7fd0; }
     .unalloc__dot--tiv { background: #6baed6; }
     .unalloc__dot--org { background: #9a7fd0; }
+    /* §1 (2026-08-27c) — **the third set: EBX.** The bar had two sets of two
+       because a benefactor's money had four states worth naming. It has four
+       still, but they are not the same four: `claimed` was a pun on an
+       organization CLAIMING a mission, and what actually follows `committed` is
+       `minted` (EBX, mission-tied, held) and then `donated` (crossed over, and
+       deductible). Amber for held EBX because it is the thing a benefactor is
+       trying to acquire; grey-green for donated because it is gone and that is
+       the point of it. */
+    .unalloc__seg--ebx { background: #e0a458; }
+    .unalloc__seg--don { background: #6f8f7a; }
+    .unalloc__dot--ebx { background: #e0a458; }
+    .unalloc__dot--don { background: #6f8f7a; }
     .unalloc__seg--none { background: rgba(245,240,232,0.1); }
     /* The head is a line: what it is, how much, and the one button that moves
        it. Commit sits HERE — "there should be one in the unallocated area" —
@@ -1754,6 +1766,14 @@
       flex: 1; min-width: 0; line-height: 1.3; word-break: break-word;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     }
+    /* §2 (2026-08-28) — the ranked field, three rows, one per contender. */
+    .rf-line--rank { gap: 6px; }
+    .rf-rank {
+      flex: 0 0 auto; width: 12px; text-align: right;
+      font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700;
+      color: rgba(245,240,232,0.35);
+    }
+    .rf-line--empty { opacity: 0; pointer-events: none; }
     .rf-line--rest { padding-left: 4px; font-size: 0.68rem; color: rgba(245,240,232,0.5); }
     .rf-line--rest b { color: rgba(245,240,232,0.7); }
     .rf-arrow { color: rgba(245,240,232,0.35); margin: 0 3px; }
@@ -1923,10 +1943,12 @@
        runs from its right edge to the edge of the screen. Full-bleed row, ghost
        rail on the left to keep the toggle centred. */
     /* §2 (2026-08-27): centred under the annulus, no rails. The top margin
-       clears the ring and its chevrons, which overflow the 460px wrap. */
+       cleared the ring and its chevrons, which overflowed the 460px wrap.
+       §2 (2026-08-28): the chevrons are gone and the band is thin, so the ring
+       overflows by ~21px instead of ~40 and the gap comes back down with it. */
     .hero__togglerow {
       display: flex; align-items: center; justify-content: center; gap: 0;
-      width: 100%; margin: 26px 0 2px;
+      width: 100%; margin: 14px 0 2px;
     }
     .st-rail {
       flex: 1 1 0; height: 0; min-width: 0;
@@ -2338,7 +2360,25 @@
       return ((EBX.config.causes || [])[0] || {}).id || null;
     }
     window.voteCauseId = voteCauseId;
-    function committableFor(causeId) { return BASE_EBX + Math.max(0, Math.round(_purchased[causeId] || 0)); }
+    // §1 (2026-08-27c) — **the ME budget is the WALLET.** It was
+    // `10 + localStorage.ebx_purchased_ebx`, per cause, invented in this
+    // browser — which is why the allocations panel could report one balance
+    // twice and why "make the ME table one-way too" sat on the backlog for a
+    // week. What a benefactor may commit to an initiative election is what
+    // their account holds unallocated, PLUS whatever is already committed to
+    // this election (lowering it hands the difference back — an initiative
+    // allocation is soft until `finalize_p1`, because the mission identity is
+    // not final until the election is).
+    function _meCommittedTkFor(causeId) {
+      const inits = (EBX.config.initiatives || []).filter(i => i.cause_id === causeId);
+      return inits.reduce((n, i) => n + (Number(_myEbxByTiv[i.id]) || 0), 0);
+    }
+    function committableFor(causeId) {
+      const freeCt = (typeof window._walletFree === 'function') ? window._walletFree() : 0;
+      const mine = _meCommittedTkFor(causeId);
+      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn())) return BASE_EBX;
+      return Math.max(0, Math.round(freeCt / 100 + mine));
+    }
     // Phase-1 candidates of a cause = the tivs actually running in its open
     // election (status-filtered AND mission-scoped, so an already-elected tiv
     // can't leak in — same guard cause.html uses).
@@ -2437,43 +2477,21 @@
     // Buy / sell the extra tokens beyond the base 10. Local + simulated, exactly as
     // the cause-page widget was: $0.10 + $0.01 × (tokens already bought) each,
     // refunded at a flat $0.10. No endpoint exists yet (backlog: Money/credit).
+    // §1 (2026-08-27c) — **the purchase simulation is retired.** It wrote a
+    // per-cause number into localStorage and `committableFor` added it to the
+    // budget, so the page could spend tokens the account did not hold. Now that
+    // the ME table reads the wallet, that number would be a second opinion
+    // about money — the exact fault the wallet exists to end. There is still no
+    // purchase endpoint (INSTRUCTIONS backlog, *Buying tokens*: `purchased_ct`
+    // is the column the real thing will write), so this says so rather than
+    // faking it. Purchased tokens are the only mobile money in the model — they
+    // may enter any race and be withdrawn until they vote — which is precisely
+    // why simulating them client-side cannot be harmless.
     function buyVoteEbx(causeId) {
-      causeId = causeId || voteCauseId();
-      const owned = Math.max(0, Math.round(_purchased[causeId] || 0));
-      const kStr = prompt(
-        'Buy or sell tokens for this election.\n' +
-        'You hold ' + (BASE_EBX + owned) + ' tokens (' + BASE_EBX + ' base + ' + owned + ' purchased).\n\n' +
-        'Enter a positive number to BUY, or a negative number to SELL back at $0.10/EBX.', '5');
-      if (kStr == null) return;
-      const k = Math.round(Number(kStr) || 0);
-      if (!k) return;
-      if (k > 0) {
-        let cost = 0;
-        for (let n = 1; n <= k; n++) cost += 0.10 + 0.01 * (owned + n);
-        if (!confirm('Buy ' + k + ' tokens for $' + cost.toFixed(2) + '?\n\n' +
-          '(Simulated — the purchase flow has no backend yet.)')) return;
-        _purchased[causeId] = owned + k;
-        _savePurchased();
-      } else {
-        const sell = Math.min(-k, owned);
-        if (!sell) return;
-        if (!confirm('Sell ' + sell + ' tokens back for $' + (sell * 0.10).toFixed(2) + '?')) return;
-        _purchased[causeId] = owned - sell;
-        _savePurchased();
-        // Selling below what's allocated shrinks the slate to fit the budget.
-        const budget = committableFor(causeId);
-        let over = _allocatedFor(causeId) - budget;
-        if (over > 0) {
-          _slateFor(causeId).slice().reverse().forEach(i => {
-            if (over <= 0) return;
-            const cut = Math.min(over, _allocFor(i.id));
-            setAlloc(i.id, _allocFor(i.id) - cut, { quiet: true });
-            over -= cut;
-          });
-        }
-      }
-      filterInitiatives();
-      renderCards();
+      alert('Buying tokens is not wired up yet.\n\n' +
+            'Your balance is your account\u2019s: 10 tokens appear each week, ' +
+            'against that week\u2019s cause. When purchasing lands, bought ' +
+            'tokens will go to any race and can be withdrawn until they vote.');
     }
     window.buyVoteEbx = buyVoteEbx;
 
@@ -2541,7 +2559,8 @@
     let _wallet = null;            // the four segments
     let _walletRows = [];          // one entry per open philanthropy election
     let _walletRules = null;       // the model's own constants, as published
-    let _grantCommitBy = null;     // ISO date this week's grant is marked with
+    let _grantCause = null;        // the cause this week's grant was issued against
+    let _hardensWeek = null;       // the week a standing allocation becomes EBX
     let _pending = {};             // mission_id -> {ct, org_id} dialled, unsent
     const CT = 100;                // centitokens per token, confirmed by /wallet
 
@@ -2571,49 +2590,65 @@
         _wallet = data.wallet || null;
         if (_wallet && data.rules) _wallet.ct_per_token = data.rules.ct_per_token || CT;
         _walletRules = data.rules || null;
-        _grantCommitBy = data.commit_by || null;
+        _grantCause = data.grant_cause_id || null;
+        _hardensWeek = (data.hardens_week != null) ? data.hardens_week : null;
         _walletRows = data.rows || [];
         _pending = {};
       } catch (e) {}
     }
     window.loadWallet = loadWallet;
-    // The date this week's grant is marked to be committed by, and the rules the
+    // The cause this week's grant was issued against, and the rules the
     // arithmetic came from — both read straight off /wallet so no number on this
-    // page is a second opinion about the model.
-    window._grantCommitBy = () => _grantCommitBy;
+    // page is a second opinion about the model. The commit-by DATE that used to
+    // be here is gone with the rule it enforced: a granted token appears in its
+    // cause's election week and cannot be moved or withdrawn, so there is
+    // nothing for a deadline to threaten.
+    window._grantCause = () => _grantCause;
+    window._hardensWeek = () => _hardensWeek;
     window._walletRules = () => _walletRules;
 
-    // §1 (2026-08-20b) — **a pending commitment, not a position.** The slider is
-    // gone: it said "this is revisable" about a decision that is one-way. What a
-    // benefactor dials in the dialog is an AMOUNT TO ADD to one race, held here
-    // until Commit writes every pending amount at once. Nothing dialled can be
-    // negative, because there is no such transaction.
+    // §1 (2026-08-27c) — **a pending allocation IS a position.** From
+    // 2026-08-20b to today this held an AMOUNT TO ADD, because committing was
+    // one way and a slider was a promise the model could not keep. The week
+    // change keeps it instead: inside its own week an allocation is a draft, so
+    // what a benefactor dials is what this race should HOLD — up or down — and
+    // the floor is whatever has already hardened into EBX.
     function setPending(missionId, rawTokens, orgId) {
       const row = window._walletRowFor(missionId);
       if (!row) return;
-      const ceiling = Math.max(0, Number(row.max_stake_ct) || 0) - (Number(row.my_stake_ct) || 0);
+      const have = Number(row.my_stake_ct) || 0;
+      const floor = Number(row.my_minted_ct) || 0;      // EBX does not move
+      const ceiling = Math.max(floor, Number(row.max_stake_ct) || 0);
       const asCt = Math.round((Number(rawTokens) || 0) * CT);
-      const want = Math.max(0, Math.min(asCt, Math.max(0, ceiling)));
+      const want = Math.max(floor, Math.min(asCt, ceiling));
       // The philanthropy rides along with the amount: one gesture, one write.
-      // Whatever is picked in the dialog right now is what this commitment will
-      // stand behind, and `pickOrg` keeps it in step if the pick changes after.
-      if (want > 0) _pending[missionId] = { ct: want,
-                                            org_id: orgId || _myOrgFor(missionId) };
+      if (want !== have) _pending[missionId] = { ct: want,
+                                                 org_id: orgId || _myOrgFor(missionId) };
       else delete _pending[missionId];
       if (typeof window._paintUnallocated === 'function') window._paintUnallocated();
       filterInitiatives();
     }
     window.setPending = setPending;
 
+    // The DELTA this race's draft would move, signed: what it would take out of
+    // unallocated, or hand back to it. The row prints it, the bar previews it.
     function _pendingFor(missionId) {
-      return (missionId && _pending[missionId]) ? (Number(_pending[missionId].ct) || 0) : 0;
+      if (!missionId || !_pending[missionId]) return 0;
+      const row = window._walletRowFor(missionId);
+      const have = row ? (Number(row.my_stake_ct) || 0) : 0;
+      return (Number(_pending[missionId].ct) || 0) - have;
+    }
+    function _pendingTargetFor(missionId) {
+      return (missionId && _pending[missionId]) ? (Number(_pending[missionId].ct) || 0) : null;
     }
     function _pendingOrg(missionId) {
       return (missionId && _pending[missionId]) ? (_pending[missionId].org_id || null) : null;
     }
     function _pendingTotalCt() {
-      return Object.keys(_pending).reduce((n, mid) => n + (Number(_pending[mid].ct) || 0), 0);
+      return Object.keys(_pending).reduce((n, mid) => n + _pendingFor(mid), 0);
     }
+    window._pendingTargetFor = _pendingTargetFor;
+    window._pendingCount = () => Object.keys(_pending).length;
     window._pendingFor = _pendingFor;
     window._pendingTotalCt = _pendingTotalCt;
 
@@ -2633,7 +2668,7 @@
     // a benefactor holding tokens in a race they had changed their mind about
     // could not move them at all — the only path out of a committed stake was
     // unreachable from the page that committed it.
-    let _addSrc = {};                // mission_id → 'free' | 'buy' | 'conv:<mid>'
+    let _addSrc = {};                // mission_id → 'free' | 'buy' | 'move:<mid>'
     function addSourceFor(mid) { return _addSrc[mid] || 'free'; }
     function setAddSource(mid, src) {
       _addSrc[mid] = src || 'free';
@@ -2646,26 +2681,28 @@
     window.setAddSource = setAddSource;
     window.addSourceFor = addSourceFor;
 
-    // The conversion itself. A philanthropy at the destination is REQUIRED by
-    // the model, so this refuses rather than sending a headless move.
-    async function convertInto(toMid) {
+    // The move itself. A philanthropy at the destination is REQUIRED by the
+    // model, so this refuses rather than sending a headless move. Free and
+    // unlimited inside the week; impossible after the roll, where the server
+    // answers with the reason rather than a silent no-op.
+    async function moveInto(toMid) {
       const src = addSourceFor(toMid);
-      if (!src.startsWith('conv:')) return;
+      if (!src.startsWith('move:')) return;
       const fromMid = src.slice(5);
       const el = document.getElementById('vb-amt-' + toMid);
       const ct = Math.round((Number(el && el.value) || 0) * CT);
       const orgId = _myOrgFor(toMid);
       if (!(ct > 0)) { if (el) el.focus(); return; }
-      if (!orgId) { alert('Pick a philanthropy above first — a conversion is a vote at the destination.'); return; }
+      if (!orgId) { alert('Pick a philanthropy above first — a move IS a vote at the destination.'); return; }
       try {
-        const r = await EBX.Auth.fetchAuthed('/wallet/convert', {
+        const r = await EBX.Auth.fetchAuthed('/wallet/move', {
           method: 'POST',
           body: JSON.stringify({ from_mission_id: fromMid, to_mission_id: toMid,
                                  ct, org_id: orgId }),
         });
         if (!r || !r.ok) {
           let d = ''; try { d = (await r.json()).detail || ''; } catch (e) {}
-          alert('Could not convert those tokens.' + (d ? '\n\n' + d : ''));
+          alert('Could not move those tokens.' + (d ? '\n\n' + d : ''));
           return;
         }
       } catch (e) { alert('Cannot reach the server.'); return; }
@@ -2676,7 +2713,7 @@
       if (typeof window._paintAllocations === 'function') window._paintAllocations();
       filterInitiatives();
     }
-    window.convertInto = convertInto;
+    window.moveInto = moveInto;
 
     // Unallocated, as the pending commitments would leave it. A PREVIEW of a
     // one-way move, which is why the bar also prints how much is dialled: the
@@ -2698,7 +2735,7 @@
       const failures = [];
       for (const mid of ids) {
         const p = _pending[mid];
-        if (!p || !(p.ct > 0)) continue;
+        if (!p) continue;                     // a target of 0 is a real instruction
         try {
           // A pick can be absent, and an absent pick must travel as JSON null
           // rather than the STRING "null" — which is what a template-built
@@ -2706,7 +2743,7 @@
           const org = (p.org_id && p.org_id !== 'null') ? p.org_id : null;
           const r = await EBX.Auth.fetchAuthed('/wallet/commit', {
             method: 'POST',
-            body: JSON.stringify({ mission_id: mid, add_ct: Math.round(p.ct), org_id: org }),
+            body: JSON.stringify({ mission_id: mid, target_ct: Math.round(p.ct), org_id: org }),
           });
           if (!r || !r.ok) failures.push(mid);
         } catch (e) { failures.push(mid); }
@@ -3052,6 +3089,9 @@
       const _mine = _wr ? (Number(_wr.my_stake_ct) || 0) : 0;
       const _room = _wr ? Math.max(0, (Number(_wr.max_stake_ct) || 0) - _mine) : 0;
       const _pend = (typeof window._pendingFor === 'function') ? window._pendingFor(mid) : 0;
+      const _minted = _wr ? (Number(_wr.my_minted_ct) || 0) : 0;
+      const _target = (typeof window._pendingTargetFor === 'function')
+        ? window._pendingTargetFor(mid) : null;
       const _tk = ct => (typeof window._fmtTkPublic === 'function') ? window._fmtTkPublic(ct) : String(ct);
       // §2 (2026-08-21) — **where the next token comes from.** "Option to add
       // more vote (grant (if available), purchase, from another OE (dropdown) +
@@ -3059,13 +3099,13 @@
       // balance, and say so in small grey text beside the field. Now it asks.
       const _rows = (typeof window._walletRowsAll === 'function') ? window._walletRowsAll() : [];
       const _src = (typeof window.addSourceFor === 'function') ? window.addSourceFor(mid) : 'free';
-      const _convFrom = _src.startsWith('conv:') ? _src.slice(5) : null;
-      // Any OTHER race this benefactor holds tokens in, with a conversion left
-      // to spend. `POST /wallet/convert` is the only way out of a committed
-      // stake, and until now nothing on the page could reach it.
+      const _convFrom = _src.startsWith('move:') ? _src.slice(5) : null;
+      // Any OTHER race this benefactor still holds MOVABLE tokens in. `movable`
+      // is the server's own predicate — allocated this week, or unvoted, or
+      // marked by a lost initiative election — so the dropdown and the endpoint
+      // cannot disagree about what may still be moved.
       const _convertable = _rows.filter(r =>
-        r.mission_id !== mid && (Number(r.my_stake_ct) || 0) > 0 &&
-        (Number(r.conversions_left) || 0) > 0);
+        r.mission_id !== mid && (Number(r.my_committed_ct) || 0) > 0 && r.movable);
       const _nameOfRace = r => {
         const m2 = (EBX.config.missions || []).find(x => x.id === r.mission_id);
         const t2 = m2 ? (EBX.config.initiatives || []).find(i => i.id === m2.winning_tiv_id) : null;
@@ -3076,17 +3116,17 @@
           'Unallocated &mdash; ' + _tk(_room) + ' available</option>' +
         '<option value="buy"' + (_src === 'buy' ? ' selected' : '') + '>Purchase more tokens</option>' +
         _convertable.map(r =>
-          '<option value="conv:' + r.mission_id + '"' +
+          '<option value="move:' + r.mission_id + '"' +
             (_convFrom === r.mission_id ? ' selected' : '') + '>' +
-            'From ' + esc(_nameOfRace(r)) + ' &mdash; ' + _tk(r.my_stake_ct) + ', ' +
-            r.conversions_left + ' conversion' + (r.conversions_left === 1 ? '' : 's') + ' left' +
+            'From ' + esc(_nameOfRace(r)) + ' &mdash; ' + _tk(r.my_committed_ct) +
+            (r.marked_tiv_id ? ', marked' : ', movable this week') +
           '</option>').join('');
       const _srcMax = _convFrom
-        ? (Number((_rows.find(r => r.mission_id === _convFrom) || {}).my_stake_ct) || 0)
+        ? (Number((_rows.find(r => r.mission_id === _convFrom) || {}).my_committed_ct) || 0)
         : _room;
       const _action = _convFrom
-        ? '<button class="vb-btn" onclick="event.stopPropagation();convertInto(\'' + mid + '\')"' +
-            (myOrg ? '' : ' disabled') + '>Convert &rarr;</button>'
+        ? '<button class="vb-btn" onclick="event.stopPropagation();moveInto(\'' + mid + '\')"' +
+            (myOrg ? '' : ' disabled') + '>Move &rarr;</button>'
         : (_src === 'buy'
             ? '<button class="vb-btn" onclick="event.stopPropagation();buyVoteEbx(\'' +
                 (cause ? cause.id : '') + '\')">Buy &rarr;</button>'
@@ -3095,15 +3135,18 @@
       const amountRow = !_authed ? ''
         : (_blocked
             ? '<div class="vb-amount vb-amount--none">This week&rsquo;s grant can only go to the ' +
-              'initiative election or to this week&rsquo;s race. Purchased tokens can go anywhere, ' +
-              'and tokens already committed elsewhere can be converted in.</div>'
+              'elections of the cause it was granted against. Purchased tokens can go anywhere, ' +
+              'and tokens still movable in another race can be moved in.</div>'
             : '<div class="vb-amount">' +
-                '<label class="vb-amount__label" for="vb-amt-' + mid + '">Add vote</label>' +
+                '<label class="vb-amount__label" for="vb-amt-' + mid + '">' +
+                  (_convFrom ? 'Move' : 'This race holds') + '</label>' +
                 '<select class="vb-amount__src" aria-label="Where these tokens come from"' +
                   ' onchange="event.stopPropagation();setAddSource(\'' + mid + '\', this.value)"' +
                   ' onclick="event.stopPropagation()">' + _srcOpts + '</select>' +
-                '<input class="vb-amount__input" id="vb-amt-' + mid + '" type="number" min="0" step="0.1"' +
-                  ' max="' + (_srcMax / 100) + '" value="' + (_pend && !_convFrom ? _pend / 100 : '') + '"' +
+                '<input class="vb-amount__input" id="vb-amt-' + mid + '" type="number" step="0.1"' +
+                  ' min="' + (_convFrom ? 0 : _minted / 100) + '"' +
+                  ' max="' + (_convFrom ? _srcMax / 100 : (_mine + _room) / 100) + '"' +
+                  ' value="' + (_convFrom ? '' : (_target != null ? _target : _mine) / 100) + '"' +
                   ' placeholder="0" inputmode="decimal"' +
                   (_convFrom || _src === 'buy' ? ''
                     : ' oninput="event.stopPropagation();setPending(\'' + mid + '\', this.value)"') +
@@ -3113,8 +3156,10 @@
                 (myOrg ? '<span class="vb-amount__to">to <b>' + esc(_orgName(myOrg)) + '</b></span>'
                        : '<span class="vb-amount__to vb-amount__to--none">pick a philanthropy above</span>') +
                 '<span class="vb-amount__warn">' +
-                  (_convFrom ? 'a conversion IS a vote here &mdash; it spends one of three'
-                             : 'one way &mdash; committed tokens can only move by conversion') +
+                  (_convFrom ? 'a move IS a vote here &mdash; free, until the week changes'
+                             : (_minted > 0
+                                 ? _tk(_minted) + ' of this is EBX &mdash; it stays with the mission'
+                                 : 'revisable until the week changes, then it is EBX')) +
                 '</span>' +
               '</div>');
       const _cyc = (mission && mission.cycle_num != null) ? mission.cycle_num : '';
@@ -3370,16 +3415,33 @@
         '<div class="rf-line ' + cls + '"><span class="rf-line__k">' + k + '</span>' +
         '<span class="rf-line__v">' + v + '</span></div>';
       const pct = n => (n || n === 0) ? ' <span class="rf-pct">(' + n + '%)</span>' : '';
-      const poolLine = line('rf-line--pool', 'Leader:',
-        d.leaderName
-          ? '<span class="rf-name">' + _esc(d.leaderName) + '</span>' + pct(d.leaderPct)
-          : '<span class="rf-none">no leader yet</span>');
-      const mineLine = line('rf-line--mine', 'My vote:',
-        d.myName
-          ? '<span class="rf-name">' + _esc(d.myName) + '</span>' +
-            (d.myText ? ' <span class="rf-pct">' + d.myText + '</span>' : '')
-          : '<span class="rf-none">no vote yet</span>');
-      const restLine = d.restText ? line('rf-line--rest', '', d.restText) : '';
+      // §2 (2026-08-28) — **the top 3 are back, and my choices are gone.**
+      // "Remove my choices and put back the top 3 as understood." A card's job
+      // on this page is the FIELD — who is winning this race — and one line of
+      // it was being spent on the reader's own position, twice over (the pick
+      // and what was left of their budget). That belongs to the benefactor, and
+      // it now has a page of its own: the seven window cards on profile.html
+      // say what they chose in every race, initiative and organization
+      // together. So the card goes back to the ranking it had before the two
+      // personal lines took two of its three rows.
+      const rank = (Array.isArray(d.top) ? d.top : []).slice(0, 3);
+      const rows = rank.length
+        ? rank.map((r, i) =>
+            '<div class="rf-line rf-line--rank">' +
+              '<span class="rf-rank">' + (i + 1) + '</span>' +
+              '<span class="rf-line__v"><span class="rf-name">' + _esc(r.name) + '</span>' +
+                pct(r.pct) + '</span>' +
+            '</div>').join('')
+        : line('rf-line--pool', 'Leader:', '<span class="rf-none">no leader yet</span>');
+      // Three rows always, so seven cards keep one height whatever the field.
+      const padRows = rank.length
+        ? new Array(Math.max(0, 3 - rank.length)).fill(
+            '<div class="rf-line rf-line--rank rf-line--empty">' +
+              '<span class="rf-rank">&nbsp;</span><span class="rf-line__v">&nbsp;</span></div>').join('')
+        : '';
+      const poolLine = rows + padRows;
+      const mineLine = '';
+      const restLine = '';
       // §2 (2026-08-08): when a replacement has been elected into a window, the
       // card takes the REPLACEMENT's colour — which is why the same slot can
       // change colour between the ME and OE sides (ME names the upcoming
@@ -3457,12 +3519,13 @@
         title: (holder ? holder.name : c.name) + ' ' + ((m ? (m.cycle_num || 0) : 0) + 1),
         date: _fmtShort(decision),
         pool,
-        leaderName: leader ? ((leader.emoji ? leader.emoji + ' ' : '') + leader.title) : null,
-        leaderPct: _pct(leaderEbx, pool),
-        myName: myTop ? ((myTop.emoji ? myTop.emoji + ' ' : '') + myTop.title) : null,
-        // What my vote is worth here, in the unit the vote is actually cast in.
-        myText: myTopEbx > 0 ? EBX.formatTokens(myTopEbx) : '',
-        restText: '<b>' + EBX.formatTokens(rest) + '</b> to other initiatives or uncommitted',
+        // §2 (2026-08-28) — the three leading initiatives, by pool share.
+        // `myTop` / `myTopEbx` / `rest` are still computed above because the
+        // vote panel reads the same helpers; the CARD no longer shows them.
+        top: inits.slice(0, 3).map(i => ({
+          name: (i.emoji ? i.emoji + ' ' : '') + i.title,
+          pct: _pct((i.committed_ebx || i.ebx_committed || 0), pool),
+        })),
         glowColor: opts && opts.glowColor ? opts.glowColor : null,
       });
     }
@@ -3998,12 +4061,14 @@
         daysLeft: _daysLeft(closes),
         title: opts.title || (tiv ? ((tiv.emoji ? tiv.emoji + ' ' : '') + tiv.title) : (mission ? mission.id : cause.name)),
         date: _fmtShort(closes),
-        leaderName: leaderId ? (_orgName(leaderId) + (won ? ' ✓ elected' : '')) : null,
-        leaderPct: _pct(votesOf(leaderId), totalVotes),
-        myName: mine ? _orgName(mine.org_id) : null,
-        // The weight behind my vote, in tokens — not a vote count.
-        myText: myStakeCt > 0 ? EBX.formatTokens(myStakeCt / 100) : '',
-        restText: '',
+        // §2 (2026-08-28) — the three leading philanthropies, by votes then
+        // tokens (the same order `ids` is already sorted in). A decided race
+        // still leads with its winner, marked.
+        top: (won ? [leaderId].concat(ids.filter(x => x !== leaderId)) : ids)
+          .slice(0, 3).map(id => ({
+            name: _orgName(id) + (won && id === leaderId ? ' \u2713 elected' : ''),
+            pct: _pct(votesOf(id), totalVotes),
+          })),
         glowColor: opts.glowColor || null,
       });
     }
@@ -4168,74 +4233,70 @@
           a0 = a1;
         });
       }
-      // The outer ring: the seven causes, the focused one lit. Same ring
-      // cause.html drew around its pie, so the swap kept it.
-      const ringOuter = outerR + 26, ringInner = outerR + 10, sectorAngle = TAU / 7;
-      let ring = '';
+      // §2 (2026-08-28) — **ONE ANNULUS, and it is thin and static.**
+      // "The rotating annulus with pointing sectors is now going to be a thin
+      // static annulus replacing the rays on the election page. The glowy dot
+      // will accompany a white glow surround this weeks sector. The glow will
+      // rotate around the annulus." — and "keep the pie chart as is", so the
+      // pie below is untouched and this ring simply frames it.
+      //
+      // What that retires: the CHEVRON RAYS (three per cause, twenty-one
+      // arrowheads saying a direction that the one moving thing on the ring
+      // already said) and the thick band they hung off. What it keeps: the
+      // marker, which is the clock, and the seven sectors, which are the queue.
+      //
+      // Two signals, kept apart on purpose:
+      //   colour       — the cause the PAGE is pointed at (selection, §1 27b)
+      //   white halo   — the sector the WEEK is in (now), travelling clockwise
+      const cycleWindowMs = (EBX.config.causeLengthDays || 49) * 86400000;
+      const cycleStartMs = EBX.config.cycleStart ? EBX.config.cycleStart.getTime() : Date.now();
+      const frac = ((Date.now() - cycleStartMs) % cycleWindowMs) / cycleWindowMs;
+      const nowSector = Math.min(6, Math.floor(frac * 7));
+
+      const sectorAngle = TAU / 7;
+      const ringInner = outerR + 13, ringOuter = outerR + 21;   // an 8px band
+      let ring = '', halo = '';
       for (let i = 0; i < 7; i++) {
-        const a0 = -Math.PI / 2 + i * sectorAngle, a1 = a0 + sectorAngle - 0.025;
+        const a0 = -Math.PI / 2 + i * sectorAngle, a1 = a0 + sectorAngle - 0.02;
         const x1 = cx + ringOuter * Math.cos(a0),  y1 = cy + ringOuter * Math.sin(a0);
         const x2 = cx + ringOuter * Math.cos(a1),  y2 = cy + ringOuter * Math.sin(a1);
         const ix1 = cx + ringInner * Math.cos(a1), iy1 = cy + ringInner * Math.sin(a1);
         const ix2 = cx + ringInner * Math.cos(a0), iy2 = cy + ringInner * Math.sin(a0);
-        const on = i === causeIndex;
         const c = (EBX.config.causes || []).find(x => x.index === i);
-        ring += '<path d="M' + x1 + ',' + y1 + ' A' + ringOuter + ',' + ringOuter + ' 0 0,1 ' +
+        const sel = i === causeIndex;
+        const now = i === nowSector;
+        const d = 'M' + x1 + ',' + y1 + ' A' + ringOuter + ',' + ringOuter + ' 0 0,1 ' +
           x2 + ',' + y2 + ' L' + ix1 + ',' + iy1 + ' A' + ringInner + ',' + ringInner +
-          ' 0 0,0 ' + ix2 + ',' + iy2 + ' Z" fill="' + (on ? color : 'rgba(245,240,232,0.07)') +
-          '" fill-opacity="' + (on ? 0.85 : 1) + '" stroke="rgba(15,26,20,0.6)" stroke-width="0.75"' +
-          (c ? ' style="cursor:pointer" onclick="selectCause(\'' + c.id + '\')"><title>' +
-               _esc(c.name) + '</title>' : '>') + '</path>';
-      }
-      // §2 (2026-08-27) — **the rays, as chevrons.** Three per cause, just
-      // outside the ring, each a two-stroke arrowhead.
-      // §1 (2026-08-27b): they point the way the GLOWY MARKER travels —
-      // clockwise, the direction the clock actually moves around this ring.
-      // They pointed the other way for a day, which put every arrow on the ring
-      // in disagreement with the one thing on it that is moving.
-      let rays = '';
-      for (let i = 0; i < 7; i++) {
-        const c = (EBX.config.causes || []).find(x => x.index === i);
-        const rc = (c && c.color) || color;
-        const on = i === causeIndex;
-        for (let k = 0; k < 3; k++) {
-          const a = -Math.PI / 2 + (i + (k + 0.5) / 3) * sectorAngle;
-          const rr = ringOuter + 9;
-          const d = 0.045;                       // half-angle of the chevron
-          const tipA = a + d;                    // clockwise — with the marker
-          const backA = a - d;                   // …and the wings trail behind it
-          const tx = cx + rr * Math.cos(tipA), ty = cy + rr * Math.sin(tipA);
-          const b1x = cx + (rr - 5) * Math.cos(backA), b1y = cy + (rr - 5) * Math.sin(backA);
-          const b2x = cx + (rr + 5) * Math.cos(backA), b2y = cy + (rr + 5) * Math.sin(backA);
-          rays += '<path d="M' + b1x + ',' + b1y + ' L' + tx + ',' + ty + ' L' + b2x + ',' + b2y +
-            '" fill="none" stroke="' + rc + '" stroke-width="' + (on ? 2 : 1.4) + '"' +
-            ' stroke-linecap="round" stroke-linejoin="round" opacity="' + (on ? 0.95 : 0.32) + '"' +
-            (on ? ' filter="url(#ebx-pie-glow)"' : '') + ' pointer-events="none" />';
+          ' 0 0,0 ' + ix2 + ',' + iy2 + ' Z';
+        // The white glow SURROUNDS this week's sector: the same wedge, drawn
+        // once underneath in white through the blur, so the light bleeds out of
+        // its edges instead of washing the colour out of it.
+        if (now) {
+          halo += '<path d="' + d + '" fill="#fff" fill-opacity="0.9"' +
+            ' filter="url(#ebx-pie-glow)" pointer-events="none"/>';
         }
+        ring += '<path d="' + d + '" fill="' + ((c && c.color) || color) + '"' +
+          ' fill-opacity="' + (sel ? 0.92 : (now ? 0.55 : 0.22)) + '"' +
+          ' stroke="rgba(15,26,20,0.55)" stroke-width="0.6"' +
+          (c ? ' style="cursor:pointer" onclick="selectCause(\'' + c.id + '\')"><title>' +
+               _esc(c.name + (now ? ' — this week' : '') + (sel ? ' (selected)' : '')) + '</title>'
+             : '>') + '</path>';
       }
 
-      // Now-marker: where the clock stands in the 49-day rotation.
-      const cycleWindowMs = (EBX.config.causeLengthDays || 49) * 86400000;
-      const cycleStartMs = EBX.config.cycleStart ? EBX.config.cycleStart.getTime() : Date.now();
-      const frac = ((Date.now() - cycleStartMs) % cycleWindowMs) / cycleWindowMs;
-      const ma = -Math.PI / 2 + frac * TAU, mr = ringOuter + 6;
+      // The dot rides the same clock the halo does, so it is always inside the
+      // lit sector — one marker, two readings: where in the week we are, and
+      // which week it is.
+      const ma = -Math.PI / 2 + frac * TAU, mr = (ringInner + ringOuter) / 2;
       const mx = cx + mr * Math.cos(ma), my = cy + mr * Math.sin(ma);
-      const aa = ma + 0.25, ar = mr + 5;
-      const ax = cx + ar * Math.cos(aa), ay = cy + ar * Math.sin(aa);
-      const tx = -Math.sin(aa), ty = Math.cos(aa);
-      const w1x = ax - tx * 5.5 + ty * 3, w1y = ay - ty * 5.5 - tx * 3;
-      const w2x = ax - tx * 5.5 - ty * 3, w2y = ay - ty * 5.5 + tx * 3;
       const nowMarker =
-        '<circle cx="' + mx + '" cy="' + my + '" r="5.5" fill="white" fill-opacity="0.95" filter="url(#ebx-pie-glow)"/>' +
-        '<circle cx="' + mx + '" cy="' + my + '" r="3" fill="white"/>' +
-        '<path d="M' + w1x + ',' + w1y + ' L' + ax + ',' + ay + ' L' + w2x + ',' + w2y +
-        '" stroke="rgba(255,255,255,0.75)" stroke-width="1.2" stroke-linecap="round"' +
-        ' stroke-linejoin="round" fill="none" filter="url(#ebx-pie-glow)"/>';
+        '<circle cx="' + mx + '" cy="' + my + '" r="5" fill="white" fill-opacity="0.95" filter="url(#ebx-pie-glow)"/>' +
+        '<circle cx="' + mx + '" cy="' + my + '" r="2.6" fill="white"/>';
+      const rays = '';   // retired 2026-08-28 — see the note above
       return '<svg viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">' +
         '<defs><filter id="ebx-pie-glow" x="-50%" y="-50%" width="200%" height="200%">' +
         '<feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>' +
         '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
-        ring + rays + nowMarker + paths + note +
+        halo + ring + rays + nowMarker + paths + note +
         '<circle cx="' + cx + '" cy="' + cy + '" r="' + (innerR - 2) + '" fill="rgba(15,26,20,0.95)" />' +
       '</svg>';
     }
@@ -5314,7 +5375,21 @@
           const cause = (EBX.config.causes || []).find(c => String(c.id) === String(wantCause));
           const sel = document.getElementById('filter-cause');
           if (cause && sel) {
-            if (typeof setMainMode === 'function') setMainMode('tiv');
+            // §0a (2026-08-28) — **?cause= no longer overrides ?state=.** This
+            // forced 'tiv' unconditionally, so `main.html?state=oe&cause=<id>`
+            // — the link the landing page and every cause card use to reach an
+            // ORGANIZATION election — landed on the INITIATIVE election
+            // instead. Every date on the page was then T, the initiative
+            // election, while the reader was looking for the organization
+            // decision at T+8wk. That is why "human rights: sep 8" read as
+            // correct and the other two read as wrong: Sep 8 IS human rights'
+            // date — for the wrong race. Its org decision is Nov 3.
+            if (!wantState && typeof setMainMode === 'function') setMainMode('tiv');
+            // …and the link points the HERO at the cause, not just the table.
+            // The cards are where a reader takes the date from, and they were
+            // left on whatever cause the clock chose. `selectCause` preserves
+            // the mode (`voteOnCause` only switches when handed a mission).
+            if (typeof selectCause === 'function') selectCause(cause.id);
             sel.value = cause.id;
             try { filterInitiatives(); } catch (e) {}
             const table = document.querySelector('.tiv-table-section');
@@ -6183,15 +6258,22 @@
     const purchased = Math.min(purchasedAll, free);
     const granted = Math.max(0, free - purchased);
     const tk = ct => (typeof window._fmtTkPublic === 'function') ? window._fmtTkPublic(ct) : String(ct);
-    const pending = Math.max(0, server - free);
+    // SIGNED since 2026-08-27c: a draft can release ct as well as spend it, so
+    // this is the boundary the draft would move inside the bar, in either
+    // direction. Clamping it at zero would make a release look like nothing.
+    const pending = server - free;
     // §1 (2026-08-20) — the date on this week's grant. The server sends it as a
     // date (`commit_by`) rather than a week index, so this line and the ME table
     // cannot disagree about which day the week ends on. Absent when there is no
     // dated grant left, and never presented as a threat: missing it costs
     // nothing but next week's date.
-    const byIso = (typeof window._grantCommitBy === 'function') ? window._grantCommitBy() : null;
-    const by = byIso ? new Date(byIso).toLocaleDateString('en-US',
-      { month: 'short', day: 'numeric' }) : '';
+    // §1 (2026-08-27c) — the grant carries its CAUSE where a commit-by date
+    // used to be. The date had nothing left to enforce: a granted token appears
+    // in its cause's election week and cannot be moved or withdrawn, so what is
+    // worth printing on it is the one place it can go.
+    const causeId = (typeof window._grantCause === 'function') ? window._grantCause() : null;
+    const causeObj = causeId ? (EBX.config.causes || []).find(x => x.id === causeId) : null;
+    const by = causeObj ? causeObj.name : (causeId || '');
     // §2 (2026-08-21) — **the allocations bar.** The strip used to be the
     // unallocated balance alone, which answered "what can I still spend?" and
     // nothing else: money already committed vanished off the screen the moment
@@ -6205,8 +6287,15 @@
     // to nowhere. Adding it here is what keeps the total constant while an
     // amount is being typed: dialling moves a boundary inside the bar, it does
     // not destroy tokens, and a total that shrank as you typed would say it did.
-    const orgCt = (w ? (Number(w.staked_ct) || 0) : 0) + pending;
-    const owned = free + tivCt + orgCt;
+    // §1 (2026-08-27c) — the OE side is the server's `committed` segment less
+    // the ME side, which is now inside it: `replace_p1_shares` spends the wallet
+    // too, so both halves of "committed" come from one number instead of one
+    // number and one client-side sum that could disagree.
+    const committedAll = w ? (Number(w.committed_ct) || 0) : 0;
+    const orgCt = Math.max(0, committedAll - tivCt) + pending;
+    const mintedCt = w ? (Number(w.minted_ct) || 0) : 0;
+    const donatedCt = w ? (Number(w.donated_ct) || 0) : 0;
+    const owned = free + tivCt + orgCt + mintedCt + donatedCt;
     const usd = n => (typeof EBX.formatTokenUSD === 'function')
       ? EBX.formatTokenUSD(n / 100) : '$' + (n / 1000).toFixed(2);
     const seg = (whole, part) => (part / Math.max(whole, 1) * 100).toFixed(1) + '%';
@@ -6228,7 +6317,7 @@
           <span class="alloc-set__name">Unallocated</span>
           <b class="alloc-set__n">${tk(free)}</b>
           <span class="alloc-set__usd">${usd(free)}</span>
-          ${pending > 0 ? `<span class="unalloc__pending">${tk(pending)} dialled</span>` : ''}
+          ${pending !== 0 ? `<span class="unalloc__pending">${pending > 0 ? tk(pending) + ' dialled' : tk(-pending) + ' released'}</span>` : ''}
         </div>
         <div class="unalloc__bar" title="Honey: granted, and dated. Moss: purchased, and not.">
           ${free > 0 ? '' : '<i class="unalloc__seg unalloc__seg--none" style="width:100%"></i>'}
@@ -6236,7 +6325,7 @@
           <i class="unalloc__seg unalloc__seg--ret" style="width:${seg(free, purchased)}"></i>
         </div>
         <div class="unalloc__key">
-          <span><i class="unalloc__dot unalloc__dot--fresh"></i>${tk(granted)} granted${by ? ` <em>by ${by}</em>` : ''}</span>
+          <span><i class="unalloc__dot unalloc__dot--fresh"></i>${tk(granted)} granted${by ? ` <em>for ${by}</em>` : ''}</span>
           <span><i class="unalloc__dot unalloc__dot--ret"></i>${tk(purchased)} purchased</span>
         </div>
       </div>
@@ -6256,6 +6345,22 @@
           <span><i class="unalloc__dot unalloc__dot--org"></i>${tk(orgCt)} organizations</span>
         </div>
       </div>
+      <div class="alloc-set">
+        <div class="alloc-set__head">
+          <span class="alloc-set__name">EBX</span>
+          <b class="alloc-set__n">${tk(mintedCt + donatedCt)}</b>
+          <span class="alloc-set__usd">${usd(mintedCt + donatedCt)}</span>
+        </div>
+        <div class="unalloc__bar" title="Held: minted to a mission, and staying. Donated: crossed over, and deductible.">
+          ${(mintedCt + donatedCt) > 0 ? '' : '<i class="unalloc__seg unalloc__seg--none" style="width:100%"></i>'}
+          <i class="unalloc__seg unalloc__seg--ebx" style="width:${seg(mintedCt + donatedCt, mintedCt)}"></i>
+          <i class="unalloc__seg unalloc__seg--don" style="width:${seg(mintedCt + donatedCt, donatedCt)}"></i>
+        </div>
+        <div class="unalloc__key">
+          <span><i class="unalloc__dot unalloc__dot--ebx"></i>${tk(mintedCt)} held</span>
+          <span><i class="unalloc__dot unalloc__dot--don"></i>${tk(donatedCt)} donated</span>
+        </div>
+      </div>
     </div>`;
   }
 
@@ -6263,25 +6368,36 @@
   // has to mean the right thing in each: the OE side writes every dialled stake
   // (`commitAll`), the ME side flushes the initiative slate (`commitVotes`).
   // The button is the panel's, not a mode's.
+  // §1 (2026-08-27c) — the net ct a draft would MOVE, signed. It can be
+  // negative now (a draft that releases ct back to unallocated) and it can be
+  // zero while a draft still exists (three races raised and lowered by the same
+  // amount), so the button cannot arm on this number alone.
   function _commitPending() {
     if (_mainMode === 'org') {
       return (typeof window._pendingTotalCt === 'function') ? window._pendingTotalCt() : 0;
     }
     return (typeof _uncommittedVotes === 'function') ? _uncommittedVotes() * 100 : 0;
   }
+  function _hasPending() {
+    if (_mainMode === 'org') {
+      return (typeof window._pendingCount === 'function') ? window._pendingCount() > 0 : false;
+    }
+    return _commitPending() !== 0;
+  }
   function _commitBtnHTML(tk) {
     const pending = _commitPending();
+    const armed = _hasPending();
     const call = _mainMode === 'org' ? 'commitAll()' : 'commitVotes()';
     // §2 (2026-08-27): Cancel beside Commit, here as everywhere else.
     const drop = _mainMode === 'org' ? 'cancelAll()' : 'cancelVotes()';
     return `<span class="unalloc__commit">
       <button class="vb-btn" id="oe-commit" onclick="event.stopPropagation();${call}"
-        ${pending > 0 ? '' : 'disabled'}
-        title="${pending > 0 ? 'Commits everything you have dialled — one write, and it cannot be undone'
-                             : 'Nothing dialled yet'}">
-        Commit${pending > 0 ? ' ' + tk(pending) : ''}</button>
+        ${armed ? '' : 'disabled'}
+        title="${armed ? 'Writes every allocation you have dialled. Revisable until the week changes, then it is EBX'
+                       : 'Nothing dialled yet'}">
+        Commit${armed && pending !== 0 ? ' ' + (pending > 0 ? tk(pending) : '\u2212' + tk(-pending)) : ''}</button>
       <button class="vb-btn vb-btn--ghost" id="oe-cancel" onclick="event.stopPropagation();${drop}"
-        ${pending > 0 ? '' : 'disabled'} title="Drops everything dialled but not committed">
+        ${armed ? '' : 'disabled'} title="Drops everything dialled but not committed">
         Cancel</button>
     </span>`;
   }
@@ -6389,13 +6505,20 @@
       // behind, and what has been dialled but not yet committed — and the
       // deciding happens in the dialog above the table.
       const committedCt = wr ? (Number(wr.my_stake_ct) || 0) : 0;
+      const mintedCt = wr ? (Number(wr.my_minted_ct) || 0) : 0;
       const pendingCt = (typeof window._pendingFor === 'function') ? window._pendingFor(m ? m.id : '') : 0;
-      const convLeft = wr ? (Number(wr.conversions_left) || 0) : 0;
-      const convNote = (committedCt > 0 && convLeft < 3)
-        ? (convLeft > 0
-            ? `<div class="stk__conv"><b>${convLeft}</b> conversion${convLeft === 1 ? '' : 's'} left</div>`
-            : '<div class="stk__conv stk__conv--out">no conversions left &mdash; these tokens stay here</div>')
-        : '';
+      // §1 (2026-08-27c) — what the row says about a commitment is now WHICH
+      // STATE it is in, not how many moves it has left. The conversion budget is
+      // gone; the week change replaced it, so the two things worth printing are
+      // "this is EBX and it stays here" and "this is still yours to move".
+      const convNote = committedCt <= 0 ? ''
+        : (mintedCt >= committedCt
+            ? `<div class="stk__conv stk__conv--out">EBX &mdash; minted to this mission, and staying</div>`
+            : (mintedCt > 0
+                ? `<div class="stk__conv"><b>${tkOf(mintedCt)}</b> already EBX &middot; the rest is still movable</div>`
+                : (wr && wr.marked_tiv_id
+                    ? '<div class="stk__conv">marked by a lost initiative &mdash; movable to any open race</div>'
+                    : '<div class="stk__conv">movable until the week changes</div>')));
       const stakeCell = !authed
         ? '<span class="mv-none">—</span>'
         : (committedCt <= 0 && pendingCt <= 0
@@ -6403,7 +6526,7 @@
             : `<div class="stk">
                  <div class="stk__say"><b id="stk-val-${m.id}">${tkOf(committedCt)}</b> committed to
                    <span class="stk__to${myOrgName ? '' : ' stk__to--none'}">${myOrgName ? esc(myOrgName) : 'no philanthropy yet'}</span></div>
-                 ${pendingCt > 0 ? `<div class="stk__pending">+ ${tkOf(pendingCt)} dialled &mdash; not committed yet</div>` : ''}
+                 ${pendingCt !== 0 ? `<div class="stk__pending">${pendingCt > 0 ? '+ ' + tkOf(pendingCt) + ' dialled' : '&minus; ' + tkOf(-pendingCt) + ' released'} &mdash; not committed yet</div>` : ''}
                  ${convNote}
                </div>`);
       return `<tr data-id="${init.id}" data-kind="mission" data-mission="${m ? m.id : ''}" class="init-table__row${isPicked ? ' row-selected' : ''}${isActiveRace ? ' row-active-race' : ''}">

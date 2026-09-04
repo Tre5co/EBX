@@ -8,6 +8,19 @@
 // to a vote this week, and a ballot above the table rather than a ballot
 // crammed into a corner of a card that also had to report the rotation.
 const { chromium } = require('playwright');
+const fs = require('fs');
+// Resolve a Chromium binary: PW_CHROME env, else the preinstalled cloud paths,
+// else Playwright's own download (works on a normal dev machine after
+// `npx playwright install chromium`).
+function chromeExe() {
+  const cands = [process.env.PW_CHROME,
+    '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    '/opt/pw-browsers/chromium/chrome-linux/chrome',
+    '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell'];
+  for (const p of cands) { try { if (p && fs.statSync(p).isFile()) return p; } catch (e) {} }
+  return undefined;   // let Playwright pick its own
+}
+
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8000';
 const EMAIL = `ce-check-${Date.now()}@ce-check.example.com`;
@@ -33,7 +46,7 @@ const section = t => console.log('\n=== ' + t);
   });
   const token = (await r.json()).access_token;
 
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const browser = await chromium.launch({ executablePath: chromeExe() });
   const page = await browser.newPage({ viewport: { width: 1400, height: 1100 } });
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message).slice(0, 200)));

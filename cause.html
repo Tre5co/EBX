@@ -1566,6 +1566,65 @@
       .init-table th:nth-child(4),
       .init-table td:nth-child(4) { display: none; }
     }
+
+    /* ══ §2 (2026-08-28) — THE CAUSE BAR IS BACK, AND IT IS THE SAME BAR ══
+       "Cause selection bar will move to discussion page too" — one control, in
+       one place, on both pages. These are main.html's styles verbatim, because
+       the point of moving it is that the two pages do this the same way; a bar
+       that looked different here would be a second control wearing the first
+       one's job.
+
+       Under it, the GUIDE STRIP. The sentence "Click on a cause to participate
+       in the discussion" was written for the seven causes, not for the wheel it
+       ended up captioning, so it comes up here to the thing it describes — and
+       it earns its place by saying where the chosen cause actually IS in the
+       seven-week run, which is the one thing a newcomer cannot infer from a row
+       of seven names.                                                        */
+    .cause-tabs {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;
+      width: 100%; align-items: stretch; min-width: 0; margin-bottom: 2px;
+    }
+    .cause-tab {
+      display: flex; align-items: flex-end; justify-content: center; gap: 6px;
+      padding: 10px 6px 8px; background: transparent; border: 0;
+      border-bottom: 3px solid rgba(245,240,232,0.10);
+      color: rgba(245,240,232,0.55);
+      font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.06em;
+      text-transform: uppercase; cursor: pointer; text-decoration: none;
+      transition: color 0.15s, border-color 0.15s, background 0.15s; min-width: 0;
+    }
+    .cause-tab:hover { color: var(--clr-parchment); background: rgba(255,255,255,0.03); }
+    .cause-tab.selected {
+      color: var(--tab-color, var(--clr-honey));
+      border-bottom-color: var(--tab-color, var(--clr-honey));
+      background: color-mix(in srgb, var(--tab-color, var(--clr-honey)) 10%, transparent);
+    }
+    .cause-tab__emoji { font-size: 0.95rem; line-height: 1; }
+    .cause-tab__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    @media (max-width: 1100px) { .cause-tab__name { display: none; } }
+
+    .cause-guide {
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+      padding: 9px 2px 14px; border-bottom: 1px solid rgba(245,240,232,0.07);
+      margin-bottom: 14px;
+      font-size: 0.76rem; color: rgba(245,240,232,0.55); line-height: 1.5;
+    }
+    .cause-guide__step {
+      font-family: var(--font-mono); font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--guide-color, var(--clr-honey)); white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .cause-guide__step i {
+      width: 7px; height: 7px; border-radius: 50%; display: inline-block;
+      background: var(--guide-color, var(--clr-honey));
+      box-shadow: 0 0 7px var(--guide-color, var(--clr-honey));
+    }
+    .cause-guide__now { color: rgba(245,240,232,0.85); }
+    .cause-guide__cta { margin-left: auto; white-space: nowrap; }
+    .cause-guide__cta a { color: var(--guide-color, var(--clr-honey)); text-decoration: none; }
+    .cause-guide__cta a:hover { text-decoration: underline; }
+
   </style>
 </head>
 <body>
@@ -1587,6 +1646,11 @@
   <!-- ══ HERO: 3 columns ══ -->
   <section class="cause-hero" id="cause-hero">
     <div class="container">
+
+      <!-- §2 (2026-08-28): the seven-cause bar, the same one main.html
+           carries, and the guide line that belongs to it. -->
+      <nav class="cause-tabs" id="cause-tabs" aria-label="Choose a cause"></nav>
+      <div class="cause-guide" id="cause-guide"></div>
 
       <!-- The mission header sits ABOVE THE ANNULUS (backlog). It names what
            every column below is about, so reading it after the wheel was
@@ -1616,10 +1680,11 @@
 
         <!-- CENTER: the cause WHEEL + its centre panel -->
         <div class="cause-hero__col cause-hero__col--center">
-          <!-- §2 (2026-08-27): the wheel is this page's cause toggle, and a
-               control has to say so. "Add to the discussion page above the
-               annulus: Click on a cause to participate in the discussion." -->
-          <div class="cause-annulus-hint">Click on a cause to participate in the discussion.</div>
+          <!-- §2 (2026-08-28): the caption moved. "'Click on a cause…' refers
+               to the 7 causes that the user can select" — so it belongs to the
+               bar at the top of the page, not to the wheel it was sitting on.
+               The wheel still navigates; it is no longer the thing being
+               explained, and it is not being touched in this pass. -->
           <div class="cause-annulus-wrap" id="cause-annulus-mount" style="position:relative;">
             <!-- §2 (2026-08-26): the 7-sector cause WHEEL (EBX.Annulus) mounts
                  here — clicking a sector is how this page changes cause. -->
@@ -3757,10 +3822,75 @@
         '0 0 24px ' + CAUSE_COLOR + '55';
     }
 
+    /* §2 (2026-08-28) — THE CAUSE BAR AND ITS GUIDE LINE.
+
+       The bar is seven links, one per cause, in rotation order — the same seven
+       main.html carries, in the same styles. It navigates the way the wheel's
+       sectors already do (`cause.html?id=…`), so there is one destination and
+       one behaviour however a reader gets there.
+
+       The guide line is the sentence that used to caption the wheel, plus the
+       fact it was missing: WHICH STEP the chosen cause is standing on. Seven
+       names in a row tell a newcomer nothing about what happens when they pick
+       one; "Week 2 of the organization election, decided Sep 15" tells them
+       what they are walking into and what the page below is for.               */
+    const GUIDE_STEP = {
+      1: ['Step 1 · Initiative election',
+          'Benefactors are choosing what this mission will DO. Make the case for one, or research the field.'],
+      2: ['Step 2 · Organization election',
+          'The initiative is settled. Benefactors are choosing WHO carries it out — investigate the candidates.'],
+      3: ['Step 3 · Budgeting',
+          'The philanthropy is elected. Suggest the service, supply and support this mission needs.'],
+      4: ['Step 3 · Budgeting',
+          'The budget is running. Analyse the plan and evaluate the work.'],
+      5: ['Step 3 · Resolution',
+          'The mission is resolving. Evaluate what was done and what it was worth.'],
+    };
+    function renderCauseBar() {
+      const bar = document.getElementById('cause-tabs');
+      const guide = document.getElementById('cause-guide');
+      const list = (EBX.config.causes || []).filter(c => c.index != null)
+        .slice().sort((a, b) => a.index - b.index);
+      if (bar) {
+        bar.innerHTML = list.map(c => {
+          const on = !!(cause && c.id === cause.id);
+          return '<a class="cause-tab' + (on ? ' selected' : '') + '"' +
+            ' style="--tab-color:' + (c.color || '#4e7a4e') + '"' +
+            ' href="cause.html?id=' + encodeURIComponent(c.id) + '"' +
+            (on ? ' aria-current="page"' : '') +
+            ' title="' + String(c.name).replace(/"/g, '&quot;') + '">' +
+            '<span class="cause-tab__emoji">' + (c.emoji || '\u{1F331}') + '</span>' +
+            '<span class="cause-tab__name">' + String(c.name) + '</span></a>';
+        }).join('');
+      }
+      if (!guide) return;
+      if (!cause) {
+        guide.innerHTML = '<span class="cause-guide__step"><i></i>Choose a cause</span>' +
+          '<span>Seven causes, one week each. Pick one to read its mission and join the discussion.</span>';
+        return;
+      }
+      const m = (typeof _displayMission === 'function') ? _displayMission(cause) : null;
+      const ph = (typeof _missionPhaseNum === 'function') ? _missionPhaseNum(m) : 1;
+      const step = GUIDE_STEP[ph] || GUIDE_STEP[1];
+      let when = '';
+      try {
+        const ms = ph === 1 ? _missionP1Ms(m) : (ph === 2 ? _missionP2Ms(m) : null);
+        if (ms) when = ' Decided ' + fmtDate(new Date(ms)) + '.';
+      } catch (e) {}
+      guide.style.setProperty('--guide-color', cause.color || 'var(--clr-honey)');
+      guide.innerHTML =
+        '<span class="cause-guide__step"><i></i>' + step[0] + '</span>' +
+        '<span class="cause-guide__now">' + step[1] + when + '</span>' +
+        '<span class="cause-guide__cta"><a href="main.html?state=' +
+          (ph === 1 ? 'me' : 'oe') + '&cause=' + encodeURIComponent(cause.id) + '">' +
+          (ph === 1 ? 'Vote on the initiative' : 'Vote on the organization') + ' &rarr;</a></span>';
+    }
+
     // Kept as `renderAnnulus(state)` because a dozen call sites repaint the
     // annulus when a tally lands. The WHEEL is mounted once and runs itself off
     // the cycle clock; what those call sites actually repaint is the centre.
     function renderAnnulus(_state) {
+      try { renderCauseBar(); } catch (e) {}
       if (!_wheelMounted && EBX.Annulus && typeof EBX.Annulus.mount === 'function') {
         const mount = document.getElementById('cause-annulus-mount');
         if (mount) {
@@ -4073,9 +4203,12 @@
           <div class="mission-card__sub" style="font-style:italic;color:rgba(245,240,232,0.28);">None yet</div>
         </div>`;
       }
-      const pool = EBX.formatEBX
-        ? EBX.formatEBX(init.pool_value || init.ebx_committed || 0)
-        : (init.pool_value || init.ebx_committed || 0) + ' EBX';
+      // §3 (2026-08-28) — a running race's pool is COMMITTED money, which is
+      // tokens. EBX is what it becomes once the mission identity is final, and
+      // nothing on this leaderboard has got there yet.
+      const pool = EBX.formatTokens
+        ? EBX.formatTokens(init.pool_value || init.ebx_committed || 0)
+        : (init.pool_value || init.ebx_committed || 0) + ' tokens';
       return `<div class="mission-card mission-card--${cls}" data-mission-id="${init.id}"
                    onclick="selectMission('${init.id}')">
         <div class="mission-card__eyebrow">${eyebrow}</div>
@@ -4321,7 +4454,7 @@
           </td>
           <td style="font-size:0.82rem;color:var(--clr-ink-muted);">${orgName}</td>
           <td><div class="init-table__date">${dateStr}</div></td>
-          <td><div class="init-table__ebx">${EBX.formatEBX ? EBX.formatEBX(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' EBX'}</div></td>
+          <td><div class="init-table__ebx">${EBX.formatTokens ? EBX.formatTokens(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' tokens'}</div></td>
           <td><span class="init-table__status ${statusClass}">${statusLabel}</span></td>
         </tr>`;
       }).join('');
@@ -4361,7 +4494,7 @@
       const metaParts = [
         `<span>${(init.status || 'suggested').replace('_', ' ')}</span>`,
         `<span>★ ${init.rating > 0 ? init.rating.toFixed(1) : '—'}</span>`,
-        `<span>${EBX.formatEBX ? EBX.formatEBX(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' EBX'} committed</span>`,
+        `<span>${EBX.formatTokens ? EBX.formatTokens(init.ebx_committed || 0) : (init.ebx_committed || 0) + ' tokens'} committed</span>`,
         `<span>${pct}% of pool</span>`,
         init.winning_org ? `<span>Org: ${init.winning_org}</span>` : '',
       ].filter(Boolean);

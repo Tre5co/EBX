@@ -11,6 +11,19 @@
 // balance share a single pot; the failure mode is a drag that takes money the
 // bar does not give back, which is the ratchet bug the carryover panel had.
 const { chromium } = require('playwright');
+const fs = require('fs');
+// Resolve a Chromium binary: PW_CHROME env, else the preinstalled cloud paths,
+// else Playwright's own download (works on a normal dev machine after
+// `npx playwright install chromium`).
+function chromeExe() {
+  const cands = [process.env.PW_CHROME,
+    '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    '/opt/pw-browsers/chromium/chrome-linux/chrome',
+    '/opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell'];
+  for (const p of cands) { try { if (p && fs.statSync(p).isFile()) return p; } catch (e) {} }
+  return undefined;   // let Playwright pick its own
+}
+
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8000';
 const EMAIL = `oe-check-${Date.now()}@oe-check.example.com`;
@@ -37,7 +50,7 @@ const section = t => console.log('\n=== ' + t);
   });
   const token = (await r.json()).access_token;
 
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const browser = await chromium.launch({ executablePath: chromeExe() });
   const page = await browser.newPage({ viewport: { width: 1400, height: 1100 } });
   const errors = [];
   page.on('pageerror', e => errors.push(String(e.message).slice(0, 200)));
@@ -99,10 +112,12 @@ const section = t => console.log('\n=== ' + t);
     ok(true, '(no "Protect lake ecosystems" row in this database)');
   }
 
-  section('§1 (2026-08-20b): the commitment is READ-ONLY in the row');
-  // The slider is gone. Committing is one way — ct leaves the unallocated bar
-  // for a race and only a conversion moves it again — and a slider is a promise
-  // that a position can be revised. So the row reports and the dialog decides.
+  section('§1: the commitment is READ-ONLY in the row');
+  // The slider is gone and stays gone. It came off on 2026-08-20b because
+  // committing was one way; the reason changed on 2026-08-27c — an allocation
+  // IS revisable inside its own week — but the shape did not, because the row's
+  // job is to report and the dialog's job is to decide. What the row says now is
+  // which STATE the money is in: EBX, or still movable.
   ok(rows.every(r => !r.hasSlider), 'no row carries a slider');
   ok(rows.every(r => r.say === null || /committed to/.test(r.say)),
      'each says what it did: "x committed to <phl>"');
@@ -223,9 +238,21 @@ const section = t => console.log('\n=== ' + t);
   ok(srcs.some(t => /Unallocated/.test(t)), '…the unallocated balance');
   ok(srcs.some(t => /Purchase/.test(t)), '…a purchase');
 
-  section('§0 (2026-08-21): no page in the voting area says EBX');
+  section('§0 (2026-08-21): the voting area counts TOKENS, not EBX');
   // "Voting no longer happens in EBX. It happens in tokens. We need to remove
   // 'EBX' everywhere from the voting area."
+  //
+  // §0c (2026-08-28) — NARROWED to what the finalized model actually says.
+  // This forbade the string EBX anywhere outside the topbar, which was right
+  // while EBX was a rival NAME for the unit. Since 2026-08-27c it is a STATE:
+  // "main.html says tokens on the voting surface because that is where tokens
+  // are; EBX is correct wherever mission-tied, minted money is meant." Two
+  // places on this page mean exactly that and must keep the word — the third
+  // allocation set, which IS the minted bin, and the commit dialog's warn line,
+  // which is the sentence explaining what the week roll does to what you are
+  // about to commit. What must never say EBX is the part a benefactor types an
+  // amount into or reads a pool from. So those two are excluded and the rest of
+  // the page is still held to the rule.
   const stray = await page.evaluate(() => {
     const out = [];
     document.querySelectorAll('body *').forEach(el => {
@@ -233,7 +260,7 @@ const section = t => console.log('\n=== ' + t);
       // the brand are the PRODUCT's name, which is still Earthbux — what had to
       // go is EBX as the unit a vote is counted in.
       if (/^(SCRIPT|STYLE|NOSCRIPT)$/.test(el.tagName)) return;
-      if (el.closest('.ebx-topbar, .ebx-home-mark')) return;
+      if (el.closest('.ebx-topbar, .ebx-home-mark, .alloc-set, .vb-amount__warn')) return;
       for (const n of el.childNodes) {
         if (n.nodeType === 3 && /\bEBX\b/.test(n.textContent)) out.push(
           el.tagName + ': ' + n.textContent.trim().slice(0, 60));
@@ -248,12 +275,19 @@ const section = t => console.log('\n=== ' + t);
   section('the allocations bar');
   // §2 (2026-08-21): "There are 2 sets of 2 allocation states — Unallocated
   // (granted or purchased), and Committed (to an initiative or an organization)."
+  // §0c (2026-08-28) — THREE sets now, not two. The finalized model has four
+  // states, not four half-states: `unallocated → committed → minted → donated`,
+  // and `docs/structure.md` states the shape of the bar in one line — "One bar,
+  // three sets of two". The third set is the minted bin (held · donated), which
+  // did not exist when this assertion was written and which the page has been
+  // drawing since 2026-08-27c. The check was rewritten that day but never RUN,
+  // which is why it still asked for the old shape.
   const sets = await page.$$eval('.alloc-set .alloc-set__name', els => els.map(e => e.textContent.trim()));
-  ok(sets.length === 2 && /Unallocated/i.test(sets[0]) && /Committed/i.test(sets[1]),
-     'two sets: Unallocated and Committed', sets.join(' · '));
+  ok(sets.length === 3 && /Unallocated/i.test(sets[0]) && /Committed/i.test(sets[1]) && /EBX/i.test(sets[2]),
+     'three sets: Unallocated · Committed · EBX', sets.join(' · '));
   const seg = await page.$$eval('.unalloc__seg:not(.unalloc__seg--none)',
     els => els.map(e => e.style.width));
-  ok(seg.length === 4, 'four segments — granted · purchased · initiatives · organizations',
+  ok(seg.length === 6, 'six segments — three sets of two',
      seg.join(' / '));
   ok(parseFloat(seg[0]) === 100, 'a new account holds nothing but its grant', seg[0]);
   ok(await page.$eval('.unalloc__title', e => /Allocations/i.test(e.textContent)),
@@ -271,18 +305,22 @@ const section = t => console.log('\n=== ' + t);
   ok((await page.$$('.unalloc__note')).length === 0,
      'the paragraph explaining the allocations is gone');
 
-  // The commit-by date survives the cut: it is a fact about the tokens, not an
-  // explanation of the panel.
+  // The grant's CAUSE survives the cut where the commit-by date used to: it is a
+  // fact about the tokens, and the only fact that still binds them.
   const key = await page.$$eval('.unalloc__key', els =>
     els.map(e => e.textContent.replace(/\s+/g, ' ').trim()).join(' | '));
-  ok(/by [A-Z][a-z]{2} \d/.test(key), 'granted tokens carry a commit-by date', key);
+  ok(/granted for /.test(key), 'granted tokens carry the CAUSE they were granted for', key);
+  ok(!/by [A-Z][a-z]{2} \d/.test(key),
+     '…and no commit-by date, because a granted token cannot expire or move');
   ok(/granted/.test(key) && /purchased/.test(key),
      '…and the unallocated set still names its two kinds');
   ok(/initiatives/.test(key) && /organizations/.test(key),
      '…while the committed set names its two');
-  // "one way" moved to the dialog, beside the act it governs.
-  ok(await page.$eval('.vb-amount__warn', e => /one way|conversion/i.test(e.textContent)),
-     'and committing is still described as one way, where it is done');
+  ok(/held/.test(key) && /donated/.test(key),
+     '…and the third set is EBX: held, and donated');
+  // The week change moved to the dialog, beside the act it governs.
+  ok(await page.$eval('.vb-amount__warn', e => /week changes|EBX/i.test(e.textContent)),
+     'and the dialog says what the week change will do to this amount');
 
   section('committing: an amount and a philanthropy, then one button');
   const mid = activeRow.mission;
@@ -293,6 +331,8 @@ const section = t => console.log('\n=== ' + t);
   if (pick) { await pick.click(); await page.waitForTimeout(600); }
   const amt = await page.$(`#vb-amt-${mid}`);
   ok(!!amt, 'the dialog carries an amount field for the picked race');
+  ok(await page.$eval('.vb-amount__label', e => /This race holds/.test(e.textContent)),
+     '…and it is labelled as a POSITION, not an addition');
   await amt.evaluate(el => {
     el.value = '3';
     el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -321,11 +361,15 @@ const section = t => console.log('\n=== ' + t);
   await page.waitForTimeout(2500);
   const server = await (await fetch(BASE + '/wallet', {
     headers: { Authorization: 'Bearer ' + token } })).json();
-  ok(server.wallet.staked_ct === 300, 'the server holds 300 ct committed',
-     server.wallet.staked_ct + ' ct');
+  ok(server.wallet.committed_ct === 300, 'the server holds 300 ct committed',
+     server.wallet.committed_ct + ' ct');
   ok(server.wallet.free_ct === 700, '…and 700 ct unallocated', server.wallet.free_ct + ' ct');
-  ok(server.wallet.free_ct + server.wallet.staked_ct === 10 * T,
+  ok(server.wallet.free_ct + server.wallet.committed_ct === 10 * T,
      'conservation survives the round trip');
+  ok(server.wallet.minted_ct === 0,
+     '…and none of it is EBX yet: the week has not changed');
+  ok(!('staked_ct' in server.wallet) && !('claimed_ct' in server.wallet),
+     '`staked` is `committed`, and `claimed` went back to meaning an org claim');
   const srvRow = server.rows.find(r => r.mission_id === mid);
   ok(srvRow && srvRow.my_stake_ct === 300, 'on the race the dialog named');
   ok(srvRow && srvRow.my_org_id, '…standing behind the philanthropy picked with it');
@@ -367,7 +411,7 @@ const section = t => console.log('\n=== ' + t);
   const b2 = await (await fetch(BASE + '/missions/' + mid + '/p2/tally')).json();
   await fetch(BASE + '/wallet/commit', { method: 'POST',
     headers: { Authorization: 'Bearer ' + t2, 'content-type': 'application/json' },
-    body: JSON.stringify({ mission_id: mid, add_ct: 250 }) });
+    body: JSON.stringify({ mission_id: mid, target_ct: 250 }) });
   const a2 = await (await fetch(BASE + '/missions/' + mid + '/p2/tally')).json();
   ok(Math.round((a2.pool_ebx - b2.pool_ebx) * 100) === 250,
      'the pool grew by 2.5 tokens with no philanthropy named',
@@ -376,16 +420,34 @@ const section = t => console.log('\n=== ' + t);
      '…and every one of them is reported as unassigned',
      b2.unassigned_ebx + ' \u2192 ' + a2.unassigned_ebx);
 
-  section('and it cannot be taken back');
+  section('and inside the week it CAN be taken back');
+  // The exact inverse of what this section asserted from 2026-08-20b until
+  // 2026-08-27c. Committing was one way then; the week change is the ratchet
+  // now, so a draft made this week can be dialled back down and the balance
+  // returns. What cannot be undone is a week roll — `wallet_check` guards that
+  // half, where a row can be aged without waiting seven days.
   const undo = await fetch(BASE + '/wallet/commit', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' },
-    body: JSON.stringify({ mission_id: mid, add_ct: -300 }),
+    body: JSON.stringify({ mission_id: mid, target_ct: 100 }),
   });
-  ok(undo.status === 422, 'a negative commitment is refused by the API', 'HTTP ' + undo.status);
-  const still = await (await fetch(BASE + '/wallet', {
+  ok(undo.status === 200, 'lowering this week\u2019s allocation is accepted', 'HTTP ' + undo.status);
+  const back = await (await fetch(BASE + '/wallet', {
     headers: { Authorization: 'Bearer ' + token } })).json();
-  ok(still.wallet.free_ct === 700, '…and the balance did not grow back');
+  ok(back.wallet.free_ct === 900, '…and the 2 tokens came back to unallocated',
+     back.wallet.free_ct + ' ct');
+  ok(back.wallet.free_ct + back.wallet.committed_ct === 10 * T,
+     '…with nothing created or destroyed on the way');
+  const neg = await fetch(BASE + '/wallet/commit', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' },
+    body: JSON.stringify({ mission_id: mid, target_ct: -300 }),
+  });
+  ok(neg.status === 422, 'a NEGATIVE target is still refused by the schema',
+     'HTTP ' + neg.status);
+  await fetch(BASE + '/wallet/commit', { method: 'POST',
+    headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' },
+    body: JSON.stringify({ mission_id: mid, target_ct: 300 }) });
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForTimeout(1500);
   ok(await page.$$eval('.alloc-set__n', els => els[0].textContent.trim()) === '7',
@@ -401,7 +463,7 @@ const section = t => console.log('\n=== ' + t);
   const after = await (await fetch(BASE + '/wallet', {
     headers: { Authorization: 'Bearer ' + token } })).json();
   ok(after.granted_this_week_ct === 0, 'reloading the page grants nothing further');
-  ok(after.wallet.free_ct + after.wallet.staked_ct === 10 * T,
+  ok(after.wallet.free_ct + after.wallet.committed_ct === 10 * T,
      'the balance is still exactly one week’s grant');
 
   section('no script errors');

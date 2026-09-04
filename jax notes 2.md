@@ -1,30 +1,66 @@
-## I start here
-**Broad (ongoing changes)**
-- [ ] Replace org/organization replace with "philanthropy"
-- [ ] Replace misison support with "research"
+## Instructions -> Notes & structure -> Instructions
+The system relies on 3 elections.
+Cause election - hard to change
+Mission election - Conceptual election - seperate from individual entities
+Organization election - Elect a group of humans who agree to be public.
+Bens park money - Goal is to get it used up. 
+Orgs park influence. Goal is to perform their stated purpose.
+objective-based payout model
+**Causes, Initiatives, Missions**
+Anyone can propose a cause. A cause worth standing up is a ubiquitously essential human experience — something nearly everyone lives through, that someone would donate to see optimized, and that is resistant to capture. Propose one, pick its colour, and make your case in the discussion: the cause election is on the Context page →
+The fine print, in four lines
+The benefactors should be encouraged to carry their earthbux through successive phases of the mission. 
 
-**Specific (enactable now)**
+**Organizations, Discussion, News**
+- HEADLINES
+- **PHL addition from cause.html** Users need to be able to suggest organizations even before the initiative has been decided. In this case, they do not need to be associated with any particular initiative or cause. This is so they can tailor their page depending on how they want to fit into our structure, without being forced to make commitments they don't yet understand. There will be links elsewhere to register/nominate an org. These will take you to profile page, but when nominating for a mission currently in OE, the whole experience stays in main.html.
 
-**Specific (future)**
-- Image attachments on posts —Image generation technology? Build an image search tool that finds/creates a good open source picture to represent the mission.
+**Profile, Donations**
+General, Various missions, different membership types - access
+Ebx = membership
+  - You elevate yourself to higher roles in the organization though participation.
+    - Valid posts, budget item approval, donation threshold, etc. 
+- Page is sorted by recent activity. 
+- Donations can ALWAYS be received.
+- We need the page to be usable by an org rep and a personal profile. This is to emphasize that both share the same goal.
+## ASCII MODELS
+**Profile**
+ ____________________________________________________________________________
+|ebx___________   ________________________________________    ____|_badge____|
+| |            | |                                         | |             | |
+| |      c     | |                     b                   | |      a      | |
+| |            | |                                         | |             | |
+| |____________| |_________________________________________| |_aa_ab_ac____| |
+|                       ____________________________                         |
+|  ____________        |______________|_____________|          ____________  |
+| |____________|                                              |____________| |
+|  ____________                                                ____________  |
+| |____________|                      d                       |____________| |
+|  ____________                                                ____________  |
+| |____________|                                              |____________| |
+|  ________________________________________________________________________  |
+| |                                                                        | |
+| |                            f                                           | |
+| |                                                                        | |
+| |                                                                        | |
 
-**Conceptual**
-How a cause changes
+a. Profile. aa. settings ab. member mode (must have a coin in c. selected) or benefactor mode if already in member mode. ac. sign out
+b allocations. This section will also be used for conversions.
+c. EBX wallet (credit coins)
+d. 3D globe display that rotates depending on which mission is selected. It will mark the locations relevant to thie mission. This element will be complex and will be the main element on the mission page too. (I might move tyhis to the mission page later but start building it for now)
+e. (box on top and 6 boxes on either side of d.) Choices table becomes these. Each represents a weekly window from the election page. Each box has one initiative and one organization. Time rotates clockwise, so this weeks top card has the initiative on the right and the organization on the left. right cards have i on bottom and o on top, left has i on top and o on bottom.
 
-The seven causes are meant to be hard to change — they are the standing subjects the whole system elects inside, so a week of enthusiasm should not move one. A challenger has to win the same window 7 weeks in a row. Lose a single week and the streak resets, and the swap date moves back by a full rotation.
+**Election**
 
-A replacement is elected at least one full rotation (7+ weeks) before the ME.
 
-Anyone can propose a cause. A cause worth standing up is a ubiquitously essential human experience
-
-1. **CE**
-Replace the cause election as an area on top of the election panel. It can persist across ME/OE. Design:
+ME Panel
  _________________________________________________________________________
 |      |    c                                                      |      |
 |   a  |    f          g        h             i                    |  b   |
 |      |    d                                                      |      |
 |      |    e                                                      |      |
 |______|___________________________________________________________|______|
+CAUSE ELECTION PANEL
 
 a. We only need 1 column of 7 horizontal lines that get colored as the weeks go by
 b. Show Cause Table
@@ -36,37 +72,86 @@ g. Make your case
 h. Commit
 i. Cancel
 
-note: the cause toggle in the CE is no longer necessary - it is toggled by the main page cause toggle (see below)
+**Mission**
+Before designing the page, I need to design the process of a mission.
+ __________________________________________________________________________________________
+|__________________________________________________________________________________________|
+|  __________                                                       _____________________  |
+| |          |                                                     |                     | |
+| |          |                                                     |                     | |
+| |          |                                                     |                     | |
+| |          |                                                     |                     | |
+| |     a    |                         b                           |          c          | |
+| |          |                                                     |                     | |
+| |          |                                                     |                     | |
+| |          |                                                     |                     | |
+| |__________|                        h                            |_____________________| |
+|  ________________________________________________________________                        |
+| |                                                                |                       |
+| |                         d                                      |          e            |
+| |                                                                |                       |
+| |________________________________________________________________|                       |
+|  ________________________________________   ___________________________________________  |
+| |                                        | |                                           | |
+| |                 f                      | |                     g                     | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |                                        | |                                           | |
+| |________________________________________| |___________________________________________| |
+|  ______________________________________________________________________________________  |
+| |                                                                                      | |
+| |                                         i                                            | |
 
-2. **More Election Page**
-Move the ME/OE toggle from above to below the annulus, and remove the horizontal line to its right.
+h. 7-cause selection
+a. 3 previous missions in that cause with the left right pager above. Currently shown on the rhs of cause.html, but the pager is below the 3.
+b. Globe UI from profile, surrounded by the 7-sectored annulus from main.
+c. High-level mission details. Membership details, allocations, my votes&allocations, activity status, inbox.
+d. About and Reviews and graph - Status update
+- Mission statement, org overview, case and context...
+e. Credit coin UI
+f. IN PROGRESS - Any input to the page is done from here. 
+g. DONE
+i. Essentially less addictive version of cause.html
 
-Move the 7-cause page toggle from the top of the page to in between the top of the annulus and the top cards. This will function as a toggle for the ME table and the CE panel as well as the election panel.
+**Newsfeed** cause.html - designed to capture attention. NOT sorted by mission.
+ __________________________________________________________________________________________
+|__________________________________________________________________________________________|
+|                 _______________________________________________________________________  |
+|                |                                                              e  |     | |
+|                |                                                                 |     | |
+|       c        |                                a                                |  b  | |
+|                |                                                                 |     | |
+|  ____________  |______________________________________________________________f__|_____| |
+| |            |  _______________________________________________________________________  |
+| |            | |                                                                 |     | |
+| |            | |                                                                 |     | |
+| |            | |                                                                 |     | |
+| |     d      | |                                                                 |     | |
+| |            | |_________________________________________________________________|_____| |
+| |            |  _______________________________________________________________________  |
+| |            | |                                                                 |     | |
+| |            | |                                                                 |     | |
+| |____________| |                                                                 |     | |
+|                |                                                                 |     | |
+|                |_________________________________________________________________|_____| |
 
-Move the just-elected mission from the lhs to the rhs top card. instead of "Winner of Forests: Invasive species removal in vermont. Elected Aug 25, 2026.", add a bar at the top of the card with "Winner of Forests" and a bar at the bottom with "Elected Aug 25, 2026."
-Similarly, add a bar at the top of the budgeting card saying "Winner of Indiginous Land Title Fund" and a bar at the bottom saying "Elected <date>"
-
-Add a new ME card below (top right side card), and shift each other card clockwise so that the upcoming ME election is now the top lhs card. Keep the orientation of the OE cards the same.
-
-The "To vote" line should only be on the lhs top card. Make it say "Select a cause, and vote."
-
-Replace the filter below the table with a button "Show all Initiatives"
-
-For now, move the allocations panel to the very bottom of the page until its design is complete. The bottom of the side cards should now be flush with the top of the election panel.
-
-Add the rays to the election annulus, but turn them into '<' symbols to indicate the direction of the dot & cards. 
-
-Remove the rays from the Discussion page annulus, and reverse the direction the svg annulus sections are pointing.
-
-Add to the discussion page above the annulus "Click on a cause to participate in the discussion."
-
-Need a deselect or cancel button next to commit everywhere.
+a. Newsfeed-like experience. New articles, conversations, reactions, all-encompassing and more short form content. This is the hub for scrolling. If people want to mindlessly scroll, this is where they do it. Image and video content.
+b. Reactions
+c. Annulus currently on cause.html - smaller - remove text from inside annulus sectors and glowy white marker (although keep glow around active sector.) keep rotation so active sector is always towards the top. Center should indicate active cause and days ledt.
+d. Control panel for the feed - Search, filters, settings, compose, etc.
+e. small annulus - links to a mission home
+f. reply
 
 
- — something nearly everyone lives through, that someone would donate to see optimized, and that is resistant to capture. Propose one, pick its colour, and make your case in the discussion: the cause election is on the Context page →
-The fine print, in four lines
 
-1, 2, 3, & 4 above correspond to a, b, c, & d in the drawing below. It would be helpful to have a better structural representation of both of these elements combined.
+The below drawings are outdated
  __________________________________________________
 |________________________k_           _____________| 
 |______a_____|______b_____||_____c____||______d____| tabs
@@ -115,149 +200,12 @@ g. linked budget items
 h. linked media
 i. external links
 
-Context page should be called the "Election" page.
-
-Swap the annuli between the election and discussion pages. Also move the page toggles across the top from the discussion to the eleciton page. 
-
-Now the pie chart annulus is on the election page, which makes more sense. We can add pie-chart vote counting for the OE and CE. 
-
-Maybe we should move the annulus from the discussion page onto the main page? Swap the 2 annuli? Move the 7 tabs also to the election page?
-
-Dates in the cause cards are still wrong.
-
-Seperating user choices from total tallies.
-
-Ok. Major page swap incoming. Move the table to the profile page. This is the same as the choices table. Move the discussion to the main page. 
-
-**News on discussion page** - Headlines on the election cards?
-1. **Profile page buildout**
-- You have your general profile, which is used to elect. You also have your mission profile, which gives you access to active missions.
-  - You receive minted EBX when you receive org membership
-  - You elevate yourself to higher roles in the organization though participation.
-    - Valid posts, budget item approval, donation threshold, etc. 
-- Token/EBX conversion hub
-  - Tokens can be converted to EBX at rate. 
-  - Any ongoing mission may receive ebx. Newer missions less likely to be funded.
-  - That's okay because of projected app growth. 
-- Globe with benefactor at center. Geolocate different initiatives/organizations.
-- 1 mission at a time, always?
- - 1 at a time when in org mode
-- Page is sorted by recent activity. 
-- We need the page to be usable by an org rep and a personal profile. This is to emphasize that both share the same goal. Earthbux admin should also use these pages to build membership roles. Some of the user-specific items can be removed from the main page. 
+## Unmanaged as of yet
 
 
-- I need a better solution to deal with the possibility but not abuse of reallocation of tokens. Maybe: tokens can only be moved forward in time? Yes. I like this. So scrap the 3 total transactions, and we don't need to assign tokens with a date. Just a rule. You can only move tokens from newer to older causes and not the other way around. So yes, a user could, week after week, add every new dollar to a maturing mission. But they can't, even with purchased tokens, move them from a preexisting mission to a newly created one. We will be able to visualize this nicely with the election cards because of their arrangement by graying out those behind the selected card while the user is transferring tokens.
-
-The issue with this is that all cash eventually ends up at the front mission, which gives unfair precedence to the oldest mission - the earliest mission automatically receives ridiculous amounts of money. BUT users are able to take money out of missions once they are into the budgeting stage, which will then be able to be put back into new missions. 
-
-
-- The top card left area has room for a short description/instructions on how to vote. "Propose an initiative" should be removed from this area. The "Mission x was initiated..." should say "Winner of for1: x initiated y" and this chould be below the card. The description/instructions should be above the card. 
-It should say. "To vote, select the election type, and click on one of the 7 cards. Then allocate your tokens."
-
-- Main needs to indicate that this page is for the first 2 phases of the election, before the mission really starts. Instead of "Context" at the top, say "Voting phase"
-- Admin should be able to remove initiatives, posts, orgs, etc. by the same mechanism which removes benefactors.
-
-Voting no longer happens in EBX. It happens in tokens. We need to remove "EBX" everywhere from the voting area. It's confusing because votes and ebx appear to be seperate. (They kind of are, votes can carry more or less weight depending on how many tokens are behind them).
-
-The OE race pool is not updating when I commit votes.
-
-Allocations should be 
-Allocations: 88 tokens - $8.80 - 
-
-
-
-1. **CE Work** More updates in structure.md top card section.
-2. **OE** It's starting to crystallize. Redesign and updates in structure.md main.html backlog.
-
-
-- **PHL addition from cause.html** Users need to be able to suggest organizations even before the initiative has been decided. In this case, they do not need to be associated with any particular initiative or cause. This is so they can tailor their page depending on how they want to fit into our structure, without being forced to make commitments they don't yet understand. There will be links elsewhere to register/nominate an org. These will take you to profile page, but when nominating for a mission currently in OE, the whole experience stays in main.html.
-
-A token is a vote, not yet a donation.
-    Earthbucks are all identical and transferable — one Earthbux dime, worth 10¢, the same in anyone's hands. None of them is a donation until it is labelled with an organization.
-Labelling it is called finalizing.
-    Finalized money can be converted between missions; it cannot be exchanged back for cash. What you hold after that is a credit token, and it becomes a credit coin belonging to the winning organization once it is donated.
-Backing the winner moves it automatically.
-    If the organization that wins is the one you voted for, the coin moves on its own. If it isn't, you have 7 weeks to decide how much of your original share to commit — floor 10% of what you first committed.
-So the worst case is small.
-    Dislike both the cause and the organization that wins it, and the most you can lose is 10% twice. We audit these organizations as publicly as we can — that is the whole product. Give through us.
-
-the organization — elected in phase 2, the pooled donation recipient the initiative — elected in phase 1, the mission it claims
-
-        *make your case →*, then the race with a **%** on both sides, the
-        suggestion pager, the seven windows abbreviated onto one row (ATM · OCE ·
-        LAN · FOR · WIL · HR · HP, full name in the title attribute), the streak
-        bars, and a one-line footer. Note (i) below is done: the paragraph is on
-        the landing page.
- _______________________________________ _______________________________________
-|+ Propose an initiative for oce1       | propose a cause to replace <a>        | a. oce2 if streak unbroken. else oce3
-                                        | cause input   color     make your case| "make your case" links to the discussion where the user writes a case for the cause
-                                        | vote - [oceans]<%> [<proposition>]<%> | % displays the percent of the vote each have
-                                        | clickthrough and select other sugg.<%>| This row allows users to look at and vot on the causes others have proposed 
-                                        | 7 causes toggle*                      | *Abbreviate so they all fit in one row
-                                        | horizontal bars display               |
-                                        |<i>____________________________________|i. ✅ 2026-08-10 — moved to `index.html#cause-change` ("How a cause changes"), which also clears the landing backlog's "Add cause change explanation". The card links to it.
-
-
-     ______________________________________________________date_
-    |winning_tiv Organization Election      |total fund   |     |         
-    | ______________________ |  my_vote | my_commit     |vote  || This row shows which organization the logged-in benefactor has their vote going towards
-p2  ||Leaderboards*         | _______  ______   _______        || *Not the recap, which it currently says. this is the organization race which will be elected at the date above
-    ||                      ||sent   ||Limbo  ||wdrawn ||wdraw || *This row is all totals, not specific to benefactor
-    ||                      ||_______||_______||_______||purchs||
-    ||______________________|___________________________________|
-    | evaluations of selected org or the one they are voting for| if none selected from leaderboard. Links to the expanded table row for that org.
-    | Analysis for this mission                                 |
-    |___________________________________________________________|
-    _______________________________________________________date
-    |"        *                "   |Posts recap:                | *As is
-    | WINNER                       | best case for              |
-p1* | ___my_vote. its_%_of_total__ | leading contex             | *recap
-    || 2nd, 3rd, 4th.*            ||                            |* Only those 3. 
-    ||                            ||                            |
-    ||____________________________||                            |
-    |______________________________|____________________________|
-
-- [x] **Cause election 'cause to replace'** — BUILT 2026-08-06. Toggle moved to the bottom under "Select cause to replace"; the threshold is now **7 weeks in a row** (one per streak column). Still framed — the ballot, the suggestions and the streak are local to the page until the cause vote has a backend (README §4).
-
-a. Vote button for active cause
-b. Vote button for alternative cause
-c. << suggestions >> (page through alternative cause suggestions) (display eachs' vote share)
-d. "Replace <cause> with <cause_suggestion> on <date>"
-e. Dialogue for a user to suggest a cause. (Automatically populates c)
-f. submit
-g. 7 columns. The leftmost (active) has 1 horizontal line and the rightmost (previous) has 7. The lines glow the suggested new cause color as they win successive weeks. If they lose, the bars all turn to the current cause color, and <date> in d. gets pushed back by 7 weeks.
-h. The 7 causes, toggle buttons for the card
-i. Select cause to replace"
-
-Cause Election Upgrade
- _______________________________________ _______________________________________
-|+ Propose an initiative for oce1       | propose a cause to replace <a>        | a. oce2 if streak unbroken. else oce3
-                                        | cause input   color     make your case| "make your case" links to the discussion where the user writes a case for the cause
-                                        | vote - [oceans]<%> [<proposition>]<%> | % displays the percent of the vote each have
-                                        | clickthrough and select other sugg.<%>| This row allows users to look at and vot on the causes others have proposed 
-                                        | 7 causes toggle*                      | *Abbreviate so they all fit in one row
-                                        | horizontal bars display               |
-                                        |<i>____________________________________|i. The description at the bottom must be moved to the landing page.
-
-
-
-Earthbux are voting tokens.
-
-The benefactors should be encouraged to carry their earthbux through successive phases of the mission. 
-
-
-The system relies on 3 elections.
-Cause election - hard to change
-Mission election - Conceptual election - seperate from individual entities
-Organization election - Elect a group of humans who agree to be public. 
-
-I've seeded with these causes.
-
-Bens park money - Goal is to get it used up. 
-Orgs park influence. Goal is to perform their stated purpose.
 
 Bens decide which mission gets the money.
-Orgs work for more money (over 1/4 just by winning election!) - objective-based payment model
+Orgs work for more money (over 1/4 just by winning election!) - 
 
 Security reasoning- You cannot join just to vote on an org.
 
