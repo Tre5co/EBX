@@ -74,3 +74,42 @@ the stuff that only LOOKS dead.
   `Donation_Landscape_Brief.md`, `Endowed_Grantmakers_Deep_Dive.md`) are
   research rather than build documents. A `docs/README.md` naming what each one
   is for would stop the build docs and the research docs being read as one pile.
+
+---
+
+## Added 2026-09-08 (build-seq §0 + §6)
+
+### Done this pass — struck from the list above
+
+- **`docs/` has no index** — it has one now: `README.md` §12, "The docs index",
+  fourteen files with a verdict on each. The three folds and the one drop it
+  recommends are entered below rather than done, because folding research
+  documents is an editorial act, not a cleanup.
+- **`.ebx_shared.build.js`** — a stray candidate build written into
+  `resources/js/` while wiring the build guard, before it was taught to build
+  into a temp directory instead. Moved to `docs/_to_delete/`; delete the folder.
+- **`docs/_to_delete/gantt_probe.mmd`** — the mermaid block from `gantt.md`,
+  copied out so it could be rendered and looked at in a container with a
+  browser. Served its purpose.
+
+### New — §A, safe now
+
+| What | Where | Why it can go |
+|---|---|---|
+| `Donation_Landscape_Brief.md` · `Endowed_Grantmakers_Deep_Dive.md` | `docs/` | Both are the same argument as `RESEARCH.md` at different lengths. **Fold into it**, keeping every source link, and the research is one document instead of three. |
+| `Donation_Recipient_Landscape.xlsx` | `docs/` | `DRL.csv` is the same table and it diffs. Keep the CSV. |
+| `docs/_to_delete/` | | The whole folder, once its two files above are confirmed unwanted. |
+
+### New — §B, one edit then safe
+
+| What | The edit first |
+|---|---|
+| `backend/seed/pilot.py` | **Retired 2026-09-08** — README §10 now says so instead of calling it "sample data". It stays on disk because the rows it generated (`init-0NN`, the GameMaster account) are the development database, and deleting the generator does not delete them. It goes when the **voting bots** replace it (`docs/gantt.md` §1) — bots drive the real endpoints, so their data has the shape the code actually produces. |
+| `docs/PLAN_2026-09-02.md` | Fold into `docs/gantt.md` once its seven passes are done. Two planning documents is one too many, and `gantt.md` has the dates. |
+
+### New — §C, live and load-bearing, but wrong
+
+| What | The problem |
+|---|---|
+| **`frontend/src/ebx_shared.ts`** | The most consequential entry on this page. The SHIPPED `resources/js/ebx_shared.js` is **ahead of its own source**: six `EBX.*` entry points the `.ts` has never had (`Dialogs` — 264 lines and 13 call sites — plus `formatTokens`, `formatTokenUSD`, `formatVoteWindow`, `openP1Mission`, `USD_PER_TOKEN`), their six private helpers, and twelve further functions whose bodies differ. So `npm run build`, the command `README.md` §1 tells you to run after any `.ts` edit, **deletes live code and succeeds silently**. `scripts/build_guard.js` (new this pass) now stands in front of it and refuses; the build is safe, the divergence is not fixed. Two ways out: back-port ~24 KB from the `.js` into the `.ts`, or retire the TypeScript and make the `.js` the source. **Not a judgement to make inside a build pass.** |
+| the six dead renderers in `ebx_shared.js` (§C above) | Unchanged, and now with a second reason to be careful: they are among the twelve functions whose `.js` and `.ts` bodies differ, so "delete it there and rebuild" is exactly the operation the guard now blocks. Resolve the divergence first. |

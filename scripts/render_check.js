@@ -8,12 +8,10 @@ const PAGES = [
   // index.html — the five sections of structure.md §1a–§1e, 2026-08-18. The
   // old selectors (.ld-sys__row, .ld-fine__item, #cause-change, #ld-causes)
   // named blocks §1f moved off the page and into the doc's backlog.
-  ['index.html', '', ['.ld-lede', '#ld-cta .ld-cta__btn', '.ld-couplet span',
-                      '.ld-elect__row', '.ld-elect__when', '#ld-dime-viz svg',
-                      '.ld-runway__bars', '#ld-active-users b',
-                      '#ld-forum .ld-forum__cat', '#ld-forum .ld-tt__btn',
-                      '#ld-forum .ld-tt__btn.on', '#ld-forum .ld-tt__what',
-                      '.ld-term--org', '.ld-step', '.ld-scale__split']],
+  // 2026-09-16: the landing as rebuilt 2026-09-15 plus build-seq §2.
+  ['index.html', '', ['.ld-claim', '#ld-cta .ld-cta__btn', '.ld-how', '.ld-steps .ld-step',
+                      '.ld-heads__h', '.ld-band', '.ld-trio__cell', '#ld-dime-viz svg',
+                      '.ld-runway__bars', '#ld-active-users b', '.ld-term--org']],
   ['mission.html', '?mission=oce1', ['#ps-ring svg', '.ps-leg',
                                      '#ml-board .ml-row', '.ml-row__bar i', '#ml-note']],
   ['cause.html', '?id=atmosphere', ['#pb', '#pb-heading', '#pb-phase .pb-tab', '#pb-cat .pb-tab',
@@ -41,8 +39,17 @@ const PAGES = [
   // and the two captions became card furniture.
   ['main.html', '', ['#hero-statetoggle .st-side', '.hero__center .hero__togglerow',
                      '#hero-topgrid', '#ebx-top-card-mount .tc-half',
-                     '.hero__causetabs .cause-tab', '#ebx-top-card-mount .tc-howto',
-                     '#ebx-top-card-mount-b .tc-bar--top', '#ebx-top-card-mount-b .tc-bar--bot',
+                     '.hero__causetabs .cause-tab',
+                     // §2 (2026-09-08): `.tc-howto` is gone — "Select a cause,
+                     // and vote." came off both top cards. What replaced it is
+                     // the election-experience block under the cause tabs.
+                     '#hero-howitgoes .hig__line',
+                     '#ebx-top-card-mount-b .tc-bar--top',
+                     // §0c (2026-09-08): the BOTTOM bar dates an election that
+                     // has happened. A cause with no elected initiative shows
+                     // the empty slot instead, and that is the card working —
+                     // so the assertion is "one or the other", not "the bar".
+                     '#ebx-top-card-mount-b .tc-bar--bot, #ebx-top-card-mount-b .tc-emptyslot',
                      '.alloc-section #alloc-mount', '#show-all-inits',
                      // §1 (2026-08-27) — THE CE PANEL, above the election panel, in
                      // every page state: seven streak lines, the keep-or-replace ballot,
@@ -62,18 +69,49 @@ const PAGES = [
                      // bar: "the election page toggles itself from these".
                      '.hero__causetabs .cause-tab.selected',
                      '#ebx-pie-mount svg', '#ebx-pie-mount .pie-slice',
-                     '#ebx-annulus-mount .ebx-center']],
+                     '#ebx-annulus-mount .ebx-center',
+                     // §2 (2026-09-08) — the second election panel: in this state
+                     // the OE notice, below the ballot.
+                     '#votebar-notice-mount .votebar--notice',
+                     '#votebar-notice-mount .vb-notice__body',
+                     // …and the annulus centre names the cause AND the election
+                     '#ebx-center-phase']],
   ['main.html', '?state=oe', ['#hero-statetoggle .st-side--oe.on', '#hero-topgrid.hero__topgrid--oe',
                               '#ebx-top-card-mount .tc-half', '#ebx-top-card-mount-b .tc-half',
                               '#alloc-mount .oe-actions',
-                              '#votebar-mount .votebar', '.init-table__myvote',
+                              '#votebar-mount .votebar',
+                              // §2 (2026-09-08) — the OE table is ONE RACE's
+                              // organizations now, so its rows depend on whether
+                              // that race has any candidates yet. What is always
+                              // there: the caption naming the contest, and the
+                              // nomination row. The My-vote cell exists per
+                              // candidate, or the empty row explains its absence.
+                              '#init-table-body .oet-cap__tiv',
+                              '#init-table-body .init-table__row--nom .rf-btn',
+                              '.init-table__myvote, #init-table-body .init-table__empty',
+                              // the second election panel — the ME notice, above
+                              // the ballot in this state
+                              '#votebar-notice-mount .votebar--notice',
+                              '#votebar-notice-mount .vb-notice__body',
                               '.hero__causetabs .cause-tab.selected', '#ebx-pie-mount svg',
                               // §2 (2026-08-27): the OE side of the row says the same
                               // thing the ME side does — winner bars on the right card,
                               // the how-to line on the left one.
-                              '#ebx-top-card-mount .tc-howto',
-                              '#ebx-top-card-mount-b .tc-bar--top',
-                              '#ebx-top-card-mount-b .tc-bar--bot',
+                              '#hero-howitgoes .hig__line',
+                              // §0c (2026-09-08) — **this reported a bug on a
+                              // correct page four weeks out of seven.** The OE
+                              // side's right card is the BUDGETING card, and its
+                              // slot is a cause one step around the wheel from
+                              // the selected one. Only four of the seven causes
+                              // have ever finished an organization election, so
+                              // whether the two winner bars exist depends on
+                              // which week the check is run in. When the slot's
+                              // cause has not finished one the card says so, in
+                              // `.tc-emptyslot`, which is the same card doing
+                              // its job. Assert what the card promises: the
+                              // bars, or the sentence explaining their absence.
+                              '#ebx-top-card-mount-b .tc-bar--top, #ebx-top-card-mount-b .tc-emptyslot',
+                              '#ebx-top-card-mount-b .tc-bar--bot, #ebx-top-card-mount-b .tc-emptyslot',
                               '#ce-panel-mount .ce-panel']],
   // …and the ballot is here instead, with the thirteen windows under it.
   ['main.html', '?state=ce', ['#votebar-mount .votebar', '#ce-panel-mount .ce-panel',

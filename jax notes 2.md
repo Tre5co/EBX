@@ -7,9 +7,8 @@ Bens park money - Goal is to get it used up.
 Orgs park influence. Goal is to perform their stated purpose.
 objective-based payout model
 **Causes, Initiatives, Missions**
+
 Anyone can propose a cause. A cause worth standing up is a ubiquitously essential human experience — something nearly everyone lives through, that someone would donate to see optimized, and that is resistant to capture. Propose one, pick its colour, and make your case in the discussion: the cause election is on the Context page →
-The fine print, in four lines
-The benefactors should be encouraged to carry their earthbux through successive phases of the mission. 
 
 **Organizations, Discussion, News**
 - HEADLINES
@@ -23,7 +22,52 @@ Ebx = membership
 - Page is sorted by recent activity. 
 - Donations can ALWAYS be received.
 - We need the page to be usable by an org rep and a personal profile. This is to emphasize that both share the same goal.
+
 ## ASCII MODELS
+**Landing**
+ ____________________________________________________________________________
+|ebx_______________________toggle_pages___________________________|_badge____|
+|                                                                            |
+|                                a                                           |
+|                                                                            |
+|                                                                            |
+|                                b                                           |
+|                                                                            |
+|                                                                            |
+|  ______c_______________________________________________________d________   |
+|                                                                            |
+|        e                f                  g                    h          |
+|                                                                            |
+| _______________ _________________ ___________________ __________________   |
+|                                  i                                         |
+|------------------j---------------k-----------------l-----------------------|
+|                                  m                                         |
+|------------------n---------------o-----------------p-----------------------|
+|                                  q                                         |
+|                                  r                                         |
+|                                  s                                         |
+|                                  t                                         |
+for e-h, suggest better ways to word. Especially with g-h. Also with s, the wording needs work
+
+a. The Social Network for Charities
+b. Earthbux News, you donate, we follow, login, signup, --- UNCHANGED
+c. Maximizing Donor Control
+d. Publicizing Charitable Impact
+e. 1. "Donors elect the initiative" ->
+f. 2. "Donors elect a philanthropy for it" ->
+g. 3. "We verify the philanthropy as they plan the mission" ->
+h. 4. "They receive money and donors trade between missions."
+i. A public forum to direct pooled philanthropic missions
+j. Service, k. supply, l. support (short description below each)
+m. Funding research based donations
+n. Situation, o. investigation, p. Analysis (short description below each)
+q. In 2026, the world...
+r. Earthbux was invented... 
+s That's why we grant 10 tokens per week to anyone using our platform.
+t. Funding runway
+
+
+
 **Profile**
  ____________________________________________________________________________
 |ebx___________   ________________________________________    ____|_badge____|
@@ -117,7 +161,7 @@ d. About and Reviews and graph - Status update
 - Mission statement, org overview, case and context...
 e. Credit coin UI
 f. IN PROGRESS - Any input to the page is done from here. 
-g. DONE
+g. DONE - Mission out reporting.
 i. Essentially less addictive version of cause.html
 
 **Newsfeed** cause.html - designed to capture attention. NOT sorted by mission.
@@ -201,11 +245,6 @@ h. linked media
 i. external links
 
 ## Unmanaged as of yet
-
-
-
-Bens decide which mission gets the money.
-Orgs work for more money (over 1/4 just by winning election!) - 
 
 Security reasoning- You cannot join just to vote on an org.
 

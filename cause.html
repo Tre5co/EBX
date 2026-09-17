@@ -34,7 +34,7 @@
     }
     .ebx-topbar__left  { display: flex; align-items: center; gap: var(--sp-md); padding-bottom: 10px; }
     .ebx-topbar__right { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 10px; }
-    .ebx-topbar__center { display: flex; align-items: stretch; }
+    .ebx-topbar__center { display: flex; align-items: center; gap: var(--sp-md); min-width: 0; }
     /* §2 (2026-08-26) — the 7 cause tabs moved to main.html's top bar. This
        page changes cause by the SEVEN SECTORS OF THE WHEEL now, which is the
        annulus that arrived here in the same swap. */
@@ -1637,6 +1637,11 @@
         <!-- cause nav hint appears here via JS -->
       </div>
       <div class="ebx-topbar__center">
+        <!-- The five site tabs (build-seq Misc, 2026-09-08), then what is left
+             of the page tag. The lit NEWS tab is the page identity now, so the
+             tag carries only the CAUSE — the half of "Discussion · Atmosphere"
+             that the nav cannot say. -->
+        <div id="ebx-nav-mount"></div>
         <span class="ebx-topbar__pagetag" id="ebx-pagetag">Discussion</span>
       </div>
       <div class="ebx-topbar__right" id="ebx-user-badge-mount"></div>
@@ -3671,7 +3676,10 @@
 
     {
       const tagEl = document.getElementById('ebx-pagetag');
-      if (tagEl) tagEl.textContent = 'Discussion' + (cause ? ' \u00b7 ' + cause.name : '');
+      // §1 (2026-09-08): the nav's lit tab says which page this is, so the tag
+      // says only which CAUSE. (The page's own Discussion -> News rename lands
+      // with the feed rebuild, build-seq §3.)
+      if (tagEl) tagEl.textContent = cause ? cause.name : 'Discussion';
     }
 
     if (!cause) return;
@@ -4517,5 +4525,6 @@
     }
   })();
   </script>
+  <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

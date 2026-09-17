@@ -64,6 +64,23 @@ def set_role(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.post("/accounts/{ben_id}/test", response_model=schemas.BenefactorRead)
+def set_test(
+    ben_id: int,
+    is_test: bool = True,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only: mark (or unmark) an account as a bot (build-seq §2)."""
+    ben = db.get(BenefactorAccount, ben_id)
+    if ben is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+    ben.is_test = bool(is_test)
+    db.commit()
+    db.refresh(ben)
+    return ben
+
+
 @router.get("/accounts", response_model=list[dict])
 def list_accounts(
     db: Session = Depends(get_db),

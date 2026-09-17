@@ -58,7 +58,10 @@ const section = t => console.log('\n=== ' + t);
   ok(await page.$('#wallet-strip') !== null, '(c) the wallet strip');
   ok(await page.$$eval('.pf2-alloc .pf2-set', e => e.length === 3),
      '(b) allocations: three sets…');
-  ok(await page.$$eval('.pf2-alloc .pf2-bar .pf2-seg', e => e.length === 6), '…of two');
+  // 2026-09-16 — EBX is one segment (held); FINAL is a figure in its key, not a
+  // segment, because a skim only marks finality and moves no money.
+  ok(await page.$$eval('.pf2-alloc .pf2-bar .pf2-seg', e => e.length === 5),
+     '…two, two, and EBX held as one (final is an overlay)');
   const setNames = await page.$$eval('.pf2-set__name', e => e.map(x => x.textContent.trim()));
   ok(/Unallocated/.test(setNames[0]) && /Committed/.test(setNames[1]) && /EBX/.test(setNames[2]),
      '…named for the four states', setNames.slice(0, 3).join(' · '));

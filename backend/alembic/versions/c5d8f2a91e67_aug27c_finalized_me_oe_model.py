@@ -1,6 +1,6 @@
 """aug27c the finalized ME/OE model — the cause tag, the split, and four states
 
-The model is `docs/ME_OE_FINALIZATION.md`, answered by Jax on 2026-08-27. Three
+The model is `docs/_to_delete/ME_OE_FINALIZATION.md`, answered by Jax on 2026-08-27. Three
 of its rules need a column that does not exist yet, and one column stops being
 read.
 

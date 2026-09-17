@@ -7,17 +7,39 @@
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
   <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
   <style>
-    /* ── Landing — build-seq §1 (2026-08-18), per docs/structure.md §1a–§1e.
-       FIVE sections and nothing else. The page used to carry four more blocks
-       (the system's four rows, the seven causes, how-a-cause-changes, the fine
-       print); structure.md §1f says everything the a–e outline does not carry
-       comes off the page and lives in the doc's backlog, so it does.
-         a — the claim, the wordmark, the two things you can do here.
-         b — why it exists, and what it is bringing to charity.
-         c — HOW IT WORKS: the two elections, the token, the runway.
-         d — A PUBLIC FORUM: three post categories; research and budgeting
-             each toggle between their three types.
-         e — WHAT WE DO: the news, and what our attention costs the pool.
+    /* ── Landing — REBUILT 2026-09-15 to the `jax notes 2.md` ## ASCII MODELS
+       **Landing** drawing. That drawing is now the spec; the a–e outline the
+       page was built to (2026-08-18) is superseded. Box by box:
+
+         a — "The Social Network for Charities" — the claim, above the title.
+         b — wordmark · "you donate, we follow" · log in / sign up · vote now.
+             UNCHANGED, as the drawing says.
+         How it Works — the heading over the four steps (2026-09-16).
+         c/d — MAXIMIZING DONOR CONTROL (left, steps 1–2) and PUBLICIZING
+             CHARITABLE IMPACT (right, steps 3–4), now BELOW the steps and
+             slightly smaller (2026-09-16).
+         e–h — the four steps, as four boxes under that rule. Wording is mine;
+             the drawing asked for better phrasing than its own placeholders
+             (see the note above each step).
+         m + n/o/p — "Research the mission to win Rewards" over Situation ·
+             Investigation · Analysis (first since 2026-09-16).
+         i + j/k/l — "A public forum budgets the missions" over Service ·
+             Supply · Support. "public forum" links to cause.html.
+         q/r/s/t — origin couplet, the weekly grant, the funding runway.
+
+       WHAT CAME OFF (the drawing does not carry them; both are logged in
+       docs/structure.md §4 backlog, not deleted):
+         · §1e the transparency scale, Dormant 1/16 → Arbitrating 5/16. Its
+           argument now lives in heading d and step 3.
+         · the Reviews forum category. j–l and n–p are budgeting and research
+           only; the drawing lists no third category.
+
+       NAMING: n is "Situation" per the drawing, and per INSTRUCTIONS.md
+       BUILD SEQUENCE §2 "Big rename - context is now going to be called
+       situation." The backend type key is still `context`
+       (backend/app/post_config.py) and every other surface still says
+       Context — this page is the first to use the new name. The rename is
+       NOT done anywhere else.
        ────────────────────────────────────────────────────────────────────── */
     body {
       background:
@@ -43,12 +65,12 @@
     body > .ebx-home-mark { display: none; }
     .ld-main { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 60px 26px 64px; box-sizing: border-box; }
 
-    /* ── §1a — founding blurb ───────────────────────────────────────────── */
+    /* ══ a / b — the hero ═══════════════════════════════════════════════════ */
     .ld-a { text-align: center; }
     /* §0a (2026-08-06): "Earthbux" was black on black. The shared stylesheet
        sets `h1..h6 { color: var(--clr-earth) }` (near-black, for the light
        pages) and that beat the inherited parchment on this dark hero, so only
-       the honey "News" was visible. Every heading here now states its colour. */
+       the honey "News" was visible. Every heading here still states its colour. */
     .ld-wordmark {
       font-family: var(--font-display, serif); font-weight: 900;
       font-size: clamp(2.6rem, 7.2vw, 4.6rem); line-height: 1.02;
@@ -61,27 +83,13 @@
       letter-spacing: 0.34em; text-transform: uppercase;
       color: rgba(245,240,232,0.5); margin: 14px 0 0;
     }
-    .ld-verse {
+    /* a — one line, above the wordmark, and it is the whole claim. */
+    .ld-claim {
       font-family: var(--font-display, serif);
-      font-size: clamp(1.02rem, 2.1vw, 1.3rem); line-height: 1.95;
-      color: rgba(245,240,232,0.92); margin: 40px auto 0; max-width: 60ch;
+      font-size: clamp(1.05rem, 2.3vw, 1.4rem); line-height: 1.5;
+      color: rgba(245,240,232,0.86); margin: 0 auto 24px; max-width: 46ch;
     }
-    .ld-verse span { display: block; }
-    .ld-verse span b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
-    .ld-rule {
-      width: min(560px, 90%); height: 1px; margin: 30px auto;
-      background: linear-gradient(90deg, transparent, rgba(232,168,76,0.55), transparent);
-    }
-    /* §1a (2026-08-08) — the two lines that say what this is now sit ABOVE the
-       wordmark, so the first thing read is the claim and the wordmark answers
-       it. Below the title: the two things a visitor can do. */
-    .ld-lede {
-      font-family: var(--font-display, serif);
-      font-size: clamp(0.98rem, 2vw, 1.22rem); line-height: 1.85;
-      color: rgba(245,240,232,0.86); margin: 0 auto 26px; max-width: 56ch;
-    }
-    .ld-lede span { display: block; }
-    .ld-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+    .ld-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
     .ld-cta__btn {
       font: inherit; font-size: 0.86rem; font-weight: 700; cursor: pointer;
       text-decoration: none; border-radius: 10px; padding: 11px 22px;
@@ -93,95 +101,143 @@
       background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14;
     }
     .ld-cta__btn--primary:hover { filter: brightness(1.07); background: var(--clr-honey, #e8a84c); }
-    .ld-verse--why { font-size: clamp(0.98rem, 1.9vw, 1.18rem); color: rgba(245,240,232,0.75); margin-top: 0; }
+    .ld-rule {
+      width: min(560px, 90%); height: 1px; margin: 34px auto;
+      background: linear-gradient(90deg, transparent, rgba(232,168,76,0.55), transparent);
+    }
 
-    /* §1b — the couplet under the founding lines. It used to be the TITLE of
-       the §1c argument; structure.md §1b owns it, so it reads here, as the
-       second half of why this exists. */
-    .ld-couplet {
+    /* ══ How it Works (2026-09-16) — the heading the two halves used to hold ═ */
+    .ld-how {
       font-family: var(--font-display, serif); font-weight: 800;
-      font-size: clamp(1.15rem, 2.6vw, 1.7rem); line-height: 1.4;
-      margin: 26px 0 0; color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em;
+      font-size: clamp(1.1rem, 2.5vw, 1.55rem); line-height: 1.25; margin: 8px 0 0;
+      color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em;
+      border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px;
     }
-    .ld-couplet span { display: block; }
-    .ld-couplet span + span { color: rgba(245,240,232,0.55); }
 
-    /* §1c/§1d — the two nouns that carry the whole model are colour-coded
-       wherever they appear: the pooled donation recipient (a PHILANTHROPY,
-       honey) and the ELECTED INITIATIVE (green). Where they are links, they go
-       to the election that decides them. */
-    .ld-term {
-      text-decoration: none; font-weight: 600; white-space: nowrap;
-      border-bottom: 1px dashed currentColor; padding-bottom: 1px;
+    /* ══ c / d — the two headings on one rule ═══════════════════════════════
+       Drawn as `______c______ ... ______d____`: a single horizontal line with a
+       label at each end. Left label owns the left half of the step row, right
+       label the right half. */
+    /* 2026-09-16: below the steps now, slightly smaller, the rule on top. */
+    .ld-heads {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+      border-top: 1px solid rgba(232,168,76,0.25); padding-top: 12px; margin-top: 22px;
     }
+    .ld-heads__h {
+      font-family: var(--font-display, serif); font-weight: 800;
+      font-size: clamp(0.9rem, 1.9vw, 1.15rem); line-height: 1.25; margin: 0;
+      color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em;
+    }
+    .ld-heads__h + .ld-heads__h { text-align: right; color: rgba(245,240,232,0.62); }
+    .ld-heads__h em { font-style: normal; color: var(--clr-honey, #e8a84c); }
+    @media (max-width: 720px) {
+      .ld-heads { grid-template-columns: 1fr; gap: 4px; }
+      .ld-heads__h + .ld-heads__h { text-align: left; }
+    }
+
+    /* ══ e–h — the four steps ═══════════════════════════════════════════════ */
+    .ld-steps {
+      list-style: none; margin: 22px 0 0; padding: 0;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+    }
+    @media (max-width: 900px) { .ld-steps { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .ld-steps { grid-template-columns: 1fr; } }
+    /* the <li> has to stretch too, or `margin-top:auto` on the destination
+       label has no height to push against and the four labels sit at four
+       different baselines. */
+    .ld-steps > li { display: flex; }
+    .ld-step {
+      flex: 1; display: flex; flex-direction: column; text-decoration: none;
+      border-top: 2px solid rgba(245,240,232,0.16); padding: 12px 2px 0;
+      color: inherit; transition: border-color 0.15s;
+    }
+    /* the two halves are colour-coded to their heading: yours (honey) / ours (green) */
+    .ld-step--you { border-top-color: rgba(232,168,76,0.75); }
+    .ld-step--us  { border-top-color: rgba(143,206,157,0.65); }
+    a.ld-step:hover { border-top-color: var(--clr-honey, #e8a84c); }
+    .ld-step__n {
+      font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(245,240,232,0.42); margin-bottom: 8px;
+    }
+    .ld-step--you .ld-step__n { color: rgba(232,168,76,0.85); }
+    .ld-step--us  .ld-step__n { color: rgba(143,206,157,0.8); }
+    .ld-step__title {
+      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem;
+      line-height: 1.3; color: var(--clr-parchment, #f5f0e8); margin: 0 0 7px;
+    }
+    a.ld-step:hover .ld-step__title { color: var(--clr-honey, #e8a84c); }
+    .ld-step__what {
+      font-size: 0.86rem; line-height: 1.6; color: rgba(245,240,232,0.64); margin: 0;
+    }
+    .ld-step__what b { color: rgba(245,240,232,0.92); font-weight: 600; }
+    .ld-step__dest {
+      margin-top: auto; padding-top: 10px;
+      font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: rgba(245,240,232,0.38);
+    }
+    a.ld-step:hover .ld-step__dest { color: var(--clr-honey, #e8a84c); }
+
+    /* the two nouns that carry the model, colour-coded wherever they appear */
+    .ld-term { font-weight: 600; white-space: nowrap; }
     .ld-term--org { color: var(--clr-honey, #e8a84c); }
     .ld-term--tiv { color: #8fce9d; }
-    a.ld-term:hover { border-bottom-style: solid; }
 
-    /* ── §1c / §1d / §1e section shell ─────────────────────────────────────── */
-    .ld-sect {
-      max-width: 760px; margin: 0 auto; padding-top: 40px; text-align: left;
-    }
-    .ld-sect + .ld-sect { margin-top: 8px; }
-    .ld-sect__title {
+    /* ══ i / m — the two forum headings, each over a row of three ═══════════ */
+    .ld-band { margin-top: 56px; }
+    .ld-band__h {
       font-family: var(--font-display, serif); font-weight: 800;
-      font-size: clamp(1.5rem, 3.2vw, 2.15rem); line-height: 1.15; margin: 0 0 6px;
-      color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.02em;
+      font-size: clamp(1.25rem, 2.9vw, 1.85rem); line-height: 1.3;
+      margin: 0 0 18px; color: var(--clr-parchment, #f5f0e8);
+      letter-spacing: -0.02em; text-align: center;
     }
-    .ld-sect__body {
-      font-size: 0.98rem; line-height: 1.75; color: rgba(245,240,232,0.74); margin: 0 0 12px;
+    .ld-band__h a {
+      color: var(--clr-honey, #e8a84c); text-decoration: none;
+      border-bottom: 1px dashed currentColor; padding-bottom: 2px;
     }
-    .ld-sect__body b { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
-    .ld-sect__lead {
-      font-family: var(--font-display, serif); font-size: clamp(1.02rem, 2vw, 1.24rem);
-      line-height: 1.55; color: rgba(245,240,232,0.88); margin: 4px 0 18px;
+    .ld-band__h a:hover { border-bottom-style: solid; }
+    .ld-band__h em { font-style: normal; color: var(--clr-honey, #e8a84c); }
+    .ld-trio {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
     }
-    .ld-sect__lead b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    @media (max-width: 720px) { .ld-trio { grid-template-columns: 1fr; gap: 0; } }
+    .ld-trio__cell {
+      padding: 16px 2px 0; border-top: 1px solid rgba(245,240,232,0.14);
+    }
+    .ld-trio__name {
+      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem;
+      color: var(--clr-parchment, #f5f0e8); margin: 0 0 6px;
+    }
+    .ld-trio__what { font-size: 0.86rem; line-height: 1.65; color: rgba(245,240,232,0.64); margin: 0; }
+    .ld-trio__what b { color: rgba(245,240,232,0.92); font-weight: 600; }
 
-    /* §1c — the two elections. Number · what happens · when. */
-    .ld-elect { list-style: none; margin: 0 0 18px; padding: 0; }
-    .ld-elect__row {
-      display: grid; grid-template-columns: 26px 1fr auto; gap: 14px; align-items: baseline;
-      padding: 14px 0; border-top: 1px solid rgba(245,240,232,0.1);
+    /* ══ q/r/s/t — origin, the grant, the runway ════════════════════════════ */
+    .ld-close { margin-top: 64px; text-align: center; }
+    .ld-verse {
+      font-family: var(--font-display, serif);
+      font-size: clamp(1.02rem, 2.1vw, 1.3rem); line-height: 1.95;
+      color: rgba(245,240,232,0.92); margin: 0 auto; max-width: 60ch;
     }
-    .ld-elect__row:last-child { border-bottom: 1px solid rgba(245,240,232,0.1); }
-    @media (max-width: 620px) {
-      .ld-elect__row { grid-template-columns: 26px 1fr; }
-      .ld-elect__when { grid-column: 2; }
+    .ld-verse span { display: block; }
+    .ld-verse span b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    .ld-grant {
+      font-family: var(--font-display, serif);
+      font-size: clamp(1.02rem, 2.1vw, 1.26rem); line-height: 1.7;
+      color: rgba(245,240,232,0.86); margin: 24px auto 0; max-width: 56ch;
     }
-    .ld-elect__n {
-      font-family: var(--font-display, serif); font-weight: 900; font-size: 1.25rem;
-      line-height: 1.2; color: var(--clr-honey, #e8a84c);
-    }
-    .ld-elect__do {
-      display: block; text-decoration: none; font-size: 0.94rem; line-height: 1.6;
-      color: var(--clr-parchment, #f5f0e8);
-    }
-    .ld-elect__do b { font-weight: 700; }
-    .ld-elect__do:hover { color: var(--clr-honey, #e8a84c); }
-    .ld-elect__do:hover .ld-term { color: inherit; }
-    .ld-elect__dest {
-      display: block; margin-top: 5px; font-family: var(--font-mono, monospace);
-      font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
-      color: rgba(245,240,232,0.42);
-    }
-    .ld-elect__do:hover .ld-elect__dest { color: var(--clr-honey, #e8a84c); }
-    .ld-elect__when {
-      font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: rgba(245,240,232,0.5); white-space: nowrap;
-    }
+    .ld-grant b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
 
-    /* §1c — the dime. Ten of them a week, one dollar, everybody. */
-    .ld-dime { margin-top: 4px; }
-    .ld-dime__row { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+    /* the dime. Ten of them a week, one dollar, everybody. */
+    .ld-dime { margin-top: 18px; }
+    .ld-dime__row { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; justify-content: center; }
     .ld-dime__cap {
       font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.12em;
-      text-transform: uppercase; color: rgba(245,240,232,0.4); margin-top: 7px;
+      text-transform: uppercase; color: rgba(245,240,232,0.4); margin-top: 9px;
     }
 
-    /* §1c — runway chart */
+    /* t — runway chart */
     .ld-runway {
-      margin: 18px 0 0; padding: 16px 18px 14px; text-align: left;
+      margin: 30px auto 0; max-width: 620px; padding: 16px 18px 14px; text-align: left;
       border: 1px solid rgba(245,240,232,0.14); border-radius: 12px;
       background: rgba(245,240,232,0.03);
     }
@@ -200,198 +256,155 @@
     .ld-runway__bar.on { background: var(--clr-honey, #e8a84c); }
     .ld-runway__note { font-size: 0.76rem; line-height: 1.55; color: rgba(245,240,232,0.42); margin-top: 10px; }
     .ld-runway__note b { color: rgba(245,240,232,0.7); }
-    /* the member count §1c asks to display — stated, not buried in the note */
     .ld-runway__members {
       display: inline-flex; align-items: baseline; gap: 6px; margin-top: 12px;
       font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em;
       text-transform: uppercase; color: rgba(245,240,232,0.5);
     }
     .ld-runway__members b { font-size: 0.95rem; letter-spacing: 0; color: var(--clr-parchment, #f5f0e8); }
-
-    /* §1d — the three post categories. Each is a numbered block; research and
-       budgeting carry a type toggle that swaps the description under it. */
-    .ld-forum { list-style: none; margin: 0; padding: 0; }
-    .ld-forum__cat { padding: 16px 0; border-top: 1px solid rgba(245,240,232,0.1); }
-    .ld-forum__cat:last-child { border-bottom: 1px solid rgba(245,240,232,0.1); }
-    .ld-forum__head { display: flex; align-items: baseline; gap: 10px; }
-    .ld-forum__n {
-      font-family: var(--font-display, serif); font-weight: 900; font-size: 1.1rem;
-      color: var(--clr-honey, #e8a84c); min-width: 16px;
-    }
-    .ld-forum__name {
-      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.05rem;
-      color: var(--clr-parchment, #f5f0e8);
-    }
-    .ld-forum__what {
-      font-size: 0.9rem; line-height: 1.65; color: rgba(245,240,232,0.7);
-      margin: 6px 0 0; padding-left: 26px;
-    }
-    .ld-tt { display: flex; gap: 6px; flex-wrap: wrap; margin: 11px 0 0 26px; }
-    .ld-tt__btn {
-      font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer;
-      padding: 5px 12px; border-radius: 999px; transition: all 0.15s;
-      border: 1px solid rgba(245,240,232,0.2); background: transparent;
-      color: rgba(245,240,232,0.62);
-    }
-    .ld-tt__btn:hover { border-color: rgba(232,168,76,0.65); color: rgba(245,240,232,0.92); }
-    .ld-tt__btn.on {
-      background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14;
-    }
-    .ld-tt__what {
-      font-size: 0.86rem; line-height: 1.65; color: rgba(245,240,232,0.62);
-      margin: 10px 0 0 26px;
-    }
-    .ld-tt__what b { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
-
-    /* §1e — the transparency scale. Five steps; the LEFT end is maximum
-       transparency and costs us 1/16, the RIGHT end is minimum and costs 5/16. */
-    .ld-scale {
-      margin-top: 16px; padding: 16px 18px 14px;
-      border: 1px solid rgba(245,240,232,0.14); border-radius: 12px;
-      background: rgba(245,240,232,0.03);
-    }
-    .ld-scale__ends {
-      display: flex; justify-content: space-between; gap: 12px;
-      font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.1em;
-      text-transform: uppercase; color: rgba(245,240,232,0.42); margin-bottom: 9px;
-    }
-    .ld-scale__steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-    @media (max-width: 620px) { .ld-scale__steps { grid-template-columns: repeat(2, 1fr); } }
-    .ld-step {
-      font: inherit; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 2px;
-      padding: 8px 9px; border-radius: 8px; color: rgba(245,240,232,0.62);
-      background: transparent; border: 1px solid rgba(245,240,232,0.18); transition: all 0.15s;
-    }
-    .ld-step:hover { border-color: rgba(232,168,76,0.65); color: rgba(245,240,232,0.92); }
-    .ld-step.on {
-      background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14;
-    }
-    .ld-step__name { font-size: 0.74rem; font-weight: 700; }
-    .ld-step__frac { font-family: var(--font-mono, monospace); font-size: 0.6rem; opacity: 0.72; }
-    .ld-scale__what {
-      font-size: 0.82rem; line-height: 1.55; color: rgba(245,240,232,0.62); margin-top: 11px;
-    }
-    .ld-scale__what b { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
-    .ld-scale__split {
-      display: flex; align-items: center; gap: 9px; margin-top: 11px;
-      font-family: var(--font-mono, monospace); font-size: 0.62rem; color: rgba(245,240,232,0.45);
-    }
-    .ld-scale__split b { color: rgba(245,240,232,0.88); }
-    .ld-scale__bar {
-      flex: 1; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(78,122,78,0.55);
-    }
-    .ld-scale__bar i { display: block; height: 100%; background: var(--clr-honey, #e8a84c); transition: width 0.2s; }
   </style>
 </head>
 
 <body>
   <div class="ld-top">
     <a class="ld-brand" href="index.html">Earthbux <em>News</em></a>
+    <!-- The five site tabs (build-seq Misc, 2026-09-08) — drawn by
+         `EBX.initNav` in resources/js/ebx_shared.js. -->
+    <div id="ebx-nav-mount"></div>
     <div id="ebx-user-badge-mount"></div>
   </div>
 
   <div class="ld-main">
 
-    <!-- ══ §1a — the founding blurb ═══════════════════════════════════════════
-         The two lines that say what this IS run ABOVE the wordmark; the
-         wordmark and its "you donate, we follow" answer them. The two actions
-         sit directly under the title. -->
+    <!-- ══ a / b — the hero ═══════════════════════════════════════════════════
+         a is one line and it is the claim. b is untouched: wordmark, strapline,
+         and the only two things a visitor can do from here. -->
     <div class="ld-a">
-      <p class="ld-lede">
-        <span>A public forum to direct pooled philanthropic missions.</span>
-        <span>An independent research team to publicize their impact.</span>
-      </p>
+      <p class="ld-claim">The Social Network for Charities.</p>
 
       <h1 class="ld-wordmark">Earthbux <em>News</em></h1>
       <p class="ld-sub">you donate, we follow</p>
 
       <div class="ld-cta" id="ld-cta"></div>
+    </div>
 
-      <div class="ld-rule"></div>
+    <div class="ld-rule"></div>
 
-      <!-- ══ §1b — why it exists, and what it brings ════════════════════════ -->
-      <p class="ld-verse ld-verse--why">
+    <!-- ══ How it Works (build-seq §2 Landing, 2026-09-16) ═══════════════════
+         "How it Works" takes the place of the two headings, which move below
+         the steps, slightly smaller. Dates per the same step: week 0 · week 8 ·
+         week 15 · week 15 on (T, the organization election at T+8, budget day
+         at T+15, then the exchange). -->
+    <h2 class="ld-how">How it Works</h2>
+
+    <ol class="ld-steps">
+      <li>
+        <a class="ld-step ld-step--you" href="main.html">
+          <span class="ld-step__n">01 · Week 0</span>
+          <span class="ld-step__title">You elect the initiative</span>
+          <span class="ld-step__what">Donate to this week&rsquo;s cause by funding what you want the
+            <span class="ld-term ld-term--tiv">mission</span> to be.</span>
+          <span class="ld-step__dest">Initiative election &rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="ld-step ld-step--you" href="main.html?state=oe">
+          <span class="ld-step__n">02 · Week 8</span>
+          <span class="ld-step__title">You elect who runs it</span>
+          <span class="ld-step__what">After the mission is decided, your tokens can be put towards its
+            <span class="ld-term ld-term--org">philanthropy</span>.</span>
+          <span class="ld-step__dest">Organization election &rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="ld-step ld-step--us" href="mission.html">
+          <span class="ld-step__n">03 · Week 15</span>
+          <span class="ld-step__title">Receive your Earthbucks</span>
+          <span class="ld-step__what">Earthbux orients the organization and its benefactors
+            <b>(you)</b>.</span>
+          <span class="ld-step__dest">Mission page &rarr;</span>
+        </a>
+      </li>
+      <li>
+        <a class="ld-step ld-step--us" href="cause.html">
+          <span class="ld-step__n">04 · Week 15 on</span>
+          <span class="ld-step__title">Follow along and trade</span>
+          <span class="ld-step__what">Hold on, or exchange for a different mission.</span>
+          <span class="ld-step__dest">Feed &rarr;</span>
+        </a>
+      </li>
+    </ol>
+
+    <!-- ══ c / d — the two halves, now under the steps and slightly smaller ══ -->
+    <div class="ld-heads">
+      <h2 class="ld-heads__h">Maximizing <em>Donor Control</em></h2>
+      <h2 class="ld-heads__h">Publicizing Charitable Impact</h2>
+    </div>
+
+    <!-- ══ research, then budgeting (build-seq §2 Landing, 2026-09-16) ════════
+         Order swapped, each heading over its own trio: the research posts are
+         what win rewards; the budget posts are what the public forum decides.
+         "public forum" still links to the feed (cause.html). -->
+    <div class="ld-band">
+      <h2 class="ld-band__h">Research the mission to win <em>Rewards</em></h2>
+      <ol class="ld-trio">
+        <li class="ld-trio__cell">
+          <h3 class="ld-trio__name">Situation</h3>
+          <p class="ld-trio__what">Researches the <b>cause</b> — the state of it and the news
+            around it — and contextualizes the initiatives standing in it.</p>
+        </li>
+        <li class="ld-trio__cell">
+          <h3 class="ld-trio__name">Investigation</h3>
+          <p class="ld-trio__what">Researches the <b>initiative</b>, and compares the
+            philanthropies that would run it — leadership, proposal, credibility.</p>
+        </li>
+        <li class="ld-trio__cell">
+          <h3 class="ld-trio__name">Analysis</h3>
+          <p class="ld-trio__what">Researches the <b>initiative and philanthropy together</b>,
+            and weighs the action plan against comparable programmes.</p>
+        </li>
+      </ol>
+    </div>
+
+    <div class="ld-band">
+      <h2 class="ld-band__h">A <a href="cause.html">public forum</a> budgets the missions</h2>
+      <ol class="ld-trio">
+        <li class="ld-trio__cell">
+          <h3 class="ld-trio__name">Service</h3>
+          <p class="ld-trio__what"><b>Labor required.</b> Something we can send people to do —
+            a job, an hourly rate, and the days it takes.</p>
+        </li>
+        <li class="ld-trio__cell">
+          <h3 class="ld-trio__name">Supply</h3>
+          <p class="ld-trio__what"><b>Commodities required.</b> What those people need to do it —
+            an item, and what it costs.</p>
+        </li>
+        <li class="ld-trio__cell">
+          <h3 class="ld-trio__name">Support</h3>
+          <p class="ld-trio__what"><b>Connections required.</b> An approval, professional help,
+            legal help in a conflict. No cost line: a connection is not a purchase.</p>
+        </li>
+      </ol>
+    </div>
+
+    <!-- ══ q / r / s / t ═════════════════════════════════════════════════════
+         q and r are unchanged. s was flagged — "the wording needs work". It
+         had been "That's why we grant 10 tokens per week to anyone using our
+         platform", which states a policy where the two lines above it are
+         making an argument. Rewritten so it is the CONSEQUENCE of r: control
+         is the thing being handed out, and a token is what control is made of.
+         t is the runway, and it is the proof that the grant is finite. -->
+    <div class="ld-close">
+      <p class="ld-verse">
         <span>In 2026, the world seemed at risk of total destruction.</span>
         <span>Earthbux was invented to give us control so we <b>save it</b>.</span>
       </p>
 
-      <p class="ld-couplet">
-        <span>Bringing publicity to charity,</span>
-        <span>Enabling research based donations.</span>
-      </p>
+      <p class="ld-grant">So control is what we hand out: every member is granted
+        <b>10 tokens a week</b> — a dollar of real say in where the pool goes.</p>
 
-      <div class="ld-rule"></div>
-    </div>
-
-    <!-- ══ §1c — HOW IT WORKS ════════════════════════════════════════════════
-         Two elections, one token, one runway. The runway is the GRANT's, not
-         ours: structure.md §1c defines it as total funds ÷ user count — how
-         many more weeks every active member can be handed their 10 EBX. It
-         used to divide Earthbux's n/16 share by the same cost, which tied it
-         to the §1e scale and answered a question nobody had asked. -->
-    <div class="ld-sect">
-      <h2 class="ld-sect__title">How it Works</h2>
-      <p class="ld-sect__lead">Maximizing donor control.</p>
-      <p class="ld-sect__body">Each mission undergoes <b>2 key elections</b>:</p>
-
-      <ol class="ld-elect">
-        <li class="ld-elect__row">
-          <span class="ld-elect__n">1</span>
-          <a class="ld-elect__do" href="main.html">
-            <b>Mission Election</b> — Benefactors elect an
-            <span class="ld-term ld-term--tiv">initiative</span>.
-            <span class="ld-elect__dest">Context &rarr;</span>
-          </a>
-          <span class="ld-elect__when">Week 0</span>
-        </li>
-        <li class="ld-elect__row">
-          <span class="ld-elect__n">2</span>
-          <a class="ld-elect__do" href="main.html?state=oe">
-            <b>Organization Election</b> — Benefactors elect a
-            <span class="ld-term ld-term--org">philanthropy</span>.
-            <span class="ld-elect__dest">Context &rarr;</span>
-          </a>
-          <span class="ld-elect__when">Week 7</span>
-        </li>
-      </ol>
-
-      <!-- §3 (2026-08-28) — the landing page says TOKENS wherever it means the
-           unit a vote is cast in. EBX is a STATE (minted, mission-tied) and this
-           page never talks about that state: everything on it is the grant, the
-           vote and the pool, all of which are tokens. -->
-      <p class="ld-sect__body">Benefactors vote by donating Earthbucks. <b>1 token = 10&cent;</b>.</p>
       <div class="ld-dime" id="ld-dime-viz"></div>
-
       <div class="ld-runway" id="ld-runway"></div>
-    </div>
-
-    <!-- ══ §1d — A PUBLIC FORUM ══════════════════════════════════════════════
-         Three categories of post. Reviews is one thing and says so; research
-         and budgeting are each three things, so each carries a toggle and the
-         description under it swaps — structure.md §1d, "for 2 and 3, allow
-         users to toggle between types to read the descriptions".
-         The type names are backend/app/post_config.py's, which is the source
-         of truth: research = context · investigation · analysis. structure.md
-         §1d named the middle one "Evaluation", but evaluation is a REVIEW type
-         and the description beside it — comparing the philanthropies — is
-         investigation's. Flagged in the doc, built as investigation. -->
-    <div class="ld-sect">
-      <h2 class="ld-sect__title">A Public Forum</h2>
-      <p class="ld-sect__lead">Crowdsourcing ideas.</p>
-      <p class="ld-sect__body">Each mission has its own discussion with
-        <b>3 categories</b> of post.</p>
-      <ol class="ld-forum" id="ld-forum"></ol>
-    </div>
-
-    <!-- ══ §1e — WHAT WE DO ══════════════════════════════════════════════════
-         The scale used to head the page as its argument. It belongs here: it
-         is what OUR work costs, and the cost falls as the philanthropy shows
-         more of its own. -->
-    <div class="ld-sect">
-      <h2 class="ld-sect__title">What we do</h2>
-      <p class="ld-sect__lead">Earthbux uses part of the pool to bring you the news.</p>
-      <p class="ld-sect__body">Higher transparency &rArr; Lower cost</p>
-      <div class="ld-scale" id="ld-scale"></div>
     </div>
 
   </div>
@@ -399,7 +412,7 @@
   <div id="ebx-footer-mount"></div>
   <script src="resources/js/ebx_shared.js"></script>
   <script>
-  // §1a — the two calls to action under the title. There are only two things a
+  // b — the two calls to action under the title. There are only two things a
   // visitor can do from here: get an account, or go vote. Signed in, the first
   // has nothing to offer, so it becomes the profile link and Vote now carries
   // the row.
@@ -419,15 +432,15 @@
     };
   })();
 
-  // ══ §1c — THE TOKEN AND THE RUNWAY ════════════════════════════════════════
+  // ══ s / t — THE TOKEN AND THE RUNWAY ══════════════════════════════════════
   //   a week of grants = active members x 10 EBX x 10c   ($1 each, everyone)
   //   the runway       = committed funds / that
   //
-  // Both numbers come from ONE endpoint, GET /stats, added with this pass. The
-  // page used to derive its member count client-side by summing `voter_count`
-  // over every mission's phase-1 tally, which counts vote ROWS and
-  // double-counts anyone voting in more than one mission — 19 where the answer
-  // is 4. A page that DISPLAYS a membership figure should not be estimating it.
+  // Both numbers come from ONE endpoint, GET /stats. The page used to derive
+  // its member count client-side by summing `voter_count` over every mission's
+  // phase-1 tally, which counts vote ROWS and double-counts anyone voting in
+  // more than one mission — 19 where the answer is 4. A page that DISPLAYS a
+  // membership figure should not be estimating it.
   (async function () {
     const runEl = document.getElementById('ld-runway');
     const dimeEl = document.getElementById('ld-dime-viz');
@@ -483,127 +496,7 @@
                 'treat this as the shape of the number, not the number.') + '</div>';
     }
   })();
-
-  // ══ §1d — THE THREE CATEGORIES ════════════════════════════════════════════
-  // Static copy, no fetch: this is what the categories ARE, not what is in them
-  // this week. The types mirror backend/app/post_config.py so the landing page
-  // and the composer cannot drift apart.
-  (function () {
-    const mount = document.getElementById('ld-forum');
-    if (!mount) return;
-
-    const CATS = [
-      {
-        key: 'reviews', name: 'Reviews',
-        what: 'Cases or evaluations arguing why a cause, initiative, or philanthropy should ' +
-              'or shouldn’t be funded.',
-      },
-      {
-        key: 'research', name: 'Research',
-        what: 'An in-depth study into a mission.',
-        types: [
-          { key: 'context', name: 'Context',
-            what: 'Researches the <b>cause</b> — the state of it and the news around it — and ' +
-                  'compares and contextualizes the initiatives standing in it.' },
-          { key: 'investigation', name: 'Investigation',
-            what: 'Researches the <b>initiative</b>, and compares and investigates the ' +
-                  'philanthropies that would run it — leadership, proposal quality, credibility.' },
-          { key: 'analysis', name: 'Analysis',
-            what: 'Researches the <b>initiative and the philanthropy together</b>, and analyzes ' +
-                  'potential action plans against comparable programmes.' },
-        ],
-      },
-      {
-        key: 'budgeting', name: 'Budgeting',
-        what: 'Itemized and cost-allocated items.',
-        types: [
-          { key: 'service', name: 'Service',
-            what: '<b>Labor required.</b> Something we can send people to do — each row a job, ' +
-                  'an hourly rate, and the days it takes.' },
-          { key: 'supply', name: 'Supply',
-            what: '<b>Commodities required.</b> What those people need to do it — each row an ' +
-                  'item and what it costs.' },
-          { key: 'support', name: 'Support',
-            what: '<b>Connections required.</b> An approval, professional help, legal help in a ' +
-                  'conflict. It carries no cost line on purpose: a connection is not a purchase.' },
-        ],
-      },
-    ];
-
-    const open = {};                       // category key -> selected type key
-    CATS.forEach(c => { if (c.types) open[c.key] = c.types[0].key; });
-
-    function paint() {
-      mount.innerHTML = CATS.map((c, i) =>
-        '<li class="ld-forum__cat" data-cat="' + c.key + '">' +
-          '<div class="ld-forum__head">' +
-            '<span class="ld-forum__n">' + (i + 1) + '</span>' +
-            '<span class="ld-forum__name">' + c.name + '</span>' +
-          '</div>' +
-          '<p class="ld-forum__what">' + c.what + '</p>' +
-          (c.types
-            ? '<div class="ld-tt">' + c.types.map(t =>
-                '<button type="button" class="ld-tt__btn' +
-                  (open[c.key] === t.key ? ' on' : '') + '" data-cat="' + c.key +
-                  '" data-type="' + t.key + '">' + t.name + '</button>').join('') +
-              '</div>' +
-              '<p class="ld-tt__what">' +
-                (c.types.find(t => t.key === open[c.key]) || c.types[0]).what +
-              '</p>'
-            : '') +
-        '</li>').join('');
-
-      mount.querySelectorAll('.ld-tt__btn').forEach(b => {
-        b.onclick = () => { open[b.dataset.cat] = b.dataset.type; paint(); };
-      });
-    }
-    paint();
-  })();
-
-  // ══ §1e — WHAT OUR ATTENTION COSTS ════════════════════════════════════════
-  // Earthbux takes n/16 of the pool, n = 1..5, and n is set by how TRANSPARENT
-  // the philanthropy is: one that publishes its own work leaves us Dormant and
-  // costs 1/16; one we have to arbitrate with costs 5/16. Left end of the
-  // scale = maximum transparency and minimum cost.
-  (function () {
-    const scaleEl = document.getElementById('ld-scale');
-    if (!scaleEl) return;
-
-    const LEVELS = [
-      { n: 1, name: 'Dormant', what: 'The philanthropy publishes its own work and it holds up. We keep the lights on and the ledger public.' },
-      { n: 2, name: 'Watching', what: 'We follow the work and file the routine reports it does not file itself.' },
-      { n: 3, name: 'Reporting', what: 'Our team has to be on the mission — visits, interviews, a parallel progress report.' },
-      { n: 4, name: 'Auditing', what: 'Its numbers have to be verified rather than read. The organization is under active audit.' },
-      { n: 5, name: 'Arbitrating', what: 'Something is contested. We investigate, mediate, and publish the finding.' },
-    ];
-    let level = 1;                       // no live transparency signal yet
-
-    function paint() {
-      const lv = LEVELS[level - 1];
-      scaleEl.innerHTML =
-        '<div class="ld-scale__ends">' +
-          '<span>&larr; lowest cost</span>' +
-          '<span>highest cost &rarr;</span>' +
-        '</div>' +
-        '<div class="ld-scale__steps">' +
-          LEVELS.map(l =>
-            '<button type="button" class="ld-step' + (l.n === lv.n ? ' on' : '') + '" data-level="' + l.n + '">' +
-              '<span class="ld-step__name">' + l.name + '</span>' +
-              '<span class="ld-step__frac">' + l.n + '/16</span>' +
-            '</button>').join('') +
-        '</div>' +
-        '<div class="ld-scale__what"><b>' + lv.name + '.</b> ' + lv.what + '</div>' +
-        '<div class="ld-scale__split">' +
-          '<span>Earthbux <b>' + lv.n + '/16</b></span>' +
-          '<span class="ld-scale__bar"><i style="width:' + (lv.n / 16 * 100).toFixed(0) + '%"></i></span>' +
-          '<span>the mission <b>' + (16 - lv.n) + '/16</b></span>' +
-        '</div>';
-      scaleEl.querySelectorAll('.ld-step').forEach(b => {
-        b.onclick = () => { level = Number(b.dataset.level) || 1; paint(); };
-      });
-    }
-    paint();
-  })();
   </script>
+  <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

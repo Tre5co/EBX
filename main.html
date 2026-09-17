@@ -35,14 +35,11 @@
     .ebx-topbar__tagline a { text-decoration: none; color: inherit; }
     .ebx-topbar__right  { display: flex; justify-content: flex-end; align-items: center; padding-bottom: 14px; }
     body { --center-w: 460px; } /* shared hero center-column width: header / top card / annulus */
-    .ebx-topbar__center {
-      width: var(--center-w);
-      display: flex;
-      align-items: stretch;
-      position: relative;
-      z-index: 2;
-    }
-    .ebx-topbar__center > * { width: 100%; }
+    /* §6 (2026-09-08): `.ebx-topbar__center` and its two rules are GONE. They
+       styled a top-bar centre cell that this page has never had an element for
+       — the card header they were written for moved into the hero, and the
+       three rules (here and the `display:none` in the mobile block below) were
+       left behind. cause.html has a real one; this file styled a ghost. */
 
     /* ── §2 (2026-08-26) — THE 7 CAUSE TABS, moved here from the discussion
        page's top bar. "Now, the election page toggles itself from these." The
@@ -184,15 +181,13 @@
     .tc-bar b { color: var(--tc-color, var(--clr-parchment)); font-weight: 700; letter-spacing: 0.06em; }
     .tc-bar--top { border-radius: 8px 8px 0 0; border-bottom: none; margin-bottom: -1px; }
     .tc-bar--bot { border-radius: 0 0 8px 8px; border-top: none; margin-top: -1px; }
-    /* §2 (2026-08-27): "The 'To vote' line should only be on the lhs top card." */
-    .tc-howto {
-      font-family: var(--font-mono);
-      font-size: 0.66rem;
-      letter-spacing: 0.06em;
-      color: rgba(245,240,232,0.5);
-      padding: 0 2px 6px;
-    }
-    .tc-howto b { color: rgba(245,240,232,0.8); }
+    /* §2 (2026-09-08): `.tc-howto` is RETIRED. It carried "Select a cause, and
+       vote." on the left top card in both page states — an instruction sitting
+       on top of a scoreboard, telling the reader to do the thing the seven tabs
+       directly above it already do. Build-seq main.html: "Remove 'select a
+       cause, and vote.'" The instructional job belongs to the election-
+       experience block under the cause tabs, which explains the whole
+       three-election sequence rather than one step of it. */
 
     /* §2 (2026-08-27) — the cause toggle sits between the top cards and the
        annulus, where the ME/OE toggle used to be. It drives the annulus, the
@@ -201,6 +196,98 @@
       width: 100%;
       margin: 6px 0 0;
       border-top: 1px solid rgba(245,240,232,0.08);
+    }
+
+    /* ── §2 (2026-09-08) — THE ELECTION EXPERIENCE, between the seven cause
+       toggles and the cause ballot. Build-seq main.html, verbatim:
+
+         "First, the cause is determined.
+          Next, a mission is elected within it.
+          Finally, an organization is elected to run the mission.
+          The leaderboards are above. The candidates and ballots are below."
+
+       Three elections in sequence, then where each half of the page is. It sits
+       exactly where a reader's eye lands after picking a cause and before the
+       first ballot, and it is what replaced "Select a cause, and vote." — a line
+       that told someone to act without telling them what the act was part of.
+       Quiet on purpose: it is the caption of a page, not a banner. */
+    .hero__howitgoes {
+      width: 100%;
+      margin: 14px 0 0;
+      padding: 14px 0 0;
+      border-top: 1px solid rgba(245,240,232,0.06);
+    }
+    .hig__steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px 22px;
+    }
+    .hig__line {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: rgba(245,240,232,0.66);
+    }
+    .hig__n {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      color: var(--clr-honey);
+      opacity: 0.85;
+      flex: 0 0 auto;
+      padding-top: 2px;
+    }
+    /* The last line is not a step — it is the page's own map, so it reads
+       across the full width under the three. */
+    .hig__line--where {
+      grid-column: 1 / -1;
+      margin-top: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      color: rgba(245,240,232,0.42);
+    }
+    @media (max-width: 780px) {
+      .hig__steps { grid-template-columns: 1fr; }
+    }
+    /* build-seq §3 (2026-09-16) — First / Next / Finally as toggles. */
+    .hig__toggle {
+      font-family: inherit; text-align: left; background: none; cursor: pointer;
+      border: 1px solid transparent; border-radius: 8px; padding: 6px 8px; margin: -6px -8px;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .hig__toggle:hover { background: rgba(245,240,232,0.05); color: rgba(245,240,232,0.9); }
+    .hig__toggle.on {
+      color: var(--clr-parchment, #f5f0e8); border-color: rgba(232,168,76,0.5);
+      background: rgba(232,168,76,0.08);
+    }
+    /* The three election cards: one expanded column, two collapsed. */
+    .el3 { display: flex; gap: 10px; align-items: stretch; margin-top: 16px; }
+    .el3__col {
+      flex: 0 0 52px; min-width: 0; display: flex;
+      border: 1px solid rgba(245,240,232,0.12); border-radius: 12px;
+      background: rgba(245,240,232,0.025); transition: flex-basis 0.25s ease;
+    }
+    .el3__col.on { flex: 1 1 auto; display: block; border-color: transparent; background: none; }
+    .el3__col:not(.on) .el3__body { display: none; }
+    .el3__col.on .el3__tab { display: none; }
+    .el3__body { min-width: 0; }
+    .el3__body .votebar-mount { margin: 0; }
+    .el3__tab {
+      flex: 1; min-height: 200px; cursor: pointer; background: none; border: none;
+      writing-mode: vertical-rl; transform: rotate(180deg);
+      font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700;
+      letter-spacing: 0.16em; text-transform: uppercase; color: rgba(245,240,232,0.55);
+      display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 0;
+    }
+    .el3__tab:hover { color: var(--clr-honey, #e8a84c); }
+    .el3__n { color: var(--clr-honey, #e8a84c); }
+    @media (max-width: 780px) {
+      .el3 { flex-direction: column; }
+      .el3__col { flex: 0 0 auto; }
+      .el3__tab { writing-mode: horizontal-tb; transform: none; min-height: 0; padding: 10px 12px; justify-content: flex-start; }
     }
     /* ── §2 (2026-08-26) — the PIE annulus, moved here from cause.html. It is
        painted behind `.ebx-center`, which keeps the centre panel this page has
@@ -527,7 +614,6 @@
     @media (max-width: 980px) {
       body { --center-w: 360px; }
       .ebx-topbar__inner { grid-template-columns: 1fr; row-gap: 8px; padding-bottom: 14px; }
-      .ebx-topbar__center { display: none; } /* card header hidden on mobile; body shows alone */
       .ebx-topbar__right { justify-content: flex-start; padding-bottom: 0; }
       .ebx-topbar__tagline { padding-bottom: 0; }
       .hero { padding-top: 10px; } /* restore a little breathing room without the card header */
@@ -780,6 +866,30 @@
        sentence saying what the slider did, and (on one row) a mark saying it is
        this week's. Everything is sized to keep eight of them on one screen. */
     .init-table__stake { min-width: 190px; }
+    /* ── §2 (2026-09-08) — the ORGANIZATION table's two non-candidate rows.
+       A caption row naming the contest at the top, a nomination row at the
+       bottom. Both span the table because neither is a candidate, and both keep
+       the white body styling so they read as part of the table rather than as
+       panels dropped into it. */
+    .init-table__row--cap > td, .init-table__row--nom > td { cursor: default; }
+    .oet-cap {
+      display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+      font-size: 0.82rem;
+    }
+    .oet-cap__k {
+      font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: #6d7570;
+    }
+    .oet-cap__tiv { color: #14181a; font-weight: 700; }
+    .oet-cap__cause { font-family: var(--font-mono); font-size: 0.7rem; }
+    .oet-cap__day {
+      font-family: var(--font-mono); font-size: 0.7rem; color: #5b635c; margin-left: auto;
+    }
+    .init-table__row--nom > td { background: #f7f9f5; }
+    .oet-nom__note {
+      display: inline-block; margin-left: 12px; font-size: 0.74rem; color: #5b635c;
+      max-width: 62ch; vertical-align: middle;
+    }
     .stk { display: flex; flex-direction: column; gap: 3px; }
     .stk__range {
       -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
@@ -1009,6 +1119,37 @@
        column keys, which do not describe it. Black dialog, white rows. */
     .votebar-mount { margin: 0 0 12px; }
     .votebar-mount:empty { display: none; }
+    /* ── §2 (2026-09-08) — THE TWO ELECTION PANELS. Build-seq main.html:
+       "Create a second 'election panel' above(ME)/below(OE) the current one."
+       The pair is always in the order the elections happen — the MISSION
+       election above, the ORGANIZATION election below — whichever one the
+       toggle is pointed at. The mode selected shows its ballot; the other slot
+       shows a notice saying where that race stands and offering the toggle. So
+       in ME the notice is the lower half, in OE it is the upper, and the
+       benefactor can always see both races without changing state to find out
+       whether the second one exists. Ordering is `order`, not DOM surgery:
+       repainting one panel must never be able to reshuffle the other. */
+    .votebar-pair { display: flex; flex-direction: column; }
+    .votebar-pair--oe #votebar-notice-mount { order: -1; }
+    /* The notice is the same panel, quieter: it reports, it does not take a
+       commitment, so it gets no fill and no left rule in the accent. */
+    .votebar--notice {
+      background: linear-gradient(180deg, rgba(245,240,232,0.035), rgba(15,26,20,0.9));
+      border: 1px solid rgba(245,240,232,0.12);
+      border-left: 3px solid rgba(245,240,232,0.22);
+      border-radius: 10px;
+      animation: none;
+    }
+    .votebar--notice .votebar__title { color: rgba(245,240,232,0.55); }
+    .vb-notice__body {
+      font-size: 0.86rem;
+      line-height: 1.5;
+      color: rgba(245,240,232,0.74);
+      margin: 2px 0 0;
+      max-width: 78ch;
+    }
+    .vb-notice__body b { color: rgba(245,240,232,0.95); font-weight: 600; }
+    .vb-notice__foot { display: flex; align-items: center; gap: 10px; margin-top: 9px; flex-wrap: wrap; }
     .votebar {
       --vb: var(--clr-honey);
       /* …and the same for any `.rf-btn` that lands in the dialog: it is not a
@@ -1037,10 +1178,14 @@
     .votebar__chip b { color: var(--clr-parchment); margin-left: 5px; }
     .votebar__rows { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
     .vb-row {
-      display: grid; grid-template-columns: minmax(140px, 1.4fr) minmax(90px, 2fr) auto auto;
+      /* §2 (2026-09-08): a fifth column — the per-row "+ org" nomination. */
+      display: grid; grid-template-columns: minmax(140px, 1.4fr) minmax(90px, 2fr) auto auto auto;
       align-items: center; gap: 10px; padding: 5px 0;
       border-bottom: 1px dashed rgba(245,240,232,0.08);
     }
+    /* The uncommitted row has no nomination button — it is not an initiative —
+       so its four cells stretch across the five columns. */
+    .vb-row--unc { grid-template-columns: minmax(140px, 1.4fr) minmax(90px, 2fr) auto auto; }
     .vb-row:last-child { border-bottom: none; }
     .vb-row__name {
       font-size: 0.84rem; font-weight: 600; color: var(--clr-parchment);
@@ -1058,6 +1203,34 @@
       border: 1px solid rgba(245,240,232,0.15); border-radius: 4px;
     }
     .vb-row__x:hover { color: #e07b6b; border-color: #e07b6b; }
+    /* §2 (2026-09-08) — "+ org" per slider row. Quiet, because it is an offer
+       rather than the act the row is for: the slider is the vote. */
+    .vb-row__nom {
+      font: inherit; font-family: var(--font-mono); font-size: 0.62rem; line-height: 1;
+      letter-spacing: 0.04em; cursor: pointer; padding: 4px 7px; white-space: nowrap;
+      color: rgba(245,240,232,0.5); background: none;
+      border: 1px solid rgba(245,240,232,0.15); border-radius: 4px;
+    }
+    .vb-row__nom:hover { color: var(--vb); border-color: var(--vb); }
+    /* §2 (2026-09-08) — the ME expansion, in the ballot instead of under the
+       table row. It keeps the detail panel's own light chrome (it was written for
+       a white table row), so it is boxed against the dark ballot rather than
+       restyled. */
+    .vb-detail {
+      position: relative;
+      margin-top: 10px;
+      border: 1px solid rgba(245,240,232,0.14);
+      border-radius: 8px;
+      background: var(--clr-bg, #0f1a14);
+      padding: 12px 14px;
+    }
+    .vb-detail__x {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      font: inherit; font-size: 0.72rem; line-height: 1; cursor: pointer; padding: 3px 7px;
+      color: rgba(245,240,232,0.5); background: rgba(15,26,20,0.8);
+      border: 1px solid rgba(245,240,232,0.18); border-radius: 4px;
+    }
+    .vb-detail__x:hover { color: #e07b6b; border-color: #e07b6b; }
     .vb-row--unc .vb-row__name { color: rgba(245,240,232,0.6); font-weight: 500; }
     /* §4 (2026-08-10) — the leader of the initiative election, marked in the
        dialog you vote in (structure.md Table → Vote dialog → ME). */
@@ -1253,6 +1426,10 @@
     .init-selected__eyebrow { font-family:var(--font-mono); font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--clr-ink-muted); margin-bottom:var(--sp-sm); }
     .init-selected__title { font-size:1.4rem; font-weight:700; color:var(--clr-earth); margin-bottom:var(--sp-sm); }
     .init-selected__meta { font-family:var(--font-mono); font-size:0.78rem; color:var(--clr-ink-muted); margin-bottom:var(--sp-md); }
+    .init-selected__case-label {
+      font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; opacity: 0.55; margin: 2px 0 4px;
+    }
     .init-selected__desc { font-size:0.92rem; line-height:1.7; color:var(--clr-ink); margin-bottom:var(--sp-lg); max-width:680px; }
     .init-selected__actions { display:flex; gap:var(--sp-sm); flex-wrap:wrap; align-items:center; }
     /* Vote status pill — shown next to the action row when the benefactor
@@ -1729,6 +1906,20 @@
     .race-face--click:hover { background: rgba(20,34,26,0.95); }
     .race-face--click:focus-visible { outline: 2px solid var(--rf); outline-offset: 2px; }
     .rf-head { display: flex; align-items: baseline; gap: 8px; }
+    /* build-seq §3 (2026-09-16): OE cards — title on its own full-width row. */
+    .rf-title--row { display: block; flex: none; text-align: left; margin-bottom: 4px; -webkit-line-clamp: 2; }
+    .rf-head--meta { justify-content: space-between; }
+    /* build-seq §3 (2026-09-16): what the signed-in account backed. */
+    .rf-line--mine {
+      background: color-mix(in srgb, var(--rf) 30%, transparent);
+      box-shadow: inset 3px 0 0 var(--rf);
+      border-radius: 5px; margin: 0 -4px; padding: 1px 4px 1px 7px;
+    }
+    .rf-line--mine .rf-name { color: #fff; font-weight: 700; }
+    .rf-mine {
+      font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--rf); font-weight: 700; white-space: nowrap;
+    }
     .rf-days {
       font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700;
       color: var(--rf); white-space: nowrap;
@@ -2001,7 +2192,12 @@
   <div class="ebx-topbar">
     <div class="container ebx-topbar__inner">
       <a class="ebx-topbar__brand" href="main.html">Earthbux <em>News</em></a>
-      <span class="ebx-topbar__pagetag" style="font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;color:rgba(245,240,232,0.5);align-self:center;white-space:nowrap;">Election</span>
+      <!-- The five site tabs (build-seq Misc, 2026-09-08). This cell used to
+           hold a page tag reading "ELECTION"; the lit ELECTIONS tab says that
+           and also says what the other four pages are, so the tag came off.
+           Markup is `EBX.initNav` (resources/js/ebx_shared.js) — once, for all
+           five pages. -->
+      <div id="ebx-nav-mount" style="align-self:center;"></div>
       <div class="ebx-topbar__right" id="ebx-user-badge-mount"></div>
     </div>
   </div>
@@ -2047,6 +2243,12 @@
               <div class="ebx-center__cause" id="ebx-center-title">—</div>
               <div class="ebx-center__phase" id="ebx-center-phase"></div>
               <div class="ebx-center__date" id="ebx-center-date">—</div>
+              <!-- §2 (2026-09-08): the sub line, which `.ebx-center__sub` has
+                   had styles for since it was written and never had an element
+                   for. On the OE side it carries the INITIATIVE the winning
+                   organization would run — the fact the title used to hold
+                   before the centre started naming the cause. -->
+              <div class="ebx-center__sub" id="ebx-center-sub"></div>
               <div style="display:none">
                 <span id="ebx-center-cause"></span><span id="ebx-center-label"></span><span id="ebx-center-close"></span>
               </div>
@@ -2090,6 +2292,52 @@
         <nav class="cause-tabs" id="cause-tabs" aria-label="Cause selector"></nav>
       </div>
 
+      <!-- §2 (2026-09-08) — the election experience, in Jax's words, between the
+           seven cause toggles and the cause ballot. -->
+      <div class="hero__howitgoes" id="hero-howitgoes">
+        <div class="hig__steps">
+          <!-- build-seq §3 (2026-09-16): First / Next / Finally ARE the toggles
+               for the three election cards below. -->
+          <button type="button" class="hig__line hig__toggle" data-col="ce" onclick="setElectionCol('ce')"><span class="hig__n">1</span>First, the cause is determined.</button>
+          <button type="button" class="hig__line hig__toggle" data-col="me" onclick="setElectionCol('me')"><span class="hig__n">2</span>Next, a mission is elected within it.</button>
+          <button type="button" class="hig__line hig__toggle" data-col="oe" onclick="setElectionCol('oe')"><span class="hig__n">3</span>Finally, an organization is elected to run the mission.</button>
+          <p class="hig__line hig__line--where">The leaderboards are above. The candidates and ballots are below.</p>
+        </div>
+      </div>
+
+      <!-- §2 (2026-09-08) — **THE CAUSE ELECTION IS UNDER THE CAUSE TOGGLE.**
+           Build-seq main.html: "The cause election should be right under the 7
+           cause toggle." It spent 2026-08-27b below the table, on the reasoning
+           that the two elections a benefactor votes in this week belong above
+           the one that decides a cause seven weeks out. That ordering is by
+           urgency; this one is by SUBJECT — the seven tabs ARE the cause
+           control, and the ballot that changes which seven they are belongs
+           against them, not at the foot of a table about initiatives. It still
+           persists across ME and OE, and it is still painted by
+           `_mountCePanel` from `_mountVoteBar`. -->
+      <!-- build-seq §3 (2026-09-16) — **THE THREE ELECTION CARDS, ONE TOGGLE.**
+           "A 3-way horizontal toggle with the cause, ME and OE election cards
+           where the one selected is an expanded column and the other two are
+           collapsed columns on the left or right. This will be selected by the
+           first, next, finally acting as the toggles." Picking ME or OE also sets
+           the page mode; picking the cause card leaves the mode where it is.
+           `_mountVoteBar` moves the ballot and the notice into the ME and OE
+           columns to match the mode. -->
+      <div class="el3" id="el3">
+        <section class="el3__col" data-col="ce" id="el3-ce">
+          <button type="button" class="el3__tab" onclick="setElectionCol('ce')"><span class="el3__n">1</span>Cause election</button>
+          <div class="el3__body"><div class="ce-panel-mount" id="ce-panel-mount"></div></div>
+        </section>
+        <section class="el3__col on" data-col="me" id="el3-me">
+          <button type="button" class="el3__tab" onclick="setElectionCol('me')"><span class="el3__n">2</span>Initiative election</button>
+          <div class="el3__body" id="el3-me-body"><div class="votebar-mount" id="votebar-mount"></div></div>
+        </section>
+        <section class="el3__col" data-col="oe" id="el3-oe">
+          <button type="button" class="el3__tab" onclick="setElectionCol('oe')"><span class="el3__n">3</span>Organization election</button>
+          <div class="el3__body" id="el3-oe-body"><div class="votebar-mount" id="votebar-notice-mount"></div></div>
+        </section>
+      </div>
+
       <!-- §1 (2026-08-12, backlog "Remove old page toggle"): the hidden
            duplicate of the state toggle that used to sit under the annulus is
            gone. It was kept after 2026-08-09 only because `setMainMode()` wrote
@@ -2124,7 +2372,12 @@
            than about the race they happen to be reading. -->
       <div class="oe-actions-mount" id="oe-actions-mount"></div>
 
-      <div class="votebar-mount" id="votebar-mount"></div>
+      <!-- §2 (2026-09-08) — the two election panels. `#votebar-mount` is the
+           ballot for the selected mode; `#votebar-notice-mount` is the other
+           election, reporting rather than asking. `.votebar-pair--oe` puts the
+           notice first, so the pair always reads mission-election-then-
+           organization-election down the page. -->
+      <!-- 2026-09-16: the two panels moved up into the three-card toggle (#el3). -->
 
       <div class="init-table-wrap">
         <div class="init-table-scroll">
@@ -2167,6 +2420,16 @@
         <div class="init-filters" role="group" aria-label="Table filters">
           <button type="button" class="rf-btn" id="show-all-inits" onclick="showAllInitiatives()">
             Show all Initiatives</button>
+          <!-- §2 (2026-09-08): in the ORGANIZATION state the table is one race's
+               candidates, so the way back out is to the eight open races — the
+               deadline view that used to be the only view. -->
+          <button type="button" class="rf-btn" id="show-all-races" style="display:none"
+                  onclick="setOeScope(_oeScope() !== 'race' ? 'race' : 'all')">Show all races</button>
+          <!-- build-seq §3 (2026-09-16): "Show active missions for [cause]" —
+               every mission of the cause the tabs point at whose initiative is
+               elected: open organization races and missions in framing. -->
+          <button type="button" class="rf-btn" id="show-cause-missions"
+                  onclick="showCauseMissions()">Show active missions</button>
           <select class="init-filter" id="filter-cause" style="display:none"
                   onchange="onCauseFilterChange(this.value)" aria-label="Filter by cause">
             <option value="">All causes</option>
@@ -2174,12 +2437,9 @@
         </div>
       </div>
 
-      <!-- §1 (2026-08-27b) — **the cause election box sits BELOW the table.**
-           It spent a day above the election panel; the two elections a
-           benefactor is voting in this week belong at the top, and the one that
-           decides a cause seven weeks out belongs after them. It still persists
-           across ME and OE. -->
-      <div class="ce-panel-mount" id="ce-panel-mount"></div>
+      <!-- §2 (2026-09-08): the cause election box MOVED UP, to directly under
+           the seven cause tabs in the hero. Nothing replaces it here — the table
+           ends at its own toolbar. -->
     </div>
   </section>
 
@@ -2201,6 +2461,11 @@
 
   <div id="ebx-footer-mount"></div>
 
+  <!-- §6 (2026-09-08) — the page helpers module. Plain JS, no build step, no
+       dependency on EBX: the html escaper this file used to define six times,
+       the date/number formatters, and the watchlist. See its header for why it
+       is not part of ebx_shared.js. -->
+  <script src="resources/js/ebx_page.js?v=20260908"></script>
   <script src="resources/js/ebx_shared.js?v=20260810c"></script>
   <!-- §7b (2026-08-10) — SAFETY NET FOR THE SHARED DATE HELPER.
        `EBX.Cycle.missionDates` is the single owner of every mission date, but
@@ -2348,10 +2613,26 @@
     // by the cause filter, or by a row's Vote toggle; defaults to the cause
     // whose initiative election is next (the one the annulus centres on).
     let _voteCauseId = null;
+    // §2 (2026-09-08) — **ONE CAUSE PER PAGE.** This computed its own default —
+    // "the next cause", in both page states — while the annulus centre, the two
+    // top cards and the seven tabs use `_focusCause`, whose default in the
+    // ORGANIZATION state is the ACTIVE cause. With no tab clicked those two
+    // answers differ by one sector, and the page said so out loud: the centre
+    // read *Human Rights*, the notice beside it read *Human Progress*, and the
+    // ballot under both read *Wildlife*. Three causes, one screen, nobody
+    // wrong-clicked. The cause toggle is meant to drive "the annulus, the
+    // election panel, the CE panel and the table" (§2, 2026-08-27), so the
+    // ballot asks the same function the toggle writes and there is one answer on
+    // the page. An explicit pick (`voteOnCause`, a card's Vote button) still
+    // wins, because that is a benefactor naming a race.
     function voteCauseId() {
       if (_voteCauseId) return _voteCauseId;
       const sel = document.getElementById('filter-cause');
       if (sel && sel.value) return sel.value;
+      try {
+        const focus = (typeof window._focusCause === 'function') ? window._focusCause() : null;
+        if (focus && focus.id) return focus.id;
+      } catch (e) {}
       try {
         const nextIdx = (EBX.Cycle.now().causeIndex + 1) % 7;
         const c = (EBX.config.causes || []).find(x => x.index === nextIdx);
@@ -2504,13 +2785,23 @@
     // The mission whose org election the dialog targets in "active missions"
     // mode: an explicit pick, else the open org race for the filtered cause,
     // else the race closing soonest (the one that started first).
+    // §2 (2026-09-08): `want` read the RAW `_voteCauseId`, which is null until a
+    // benefactor presses Vote on something — so with nothing clicked this fell
+    // straight through to "the open race closing soonest anywhere", and the OE
+    // ballot opened on a WILDLIFE race under a HUMAN RIGHTS annulus. It asks
+    // `voteCauseId()` now, the same accessor everything else on the page asks,
+    // which knows the cause toggle's answer as well as an explicit pick. Where
+    // the chosen cause has two organization elections open at once — which is
+    // normal, since the races run 8 weeks and the cause comes round every 7 —
+    // the `started_at` sort takes the OLDER one, the race that finalizes next.
+    // That is the same "upcoming, not newest" rule the top cards and the annulus
+    // centre follow, and build-seq main.html asks the OE table for it too.
     function voteMissionId() {
       if (_voteMissionId) return _voteMissionId;
       const open = (EBX.config.missions || [])
         .filter(m => m.winning_tiv_id && !m.winning_org_id)
         .sort((a, b) => new Date(a.started_at || 0) - new Date(b.started_at || 0));
-      const sel = document.getElementById('filter-cause');
-      const want = _voteCauseId || (sel && sel.value) || null;
+      const want = voteCauseId();
       const mine = want ? open.find(m => m.cause_id === want) : null;
       return (mine || open[0] || {}).id || null;
     }
@@ -2532,7 +2823,8 @@
       const m = (EBX.config.missions || []).find(x => x.id === _voteMissionId);
       if (m) _voteCauseId = m.cause_id;
       filterInitiatives();
-      renderCards();
+      if (m) _pointAnnulusAt(m.cause_id);        // renders the cards too
+      else renderCards();
     }
     window.selectMission = selectMission;
     // The table renders in the other script block; it asks here which mission
@@ -2544,6 +2836,11 @@
     // pointed at as well as the filter field, or the next repaint puts it back.
     window._clearVoteCause = () => { _voteCauseId = null; _selectedInit = null; };
     window._p2For = mid => (mid && _p2ByMission[mid]) || null;
+    // §2 (2026-09-08): the OE table lists a race's ORGANIZATIONS now, and it is
+    // rendered in the second script block, so the candidacy map and this
+    // benefactor's own pick have to be reachable from there.
+    window._candFor = mid => (mid && _candByMission[mid]) || [];
+    window._myOrgForPublic = mid => (typeof _myOrgFor === 'function') ? _myOrgFor(mid) : null;
     // §8 (2026-08-10): the signed-in benefactor's own commitment in one
     // mission's philanthropy election — the OE table's "My commitment" column.
     window._myP2For = mid => (mid && _myP2ByMission[mid]) || null;
@@ -2559,7 +2856,8 @@
     let _wallet = null;            // the four segments
     let _walletRows = [];          // one entry per open philanthropy election
     let _walletRules = null;       // the model's own constants, as published
-    let _grantCause = null;        // the cause this week's grant was issued against
+    let _grantWeek = null;         // the WEEK this grant was issued in (2026-09-16: never a cause)
+    let _walletWeek = null;
     let _hardensWeek = null;       // the week a standing allocation becomes EBX
     let _pending = {};             // mission_id -> {ct, org_id} dialled, unsent
     const CT = 100;                // centitokens per token, confirmed by /wallet
@@ -2590,7 +2888,8 @@
         _wallet = data.wallet || null;
         if (_wallet && data.rules) _wallet.ct_per_token = data.rules.ct_per_token || CT;
         _walletRules = data.rules || null;
-        _grantCause = data.grant_cause_id || null;
+        _grantWeek = (data.grant_week != null) ? data.grant_week : null;
+        _walletWeek = (data.week != null) ? data.week : null;
         _hardensWeek = (data.hardens_week != null) ? data.hardens_week : null;
         _walletRows = data.rows || [];
         _pending = {};
@@ -2603,7 +2902,10 @@
     // be here is gone with the rule it enforced: a granted token appears in its
     // cause's election week and cannot be moved or withdrawn, so there is
     // nothing for a deadline to threaten.
-    window._grantCause = () => _grantCause;
+    // 2026-09-16 — a grant carries its WEEK, never a cause: "the active week's
+    // cause is different between the 2 elections."
+    window._grantWeek = () => _grantWeek;
+    window._walletWeek = () => _walletWeek;
     window._hardensWeek = () => _hardensWeek;
     window._walletRules = () => _walletRules;
 
@@ -2745,7 +3047,12 @@
             method: 'POST',
             body: JSON.stringify({ mission_id: mid, target_ct: Math.round(p.ct), org_id: org }),
           });
-          if (!r || !r.ok) failures.push(mid);
+          if (!r || !r.ok) {
+            // build-seq §3 (2026-09-16): say WHY — e.g. the $1 minimum.
+            let why = '';
+            try { why = (await r.json()).detail || ''; } catch (e) {}
+            failures.push(why || mid);
+          }
         } catch (e) { failures.push(mid); }
       }
       // The org PICK is a separate decision on races the benefactor is already
@@ -2765,7 +3072,8 @@
       try { await loadP2Tallies(); } catch (e) {}
       filterInitiatives();
       renderCards();
-      if (failures.length) alert('Some commitments were refused by the server. Reloading what did land.');
+      if (failures.length) alert('Some commitments were refused by the server:\n\n' +
+        Array.from(new Set(failures)).join('\n') + '\n\nReloading what did land.');
     }
     window.commitAll = commitAll;
 
@@ -2839,9 +3147,23 @@
     // this area calls `pickOrg` by name, so nothing depends on the old one.
 
     // ── The dialog itself — rendered as the table's first row ─────────────
+    // §2 (2026-09-08) — **THE ME EXPANSION LIVES IN THE BALLOT.** Build-seq
+    // main.html: "Remove expanded row from ME table. Clicking a row should bring
+    // up the expansion in the election panel." An inline `<tr>` unfolding under a
+    // row pushes the rest of the field down the page, which is the comparison the
+    // table exists to make — the same reason the OE rows stopped expanding on
+    // 2026-08-20. The panel is a fixed place at the top of the voting area, so
+    // reading about one initiative no longer moves the other twenty.
+    let _meDetailTivId = null;
+    window._meDetailGet = () => _meDetailTivId;
+    window._meDetailSet = function (tivId) {
+      _meDetailTivId = tivId || null;
+      _mountVoteBar();
+    };
+    window._meDetailClear = function () { window._meDetailSet(null); };
+
     function voteBarHTML() {
-      const _esc = s => String(s == null ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const _esc = EBXPage.esc;                     // §6 (2026-09-08)
       // §1 (2026-08-27): the cause ballot is not in here any more — it is the
       // CE PANEL above this one, in every state, so this panel is only ever the
       // mission election or the organization election.
@@ -2852,6 +3174,95 @@
     // §4 (2026-08-10) — paint the election dialog into its panel ABOVE the
     // table keys. Both table renderers call this instead of prepending a
     // `<tr class="votebar-row">` to their own tbody.
+    // §2 (2026-09-08) — **THE SECOND ELECTION PANEL.** Build-seq main.html asked
+    // for it in the two sentences it should say, one per page state, and both are
+    // reproduced here almost word for word:
+    //
+    //   with ORGANIZATION elections selected —
+    //     "x was elected on x, select 'Mission elections' to vote on the next
+    //      mission"
+    //   with MISSION elections selected —
+    //     "The organization election for x will open when an initiative for x is
+    //      elected on x. Select 'Organization elections' to vote in the active
+    //      organization election for this cause."
+    //
+    // Why it earns a panel rather than a line: the page has two elections and
+    // one ballot, so until now the state a benefactor was NOT in was invisible
+    // — there was nothing on the screen to say the other race existed, when it
+    // closes, or that the toggle is what reaches it. The notice is that, in the
+    // slot where that race's ballot would be, so the two halves of the page keep
+    // the order the elections happen in whichever one is being voted in.
+    function _voteBarNotice(esc) {
+      const causeId = voteCauseId();
+      const cause = (EBX.config.causes || []).find(c => c.id === causeId);
+      if (!cause) return '';
+      const isTiv = _mainMode !== 'org';
+      const btn = (mode, label) =>
+        '<button class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();' +
+        'setMainMode(\'' + mode + '\')">' + label + '</button>';
+
+      if (isTiv) {
+        // The OE notice — what happens after the initiative election closes, and
+        // the way into the organization election this cause already has running.
+        let meDay = '';
+        try { meDay = _fmtFullDate(_nextInitiativeElection(cause.index)); } catch (e) {}
+        const open = (typeof _openPhlElections === 'function') ? _openPhlElections(cause.id) : [];
+        const active = (typeof _finalizingMission === 'function') ? _finalizingMission(cause.id) : null;
+        const activeTiv = active
+          ? (EBX.config.initiatives || []).find(i => i.id === active.winning_tiv_id) : null;
+        let activeDay = '';
+        try { activeDay = active ? _fmtFullDate(_orgCloseDate(active, cause.index)) : ''; } catch (e) {}
+        const second = active
+          ? 'One is already running: <b>' + esc(activeTiv ? activeTiv.title : active.id) +
+            '</b> picks its organization on <b>' + activeDay + '</b>. ' +
+            'Select <b>Organization Elections</b> to vote in it.'
+          : 'This cause has no organization election open yet — the one above is the first, ' +
+            'and it opens the moment its initiative is elected.';
+        return '<div class="votebar votebar--notice">' +
+          '<div class="votebar__head">' +
+            '<span class="votebar__title">Next &middot; ' + esc(cause.name) + ' Organization Election</span>' +
+            '<span class="votebar__spacer"></span>' +
+            (open.length ? '<span class="votebar__chip">Open now<b>' + open.length +
+              ' race' + (open.length === 1 ? '' : 's') + '</b></span>' : '') +
+          '</div>' +
+          '<p class="vb-notice__body">The organization election for <b>' + esc(cause.name) +
+            '</b> will open when an initiative for <b>' + esc(cause.name) + '</b> is elected' +
+            (meDay ? ' on <b>' + meDay + '</b>' : '') + '. ' + second + '</p>' +
+          '<div class="vb-notice__foot">' + btn('org', 'Organization Elections &rarr;') + '</div>' +
+        '</div>';
+      }
+
+      // The ME notice — the initiative this cause elected most recently, the day
+      // it happened, and the way back to the race that elects the next one.
+      const elected = (EBX.config.missions || [])
+        .filter(m => m.cause_id === cause.id && m.winning_tiv_id)
+        .sort((a, b) => (b.cycle_num || 0) - (a.cycle_num || 0))[0] || null;
+      const tiv = elected
+        ? (EBX.config.initiatives || []).find(i => i.id === elected.winning_tiv_id) : null;
+      let electedDay = '';
+      try {
+        if (elected) electedDay = _fmtFullDate(EBX.Cycle.missionDates(elected).missionStarted);
+      } catch (e) {}
+      let nextDay = '';
+      try { nextDay = _fmtFullDate(_nextInitiativeElection(cause.index)); } catch (e) {}
+      const said = elected
+        ? '<b>' + esc(tiv ? ((tiv.emoji ? tiv.emoji + ' ' : '') + tiv.title) : elected.winning_tiv_id) +
+          '</b> was elected' + (electedDay ? ' on <b>' + electedDay + '</b>' : '') + '. '
+        : esc(cause.name) + ' has not elected an initiative yet. ';
+      return '<div class="votebar votebar--notice">' +
+        '<div class="votebar__head">' +
+          '<span class="votebar__title">Decided &middot; ' + esc(cause.name) + ' Mission Election</span>' +
+          '<span class="votebar__spacer"></span>' +
+          (nextDay ? '<span class="votebar__chip">Next<b>' + nextDay + '</b></span>' : '') +
+        '</div>' +
+        '<p class="vb-notice__body">' + said +
+          'Select <b>Mission Elections</b> to vote on the next mission' +
+          (nextDay ? ', decided <b>' + nextDay + '</b>' : '') + '.</p>' +
+        '<div class="vb-notice__foot">' + btn('tiv', '&larr; Mission Elections') + '</div>' +
+      '</div>';
+    }
+    window._voteBarNotice = _voteBarNotice;
+
     function _mountVoteBar() {
       // §1 (2026-08-27): the CE panel sits above this one and is painted with
       // it, so every path that repaints the voting area repaints both.
@@ -2859,6 +3270,22 @@
       const mount = document.getElementById('votebar-mount');
       if (!mount) return;
       mount.innerHTML = (typeof voteBarHTML === 'function') ? voteBarHTML() : '';
+      // …and so does the second panel, which is the same repaint: the notice
+      // names the OTHER race, so anything that changes cause or mode changes it.
+      const notice = document.getElementById('votebar-notice-mount');
+      if (notice) {
+        notice.innerHTML = _voteBarNotice(EBXPage.esc);
+      }
+      // build-seq §3 (2026-09-16): the ballot lives in the column of the mode it
+      // votes in, the notice in the other one.
+      const meBody = document.getElementById('el3-me-body');
+      const oeBody = document.getElementById('el3-oe-body');
+      if (meBody && oeBody && mount && notice) {
+        const ballotHome = _mainMode === 'org' ? oeBody : meBody;
+        const noticeHome = _mainMode === 'org' ? meBody : oeBody;
+        if (mount.parentNode !== ballotHome) ballotHome.appendChild(mount);
+        if (notice.parentNode !== noticeHome) noticeHome.appendChild(notice);
+      }
     }
     window._mountVoteBar = _mountVoteBar;
 
@@ -2896,7 +3323,7 @@
         return '<div class="vb-row' + (isLeader ? ' vb-row--leader' : '') + '">' +
           '<div><div class="vb-row__name">' +
             (isLeader ? '<span class="vb-lead" title="Leading the initiative election">▲ leading</span>' : '') +
-            (i.emoji ? i.emoji + ' ' : '') + esc(i.title || 'Untitled') + '</div>' +
+            (i.emoji ? i.emoji + ' ' : '') + esc(((typeof window._titleAndCase === 'function') ? window._titleAndCase(i).title : (i.title || '')) || 'Untitled') + '</div>' +
             '<div class="vb-row__sub">pool ' + Math.round(tot).toLocaleString() + ' tokens' +
               (pool > 0 ? ' · ' + Math.round(tot / pool * 100) + '% of the field' : '') +
               (v > 0 && (used > 0) ? ' · ' + Math.round(v / used * 100) + '% of my slate' : '') + '</div></div>' +
@@ -2905,6 +3332,20 @@
             ' onchange="event.stopPropagation();setAlloc(\'' + i.id + '\', this.value)"' +
             ' onclick="event.stopPropagation()" aria-label="Tokens on ' + esc(i.title || '') + '" />' +
           '<div class="vb-row__val" id="vb-val-' + i.id + '">' + v + ' tokens</div>' +
+          // §2 (2026-09-08) — "In the ME election panel add a button beside each
+          // slider row to nominate an organization for that initiative."
+          // Nomination has always been an ORGANIZATION-election act, reachable
+          // only from the OE panel — which means it could not be done until the
+          // initiative had already won. jax notes 2 says the opposite: "Users
+          // need to be able to suggest organizations even before the initiative
+          // has been decided… Org nomination can fire upon tiv vote." This is
+          // that door, at the moment a benefactor is deciding they want this
+          // initiative to happen, which is exactly when they know who should run
+          // it. It carries the initiative so the dialog can attach the
+          // candidacy to the mission the initiative belongs to.
+          '<button class="vb-row__nom" title="Nominate an organization to run ' +
+            esc(i.title || '') + '"' +
+            ' onclick="event.stopPropagation();nominateOrgFor(\'' + i.id + '\')">+ org</button>' +
           '<button class="vb-row__x" title="Remove from my slate"' +
             ' onclick="event.stopPropagation();toggleSlate(\'' + i.id + '\')">✕</button>' +
         '</div>';
@@ -2925,6 +3366,21 @@
         : '<div class="votebar__empty">Your slate is empty. Press <b>Vote</b> on any initiative below to put it in ' +
           'here, then split your ' + budget + ' tokens across up to ' + MAX_SPLIT + ' of them.</div>';
 
+      // The expansion that used to unfold under the table row. It is the same
+      // markup (`_idxInitDetailHTML`), in a fixed place, with a way to shut it.
+      let detail = '';
+      if (_meDetailTivId && typeof window._idxInitDetailHTML === 'function') {
+        const dTiv = ((window._allInitsPublic && window._allInitsPublic()) ||
+                      EBX.config.initiatives || []).find(i => i.id === _meDetailTivId);
+        if (dTiv) {
+          detail = '<div class="vb-detail">' +
+            '<button class="vb-detail__x" title="Close" aria-label="Close"' +
+              ' onclick="event.stopPropagation();window._meDetailClear()">✕</button>' +
+            window._idxInitDetailHTML(dTiv) +
+          '</div>';
+        }
+      }
+
       return '<div class="votebar" style="--vb:' + col + ';">' +
         '<div class="votebar__head">' +
           '<span class="votebar__title">Phase 1 · ' + esc(cause.name) + ' Initiative Election</span>' +
@@ -2941,7 +3397,7 @@
                 ' · ' + Math.round(leaderEbx).toLocaleString() + ' tokens</b></span>'
             : '') +
         '</div>' +
-        body +
+        body + detail +
         '<div class="votebar__foot">' +
           '<button class="vb-btn" onclick="event.stopPropagation();commitVotes(\'' + causeId + '\')"' +
             (pending ? '' : ' disabled') + '>Commit' + (pending ? ' ' + pending + ' tokens' : '') + '</button>' +
@@ -2973,7 +3429,7 @@
       if (!mid) {
         return '<div class="votebar" style="--vb:var(--clr-honey);">' +
           '<div class="votebar__head">' +
-            '<span class="votebar__title">Philanthropy Election</span>' +
+            '<span class="votebar__title">Organization Election</span>' +
             '<span class="votebar__spacer"></span>' +
           '</div>' +
           // §0 (2026-08-21): this still told a benefactor to "press its Vote
@@ -3035,7 +3491,7 @@
       // button beside it, which on a race with a dozen candidacies is a scroll,
       // not a choice. Three is the shortlist the card and the leaders strip
       // already report; anything below it is read on the mission page. A
-      // philanthropy a benefactor has ALREADY picked stays on the list whatever
+      // organization a benefactor has ALREADY picked stays on the list whatever
       // its rank — the one thing worse than a long list is one that hides your
       // own vote.
       const shortlist = ranked.slice(0, 3);
@@ -3073,7 +3529,7 @@
       const note = dirty.any
         ? [dirty.voteDirty ? 'organization picked' : null,
            dirty.carryDirty ? 'split moved' : null].filter(Boolean).join(' · ') + ' — not yet committed'
-        : 'one vote per benefactor · your phase-1 tokens ride on it';
+        : 'one vote per benefactor · $1 (10 tokens) minimum unless your initiative-election tokens ride on it';
       // §3 (2026-08-09, structure.md backlog "Show next vote day"): this header
       // used to read "Phase 2 · Oceans Organization Election" followed by a sub
       // of "oce0 · Garbage Patch Analysis", which ran together on screen as
@@ -3154,7 +3610,7 @@
                 '<span class="vb-amount__unit">token' + (_srcMax === 100 ? '' : 's') + '</span>' +
                 _action +
                 (myOrg ? '<span class="vb-amount__to">to <b>' + esc(_orgName(myOrg)) + '</b></span>'
-                       : '<span class="vb-amount__to vb-amount__to--none">pick a philanthropy above</span>') +
+                       : '<span class="vb-amount__to vb-amount__to--none">pick an organization above</span>') +
                 '<span class="vb-amount__warn">' +
                   (_convFrom ? 'a move IS a vote here &mdash; free, until the week changes'
                              : (_minted > 0
@@ -3178,7 +3634,7 @@
         '<div class="votebar__head">' +
           '<span class="votebar__title">' + esc(cause ? cause.name : '') + ' ' + _cyc +
             (tiv ? ' - ' + esc(tiv.title) : '') +
-            ' - Philanthropy Election: ' + _phlDay + '</span>' +
+            ' - Organization Election: ' + _phlDay + '</span>' +
           '<span class="votebar__spacer"></span>' +
           '<span class="votebar__chip" title="Phase-1 commitment kept in this mission, plus votes bought">' +
             'Race pool<b>' + Math.round(poolEbx) + ' tokens</b></span>' +
@@ -3200,7 +3656,27 @@
         // panel under the annulus — and a panel about a benefactor's balance is
         // not the place for three links about one race. Commit is not among
         // them: it is all-encompassing, so it stays with the balance it spends.
+        // §2 (2026-09-08) — **COMMIT IS BACK ON THE BALLOT.** Build-seq
+        // main.html: "OE ballot card is currently missing the commit button."
+        // It was deliberately removed on 2026-08-21 — "Commit is
+        // all-encompassing, so it stays with the balance it spends" — and that
+        // reasoning is still true of the button in the allocations panel, which
+        // stays exactly where it is. What it got wrong is the reader: the ballot
+        // is where the decision is made, and it ended in three links with no way
+        // to act, while the only Commit on the page sat a screen and a half
+        // below, in a panel about a balance. Both exist now, they arm together,
+        // and they are the same call — `commitOrgVote` is the per-race alias of
+        // `commitAll`, so there is still exactly ONE write path.
         '<div class="votebar__foot">' +
+          '<button class="vb-btn" onclick="event.stopPropagation();commitOrgVote(\'' + mid + '\')"' +
+            (dirty.any ? '' : ' disabled') +
+            ' title="' + (dirty.any
+              ? 'Writes every allocation you have dialled, this race included. Revisable until the week changes, then it is EBX'
+              : 'Nothing dialled in this race yet') + '">' +
+            'Commit' + (_pend > 0 ? ' ' + _tk(_pend) : '') + '</button>' +
+          '<button class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();cancelAll()"' +
+            (dirty.any ? '' : ' disabled') +
+            ' title="Drops everything dialled but not committed">Cancel</button>' +
           '<a class="vb-btn vb-btn--ghost" style="text-decoration:none;" href="cause.html?id=' +
             (cause ? cause.id : '') + '#phase-recap-2" onclick="event.stopPropagation()">Discuss &rarr;</a>' +
           '<button class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();openOrgRegisterModal()">' +
@@ -3228,6 +3704,12 @@
     function voteOnCause(causeId, orgMissionId, opts) {
       if (!causeId) return;
       _voteCauseId = causeId;
+      // build-seq §3 (2026-09-16) — "The annulus is not toggling to the selected
+      // mission." Picking a card or a race pointed the table and the ballot at
+      // it but left `_selCauseId` alone, so the annulus, its centre and the cause
+      // tabs kept showing the default cause. Every pick now points them too.
+      // (The cause tabs call this through `selectCause`, which renders itself.)
+      if (!(opts && opts.fromTabs)) _pointAnnulusAt(causeId);
       if (orgMissionId) {
         _voteMissionId = orgMissionId;
         if (_mainMode !== 'org' && typeof window.setMainMode === 'function') {
@@ -3354,7 +3836,7 @@
     // Back  (tiv mode): emphasizes the upcoming initiative election + ranking.
     // We delegate the front face to the shared sideCard() and build a custom
     // back face here so the flip lives in this page's mode state without
-    // needing a rebuild of ebx_shared.ts.
+    // editing the shared engine.
     // ══ §2 (2026-08-05) — SIDE CARDS, per the structure.md drawings ═══════
     //
     //   ____________________________________
@@ -3375,11 +3857,9 @@
     // card read "51 d left" beside "Sep 29" on Aug 10, which is 50 days. Two
     // numbers on one card must not disagree — both now count midnight to
     // midnight, so the days ALWAYS equal the printed date minus today.
-    const _daysLeft = d => {
-      const t = new Date(d); t.setHours(0, 0, 0, 0);
-      const n = new Date();  n.setHours(0, 0, 0, 0);
-      return Math.max(0, Math.round((t.getTime() - n.getTime()) / EBX.Cycle.MS_PER_DAY));
-    };
+    // §6 (2026-09-08): the midnight-to-midnight rule moved to EBXPage, comment
+    // and all — it is the fix from 2026-08-10 and it must not be re-derived.
+    const _daysLeft = EBXPage.daysLeft;
     const _pct = (part, whole) => (whole > 0 ? Math.round(part / whole * 100) : 0);
     // §7 (2026-08-10) — "the next initiative election you can still vote in".
     // Answered from the cause's OPEN mission via the shared anchor, because
@@ -3398,8 +3878,7 @@
       const d = new Date(EBX.Cycle.nextDecisionDate(causeIndex).getTime() + wk);
       return d.getTime() > Date.now() ? d : new Date(d.getTime() + rotation);
     }
-    const _esc = s => String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const _esc = EBXPage.esc;                       // §6 (2026-09-08)
 
     function raceFace(d) {
       const glow = d.glowColor
@@ -3427,10 +3906,13 @@
       const rank = (Array.isArray(d.top) ? d.top : []).slice(0, 3);
       const rows = rank.length
         ? rank.map((r, i) =>
-            '<div class="rf-line rf-line--rank">' +
+            // build-seq §3 (2026-09-16): "any initiative or organization that
+            // the logged in account backed should be highlighted."
+            '<div class="rf-line rf-line--rank' + (r.mine ? ' rf-line--mine' : '') + '"' +
+              (r.mine ? ' title="You backed this"' : '') + '>' +
               '<span class="rf-rank">' + (i + 1) + '</span>' +
               '<span class="rf-line__v"><span class="rf-name">' + _esc(r.name) + '</span>' +
-                pct(r.pct) + '</span>' +
+                pct(r.pct) + (r.mine ? ' <span class="rf-mine">&#10003; you</span>' : '') + '</span>' +
             '</div>').join('')
         : line('rf-line--pool', 'Leader:', '<span class="rf-none">no leader yet</span>');
       // Three rows always, so seven cards keep one height whatever the field.
@@ -3468,11 +3950,19 @@
           (d.clickTitle ? ' title="' + _esc(d.clickTitle) + '"' : '')
         : ' class="race-face"';
       return '<div' + click + ' data-cause-id="' + d.causeId + '" style="--rf:' + d.color + ';' + glow + '">' +
-        '<div class="rf-head">' +
-          '<span class="rf-days">' + d.daysLeft + ' d left</span>' +
-          '<span class="rf-title">' + _esc(d.title) + '</span>' +
-          '<span class="rf-date">' + d.date + '</span>' +
-        '</div>' +
+        // build-seq §3 (2026-09-16): OE cards give the initiative title the
+        // full row, above the days-left and the date.
+        (d.titleAbove
+          ? '<div class="rf-title rf-title--row">' + _esc(d.title) + '</div>' +
+            '<div class="rf-head rf-head--meta">' +
+              '<span class="rf-days">' + d.daysLeft + ' d left</span>' +
+              '<span class="rf-date">' + d.date + '</span>' +
+            '</div>'
+          : '<div class="rf-head">' +
+              '<span class="rf-days">' + d.daysLeft + ' d left</span>' +
+              '<span class="rf-title">' + _esc(d.title) + '</span>' +
+              '<span class="rf-date">' + d.date + '</span>' +
+            '</div>') +
         swapLine + poolLine + mineLine + restLine +
       '</div>';
     }
@@ -3523,8 +4013,9 @@
         // `myTop` / `myTopEbx` / `rest` are still computed above because the
         // vote panel reads the same helpers; the CARD no longer shows them.
         top: inits.slice(0, 3).map(i => ({
-          name: (i.emoji ? i.emoji + ' ' : '') + i.title,
+          name: (i.emoji ? i.emoji + ' ' : '') + ((typeof window._titleAndCase === 'function') ? window._titleAndCase(i).title : (i.title || '')),
           pct: _pct((i.committed_ebx || i.ebx_committed || 0), pool),
+          mine: _allocFor(i.id) > 0,
         })),
         glowColor: opts && opts.glowColor ? opts.glowColor : null,
       });
@@ -3672,18 +4163,18 @@
           '<span class="cy-pick won">' + tivName + ' ✓</span>' +
           (st.backed_winner ? '<span class="cy-note">you backed the winner</span>'
                             : '<span class="cy-note">you did not back the winner</span>') + '</div>' +
-        // §1 (2026-08-20): the initiative election takes NOTHING now — one skim,
-        // and it falls after the philanthropy is elected. So this line reads 0
-        // on any race finalized under the current rules, and survives only to
-        // explain the older ones honestly.
+        // 2026-09-16: this legacy carryover card reads the pre-2026-08-20 send.
+        // The live skims (10% at the ME, +10% at the OE) are booked on the OE
+        // row's `donated_ct`, not here, so this line survives only to explain
+        // older races honestly.
         (st.sent_to_pool_ebx > 0
           ? '<div class="cy-line"><span class="cy-label">Sent to the pool</span>' +
             '<b>' + Math.round(st.sent_to_pool_ebx) + ' tokens</b>' +
             '<span class="cy-note">irrevocable — skimmed under the pre-2026-08-20 rates, ' +
             'and it still counts toward your commitment and vote weight</span></div>'
           : '<div class="cy-line"><span class="cy-label">Sent to the pool</span>' +
-            '<b>0 tokens</b><span class="cy-note">the initiative election takes nothing — ' +
-            'the one skim comes after the philanthropy is elected</span></div>') +
+            '<b>0 tokens</b><span class="cy-note">under the current rules 10% is final at the initiative election, ' +
+            'another 10% at the organization election, and all of it on budget day (T+15)</span></div>') +
         (st.already_rolled_ebx ? '<div class="cy-line"><span class="cy-label">Rolled forward</span><b>' +
           Math.round(st.already_rolled_ebx) + ' tokens</b>' +
           (st.reclaimable_ebx > 0
@@ -3756,7 +4247,17 @@
           }
         } catch (e) {}
       }
+      // §2 (2026-09-08) — **and repaint the TABLE, not only the cards.** Every
+      // phase-2 number in the organization table comes from `_p2ByMission`, which
+      // this function is what fills; it ended at `renderCards()`, so the table
+      // had already been drawn from an empty map and nothing came back to it.
+      // The old row showed one em-dash where the race pool goes; the row this
+      // pass replaced it with shows three blanks — a registered organization
+      // with "0 votes · 0 benefactors · —" beside it, when the tally says 1 vote
+      // and 6 tokens. The ME table never had the problem because an initiative
+      // carries its own total in `/initiatives`.
       renderCards();
+      if (typeof filterInitiatives === 'function') filterInitiatives();
     }
     window.loadP2All = loadP2All;
 
@@ -4054,7 +4555,10 @@
       // somewhere else.
       const myStakeCt = (mid && typeof window._walletRowFor === 'function')
         ? Number((window._walletRowFor(mid) || {}).my_stake_ct) || 0 : 0;
+      const myOrg = (mine && mine.org_id) ||
+        ((mid && typeof window._walletRowFor === 'function') ? (window._walletRowFor(mid) || {}).my_org_id : null);
       return raceFace({
+        titleAbove: true,
         onClick: mid ? "voteOnCause('" + cause.id + "', '" + mid + "')" : null,
         clickTitle: 'Vote in this philanthropy election',
         causeId: cause.id, color: cause.color,
@@ -4068,6 +4572,7 @@
           .slice(0, 3).map(id => ({
             name: _orgName(id) + (won && id === leaderId ? ' \u2713 elected' : ''),
             pct: _pct(votesOf(id), totalVotes),
+            mine: !!(myOrg && id === myOrg),
           })),
         glowColor: opts.glowColor || null,
       });
@@ -4154,6 +4659,7 @@
       const focus = _focusCause();
       const causes = (EBX.config.causes || []).slice()
         .filter(c => c.index != null).sort((a, b) => a.index - b.index);
+      if (typeof window.labelCauseMissionsButton === 'function') window.labelCauseMissionsButton();
       el.innerHTML = causes.map(c => {
         const on = !!(focus && c.id === focus.id);
         let day = '';
@@ -4174,9 +4680,17 @@
     function selectCause(causeId) {
       if (!causeId) return;
       _selCauseId = causeId;
-      voteOnCause(causeId, null, { scroll: false });
+      voteOnCause(causeId, null, { scroll: false, fromTabs: true });
       render();
     }
+    // build-seq §3 (2026-09-16): point the annulus, its centre and the cause
+    // tabs at a cause picked anywhere else on the page (a card, a race row).
+    function _pointAnnulusAt(causeId) {
+      if (!causeId) return;
+      _selCauseId = causeId;
+      try { render(); } catch (e) {}
+    }
+    window._pointAnnulusAt = _pointAnnulusAt;
     window.selectCause = selectCause;
 
     // ── the pie itself ──
@@ -4255,19 +4769,47 @@
 
       const sectorAngle = TAU / 7;
       const ringInner = outerR + 13, ringOuter = outerR + 21;   // an 8px band
+      // §2 (2026-09-08) — **THE SEVEN SECTORS POINT CLOCKWISE.** Build-seq
+      // main.html: "Fix the 7 sectors in the outer annulus so that they are
+      // pointing clockwise, indicating the direction of the glowy dot. Get
+      // creative!"
+      //
+      // The band was seven plain wedges: a queue with no grain, so the only thing
+      // saying which way the week travels was the marker, and you had to watch it
+      // to find out. The twenty-one chevron RAYS that used to say it were retired
+      // on 2026-08-28 for good reason — they were spikes hanging off the ring,
+      // three per cause, shouting a direction. So the direction goes INTO the
+      // sectors instead of onto them: each one is a chevron, its leading edge
+      // drawn to a point at mid-band and its trailing edge notched by the same
+      // angle, so a sector's tip lands exactly in the notch of the one ahead.
+      // Seven arrowheads, interlocking, all sweeping the way the dot goes — and
+      // the ring is still one 8px band with nothing sticking out of it.
+      //
+      // The halo reuses the same path, so this week's sector glows as an
+      // arrowhead too: the light now has a direction as well as a position.
+      // Rendered and looked at, four ways, before picking these two numbers: at
+      // 0.055 rad the barb is about the band's own width and reads as a nick in
+      // the edge rather than a point; at 0.18 the gaps start to break the ring
+      // into seven separate objects. 0.14 with a 0.03 gap is the one where the
+      // direction is unmistakable at a glance and the ring is still a ring.
+      const tipAngle = 0.14;                  // ~8° of overhang — the barb
+      const sectorGap = 0.03;                 // the dark hairline between sectors
+      const midR = (ringInner + ringOuter) / 2;
+      const P = (ang, r) => (cx + r * Math.cos(ang)) + ',' + (cy + r * Math.sin(ang));
       let ring = '', halo = '';
       for (let i = 0; i < 7; i++) {
-        const a0 = -Math.PI / 2 + i * sectorAngle, a1 = a0 + sectorAngle - 0.02;
-        const x1 = cx + ringOuter * Math.cos(a0),  y1 = cy + ringOuter * Math.sin(a0);
-        const x2 = cx + ringOuter * Math.cos(a1),  y2 = cy + ringOuter * Math.sin(a1);
-        const ix1 = cx + ringInner * Math.cos(a1), iy1 = cy + ringInner * Math.sin(a1);
-        const ix2 = cx + ringInner * Math.cos(a0), iy2 = cy + ringInner * Math.sin(a0);
+        const a0 = -Math.PI / 2 + i * sectorAngle, a1 = a0 + sectorAngle - sectorGap;
         const c = (EBX.config.causes || []).find(x => x.index === i);
         const sel = i === causeIndex;
         const now = i === nowSector;
-        const d = 'M' + x1 + ',' + y1 + ' A' + ringOuter + ',' + ringOuter + ' 0 0,1 ' +
-          x2 + ',' + y2 + ' L' + ix1 + ',' + iy1 + ' A' + ringInner + ',' + ringInner +
-          ' 0 0,0 ' + ix2 + ',' + iy2 + ' Z';
+        const d =
+          'M' + P(a0, ringOuter) +
+          ' A' + ringOuter + ',' + ringOuter + ' 0 0,1 ' + P(a1, ringOuter) +
+          ' L' + P(a1 + tipAngle, midR) +          // the point, leading clockwise
+          ' L' + P(a1, ringInner) +
+          ' A' + ringInner + ',' + ringInner + ' 0 0,0 ' + P(a0, ringInner) +
+          ' L' + P(a0 + tipAngle, midR) +          // the notch the sector behind fits
+          ' Z';
         // The white glow SURROUNDS this week's sector: the same wedge, drawn
         // once underneath in white through the blur, so the light bleeds out of
         // its edges instead of washing the colour out of it.
@@ -4291,12 +4833,11 @@
       const nowMarker =
         '<circle cx="' + mx + '" cy="' + my + '" r="5" fill="white" fill-opacity="0.95" filter="url(#ebx-pie-glow)"/>' +
         '<circle cx="' + mx + '" cy="' + my + '" r="2.6" fill="white"/>';
-      const rays = '';   // retired 2026-08-28 — see the note above
       return '<svg viewBox="0 0 ' + size + ' ' + size + '" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">' +
         '<defs><filter id="ebx-pie-glow" x="-50%" y="-50%" width="200%" height="200%">' +
         '<feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b"/>' +
         '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
-        halo + ring + rays + nowMarker + paths + note +
+        halo + ring + nowMarker + paths + note +
         '<circle cx="' + cx + '" cy="' + cy + '" r="' + (innerR - 2) + '" fill="rgba(15,26,20,0.95)" />' +
       '</svg>';
     }
@@ -4312,7 +4853,11 @@
       const color = cause.color || 'var(--clr-moss)';
       let slices = [], empty = '';
       if (_mainMode === 'org') {
-        const m = _finalizingMission(cause.id);
+        // build-seq §3 (2026-09-16): the picked race, if it belongs to this cause.
+        const picked = _voteMissionId
+          ? (EBX.config.missions || []).find(x => x.id === _voteMissionId && x.cause_id === cause.id
+              && x.winning_tiv_id && !x.winning_org_id) : null;
+        const m = picked || _finalizingMission(cause.id);
         const t = m ? _p2ByMission[m.id] : null;
         const entries = ((t && t.entries) || []).slice()
           .sort((a, b) => (Number(b.net_votes) || 0) - (Number(a.net_votes) || 0));
@@ -4379,16 +4924,27 @@
       const titleEl = document.getElementById("ebx-center-title");
       const phaseEl = document.getElementById("ebx-center-phase");
       const dateEl  = document.getElementById("ebx-center-date");
+      const subEl   = document.getElementById("ebx-center-sub");
 
       // §8 (2026-08-10) — BOTH CENTRES NAME A RACE AND THEN DATE THAT RACE.
       // The date used to come from `voteCloseDate(idx)`, which is a CAUSE's
       // active-week start: on the OE side it was the *next* cause's date under
       // the *active* cause's mission, and on both sides it was a week early.
+      // §2 (2026-09-08) — **THE CENTRE NAMES THE CAUSE AND THE ELECTION.** It
+      // used to read "<Cause> Decision:" with no phase line on the ME side, and
+      // the initiative's title over "Philanthropy election" on the OE side — so
+      // the two states did not name the same KIND of thing, "Decision" named no
+      // race at all, and "philanthropy" is a word this build is retiring from
+      // user-facing copy in favour of *organization*. Both states read the same
+      // three lines now: the CAUSE, which election is running, and when it
+      // closes. Build-seq main.html: "annulus center — should say cause +
+      // Initiative/organizaiton election, not 'philanthropy' or 'decision'."
       let decisionStr = "";
+      if (subEl) { subEl.textContent = ""; subEl.style.display = "none"; }
       if (isTiv) {
         // ME centre — the next initiative election, on the upcoming cause.
-        if (titleEl) titleEl.textContent = (focusCause ? focusCause.name : "—") + " Decision:";
-        if (phaseEl) { phaseEl.textContent = ""; phaseEl.style.display = "none"; }
+        if (titleEl) titleEl.textContent = focusCause ? focusCause.name : "—";
+        if (phaseEl) { phaseEl.textContent = "Initiative election"; phaseEl.style.display = ""; }
         try { decisionStr = fmtD(_nextInitiativeElection(focusCause ? focusCause.index : nextIdx)); } catch (e) {}
       } else {
         // OE centre — structure.md, "New helpful rule": the active cause's
@@ -4399,13 +4955,26 @@
         // which is why the centre said **Methane Leak Detection Grid** where it
         // should say Carbon Capture Expansion — the same newest/oldest mix-up
         // the OE top card was corrected for on 2026-08-09.
-        const electing = _finalizingMission(focusCause ? focusCause.id : '');
+        // build-seq §3 (2026-09-16): a race the benefactor PICKED wins over the
+        // default "closing soonest" race, so the centre names the selected mission.
+        const pickedRace = _voteMissionId
+          ? (EBX.config.missions || []).find(x => x.id === _voteMissionId && x.winning_tiv_id
+              && !x.winning_org_id && (!focusCause || x.cause_id === focusCause.id))
+          : null;
+        const electing = pickedRace || _finalizingMission(focusCause ? focusCause.id : '');
         const tiv = electing
           ? (EBX.config.initiatives || []).find(i => i.id === electing.winning_tiv_id) : null;
-        if (titleEl) titleEl.textContent = tiv
-          ? ((tiv.emoji ? tiv.emoji + ' ' : '') + tiv.title)
-          : (electing ? electing.id : (activeCause ? activeCause.name : "—"));
-        if (phaseEl) { phaseEl.textContent = "Philanthropy election"; phaseEl.style.display = ""; }
+        if (titleEl) titleEl.textContent = focusCause
+          ? focusCause.name
+          : (activeCause ? activeCause.name : "—");
+        if (phaseEl) { phaseEl.textContent = "Organization election"; phaseEl.style.display = ""; }
+        if (subEl) {
+          const tivName = tiv
+            ? ((tiv.emoji ? tiv.emoji + ' ' : '') + tiv.title)
+            : (electing ? electing.id : '');
+          subEl.textContent = tivName ? ('to run ' + tivName) : '';
+          subEl.style.display = tivName ? '' : 'none';
+        }
         // ...and its OWN close date, from the shared anchor.
         try {
           decisionStr = electing ? fmtD(_orgCloseDate(electing, focusCause ? focusCause.index : active)) : "";
@@ -4555,7 +5124,7 @@
       return (EBX.config.initiatives || []).filter(i =>
         (i.cause_index === causeIndex || (c && i.cause_id === c.id)));
     }
-    function _num1(n) { return Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 1 }); }
+    const _num1 = EBXPage.num1;                     // §6 (2026-09-08)
     function _leadingPosts(causeId, limit) {
       const score = p => (p.score != null ? p.score
         : (p.upvotes || 0) - (p.downvotes || 0) + (p.reply_count || p.replies || 0));
@@ -4565,7 +5134,7 @@
         .sort((a, b) => (score(b) - score(a)) || (new Date(b.created_at || 0) - new Date(a.created_at || 0)))
         .slice(0, limit || 3);
     }
-    const _fmtFullDate = d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const _fmtFullDate = EBXPage.fmtFullDate;       // §6 (2026-09-08)
     const _tcStat = (label, value, accentCol) =>
       '<div class="tc-stat"><span class="tc-stat__label">' + label + '</span>' +
       '<span class="tc-stat__value"' + (accentCol ? ' style="color:' + accentCol + ';"' : '') + '>' + value + '</span></div>';
@@ -4820,7 +5389,6 @@
       const fDecision = _nextInitiativeElection(fIdx);
       const leftCard =
         '<div class="tc-half tc-half--glow" style="--tc-color:' + (focus.color || col) + ';">' +
-          '<div class="tc-howto">Select a cause, and vote.</div>' +
           '<div class="tc-half__head">' +
             // The card below counts cycles from 1, so this one does too — the
             // same race must not be "Wildlife 1" here and "Wildlife 2" there.
@@ -5232,9 +5800,6 @@
       };
       const leftCard = electing
         ? '<div class="tc-half tc-half--glow" style="--tc-color:' + col + ';">' +
-            // §2 (2026-08-27): "The 'To vote' line should only be on the lhs
-            // top card" — and it is the same line in both page states.
-            '<div class="tc-howto">Select a cause, and vote.</div>' +
             '<div class="tc-half__head">' +
               '<span class="tc-half__title">' + _esc(nameOf(electing)) + '</span>' +
               '<span class="tc-half__days">' + _daysLeft(closesSoon) + ' d</span>' +
@@ -5349,7 +5914,6 @@
       rewriteTableHead(_mainMode); // paint the sortable head before first render
       filterInitiatives(); // initial render — applies the phase-1-only rule (3b)
       // build-seq 1d — info tab is the default; seed it with the leader card.
-      if (typeof idxRenderDefaultInfo === 'function') idxRenderDefaultInfo();
       // build-seq 4 (pass 34): deep link from cause.html left cards —
       // main.html?init=<id> selects that initiative's entry and scrolls to it.
       (function () {
@@ -5368,7 +5932,7 @@
           else if (wantState === 'me' || wantState === 'tiv') setMainMode('tiv');
           // §1 (2026-08-21): …and the third tab, so the cause table is linkable
           // the same way the other two are.
-          else if (wantState === 'ce' || wantState === 'cause') setTableTab('ce');
+          else if (wantState === 'ce' || wantState === 'cause') { setTableTab('ce'); setElectionCol('ce'); }
         }
         const wantCause = EBX.getParam ? EBX.getParam('cause') : null;
         if (wantCause) {
@@ -5473,6 +6037,41 @@
   // which is exactly what the sentence in brackets asks for.
   let _tableTab = 'me';
   window._tableTab = () => _tableTab;
+  // §2 (2026-09-08) — what the ORGANIZATION table is a table OF: 'race' (the
+  // default — the candidates in the selected cause's upcoming organization
+  // election) or 'all' (every open race, the eight-deadline view, reached by the
+  // button under the table). It is not persisted: a page load is a fresh look at
+  // the race the toggle is pointed at.
+  let _oeScope = 'race';
+  window._oeScope = () => _oeScope;
+  function setOeScope(scope) {
+    _oeScope = (scope === 'all' || scope === 'cause') ? scope : 'race';
+    _tableSort = (_oeScope !== 'race')
+      ? { key: 'started', dir: 'asc' }
+      : { key: 'total', dir: 'desc' };
+    const btn = document.getElementById('show-all-races');
+    if (btn) btn.textContent = (_oeScope !== 'race') ? 'Back to this race' : 'Show all races';
+    const scroller = document.querySelector('.init-table-scroll');
+    if (scroller) scroller.classList.toggle('init-table-scroll--fixed', _oeScope !== 'race');
+    rewriteTableHead(_mainMode);
+    filterInitiatives();
+  }
+  window.setOeScope = setOeScope;
+
+  // build-seq §3 (2026-09-16) — "Show active missions for [cause]".
+  function showCauseMissions() {
+    if (_mainMode !== 'org') setMainMode('org');
+    setOeScope('cause');
+    const table = document.querySelector('.tiv-table-section');
+    if (table && table.scrollIntoView) table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  window.showCauseMissions = showCauseMissions;
+  function labelCauseMissionsButton() {
+    const b = document.getElementById('show-cause-missions');
+    const c = (typeof window._focusCause === 'function') ? window._focusCause() : null;
+    if (b) b.textContent = 'Show active missions for ' + (c ? c.name : 'this cause');
+  }
+  window.labelCauseMissionsButton = labelCauseMissionsButton;
   // §4 (2026-08-02): leaderboard sort state — which column the table is sorted
   // by and in which direction. Declared UP HERE (not beside setTableSort) so
   // rewriteTableHead(), which paints the ▲/▼ indicator, can never hit a
@@ -5503,9 +6102,27 @@
   }
   window.setTableTab = setTableTab;
 
+  // build-seq §3 (2026-09-16) — the three-card election toggle. 'ce' · 'me' · 'oe'.
+  let _el3Col = 'me';
+  function setElectionCol(col, opts) {
+    if (!['ce', 'me', 'oe'].includes(col)) return;
+    _el3Col = col;
+    document.querySelectorAll('#el3 .el3__col').forEach(el =>
+      el.classList.toggle('on', el.dataset.col === col));
+    document.querySelectorAll('#hero-howitgoes .hig__toggle').forEach(el =>
+      el.classList.toggle('on', el.dataset.col === col));
+    if (opts && opts.fromMode) return;
+    if (col === 'me' && _mainMode !== 'tiv') setMainMode('tiv');
+    else if (col === 'oe' && _mainMode !== 'org') setMainMode('org');
+  }
+  window.setElectionCol = setElectionCol;
+  window._electionCol = () => _el3Col;
+
   function setMainMode(mode) {
     if (mode !== 'tiv' && mode !== 'org') return;
     _mainMode = mode;
+    // The expanded election card follows the mode — unless the cause card is open.
+    if (_el3Col !== 'ce') setElectionCol(mode === 'org' ? 'oe' : 'me', { fromMode: true });
     _tableTab = (mode === 'org') ? 'oe' : 'me';
     // §1 (2026-08-12): the hidden duplicate toggle (`main-toggle-btn` +
     // `main-showing`) is deleted, so the only labels to write are the two sides
@@ -5530,8 +6147,22 @@
     // stay for the initiative table, where the field is unbounded.
     const causeSel = document.getElementById('filter-cause');
     if (causeSel) causeSel.value = '';
+    // §2 (2026-09-08): the toolbar STAYS in the organization state now — the
+    // search box and "Show all Initiatives" do not belong to it, but the way
+    // back out to all eight open races does, and that is the same control in the
+    // same place. Hiding the whole strip was right while the OE table was
+    // already all eight; it is wrong now that the table is one race.
     const toolbar = document.querySelector('.init-toolbar--below');
-    if (toolbar) toolbar.style.display = (mode === 'org') ? 'none' : '';
+    if (toolbar) toolbar.style.display = '';
+    const searchWrap = document.querySelector('.init-search-wrap');
+    if (searchWrap) searchWrap.style.display = (mode === 'org') ? 'none' : '';
+    const allInits = document.getElementById('show-all-inits');
+    if (allInits) allInits.style.display = (mode === 'org') ? 'none' : '';
+    const allRaces = document.getElementById('show-all-races');
+    if (allRaces) {
+      allRaces.style.display = (mode === 'org') ? '' : 'none';
+      allRaces.textContent = (_oeScope !== 'race') ? 'Back to this race' : 'Show all races';
+    }
     const searchBox = document.getElementById('init-search');
     if (searchBox && mode === 'org') searchBox.value = '';
     // …and it does not scroll: eight rows are the whole table, so the container
@@ -5548,7 +6179,12 @@
     // Entering OE mode always lands on that order, whatever the initiative table
     // was sorted by; the headers still re-sort once you are there.
     if (mode === 'org') {
-      _tableSort = { key: 'started', dir: 'asc' };
+      // §2 (2026-09-08): the QUEUE order belongs to the eight-race view. Inside
+      // one race the order is the leaderboard — votes, then the tokens behind
+      // them — which is what `total` sorts here.
+      _tableSort = (_oeScope !== 'race')
+        ? { key: 'started', dir: 'asc' }
+        : { key: 'total', dir: 'desc' };
     }
     // The propose/register entries live in the table now (§2, 2026-08-06).
     // Rewrite the table head + body for the new mode
@@ -5557,7 +6193,6 @@
     // Flip card faces
     if (typeof renderCards === 'function') renderCards();
     // Re-seed the info panel (build-seq 1d) so the default leader matches mode.
-    if (!_selectedInit && typeof idxRenderDefaultInfo === 'function') idxRenderDefaultInfo();
   }
   window.setMainMode = setMainMode;
 
@@ -5597,6 +6232,24 @@
       onDone: () => { try { loadP2All(); } catch (e) {} },
     });
   }
+  // §2 (2026-09-08) — nominate an organization FOR ONE INITIATIVE, from the "+ org"
+  // button beside that initiative's slider in the mission ballot. The dialog is
+  // the same one the organization panel opens; what this adds is the subject, so
+  // the initiative the benefactor was looking at arrives pre-checked instead of
+  // having to be found again in a list that may not even contain it yet.
+  function nominateOrgFor(tivId) {
+    const init = ((typeof window._allInitsPublic === 'function' ? window._allInitsPublic() : null) ||
+                  EBX.config.initiatives || []).find(i => i.id === tivId) || null;
+    const causeId = (init && init.cause_id) ||
+      (typeof voteCauseId === 'function' ? voteCauseId() : null);
+    if (!(EBX.Dialogs && EBX.Dialogs.orgRegister)) return;
+    EBX.Dialogs.orgRegister({
+      causeId: causeId,
+      tivId: tivId,
+      onDone: () => { try { loadP2All(); } catch (e) {} },
+    });
+  }
+  window.nominateOrgFor = nominateOrgFor;
   window.openProposeModal = openProposeModal;
   window.openOrgRegisterModal = openOrgRegisterModal;
 
@@ -5645,6 +6298,26 @@
       // sufficient". It held a button that did what a click on the row already
       // does (point the dialog at this race), and a column that exists to
       // repeat the row's own behaviour is a column of noise.
+      // §2 (2026-09-08) — **the OE table is ONE RACE's ORGANIZATIONS.**
+      // Build-seq main.html: "OE table should only contain the orgs that are
+      // running for the election in the selected cause-initiative (if it's the
+      // active one which has 2 active ones, only show the upcoming one)."
+      // It used to be eight rows, one per open race — a table of deadlines. That
+      // view still exists behind the button under the table (`_oeScope = 'all'`),
+      // because the 2026-08-20b reason for it is still true: a benefactor with
+      // money in eight races needs to see eight dates. But the DEFAULT is the
+      // ballot's own race, so the table lists the candidates a vote is being cast
+      // between rather than the races it could be cast in.
+      if (_oeScope === 'race') {
+        thead.innerHTML = `<tr>
+          <th class="col-watch" aria-label="Watch"></th>
+          ${_th('mine', 'My vote', 'Sort the organization I have voted for to the top')}
+          ${_th('name', 'Organization', 'Sort by name')}
+          ${_th('total', 'Tokens behind it', 'Sort by the tokens standing behind each organization')}
+          ${_th('started', 'Standing', 'Sort by registration standing')}
+        </tr>`;
+        return;
+      }
       thead.innerHTML = `<tr>
         <th class="col-watch" aria-label="Watch"></th>
         ${_th('mine', 'My commitment', 'Sort by my commitment')}
@@ -5655,15 +6328,12 @@
     }
   }
 
-  // Watched ids — separate lists for initiatives (tiv) and organizations (org),
-  // persisted in localStorage. Tiv watches also sync to the backend watchlist.
-  const WATCH_KEY     = 'ebx_watched_initiatives';   // tiv
-  const WATCH_ORG_KEY = 'ebx_watched_orgs';
-  function _watchKey(kind) { return kind === 'org' ? WATCH_ORG_KEY : WATCH_KEY; }
-  function getWatched(kind) {
-    try { return JSON.parse(localStorage.getItem(_watchKey(kind)) || '[]'); } catch(e) { return []; }
-  }
-  function setWatched(kind, ids) { localStorage.setItem(_watchKey(kind), JSON.stringify(ids)); }
+  // §6 (2026-09-08): the two lists and their storage keys live in
+  // `resources/js/ebx_page.js` now, where the reads are wrapped — an unwrapped
+  // `localStorage` THROWS in a private window rather than returning null, and a
+  // bookmarked initiative must not be able to blank the page.
+  const getWatched = EBXPage.getWatched;
+  const setWatched = EBXPage.setWatched;
   // Seed the tiv watchlist from the backend on load (best-effort) so bookmarks
   // follow the account across devices.
   async function loadWatchlist() {
@@ -5678,222 +6348,37 @@
   }
   window.loadWatchlist = loadWatchlist;
 
-  // ── Entity-card vote state (build-seq 1a) ─────────────────────────
-  // Reuses the same cause-keyed shape that cause.html writes to so the
-  // homepage vote is visible there immediately (and vice versa). Org votes
-  // are stored under a parallel key — one per cause for now (the org
-  // election is gated to the active cause in this pass).
-  const VOTE_SHARES_KEY    = 'ebx_vote_shares';      // { causeId: { initId: share } }
-  const VOTE_COMMIT_KEY    = 'ebx_vote_committed';   // { causeId: { shares, at } }
-  const ORG_VOTE_KEY       = 'ebx_org_votes';        // { causeId: {org_id, tiv_id, votes, at} } (pass 35)
-
-  function _loadCauseShares(causeId) { return {}; /* DECONSTRUCTED (v2) */ }
-  function _saveCauseShares(causeId, shares) { /* DECONSTRUCTED (v2): PUT /missions/{id}/p1/votes */ }
-  // Step 1a — committing EBX. Shared store with the cause-page widget:
-  // ebx_vote_committed[causeId] = { shares, at, ebx }. Committing tokens from
-  // the entity card adds weight to the benefactor's initiative vote.
-  // Org-vote commits live under their own key (build-seq 1c) so the org card
-  // pool (phase-1 carry-over + phase-2 commits) never mixes with tiv weight.
-  const ORG_COMMIT_KEY = 'ebx_org_committed';      // { causeId: { at, ebx } }
-  function _commitKeyFor(kind) { return kind === 'org' ? ORG_COMMIT_KEY : VOTE_COMMIT_KEY; }
-  function _loadCauseCommit(causeId, kind) { return null; /* DECONSTRUCTED (v2) */ }
-  function _saveCauseCommitEbx(causeId, ebx, kind) { /* DECONSTRUCTED (v2): commit -> backend */ }
-  function entityCommitEbx(btn) {
-    const causeId = btn && btn.getAttribute('data-cause-id');
-    const kind = (btn && btn.getAttribute('data-kind')) || 'tiv';
-    const input = document.getElementById('entity-ebx-input');
-    if (!causeId || !input) return;
-    const amt = Math.max(0, Math.round(Number(input.value) || 0));
-    _saveCauseCommitEbx(causeId, amt, kind);
-    _flashEntityToast(amt > 0
-      ? 'Committed ' + amt.toLocaleString() + ' tokens — added weight to your vote.'
-      : 'Token commitment cleared.');
-    if (typeof renderCards === 'function') renderCards();
-    if (_selectedInit) idxSelectInit(JSON.stringify(_selectedInit));
-    else idxRenderDefaultInfo();
-  }
-  window.entityCommitEbx = entityCommitEbx;
-  // Inline EBX-commit control shown once a benefactor has voted in a cause.
-  function _entityCommitControl(causeId, kind) {
-    kind = kind || 'tiv';
-    const committed = _loadCauseCommit(causeId, kind);
-    const cur = committed ? (committed.ebx || 0) : 0;
-    return `<div class="entity-commit" style="flex-basis:100%;display:flex;align-items:center;gap:6px;margin-top:8px;">
-      <label style="font-family:var(--font-mono);font-size:0.7rem;opacity:0.7;">Commit tokens:</label>
-      <input id="entity-ebx-input" type="number" min="0" step="1" value="${cur}"
-             style="width:90px;padding:3px 6px;font-family:var(--font-mono);font-size:0.72rem;
-                    background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);
-                    border-radius:4px;color:inherit;" />
-      <button class="btn btn-ghost btn-sm" onclick="entityCommitEbx(this)" data-cause-id="${causeId}" data-kind="${kind}">
-        ${cur > 0 ? 'Update tokens' : 'Commit tokens'}</button>
-      ${cur > 0 ? '<span class="entity-vote-status cast" style="font-size:0.7rem;">✓ ' + cur.toLocaleString() + ' tokens</span>' : ''}
-    </div>`;
-  }
-  // pass 35: ebx_org_votes entries are objects ({org_id, tiv_id, votes, at}).
-  // _loadOrgVote returns the org id (normalizing the old plain-string shape);
-  // _saveOrgVote writes the object shape used by cause.html's phase-2 widget.
-  function _loadOrgVote(causeId) { return null; /* DECONSTRUCTED (v2) */ }
-  function _saveOrgVote(causeId, orgId) { /* DECONSTRUCTED (v2): PUT /missions/{id}/p2/vote */ }
-
-  // Cast a tiv vote from the entity card. First vote: stores share=1.0 for
-  // this init on this cause. Subsequent vote on the SAME init: prompts to
-  // visit the cause page to split the vote (per build-seq 1a). Vote on a
-  // DIFFERENT init in the same cause: also nudges to the cause page where
-  // the share allocator lives — main.html keeps the per-cause split UI
-  // single-sourced in cause.html. Returns a status string for the panel.
-  function castTivVote(init) {
-    if (!init || !init.cause_id) return 'No cause for this initiative.';
-    const shares = _loadCauseShares(init.cause_id);
-    const active = Object.keys(shares).filter(k => (Number(shares[k])||0) > 0);
-    if (active.length === 0) {
-      _saveCauseShares(init.cause_id, { [init.id]: 1.0 });
-      return 'voted';
-    }
-    if (active.length === 1 && active[0] === init.id) {
-      return 'already-voted-same';
-    }
-    if (active.includes(init.id)) return 'already-voted-same';
-    return 'voted-other';
-  }
-
-  // Cast an org vote — one per cause/active-mission, hard vote. If a vote
-  // already exists for this cause, prompt to change (handled in the UI).
-  function castOrgVote(org, causeId) {
-    if (!org || !causeId) return 'No cause for this organization.';
-    const current = _loadOrgVote(causeId);
-    if (current === org.id) return 'already-voted-same';
-    if (current) return 'already-voted-other';
-    _saveOrgVote(causeId, org.id);
-    return 'voted';
-  }
-
-  // Render the vote actions for a tiv inside the entity card. State-aware
-  // per build-seq 1a — first vote, already voted same, voted different.
-  function entityVoteActionsForTiv(init) {
-    const loggedIn = !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
-    const shares = _loadCauseShares(init.cause_id || '');
-    const active = Object.keys(shares).filter(k => (Number(shares[k])||0) > 0);
-    const causeHref = `cause.html?id=${init.cause_id || ''}`;
-    if (!loggedIn) {
-      return `<button class="btn-entity-vote" onclick="entityLoginPrompt()">Log in to vote</button>
-              <a href="${causeHref}" class="btn btn-ghost btn-sm">View on cause page →</a>`;
-    }
-    if (active.length === 0) {
-      return `<a class="btn-entity-vote" href="${causeHref}&vote=1#pb" style="text-decoration:none;display:inline-block;">Vote for this initiative →</a>
-              <a href="${causeHref}" class="btn btn-ghost btn-sm">View on cause page →</a>`;
-    }
-    if (active.includes(init.id) && active.length === 1) {
-      return `<span class="entity-vote-status cast">✓ Voted — full share</span>
-              <a href="${causeHref}" class="btn btn-ghost btn-sm">Split this vote on the cause page →</a>`
-              + _entityCommitControl(init.cause_id || '');
-    }
-    if (active.includes(init.id)) {
-      const share = (Number(shares[init.id]) || 0).toFixed(1);
-      return `<span class="entity-vote-status cast">✓ Voted · share ${share}</span>
-              <a href="${causeHref}&add=${init.id}" class="btn btn-ghost btn-sm">Re-balance on cause page →</a>`
-              + _entityCommitControl(init.cause_id || '');
-    }
-    // Voted on a different initiative in this cause.
-    // build-seq 2 (pass 35): carries &add= so the cause page performs the
-    // same 'add' as its own + Add control on arrival.
-    return `<span class="entity-vote-status">You already voted in this cause</span>
-            <a href="${causeHref}&add=${init.id}" class="btn-entity-vote" style="text-decoration:none;display:inline-block;">Split your vote →</a>`;
-  }
-
-  // Render the vote actions for an org. Hard vote, one per cause.
-  function entityVoteActionsForOrg(org) {
-    const loggedIn = !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
-    // Org vote is gated to the currently-active cause in this pass — the
-    // org election always lines up with the active mission window.
-    const state = (EBX.Cycle && EBX.Cycle.now) ? EBX.Cycle.now() : { causeIndex: 0 };
-    const cause = (EBX.config.causes || []).find(c => c.index === state.causeIndex);
-    const causeId = cause ? cause.id : '';
-    const websiteBtn = org.website
-      ? `<a href="${org.website}" target="_blank" rel="noopener" class="btn btn-ghost btn-sm">Visit website →</a>`
-      : '';
-    if (!loggedIn) {
-      return `<button class="btn-entity-vote" onclick="entityLoginPrompt()">Log in to vote</button>${websiteBtn}`;
-    }
-    const current = _loadOrgVote(causeId);
-    if (!current) {
-      return `<a class="btn-entity-vote" href="cause.html?id=${causeId}&vote=2#phase-recap-2" style="text-decoration:none;display:inline-block;">Vote for this organization →</a>${websiteBtn}`;
-    }
-    if (current === org.id) {
-      return `<span class="entity-vote-status cast">✓ Your pick for ${cause ? cause.name : 'this cause'}</span>
-              <button class="btn btn-ghost btn-sm" onclick="entityCancelOrgVote('${causeId}')">Cancel vote</button>${websiteBtn}`
-              + _entityCommitControl(causeId, 'org');
-    }
-    // Already voted for a different org in this cause.
-    return `<span class="entity-vote-status">You voted for another org in this cause</span>
-            <button class="btn-entity-vote" onclick="entityChangeOrgVote(this)"
-                    data-org-id="${org.id}" data-cause-id="${causeId}">Change vote to this org</button>${websiteBtn}`;
-  }
-
-  // Click handlers — keep them small; they delegate to the cast helpers
-  // and re-render the card actions so state stays in sync without a reload.
-  function entityVoteTiv(btn) {
-    const initId = btn && btn.getAttribute('data-init-id');
-    const init = (_allInits || []).find(i => i.id === initId);
-    if (!init) return;
-    const result = castTivVote(init);
-    if (result === 'voted') {
-      _flashEntityToast('Vote cast for ' + (init.title || 'this initiative') + '. Split on the cause page if you change your mind.');
-    } else if (result === 'voted-other') {
-      _flashEntityToast('You already voted in this cause — go to the cause page to split your share.');
-    }
-    if (_selectedInit && _selectedInit.id === init.id) idxSelectInit(JSON.stringify(_selectedInit));
-    else idxRenderDefaultInfo();
-  }
-  window.entityVoteTiv = entityVoteTiv;
-  function entityVoteOrg(btn) {
-    const orgId   = btn && btn.getAttribute('data-org-id');
-    const causeId = btn && btn.getAttribute('data-cause-id');
-    const org = (EBX.config.organizations || []).find(o => o.id === orgId);
-    if (!org || !causeId) return;
-    castOrgVote(org, causeId);
-    _flashEntityToast('Voted for ' + (org.name || 'this organization') + '.');
-    if (_selectedOrg && _selectedOrg.id === org.id) idxSelectOrg(JSON.stringify(_selectedOrg));
-    else idxRenderDefaultInfo();
-  }
-  window.entityVoteOrg = entityVoteOrg;
-  function entityChangeOrgVote(btn) {
-    const orgId   = btn && btn.getAttribute('data-org-id');
-    const causeId = btn && btn.getAttribute('data-cause-id');
-    if (!orgId || !causeId) return;
-    if (!confirm('Change your vote to this organization?')) return;
-    _saveOrgVote(causeId, orgId);
-    _flashEntityToast('Vote changed.');
-    if (_selectedOrg) idxSelectOrg(JSON.stringify(_selectedOrg));
-    else idxRenderDefaultInfo();
-  }
-  window.entityChangeOrgVote = entityChangeOrgVote;
-  function entityCancelOrgVote(causeId) {
-    if (!causeId) return;
-    if (!confirm('Cancel your vote for this cause?')) return;
-    _saveOrgVote(causeId, null);
-    _flashEntityToast('Vote cancelled.');
-    if (_selectedOrg) idxSelectOrg(JSON.stringify(_selectedOrg));
-    else idxRenderDefaultInfo();
-  }
-  window.entityCancelOrgVote = entityCancelOrgVote;
-  function entityLoginPrompt() {
-    if (window.EBX && EBX.Auth && EBX.Auth.openModal) EBX.Auth.openModal('login');
-  }
-  window.entityLoginPrompt = entityLoginPrompt;
-
-  // Lightweight inline toast — sits inside the actions row for ~2s.
-  function _flashEntityToast(text) {
-    // build-seq 8: actions now live inside the expanded table row's detail panel.
-    const actions = document.querySelector('#init-table-body .init-detail-row .init-selected__actions');
-    if (!actions) return;
-    const toast = document.createElement('div');
-    toast.style.cssText =
-      'font-family:var(--font-mono);font-size:0.72rem;color:var(--clr-honey);' +
-      'margin-top:8px;flex-basis:100%;';
-    toast.textContent = text;
-    actions.appendChild(toast);
-    setTimeout(() => { try { toast.remove(); } catch(e) {} }, 2400);
-  }
+  // ── §6 (2026-09-08) — THE ENTITY-CARD VOTE SUBSYSTEM IS GONE (215 lines).
+  //
+  // It was the homepage's own voting UI: `castTivVote` / `castOrgVote` writing
+  // per-cause shares into localStorage, `entityVoteActionsForTiv` /
+  // `…ForOrg` rendering the buttons, `entityCommitEbx` + `_entityCommitControl`
+  // taking an amount, `_flashEntityToast` confirming it, and
+  // `idxRenderDefaultInfo` painting the panel it all lived in.
+  //
+  // Two independent reasons it had to go, either of which is sufficient:
+  //
+  //   1. THE PANEL IS NOT ON THE PAGE. `idxRenderDefaultInfo` opens by looking
+  //      up `idx-init-title` / `idx-init-meta` / `idx-init-desc` /
+  //      `idx-init-actions` and returning if any is missing. All four ids
+  //      appeared exactly ONCE in this file — in that lookup. The markup they
+  //      read was removed some passes ago and the code that fills it was not.
+  //
+  //   2. IT WOULD HAVE LIED IF IT HAD RUN. Its six storage helpers were
+  //      stubbed out at the v2 backend cutover and left as
+  //      `return {}` / `return null` / `{ /* DECONSTRUCTED */ }`. So
+  //      `castTivVote` always took its "no votes yet" branch, called a save
+  //      that does nothing, and returned `'voted'`; `castOrgVote` did the same;
+  //      `entityCommitEbx` popped a toast reading "Committed N tokens — added
+  //      weight to your vote" against a function with an empty body. A dead
+  //      path that reports success is worse than a dead path.
+  //
+  // The real voting surface is the ballot above the table (`_voteBarTiv` /
+  // `_voteBarOrg`), which writes through `/wallet/commit` and has since
+  // 2026-08-19. Nothing here was reachable from it.
+  //
+  // Kept, because they are still used by the table's disclosure row:
+  // `idxRowExpand`, `idxSelectOrg`, `_idxOrgDetailHTML`, `_idxInitDetailHTML`.
 
   // Track the most recently selected org so vote-state changes can re-render
   // the panel without losing the user's selection.
@@ -6044,10 +6529,34 @@
         if (slot && typeof window.openCauseVote === 'function') window.openCauseVote(slot);
         return;
       }
+      // §2 (2026-09-08): an initiative row now toggles the panel in the election
+      // area. `isOpen` looked for a `.init-detail-row` sibling, which no longer
+      // exists for a tiv, so pressing the open row a second time has to be asked
+      // of the panel instead.
+      if (kind !== 'org' && typeof window._meDetailGet === 'function'
+          && window._meDetailGet() === id) {
+        idxRowCollapseAll();
+        _selectedInit = null;
+        if (typeof window._meDetailClear === 'function') window._meDetailClear();
+        return;
+      }
       // Every other kind of row still toggles its disclosure panel shut.
       if (isOpen) {
         idxRowCollapseAll();
         _selectedInit = null; _selectedOrg = null;
+        return;
+      }
+      // §2 (2026-09-08) — in the ORGANIZATION table an org row carries the race
+      // it is running in, and clicking it is the vote: the same act as the pick
+      // button in the ballot above, which is where the amount and the commit
+      // live. Rows elsewhere (the entity cards' org rows) keep their disclosure
+      // panel, which is why this branch is keyed on `data-mission` rather than
+      // on the kind alone.
+      const orgRace = tr.getAttribute('data-mission');
+      if (kind === 'org' && orgRace) {
+        idxRowCollapseAll();
+        tr.classList.add('row-selected');
+        if (typeof window.pickOrg === 'function') window.pickOrg(orgRace, id);
         return;
       }
       if (kind === 'org') {
@@ -6187,6 +6696,8 @@
   window.rowDonate = rowDonate;
 
   // Detail-panel markup for an initiative — reuses the .init-selected-panel chrome.
+  // §2 (2026-09-08): exposed, because the ME ballot renders it now instead of the
+  // table unfolding a row under itself.
   function _idxInitDetailHTML(init) {
     const causes = (EBX.config && EBX.config.causes) || [];
     const cause = causes.find(c => c.id === init.cause_id || c.index === init.cause_index) || {};
@@ -6195,14 +6706,34 @@
     const ebx = init.committed_ebx || init.ebx_committed || 0;
     const meta = [cause.name, init.status, ebx > 0 ? ebx.toLocaleString() + ' tokens committed' : null]
       .filter(Boolean).join(' · ');
+    // build-seq §3 (2026-09-16) — the TITLE and the CASE are displayed apart.
+    // "The description is a case." Older proposals put the argument in the
+    // title; when there is no description and the title runs long, the first
+    // sentence is the title and the rest is shown as the case.
+    const tc = _titleAndCase(init);
+    const esc = (typeof EBXPage !== 'undefined' && EBXPage.esc) ? EBXPage.esc : (x => x);
     return `<div class="init-selected-panel" style="--entity-color:${color};">
       <div class="init-selected__eyebrow">Selected Initiative</div>
-      <div class="init-selected__title">${(init.emoji ? init.emoji + ' ' : '') + (init.title || '')}</div>
+      <div class="init-selected__title">${(init.emoji ? init.emoji + ' ' : '') + esc(tc.title)}</div>
       <div class="init-selected__meta">${meta}</div>
-      <div class="init-selected__desc">${init.description || ''}</div>
+      <div class="init-selected__case-label">The case</div>
+      <div class="init-selected__desc">${tc.caseText ? esc(tc.caseText)
+        : '<span style="opacity:0.55;font-style:italic;">No case has been made yet.</span>'}</div>
       ${_idxRowStatusHTML(init, 'tiv')}
     </div>`;
   }
+
+  function _titleAndCase(init) {
+    const title = String(init.title || '').trim();
+    const desc = String(init.description || '').trim();
+    if (desc || title.length <= 90) return { title, caseText: desc };
+    const m = title.match(/^(.{12,90}?)([.:;!?]|\s[-\u2013\u2014]\s)\s*(.+)$/);
+    return m ? { title: m[1].trim(), caseText: m[3].trim() } : { title, caseText: '' };
+  }
+  window._titleAndCase = _titleAndCase;
+
+  window._idxInitDetailHTML = _idxInitDetailHTML;
+  window._allInitsPublic = () => _allInits || [];
 
   // Detail-panel markup for an organization.
   function _idxOrgDetailHTML(org) {
@@ -6271,9 +6802,11 @@
     // used to be. The date had nothing left to enforce: a granted token appears
     // in its cause's election week and cannot be moved or withdrawn, so what is
     // worth printing on it is the one place it can go.
-    const causeId = (typeof window._grantCause === 'function') ? window._grantCause() : null;
-    const causeObj = causeId ? (EBX.config.causes || []).find(x => x.id === causeId) : null;
-    const by = causeObj ? causeObj.name : (causeId || '');
+    // 2026-09-16 — the grant carries its WEEK: a granted token may enter the
+    // initiative or organization election closing that week.
+    const gWeek = (typeof window._grantWeek === 'function') ? window._grantWeek() : null;
+    const nowWeek = (typeof window._walletWeek === 'function') ? window._walletWeek() : null;
+    const by = (gWeek == null) ? '' : (gWeek === nowWeek ? 'this week\u2019s elections' : 'week ' + gWeek);
     // §2 (2026-08-21) — **the allocations bar.** The strip used to be the
     // unallocated balance alone, which answered "what can I still spend?" and
     // nothing else: money already committed vanished off the screen the moment
@@ -6294,8 +6827,12 @@
     const committedAll = w ? (Number(w.committed_ct) || 0) : 0;
     const orgCt = Math.max(0, committedAll - tivCt) + pending;
     const mintedCt = w ? (Number(w.minted_ct) || 0) : 0;
-    const donatedCt = w ? (Number(w.donated_ct) || 0) : 0;
-    const owned = free + tivCt + orgCt + mintedCt + donatedCt;
+    // 2026-09-16 — FINAL is an overlay, not a segment: a skim (10% at the ME,
+    // +10% at the OE) and budget day (T+15) make ct deductible and no longer
+    // withdrawable, but nothing leaves the position. `final_ct` includes
+    // budget-day finality; `donated_ct` is the skims alone.
+    const finalCt = w ? (Number(w.final_ct != null ? w.final_ct : w.donated_ct) || 0) : 0;
+    const owned = free + tivCt + orgCt + mintedCt;
     const usd = n => (typeof EBX.formatTokenUSD === 'function')
       ? EBX.formatTokenUSD(n / 100) : '$' + (n / 1000).toFixed(2);
     const seg = (whole, part) => (part / Math.max(whole, 1) * 100).toFixed(1) + '%';
@@ -6348,17 +6885,16 @@
       <div class="alloc-set">
         <div class="alloc-set__head">
           <span class="alloc-set__name">EBX</span>
-          <b class="alloc-set__n">${tk(mintedCt + donatedCt)}</b>
-          <span class="alloc-set__usd">${usd(mintedCt + donatedCt)}</span>
+          <b class="alloc-set__n">${tk(mintedCt)}</b>
+          <span class="alloc-set__usd">${usd(mintedCt)}</span>
         </div>
-        <div class="unalloc__bar" title="Held: minted to a mission, and staying. Donated: crossed over, and deductible.">
-          ${(mintedCt + donatedCt) > 0 ? '' : '<i class="unalloc__seg unalloc__seg--none" style="width:100%"></i>'}
-          <i class="unalloc__seg unalloc__seg--ebx" style="width:${seg(mintedCt + donatedCt, mintedCt)}"></i>
-          <i class="unalloc__seg unalloc__seg--don" style="width:${seg(mintedCt + donatedCt, donatedCt)}"></i>
+        <div class="unalloc__bar" title="Held: minted to a mission. Final: deductible and no longer withdrawable — 10% at the initiative election, another 10% at the organization election, all of it on budget day.">
+          ${mintedCt > 0 ? '' : '<i class="unalloc__seg unalloc__seg--none" style="width:100%"></i>'}
+          <i class="unalloc__seg unalloc__seg--ebx" style="width:${seg(mintedCt, mintedCt)}"></i>
         </div>
         <div class="unalloc__key">
           <span><i class="unalloc__dot unalloc__dot--ebx"></i>${tk(mintedCt)} held</span>
-          <span><i class="unalloc__dot unalloc__dot--don"></i>${tk(donatedCt)} donated</span>
+          <span><i class="unalloc__dot unalloc__dot--don"></i>${tk(finalCt)} final (deductible)</span>
         </div>
       </div>
     </div>`;
@@ -6436,6 +6972,91 @@
   }
   window._mountOeActions = _mountOeActions;
 
+  // §2 (2026-09-08) — **THE ORGANIZATION TABLE.** One race, its candidates, and
+  // the way to add one. Build-seq main.html asked for both halves of this: the
+  // table scoped to "the orgs that are running for the election in the selected
+  // cause-initiative", and "an option to nominate an organization to run x".
+  //
+  // A registered organization with no votes yet is a row — the candidacies are
+  // unioned with the tally, not filtered by it, because an org that nobody has
+  // voted for is exactly the row a benefactor is being asked to consider. The
+  // last row is not a candidate: it is the nomination, in the table, where
+  // someone reading the ballot will be when they notice the name they want is
+  // not on it.
+  function renderOrgTable(mission, rows) {
+    const tbody = document.getElementById('init-table-body');
+    if (!tbody) return;
+    const esc = EBXPage.esc;                        // §6 (2026-09-08)
+    const watched = new Set(EBXPage.getWatched('org'));
+    _bindTableClickOnce(tbody);
+    _mountVoteBar();
+    _mountOeActions();
+
+    const causes = (EBX.config && EBX.config.causes) || [];
+    const cause = mission ? causes.find(c => c.id === mission.cause_id) : null;
+    const tiv = mission
+      ? (EBX.config.initiatives || []).find(i => i.id === mission.winning_tiv_id) : null;
+    const tivName = tiv ? ((tiv.emoji ? tiv.emoji + ' ' : '') + (tiv.title || mission.winning_tiv_id))
+                        : (mission ? mission.winning_tiv_id : '');
+    let day = '';
+    try {
+      if (mission) day = EBX.Cycle.missionDates(mission).phlElected
+        .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch (e) {}
+
+    if (!mission) {
+      tbody.innerHTML = '<tr><td colspan="5" class="init-table__empty">' +
+        'No organization election is open for this cause yet — it opens when its initiative is elected.' +
+        '</td></tr>';
+      return;
+    }
+
+    // The caption row: which race these candidates are running in. The table's
+    // own head names columns, not the contest, and a table of five organizations
+    // with no contest named is five names in a vacuum.
+    const capRow = '<tr class="init-table__row init-table__row--cap"><td colspan="5">' +
+      '<div class="oet-cap">' +
+        '<span class="oet-cap__k">Running to lead</span>' +
+        '<b class="oet-cap__tiv">' + esc(tivName) + '</b>' +
+        '<span class="oet-cap__cause" style="color:' + ((cause && cause.color) || 'var(--clr-moss)') + '">' +
+          esc((cause && cause.name) || mission.cause_id) + '</span>' +
+        (day ? '<span class="oet-cap__day">decided ' + day + '</span>' : '') +
+      '</div></td></tr>';
+
+    const body = rows.length ? rows.map(r => {
+      const isWatched = watched.has(r.org_id);
+      return '<tr data-id="' + esc(r.org_id) + '" data-kind="org" data-mission="' + esc(mission.id) + '"' +
+        ' class="init-table__row' + (r.mine ? ' row-selected' : '') + '">' +
+        '<td class="col-watch"><button class="init-watch-btn ' + (isWatched ? 'watched' : '') + '"' +
+          ' data-watch-id="' + esc(r.org_id) + '" data-watch-kind="org"' +
+          ' aria-label="' + (isWatched ? 'Unwatch' : 'Watch') + ' organization"' +
+          ' title="' + (isWatched ? 'Unwatch' : 'Watch') + '">' + (isWatched ? '★' : '☆') + '</button></td>' +
+        '<td class="init-table__myvote">' + (r.mine
+          ? '<b>✓ my vote</b>'
+          : '<span class="mv-none">—</span>') + '</td>' +
+        '<td><div class="init-table__name"><span>' + esc(r.name) + '</span></div>' +
+          '<div class="vb-row__sub">' + r.net_votes + ' vote' + (r.net_votes === 1 ? '' : 's') +
+            ' &middot; ' + r.voter_count + ' benefactor' + (r.voter_count === 1 ? '' : 's') + '</div></td>' +
+        '<td class="init-table__ebx">' + (r.ebx > 0 ? Math.round(r.ebx).toLocaleString() + ' tokens' : '—') + '</td>' +
+        '<td class="init-table__date">' + esc(r.status) + '</td>' +
+      '</tr>';
+    }).join('')
+      : '<tr><td colspan="5" class="init-table__empty">' +
+        'No organization has registered for ' + esc(tivName) + ' yet &mdash; nominate the first one below.' +
+        '</td></tr>';
+
+    // "There should be an option to nominate an organization to run x."
+    const nomRow = '<tr class="init-table__row init-table__row--nom"><td colspan="5">' +
+      '<button class="rf-btn" onclick="event.stopPropagation();openOrgRegisterModal()">' +
+        '+ Nominate an organization to run ' + esc(tivName) + '</button>' +
+      '<span class="oet-nom__note">Anyone can put a name forward. Verification comes later, ' +
+        'and only a verified organization can be paid.</span>' +
+    '</td></tr>';
+
+    tbody.innerHTML = capRow + body + nomRow;
+  }
+  window.renderOrgTable = renderOrgTable;
+
   function renderMissionTable(rows) {
     const causes = (EBX.config && EBX.config.causes) || [];
     const causeMap = {};
@@ -6445,8 +7066,7 @@
     if (!tbody) return;
     // Organization names are user-submitted (an org can be nominated by a vote),
     // so they are escaped before they go into a row.
-    const esc = v => String(v == null ? '' : v)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const esc = EBXPage.esc;                        // §6 (2026-09-08)
     const tkOf = ct => (typeof window._fmtTkPublic === 'function')
       ? window._fmtTkPublic(ct) : String(Math.round((Number(ct) || 0) / 100));
     _bindTableClickOnce(tbody);
@@ -6532,7 +7152,7 @@
       return `<tr data-id="${init.id}" data-kind="mission" data-mission="${m ? m.id : ''}" class="init-table__row${isPicked ? ' row-selected' : ''}${isActiveRace ? ' row-active-race' : ''}">
         <td class="col-watch"><button class="init-watch-btn ${isWatched ? 'watched' : ''}" data-watch-id="${init.id}" data-watch-kind="tiv" aria-label="${isWatched ? 'Unwatch' : 'Watch'} initiative" title="${isWatched ? 'Unwatch' : 'Watch'}">${isWatched ? '★' : '☆'}</button></td>
         <td class="init-table__myvote init-table__stake">${stakeCell}</td>
-        <td><div class="init-table__name">${init.emoji ? init.emoji + ' ' : ''}<span>${init.title || 'Untitled'}</span></div>
+        <td><div class="init-table__name">${init.emoji ? init.emoji + ' ' : ''}<span>${((typeof window._titleAndCase === 'function') ? window._titleAndCase(init).title : (init.title || '')) || 'Untitled'}</span></div>
           <div class="vb-row__sub" style="color:${cause.color || 'var(--clr-moss)'}">${cause.name || '—'}${isActiveRace ? ' <b class="row-active-race__tag">this week</b>' : ''}</div></td>
         <td class="init-table__ebx">${poolEbx > 0 ? Math.round(poolEbx).toLocaleString() + ' tokens' : '—'}
           ${t ? `<div class="vb-row__sub">${nVotes} vote${nVotes === 1 ? '' : 's'} cast</div>` : ''}</td>
@@ -6619,7 +7239,7 @@
       return `<tr data-id="${init.id}" data-kind="tiv" class="init-table__row">
         <td class="col-watch"><button class="init-watch-btn ${isWatched ? 'watched' : ''}" data-watch-id="${init.id}" data-watch-kind="tiv" aria-label="${isWatched ? 'Unwatch' : 'Watch'} initiative" title="${isWatched ? 'Unwatch' : 'Watch'}">${star}</button></td>
         ${myVoteCell}
-        <td><div class="init-table__name">${emoji ? emoji + ' ' : ''}<span>${init.title || 'Untitled'}</span></div></td>
+        <td><div class="init-table__name">${emoji ? emoji + ' ' : ''}<span>${((typeof window._titleAndCase === 'function') ? window._titleAndCase(init).title : (init.title || '')) || 'Untitled'}</span></div></td>
         <td class="init-table__ebx">${totalEbx > 0 ? Math.round(totalEbx).toLocaleString() : '—'}</td>
         <td><span class="init-table__cause" style="color:${causeColor}">${causeName}</span></td>
         <td class="col-vote"><button class="init-table__votebtn${inS ? ' on' : ''}"
@@ -6686,7 +7306,51 @@
       // filtered here either: a table of eight deadlines that can be reduced to
       // one is a table that can hide a race a benefactor still has money in.
       // Pressing Vote on a card used to do exactly that.
-      const missions = (EBX.config.missions || []).filter(m => m.winning_tiv_id && !m.winning_org_id);
+      // build-seq §3 (2026-09-16): the 'cause' scope is every ACTIVE mission of
+      // the focused cause — elected initiative, organization race open or done.
+      const focusC = (typeof window._focusCause === 'function') ? window._focusCause() : null;
+      const missions = (_oeScope === 'cause' && focusC)
+        ? (EBX.config.missions || []).filter(m => m.cause_id === focusC.id && m.winning_tiv_id)
+        : (EBX.config.missions || []).filter(m => m.winning_tiv_id && !m.winning_org_id);
+      // §2 (2026-09-08) — the default is ONE RACE's organizations. `voteMissionId`
+      // resolves it: the open organization election of the cause the seven tabs
+      // are pointed at, and where that cause has two open at once — normal, since
+      // a race runs eight weeks and the cause comes round every seven — the one
+      // that finalizes NEXT. "Only show the upcoming one."
+      if (_oeScope === 'race') {
+        const mid = (typeof window.voteMissionId === 'function') ? window.voteMissionId() : null;
+        const mission = mid ? missions.find(m => m.id === mid) : null;
+        const tally = (mid && typeof window._p2For === 'function') ? window._p2For(mid) : null;
+        const cands = (mid && typeof window._candFor === 'function') ? window._candFor(mid) : [];
+        const entries = (tally && tally.entries) || [];
+        const ids = Array.from(new Set(
+          cands.map(c => c.org_id).concat(entries.map(e => e.org_id))
+        )).filter(Boolean);
+        const entryFor = id => entries.find(e => e.org_id === id) || {};
+        const statusOf = id => (cands.find(c => c.org_id === id) || {}).status || 'unregistered';
+        const myOrg = (mid && typeof window._myOrgForPublic === 'function')
+          ? window._myOrgForPublic(mid) : null;
+        const orows = ids.map(id => {
+          const e = entryFor(id);
+          return {
+            org_id: id,
+            name: (typeof window._orgNamePublic === 'function') ? window._orgNamePublic(id) : id,
+            status: statusOf(id),
+            net_votes: Number(e.net_votes) || 0,
+            ebx: Number(e.ebx) || 0,
+            voter_count: Number(e.voter_count) || 0,
+            mine: myOrg === id,
+          };
+        });
+        const oKey = {
+          mine:    r => (r.mine ? 1 : 0),
+          name:    r => r.name || '',
+          started: r => r.status || '',
+          total:   r => r.net_votes * 1e6 + r.ebx,
+        };
+        renderOrgTable(mission, _sortRows(orows, oKey[_tableSort.key] || oKey.total));
+        return;
+      }
       const rows = (EBX.config.initiatives || [])
         .filter(i => missions.some(m => m.winning_tiv_id === i.id))
         .map(i => ({ init: i, mission: missions.find(m => m.winning_tiv_id === i.id) || null }));
@@ -6746,9 +7410,14 @@
     try { init = JSON.parse(initJson); } catch(e) { return; }
     _selectedInit = init;
     _selectedOrg = null;
-    // build-seq 8: info opens inline in an expandable table row.
+    // §2 (2026-09-08) — the expansion goes to the ELECTION PANEL. Build-seq
+    // main.html: "Remove expanded row from ME table. Clicking a row should bring
+    // up the expansion in the election panel." What is left in the row is the
+    // highlight, so the table still says which initiative the panel is about.
+    idxRowCollapseAll();
     const row = document.querySelector(`#init-table-body tr[data-id="${init.id}"]`);
-    if (row) idxRowExpand(row, init, 'tiv');
+    if (row) row.classList.add('row-selected');
+    if (typeof window._meDetailSet === 'function') window._meDetailSet(init.id);
   }
 
   function idxClearSelection() {
@@ -6758,79 +7427,6 @@
   }
   window.idxClearSelection = idxClearSelection;
 
-  // build-seq 1d — when no row is selected, the info panel shows the leader of
-  // whichever election the page is currently focused on. In tiv mode that's
-  // the leading proposal for the NEXT cause (same target as the annulus center
-  // and the top-right side card back). In org mode it's the leading org in the
-  // currently-active cause. Keeps the panel useful even before a click.
-  function idxRenderDefaultInfo() {
-    const titleEl  = document.getElementById('idx-init-title');
-    const metaEl   = document.getElementById('idx-init-meta');
-    const descEl   = document.getElementById('idx-init-desc');
-    const actionEl = document.getElementById('idx-init-actions');
-    if (!titleEl || !metaEl || !descEl || !actionEl) return;
-    if (!window.EBX || !EBX.Cycle || !EBX.config) return;
-
-    const causes = EBX.config.causes || [];
-    const state  = EBX.Cycle.now();
-    const active = state.causeIndex;
-
-    const panel = document.querySelector('.init-selected-panel');
-    const eyebrow = document.querySelector('.init-selected__eyebrow');
-
-    if (_mainMode === 'tiv') {
-      // Leader of the NEXT cause election.
-      const nextIdx = (active + 1) % 7;
-      const cause = causes.find(c => c.index === nextIdx);
-      if (panel) panel.style.setProperty('--entity-color', (cause && cause.color) || '#4e7a4e');
-      if (eyebrow) eyebrow.textContent = 'Leading Initiative · Next election';
-      const inits = (EBX.config.initiatives || [])
-        .filter(i => i.cause_index === nextIdx || (cause && i.cause_id === cause.id))
-        .sort((a,b) => (b.committed_ebx||b.ebx_committed||0) - (a.committed_ebx||a.ebx_committed||0));
-      const leader = inits[0];
-      if (!leader) {
-        titleEl.textContent = '(No initiative leader yet)';
-        metaEl.textContent  = (cause ? cause.name : '') + ' · upcoming election';
-        descEl.textContent  = 'No proposals yet for the upcoming cause. Use the Propose button to add one.';
-        actionEl.innerHTML  = cause
-          ? `<a href="cause.html?id=${cause.id}" class="btn btn-forest btn-sm">View ${cause.name} →</a>`
-          : '';
-        return;
-      }
-      // Ensure leader carries the cause_id so the vote helpers can key on it.
-      if (!leader.cause_id && cause) leader.cause_id = cause.id;
-      const ebx = leader.committed_ebx || leader.ebx_committed || 0;
-      titleEl.textContent = (leader.emoji ? leader.emoji + ' ' : '') + (leader.title || '');
-      metaEl.textContent  = [cause && cause.name, 'leader · upcoming election',
-        ebx > 0 ? ebx.toLocaleString() + ' tokens committed' : null].filter(Boolean).join(' · ');
-      descEl.textContent  = leader.description || '';
-      actionEl.innerHTML  = entityVoteActionsForTiv(leader);
-    } else {
-      // org mode → leading organization in the active cause.
-      const cause = causes.find(c => c.index === active);
-      if (panel) panel.style.setProperty('--entity-color', (cause && cause.color) || '#4e7a4e');
-      if (eyebrow) eyebrow.textContent = 'Leading Organization · Active election';
-      const allOrgs = EBX.config.organizations || [];
-      // No vote tallies on the homepage yet — fall back to the first verified org
-      // that lists the active cause as in-scope.
-      const candidates = allOrgs.filter(o =>
-        Array.isArray(o.causes) ? o.causes.includes(active) : true);
-      const leader = candidates.find(o => o.verified) || candidates[0];
-      if (!leader) {
-        titleEl.textContent = '(No organization leader yet)';
-        metaEl.textContent  = (cause ? cause.name : '') + ' · org election';
-        descEl.textContent  = 'No registered organizations for this cause yet. Use the Register button to add one.';
-        actionEl.innerHTML  = '';
-        return;
-      }
-      titleEl.textContent = leader.name || '';
-      metaEl.textContent  = [cause && cause.name, leader.verified ? 'Verified' : 'Unverified',
-        leader.founded ? 'Founded ' + leader.founded : null].filter(Boolean).join(' · ');
-      descEl.textContent  = leader.description || 'No description provided.';
-      actionEl.innerHTML  = entityVoteActionsForOrg(leader);
-    }
-  }
-  window.idxRenderDefaultInfo = idxRenderDefaultInfo;
 
   // §1 (2026-08-05): the discussion board is GONE from the Context page.
   // structure.md's site table now reads Context = "no posts — Only voting";
@@ -6845,6 +7441,9 @@
   // closeProposeModal / _slugForInitiative / submitProposal all lived here and
   // were a near-copy of cause.html's. They are gone — EBX.Dialogs.propose owns
   // the dialog, the slug, and the POST for both pages.
-  </script>
+    // build-seq §3 (2026-09-16): light the election card and toggle for the starting mode.
+  try { setElectionCol(_electionCol() === 'ce' ? 'ce' : (_mainMode === 'org' ? 'oe' : 'me'), { fromMode: true }); } catch (e) {}
+</script>
+  <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

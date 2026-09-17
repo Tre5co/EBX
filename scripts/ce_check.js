@@ -65,6 +65,8 @@ const section = t => console.log('\n=== ' + t);
   // run across the top of it — "the cause toggle in the CE is no longer
   // necessary; it is toggled by the main page cause toggle".
   await page.goto(BASE + '/main.html', { waitUntil: 'networkidle' });
+  // build-seq §3 (2026-09-16): the cause election is one of three toggled cards — open it.
+  await page.evaluate(() => window.setElectionCol && window.setElectionCol('ce'));
   await page.waitForSelector('#ce-panel-mount .ce-panel', { timeout: 15000 });
   await page.waitForTimeout(1500);
   ok(!(await page.$('.cause-election')), 'the cause-election CARD is gone from the hero');
@@ -138,11 +140,15 @@ const section = t => console.log('\n=== ' + t);
   // slot 7 — the nearest one still open. (The tab loop above left a selection
   // behind, and a selection deliberately survives the ME/OE switch.)
   await page.goto(BASE + '/main.html?state=oe', { waitUntil: 'networkidle' });
+  // build-seq §3 (2026-09-16): the cause election is one of three toggled cards — open it.
+  await page.evaluate(() => window.setElectionCol && window.setElectionCol('ce'));
   await page.waitForTimeout(2200);
   ok(await page.$eval('.ce-panel', e => e.dataset.slot) === '7',
      '…and a fresh OE load opens on slot 7, the nearest open window',
      await page.$eval('.ce-panel', e => e.dataset.slot));
   await page.goto(BASE + '/main.html', { waitUntil: 'networkidle' });
+  // build-seq §3 (2026-09-16): the cause election is one of three toggled cards — open it.
+  await page.evaluate(() => window.setElectionCol && window.setElectionCol('ce'));
   await page.waitForTimeout(2000);
 
   section('"Show Cause Table" toggles the TABLE and leaves the cards alone');

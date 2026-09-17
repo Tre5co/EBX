@@ -197,7 +197,7 @@ CATEGORIES: dict[str, PostCategory] = {
         notes="One post per type (up to 3); rolling slots; upvote-only.",
     ),
     "mission_support": PostCategory(
-        "mission_support", "Mission Support",
+        "mission_support", "Research",
         tuple(t.key for t in _MISSION_SUPPORT_TYPES), "ben",
         notes="One post per type; full reactions; the three rewarded types.",
     ),

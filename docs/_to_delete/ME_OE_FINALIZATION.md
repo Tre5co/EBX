@@ -1,9 +1,23 @@
 # ME & OE — the finalized model, staged for the doc overhaul
 
-*Status: **the model in §A is BUILT and the docs in §B are rewritten**
-(2026-08-27c). This file is kept as the dated RECORD of what was asked and
-answered — `docs/token_model.md` is the model itself, and the two should agree.
-If they ever disagree, `backend/app/token_model.py` settles it.*
+> ## ⚠ SUPERSEDED 2026-09-04 — read this as history, not as the model
+>
+> The money model was overhauled on 2026-09-04. **EBX is now a tradeable
+> position in a mission's remaining charitable capital**, exchanged for other
+> missions' EBX on the Earthbux DEX; the donation completes at commit. The
+> decisions recorded below that are now **retired**: the clean 10% OE skim, the
+> week-roll ratchet, early EBX, marked tokens, the eight-open/fourteen-lifetime
+> field, and donation-by-tranche. What survives: centitokens and the rounding
+> rule, the grant (ten as a floor, tied to its cause), split-vs-commit, the
+> vote-weight curve and the influence multipliers.
+>
+> This file is still worth reading — it is the record of *why* the retired
+> machinery was built, which is exactly the context needed to judge whether the
+> DEX really replaces it. `docs/token_model.md` is the model itself.
+
+*Status: **historical.** The model in §A was BUILT and the docs in §B were
+rewritten (2026-08-27c); both have since been superseded — see the banner above.
+This file is the dated RECORD of what was asked and answered.*
 
 *Written 2026-08-27c from the ME & OE Finalization block at the head of
 `docs/INSTRUCTIONS.md`. This file is STAGING: it exists so the model can be

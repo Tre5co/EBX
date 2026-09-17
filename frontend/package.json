@@ -1,15 +1,9 @@
 {
   "name": "earthbucks-frontend",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "type": "module",
+  "description": "RETIRED 2026-09-16. resources/js/ebx_shared.js is the source and has no build step. This folder is in the REMOVAL REGISTER (docs/INSTRUCTIONS.md) and can be deleted.",
   "scripts": {
-    "build": "grep -q EBX_TAIL_SENTINEL src/ebx_shared.ts && esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020",
-    "dev": "grep -q EBX_TAIL_SENTINEL src/ebx_shared.ts && esbuild src/ebx_shared.ts --bundle --outfile=../resources/js/ebx_shared.js --format=iife --target=es2020 --watch --sourcemap",
-    "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "esbuild": "^0.21.0",
-    "typescript": "^5.4.0"
+    "build": "node -e \"console.error('Retired 2026-09-16: edit resources/js/ebx_shared.js directly. There is no build.'); process.exit(1)\""
   }
 }

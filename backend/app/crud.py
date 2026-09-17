@@ -56,21 +56,17 @@ def p2_vote_cost(votes: int) -> int:
 # an election closes. These MIRROR `token_model.py`, which is the source of
 # truth; nothing here computes, it only names.
 #
-# 2026-08-27c — **A CLEAN 10%, ACROSS THE BOARD.** Jax: "It's a clean 10% across
-# the board, winners and losers pay the same, the difference comes after
-# (special ebx for ME, special mission membership for OE)." So the win/lose fork
-# is gone entirely, and with it `P2_SEND_WIN` / `P2_SEND_LOSE`. One rate, paid
-# by every ct that entered the race, and the other 90% becomes the benefactor's
-# EBX for that mission — held, mission-tied, and donated in tranches as the
-# mission runs.
-#
-# The initiative election still takes nothing. It is a routing step, not a
-# settlement: every backer's stake moves whole into the winning initiative's
-# organization election, the winner's as EARLY EBX and the losers' as marked
-# tokens that can still choose a race.
-P1_SEND_WIN = 0.0            # your tiv won   (= token_model.ME_SKIM)
-P1_SEND_LOSE = 0.0           # your tiv lost  (= token_model.ME_SKIM)
-P2_SKIM = 0.10               # everyone, at the OE (= token_model.OE_SKIM)
+# 2026-09-16 — **THE FINALITY LADDER** (money_model.md §6). Winners and losers
+# pay the same rates: 10% of every ME stake is final at the initiative election,
+# another 10% of every OE stake at the organization election, and 100% on budget
+# day (T+15). The skims are booked into `votes_p2.donated_ct`; the rest stays
+# the benefactor's EBX. Being right is rewarded by the deployment order, not by
+# a rate.
+# 2026-09-16 — the finality ladder (money_model.md §6): 10% of every ME stake is
+# final at T, another 10% of every OE stake at T+8, and all of it on budget day.
+P1_SEND_WIN = 0.10           # your tiv won   (= token_model.ME_SKIM)
+P1_SEND_LOSE = 0.10          # your tiv lost  (= token_model.ME_SKIM)
+P2_SKIM = 0.10               # everyone, ADDITIONAL, at the OE (= token_model.OE_SKIM)
 
 # The commitment fund took its cut as a losing initiative's stake rolled to the
 # next election of the same cause. NOTHING ROLLS ANY MORE — the stake goes to
@@ -1422,7 +1418,19 @@ def can_post_mission(db: Session, ben_id: int, mission_id: str) -> bool:
             models.VoteP1.mission_id == mission_id,
         )
     ) or 0
-    return float(p1_committed) > 0
+    if float(p1_committed) > 0:
+        return True
+    # build-seq §2 (2026-09-16): a committed ORGANIZATION-election stake is the
+    # same agreement to become a member — without it, nobody who arrived at a
+    # mission after its initiative election could argue a case or suggest a
+    # budget item there before the organization election closes.
+    p2_stake = db.scalar(
+        select(sqlfunc.coalesce(sqlfunc.sum(models.VoteP2.stake_ct), 0)).where(
+            models.VoteP2.ben_id == ben_id,
+            models.VoteP2.mission_id == mission_id,
+        )
+    ) or 0
+    return int(p2_stake) > 0
 
 
 def mint_mission_coins(db: Session, mission_id: str) -> int:
@@ -1434,11 +1442,21 @@ def mint_mission_coins(db: Session, mission_id: str) -> int:
     mission = db.get(models.Mission, mission_id)
     if mission is None:
         raise ValueError("Mission not found")
+    # §0a (2026-09-08) — **the phase-2 term was the wrong column, so an
+    # organization-election backer got no coin at all.** This read `ebx_spent`,
+    # which is `p2_vote_cost` — the price of EXTRA votes, 0 for a first vote and
+    # 0 for everyone on the platform — and then rounded the total to an int, so a
+    # benefactor whose whole position was in the ORGANIZATION election minted
+    # `int(round(0))` and was skipped. profile.html's backlog has asked for
+    # "anything I voted on should have a coin in the wallet" ever since; this is
+    # why it did not. `p2_stake_by_ben` is the one reader of a phase-2 stake (the
+    # column when it is written, the carried phase-1 figure when it is not), and
+    # it answers in tokens, which is what a coin is sized in.
     stakes: dict[int, float] = {}
     for v in db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == mission_id)).all():
         stakes[v.ben_id] = stakes.get(v.ben_id, 0.0) + float(v.ebx_committed or 0)
-    for v in db.scalars(select(models.VoteP2).where(models.VoteP2.mission_id == mission_id)).all():
-        stakes[v.ben_id] = stakes.get(v.ben_id, 0.0) + float(v.ebx_spent or 0)
+    for ben_id, tokens in p2_stake_by_ben(db, mission_id).items():
+        stakes[ben_id] = stakes.get(ben_id, 0.0) + float(tokens or 0.0)
     existing = {
         c.owner_id for c in db.scalars(
             select(models.CreditCoin).where(models.CreditCoin.mission_id == mission_id)
@@ -1457,12 +1475,30 @@ def mint_mission_coins(db: Session, mission_id: str) -> int:
     return minted
 
 
+def _p2_stake_ct(v: models.VoteP2) -> int:
+    """A phase-2 row's stake in ct, without needing its mission's carry map.
+
+    The column when it has been written; the row's own legacy float otherwise.
+    For a GLOBAL sum this is enough — the per-mission carried figure that
+    `wallet.stake_ct_of` falls back to is already counted on the phase-1 side of
+    the same sum, so asking for it here would double it.
+    """
+    ct = int(getattr(v, "stake_ct", 0) or 0)
+    return ct if ct > 0 else 0
+
+
 def global_coin_value(db: Session, scale: float = 100000.0) -> dict:
     """The GLOBAL coin value — moved by people committing/withdrawing money
     across the platform (placeholder curve: 1 + net_flow/scale). Per-mission
     values live on mission.credit_value and move with resolutions."""
+    # §0a (2026-09-08) — `ebx_spent` is `p2_vote_cost`, not a stake, and it is
+    # zero for every row ever written, so the organization-election half of net
+    # flow was missing from the global curve. `stake_ct` is the stake, with the
+    # legacy float behind it for rows that predate the column.
     committed = float(db.scalar(select(sqlfunc.coalesce(sqlfunc.sum(models.VoteP1.ebx_committed), 0))) or 0)
-    spent = float(db.scalar(select(sqlfunc.coalesce(sqlfunc.sum(models.VoteP2.ebx_spent), 0))) or 0)
+    spent = sum(
+        _p2_stake_ct(v) for v in db.scalars(select(models.VoteP2)).all()
+    ) / 100.0
     refunded = float(db.scalar(
         select(sqlfunc.coalesce(sqlfunc.sum(models.Transaction.amount_ebx), 0)).where(
             models.Transaction.type == "transfer",
@@ -1872,10 +1908,10 @@ def replace_p1_shares(
     held = sum(max(0, int(getattr(r, "stake_ct", 0) or 0)) for r in existing.values())
 
     # Which door this ct comes through. A granted token may only be spent in the
-    # elections of the cause it was granted against; a purchased one may go
-    # anywhere. `grant_cause_id` is that cause, and it falls back to the week's
-    # active cause for accounts granted before the column existed.
-    door_cause = getattr(ben, "grant_cause_id", None) or wallet_mod.active_cause_id()
+    # elections closing on its grant WEEK (2026-09-16: grants carry a week, not
+    # a cause) — for the initiative election that is the week's active cause; a
+    # purchased one may go anywhere.
+    door_cause = wallet_mod.active_cause_id()
     granted_allowed = (mission.cause_id == door_cause)
     free = int(ben.free_ct or 0)
     purchased = min(int(ben.purchased_ct or 0), free)
@@ -2639,16 +2675,18 @@ def _open_oe_stakes(db: Session, mission: models.Mission, winner_id: str) -> int
             neither, it commits to whoever wins the race it is sitting in.
 
     One `VoteP2` row per benefactor (the table's unique key) holding the whole
-    of what they committed — no skim, either way, because the initiative
-    election is a routing step and not a settlement. `minted_ct` is the winning
-    share, `marked_tiv_id` names the largest losing one, and `stake_ct` is both.
+    of what they committed. 2026-09-16: 10% of the whole stake is FINAL here,
+    winners and losers alike (`tm.settle_me`) — booked in `donated_ct`, which
+    marks finality and moves nothing. `minted_ct` is the winning share,
+    `marked_tiv_id` names the largest losing one, and `stake_ct` is both.
 
     One provenance element per initiative they backed, so a coin remembers the
     argument its money lost as well as the one it won. Idempotent: a row that
     already carries a `settle_me` event for this mission is left alone.
     """
     from . import wallet as wallet_mod
-    from .token_model import coin_element_me, coin_element_oe, ct_from_tokens
+    from .token_model import (coin_element_me, coin_element_oe, coin_donation,
+                              ct_from_tokens, settle_me)
 
     week = wallet_mod.current_week()
 
@@ -2691,6 +2729,11 @@ def _open_oe_stakes(db: Session, mission: models.Mission, winner_id: str) -> int
         # Early EBX for the winning share; a mark on the rest.
         v.minted_ct = max(int(getattr(v, "minted_ct", 0) or 0), won_ct)
         v.marked_tiv_id = biggest_loss
+        # 2026-09-16 — the ME skim: 10% of the whole stake is FINAL at T,
+        # winners and losers alike. It only marks finality — nothing leaves the
+        # position (`votes_p2.donated_ct` is final-so-far).
+        me_final = settle_me(total_ct).donated_ct
+        v.donated_ct = max(int(getattr(v, "donated_ct", 0) or 0), me_final)
         chain = list(v.provenance or [])
         for r in sorted(rows, key=lambda r: -_row_ct(r)):
             chain.append(coin_element_me(
@@ -2703,6 +2746,9 @@ def _open_oe_stakes(db: Session, mission: models.Mission, winner_id: str) -> int
             # has not been decided. That is what early means.
             chain.append(coin_element_oe(week=week, mission_id=mission.id,
                                          org_id=None, amount_ct=won_ct).as_dict())
+        if me_final > 0:
+            chain.append(coin_donation(week=week, mission_id=mission.id,
+                                       amount_ct=me_final, note="me_close").as_dict())
         v.provenance = chain
         opened += 1
     return opened
@@ -2713,7 +2759,7 @@ def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
 
     Sets `mission.winning_tiv_id`, marks the winner 'active', carries every
     backer's stake into this mission's organization election (`_open_oe_stakes`
-    — no skim, winners and losers alike, first coin element written), and
+    — 10% final, winners and losers alike, first coin element written), and
     re-lists the losing initiatives as candidates in the cause's next cycle
     (`_relist_losers` — the idea, not the money). Returns the winning tiv id, or
     None if there's no vote signal yet."""
@@ -2763,11 +2809,9 @@ def _settle_oe_stakes(db: Session, mission: models.Mission, winner_org: str) -> 
        MARKED token that never moved commits here too, which is rule 7's
        default. After this there is nothing left in the race that is not EBX.
 
-    2. **The first donation tranche crosses.** A clean 10% of every stake, and
-       the same 10% whoever it backed. It is not a penalty on a losing side; it
-       is the opening instalment of the donation, which is why "the 10% skim is
-       added to the pool" and "the tax deduction happens when the ebx is
-       donated" are the same sentence. More tranches follow as the mission runs.
+    2. **The OE skim crosses** (2026-09-16): ANOTHER 10% of every stake, on top
+       of the 10% the initiative election already finalized, the same whoever
+       it backed. Budget day (T+15) makes the rest final (`wallet.final_ct_of`).
 
     Booked per benefactor, not derived. The OE half of settlement was the last
     thing being recomputed on every read — the right number in the wrong place —
@@ -2801,14 +2845,19 @@ def _settle_oe_stakes(db: Session, mission: models.Mission, winner_org: str) -> 
             _p2_record(v, tm.coin_element_oe(week=week, mission_id=mission.id,
                                              org_id=v.org_id, amount_ct=unminted))
             minted += unminted
+        # 2026-09-16 — the OE skim is ADDITIONAL to the ME skim: another 10% of
+        # the stake, booked once (a row that already carries an `oe_close`
+        # donation is left alone), capped at the stake.
         already = int(getattr(v, "donated_ct", 0) or 0)
-        first = tm.settle_oe(total).donated_ct
-        if first > already:
-            crossing = first - already
-            v.donated_ct = already + crossing
-            _p2_record(v, tm.coin_donation(week=week, mission_id=mission.id,
-                                           amount_ct=crossing, note="oe_close"))
-            donated_ct += crossing
+        booked = any((e or {}).get("kind") == "donate" and (e or {}).get("outcome") == "oe_close"
+                     for e in (v.provenance or []))
+        if not booked:
+            crossing = min(max(0, total - already), tm.settle_oe(total).donated_ct)
+            if crossing > 0:
+                v.donated_ct = already + crossing
+                _p2_record(v, tm.coin_donation(week=week, mission_id=mission.id,
+                                               amount_ct=crossing, note="oe_close"))
+                donated_ct += crossing
     return {"minted_ct": minted, "donated_ct": donated_ct, "rows": len(rows)}
 
 
@@ -2853,8 +2902,7 @@ def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
         if cand.org_id == winner_org:
             cand.p2_vote_tally = winner_entry["net_votes"]
     # Settlement, booked: everything still a token becomes EBX (silence follows
-    # the winner of its own race), then the clean 10% crosses as the first
-    # donation tranche. `_settle_oe_stakes` is the OE half that used to be
+    # the winner of its own race), then the additional 10% OE skim crosses. `_settle_oe_stakes` is the OE half that used to be
     # recomputed on every wallet read.
     _settle_oe_stakes(db, mission, winner_org)
     # §1a: the mission's credit coins. The COIN is the receipt — its issuance
@@ -3075,6 +3123,7 @@ def list_posts(
     ben_author_id: Optional[int] = None,
     type: Optional[str] = None,
     limit: int = 50,
+    sort: str = "recent",
 ) -> Sequence[models.Post]:
     stmt = select(models.Post)
     # §1 (2026-08-28) — the profile FEED asks for one benefactor's activity, and
@@ -3102,7 +3151,108 @@ def list_posts(
     # roots_only → exclude comments from a feed so threads don't double-list.
     if roots_only:
         stmt = stmt.where(models.Post.parent_id.is_(None))
+    if sort == "hot":
+        return _rank_hot(db.scalars(stmt.limit(max(limit * 4, 200))).all(), limit)
     return db.scalars(stmt.order_by(models.Post.created_at.desc()).limit(limit)).all()
+
+
+# ---------------------------------------------------------------------------
+# §3 (2026-09-08) — THE FEED ORDER.
+#
+# `jax notes 2` on the cause.html rebuild: "Newsfeed — designed to capture
+# attention. NOT sorted by mission." Every existing ordering in this file is
+# chronological or by pool size, and neither is an attention order: newest-first
+# buries a thread the moment anything else is written, and there is no ordering
+# by mission at all to avoid.
+#
+# The shape below is the standard decayed-engagement score, with the reaction
+# vocabulary this platform actually has (helpful / neutral / harmful) rather
+# than an up/down vote:
+#
+#     score = (helpful + 2·replies + ¼·neutral − ½·harmful + gravity)
+#             ÷ (age_hours + 2) ^ 1.5
+#
+# Four decisions worth stating, because each one is a judgement and not a
+# formula:
+#
+#   * **A REPLY IS WORTH TWO REACTIONS.** Writing something back costs more than
+#     pressing a button, and this whole product is a forum before it is a feed.
+#     It is also the one signal an author cannot manufacture alone.
+#   * **HARMFUL SUBTRACTS, IT DOES NOT SINK.** A disputed post is interesting;
+#     the half-weight keeps a genuine argument visible while stopping a pile-on
+#     from ranking. What actually removes a post is the FLAG, and a `red` flag
+#     is floored out below, because red means spam or unsupported slander and
+#     Earthbux apologises to organizations for those — it must not then put them
+#     at the top of the page.
+#   * **THE +2 IN THE DENOMINATOR** stops a brand-new post with one reaction
+#     dividing by nearly zero and taking the whole page.
+#   * **GRAVITY** is a small constant for the post types that ARE the news:
+#     Earthbux's own headline/editorial posts and an organization's updates. A
+#     winner announcement should not need reactions to be seen in the first
+#     hour, which is exactly when it has none. It is a LAUNCH boost and it
+#     expires: applied only inside `_HOT_GRAVITY_HOURS`, because as a permanent
+#     additive term it does not decay relative to anything and it showed its
+#     hand immediately — a June editorial with zero reactions outranked an
+#     August post that people had actually reacted to. News gets a head start,
+#     not tenure.
+#
+# Ranked in Python rather than SQL: the inputs include a reply COUNT, the score
+# is not a column, and a feed page is a few hundred rows. It becomes a query
+# when it stops being.
+_HOT_GRAVITY = {"headline": 12.0, "editorial": 8.0, "org_update": 6.0,
+                "mission_update": 6.0}
+_HOT_GRAVITY_HOURS = 48.0
+_HOT_HALFLIFE_POW = 1.5
+
+
+def _rank_hot(posts, limit: int):
+    from datetime import timezone
+
+    if not posts:
+        return []
+    ids = [p.id for p in posts]
+    replies: dict[str, int] = {}
+    # One query for every reply count in the page, keyed by parent.
+    for pid, n in db_reply_counts(posts[0], ids):
+        replies[pid] = n
+    now = datetime.utcnow()
+
+    def score(p) -> float:
+        created = p.created_at or now
+        if getattr(created, "tzinfo", None) is not None:
+            created = created.astimezone(timezone.utc).replace(tzinfo=None)
+        age_h = max(0.0, (now - created).total_seconds() / 3600.0)
+        engagement = (
+            float(p.helpful_count or 0)
+            + 2.0 * float(replies.get(p.id, 0))
+            + 0.25 * float(p.neutral_count or 0)
+            - 0.5 * float(p.harmful_count or 0)
+            + (_HOT_GRAVITY.get(p.category or "", 0.0)
+               if age_h <= _HOT_GRAVITY_HOURS else 0.0)
+        )
+        if (p.flag or "green") == "red":
+            engagement = min(engagement, 0.0)
+        return engagement / ((age_h + 2.0) ** _HOT_HALFLIFE_POW)
+
+    return sorted(posts, key=lambda p: (-score(p), -(p.created_at or now).timestamp()))[:limit]
+
+
+def db_reply_counts(sample_post, ids: list[str]):
+    """(parent_id, count) for every post in `ids` that has replies.
+
+    Takes a sample ORM object only to reach its session — `_rank_hot` is handed
+    rows, not a session, and asking for one would push the ranking's shape into
+    every caller."""
+    from sqlalchemy import inspect as _sa_inspect
+
+    session = _sa_inspect(sample_post).session
+    if session is None or not ids:
+        return []
+    return session.execute(
+        select(models.Post.parent_id, sqlfunc.count(models.Post.id))
+        .where(models.Post.parent_id.in_(ids))
+        .group_by(models.Post.parent_id)
+    ).all()
 
 
 def list_org_posts(db: Session, org_id: str, limit: int = 50) -> Sequence[models.Post]:
@@ -3242,6 +3392,42 @@ def create_post(
     if author is not None and post.author_type == "ben" and post.ben_author_id is None:
         post.ben_author_id = author.id
     db.add(post)
+    db.commit()
+    db.refresh(post)
+    return post
+
+
+def update_post(db: Session, post_id: str, data: schemas.PostUpdate,
+                author: models.BenefactorAccount) -> models.Post:
+    """An author edits their own benefactor post (build-seq §2).
+
+    Title, body, stance, and — for budgeting — the costed list and estimates.
+    Category, type, mission and parent are fixed at creation. Staff may edit any
+    post. Not yet versioned: `post_config.edit_policy` promises history, which
+    needs a table (BACKLOG).
+    """
+    post = db.get(models.Post, post_id)
+    if post is None:
+        raise ValueError("Post not found")
+    staff = getattr(author, "is_staff", False)
+    if not staff and post.ben_author_id != author.id:
+        raise PermissionError("you can only edit your own posts")
+    fields = data.model_dump(exclude_unset=True)
+    if post.category != "budgeting":
+        for f in ("line_items", "est_setup_days", "est_cost_usd"):
+            fields.pop(f, None)
+    elif "line_items" in fields and fields["line_items"] is not None:
+        bad = pcfg.invalid_line_items(post.type, fields["line_items"])
+        if bad:
+            raise ValueError("this budget row is incomplete: " + bad)
+        derived = pcfg.estimates_from_line_items(post.type, fields["line_items"])
+        for f, v in derived.items():
+            fields.setdefault(f, v)
+    if "body" in fields and not (fields["body"] or "").strip():
+        raise ValueError("a post needs a body")
+    for f, v in fields.items():
+        setattr(post, f, v)
+    post.flag = pcfg.classify_flag(post.type, post.body, post.title)
     db.commit()
     db.refresh(post)
     return post

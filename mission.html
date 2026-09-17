@@ -255,13 +255,17 @@
   </style>
 </head>
 <body>
+  <div class="ebx-navstrip"><div id="ebx-nav-mount"></div></div>
   <a href="main.html" class="ebx-home-mark">EBX</a>
 
-  <!-- §5 (2026-08-13): same warning the Context page's cause-election card
-       carries. No mission has been elected yet, so everything below is
-       synthetic. -->
+  <!-- §0c (2026-09-08): the banner here said "no mission has been elected",
+       which stopped being true a long time ago — four missions have elected both
+       an initiative and an organization and are in budgeting, and this page
+       renders their real posts, pool and post-support ring. What IS still true
+       is that the page is mid-redesign (build-seq §3), so the notice says that
+       instead of something a reader can disprove by scrolling. -->
   <div role="alert" style="margin:0;padding:11px 16px;text-align:center;background:#e8a84c;color:#1a1206;font-size:0.9rem;line-height:1.4;">
-    <strong style="letter-spacing:0.04em;">WARNING</strong> &mdash; mission page not yet operational; no mission has been elected.
+    <strong style="letter-spacing:0.04em;">IN PROGRESS</strong> &mdash; the mission page is being rebuilt to its new layout. The figures below are live; the arrangement is not final.
   </div>
 
   <div class="mp-shell">
@@ -311,7 +315,7 @@
         <div class="mp-posts" id="mp-posts"><span style="font-size:0.8rem;opacity:0.6;">Loading posts…</span></div>
         <div class="mp-cattabs" id="mp-cattabs">
           <button class="mp-cattab" data-cat="budgeting">Budgeting</button>
-          <button class="mp-cattab on" data-cat="mission_support">Mission support</button>
+          <button class="mp-cattab on" data-cat="mission_support">Research</button>
           <button class="mp-cattab" data-cat="review">Review</button>
         </div>
       </div>
@@ -1192,5 +1196,6 @@
     };
   })();
   </script>
+  <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

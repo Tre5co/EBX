@@ -277,6 +277,14 @@ class BenefactorAccount(Base):
     role: Mapped[str] = mapped_column(String, default="benefactor", nullable=False)
 
     vvv: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)  # set after first p2 vote
+    # 2026-09-16 (build-seq §2) — the BOT SIGNATURE. True for accounts driven by
+    # scripts/bots/ebx_bots.py. Set at signup only when the request carries the
+    # server's EBX_BOT_KEY (so nobody can mark themselves), or by staff through
+    # POST /admin/accounts/{id}/test. Bots vote and post like anyone else; this
+    # is how they are found, excluded from public member counts, and removed
+    # before real money is used.
+    is_test: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False,
+                                          server_default="0")
     watched_tiv_ids: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON list
 
     # ── the wallet (2026-08-19, token_model.py) ────────────────────────────
@@ -315,15 +323,9 @@ class BenefactorAccount(Base):
     #            reason the two are counted apart.
     purchased_ct: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     grant_commit_by_week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    #   grant_cause_id  the cause this week's grant was issued against
-    #            (2026-08-27c). "Tokens aren't granted until election week when
-    #            it's too late to transfer or withdraw" — so a granted token has
-    #            no free window and needs no deadline; what it carries instead is
-    #            the cause whose races it may enter, and whose NEXT window it
-    #            waits for if this one does not spend it. `grant_commit_by_week`
-    #            above is the retired deadline, left unread rather than dropped
-    #            so races settled under it can still be explained.
-    grant_cause_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    #   grant_cause_id  DROPPED 2026-09-16 (migration e1a7c3b95d20). A grant
+    #            carries its WEEK (`last_grant_week`), never a cause: "the active
+    #            week's cause is different between the 2 elections."
 
     credit_coins: Mapped[list["CreditCoin"]] = relationship(
         back_populates="owner", cascade="all, delete-orphan"

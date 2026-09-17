@@ -57,6 +57,11 @@ class WithdrawBody(BaseModel):
     ct: int = Field(gt=0)
 
 
+class WithdrawStakeBody(BaseModel):
+    mission_id: str
+    ct: int = Field(gt=0)
+
+
 class OrgBody(BaseModel):
     mission_id: str
     org_id: Optional[str] = None      # null returns the stake to unassigned
@@ -83,28 +88,25 @@ def get_wallet(
         "wallet": wallet.as_dict(),
         "granted_this_week_ct": granted["granted_ct"],
         "week": week,
-        # The cause this week's grant was issued against, and can be spent in.
-        # It replaces the commit-by date, which had nothing left to enforce.
-        "grant_cause_id": granted.get("grant_cause_id"),
+        # The week this grant was issued in — the only thing that limits where a
+        # granted token may go (2026-09-16: a week id, never a cause).
+        "grant_week": granted.get("grant_week"),
         "hardens_week": tm.hardens_at_week(week),
         "rows": w.oe_rows(db, user.id),
         "rules": {
             "weekly_grant_ct": tm.WEEKLY_GRANT_CT,
             "ct_per_token": tm.CT_PER_TOKEN,
             "max_split_tivs": tm.MAX_SPLIT_TIVS,
-            # One skim, and it is the same for everyone. `me_skim` is reported
-            # as 0 rather than dropped: a client that still prints a phase-1 cut
-            # should print zero, not fall back to a stale default.
+            # The finality ladder (2026-09-16): 10% at the ME, another 10% at
+            # the OE, 100% on budget day. Same rates for winners and losers.
             "me_skim": tm.ME_SKIM,
             "oe_skim": tm.OE_SKIM,
             "weight_block_ct": tm.WEIGHT_BLOCK_CT,
             "weight_r": tm.WEIGHT_R,
-            # What being right is worth, per arena. None of it is money.
-            "me_correct_oe_mult": tm.ME_CORRECT_OE_MULT,
-            "oe_correct_budget_mult": tm.OE_CORRECT_BUDGET_MULT,
-            "research_mult_each": tm.RESEARCH_MULT_EACH,
-            "research_mult_both": tm.influence_mult("research", True, True),
             "budget_set_weeks": tm.BUDGET_SET_WEEKS,
+            "budget_day_after_me_weeks": tm.BUDGET_DAY_AFTER_ME_WEEKS,
+            "org_budget_day_32nds": tm.ORG_BUDGET_DAY_32NDS,
+            "oe_min_stake_ct": tm.OE_MIN_STAKE_CT,     # build-seq §3: $1 to vote in an OE
             "oe_table_rows": w.OE_TABLE_ROWS,
             "oe_lifetime_races": tm.OE_LIFETIME_RACES,
         },
@@ -157,6 +159,19 @@ def post_withdraw(
     free."""
     try:
         return w.withdraw(db, user.id, body.ct)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/withdraw-stake", response_model=dict)
+def post_withdraw_stake(
+    body: WithdrawStakeBody,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Withdraw the non-final part of a stake as cash, until budget day (T+15)."""
+    try:
+        return w.withdraw_stake(db, user.id, body.mission_id, body.ct)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

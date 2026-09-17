@@ -1,0 +1,42 @@
+gantt
+    title Earthbux build clock — W0 = 2026-09-07
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+
+    section Unblock (not engineering)
+    Buy the earthbux domain + mailbox        :crit, unblock1, 2026-09-08, 2d
+    Nonprofit status enquiry                 :crit, unblock2, 2026-09-08, 60d
+    Banking / payee enquiry                  :crit, unblock3, 2026-09-08, 60d
+    Answer mission_model.md open questions    :active, unblock4, 2026-09-08, 7d
+
+    section Surfaces
+    Nav, profile, main.html (build-seq 1-2)  :done, s1, 2026-09-08, 1d
+    cause.html newsfeed rebuild              :s2, after unblock4, 14d
+    mission.html redesign                    :s3, after s2, 14d
+    Animated process diagram                 :s4, after s3, 7d
+
+    section Data to build against
+    Voting bots (admin simulation)           :crit, bots, 2026-09-15, 5d
+    Retroactive posts for recent elections   :posts, after bots, 3d
+
+    section Money model
+    token_model.md amendment (build-seq 4)   :done, m1, 2026-09-08, 1d
+    Withdrawal window + finality ladder      :m2, after bots, 10d
+    ME skim moves to finalize_p1             :m3, after m2, 3d
+    Deployment order (provenance queue)      :m4, after m3, 7d
+
+    section Counterparty
+    Mail transport                           :c1, after unblock1, 3d
+    M1 registered / M2 might-win / M3 won    :c2, after c1, 7d
+    Org registration + claim page            :c3, after s3, 14d
+    Vetting gates                            :c4, after c3, 7d
+    Check flow + payee                       :c5, after unblock3, 14d
+
+    section Trust and safety
+    New-account vote-buying gate             :t1, after m4, 4d
+    Kids accounts (legal review first)       :t2, after unblock2, 14d
+    Real content classifier                  :t3, after t1, 7d
+
+    section Housekeeping
+    Docs index, prune, pilot seed            :h1, after s4, 3d
+    ebx_shared.ts / .js reconciliation       :crit, h2, 2026-09-15, 5d

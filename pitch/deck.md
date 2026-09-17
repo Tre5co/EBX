@@ -9,6 +9,8 @@ milestones → runway breakdown → appendix
 
 **Open across the whole deck:** the ask numbers, milestone dates, five screenshots,
 and a primary cite for the foundation→DAF payout claim on slide 2.
+- Add org claim gate and how an org is allowed to exist - top 3 at week 5.
+- Focus heavily on bringing awareness to charity - through news, also through providing donors with opportunities.
 
 ---
 
@@ -33,7 +35,7 @@ people give modestly, at tax time, and never learn that most of what they gave i
 Second line: the totals flatter it — a deposit counts as giving the day it is deducted, not the day it
 arrives — and a foundation can meet its 5% by granting into a DAF, which owes nothing.
 *edits*
-⚠ The foundation→DAF payout point needs a primary source before this is presented.
+⚠ The foundation→DAF payout point needs a primary source before this is presented. 
 
 # 3 problem · angle 2
 **The money that does move is barely policed.**

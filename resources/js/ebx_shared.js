@@ -1,6 +1,14 @@
 "use strict";
+/* ebx_shared.js — THE SOURCE. Edit this file directly; there is no build step.
+ *
+ * 2026-09-16 (INSTRUCTIONS build-seq §1): the TypeScript source
+ * `frontend/src/ebx_shared.ts` is RETIRED. It had fallen ~24 KB behind this
+ * file (six EBX.* entry points and twelve diverged functions), so the build
+ * that was meant to regenerate this file from it could only delete live code.
+ * `frontend/` and `scripts/build_guard.js` are inert and listed in the
+ * REMOVAL REGISTER. Bump the `?v=` on the pages' script tags after an edit.
+ */
 (() => {
-  // src/ebx_shared.ts
   var config = {
     dataRoot: "/data/",
     apiBase: "",
@@ -670,8 +678,58 @@
     </footer>
   `;
   }
+  // ── SITE NAV — the five tabs, on every page. ─────────────────────────────
+  // Build-seq Misc (2026-09-08): "Add 5 navigation tabs across the top on every
+  // page: About(index) - Elections(main) - Missions(mission) - News(cause) -
+  // Profile(profile)."
+  //
+  // Written HERE, once, because `initPage` already runs on all five pages and a
+  // nav that is copied five times is a nav that drifts — main.html and
+  // cause.html each carry a byte-identical fallback of `missionDates` for
+  // exactly that reason, and one of those in the codebase is enough.
+  //
+  // THE LIT TAB IS THE PAGE TAG. main.html's top bar said "ELECTION" and
+  // cause.html's said "Discussion · <cause>"; the lit tab says that and also
+  // says what the other four are, so the tag comes off where the nav goes in.
+  // cause.html keeps the cause name beside the tabs — that half of its tag is
+  // not navigation.
+  //
+  // Two mount modes: `#ebx-nav-mount` when the page has a top bar with a centre
+  // cell to put it in, and otherwise a fixed strip at top-centre, between the
+  // fixed `.ebx-home-mark` at top-left and the fixed user badge at top-right,
+  // so mission.html and profile.html get it with no layout change at all.
+  var NAV_TABS = [
+    { label: "About", href: "index.html", match: ["index.html", ""] },
+    { label: "Elections", href: "main.html", match: ["main.html"] },
+    { label: "Missions", href: "mission.html", match: ["mission.html"] },
+    { label: "News", href: "cause.html", match: ["cause.html"] },
+    { label: "Profile", href: "profile.html", match: ["profile.html"] }
+  ];
+  function currentPageFile() {
+    const parts = window.location.pathname.split("/");
+    return (parts[parts.length - 1] || "").toLowerCase();
+  }
+  function navTabs() {
+    const here = currentPageFile();
+    return '<nav class="ebx-nav" aria-label="Site">' + NAV_TABS.map((t) => {
+      const on = t.match.indexOf(here) !== -1;
+      return '<a class="ebx-nav__tab' + (on ? " ebx-nav__tab--on" : "") +
+        '" href="' + t.href + '"' + (on ? ' aria-current="page"' : "") + ">" +
+        t.label + "</a>";
+    }).join("") + "</nav>";
+  }
+  function initNav() {
+    const mount = document.getElementById("ebx-nav-mount");
+    if (mount) { mount.innerHTML = navTabs(); return; }
+    if (document.querySelector(".ebx-nav")) return;
+    const wrap = document.createElement("div");
+    wrap.className = "ebx-nav-float";
+    wrap.innerHTML = navTabs();
+    document.body.insertBefore(wrap, document.body.firstChild);
+  }
   async function initPage() {
     initFooter();
+    initNav();
     if (!document.querySelector(".ebx-home-mark")) {
       const a = document.createElement("a");
       a.href = "index.html";
@@ -1497,9 +1555,7 @@
   // vote dialog at it (window.voteOnCause on main.html); Discuss leaves for the
   // cause page, which is the discussion hub. Pages without a voteOnCause hook
   // (cause.html reuses these cards) fall back to the caller's voteHref.
-  // NOTE: this file is the LIVE artifact — frontend/src/ebx_shared.ts has
-  // diverged and no longer contains this function, so there is nothing to
-  // mirror there.
+  // NOTE: this file is the source (the TypeScript copy was retired 2026-09-16).
   function _electionCardFooter(d) {
     const voteHref = d.voteHref || d.href || "#";
     const cid = String(d.causeId || "").replace(/'/g, "");
@@ -1850,8 +1906,11 @@
       const bg = _dlgShell("ebx-dlg-propose",
         "Propose an Initiative" + (cname ? ' <span style="opacity:0.5;font-size:0.8rem;">· ' + cname + "</span>" : ""),
         causeField +
-        "<label>Title *</label><input type=\"text\" id=\"ebx-dlg-title\" placeholder=\"e.g. Restore kelp forests in the Pacific\" />" +
-        "<label>Description *</label><textarea id=\"ebx-dlg-desc\" placeholder=\"What should happen, why it matters, and how you'd measure success…\"></textarea>" +
+        // build-seq §3 (2026-09-16): the title and the CASE are separate. "The
+        // description is a case" — a short name goes in the title, the argument
+        // goes below it, and the two are displayed apart everywhere.
+        "<label>Title * <span style=\"opacity:0.5;font-weight:400;\">(a short name — 90 characters)</span></label><input type=\"text\" id=\"ebx-dlg-title\" maxlength=\"90\" placeholder=\"e.g. Restore kelp forests in the Pacific\" />" +
+        "<label>Make the case *</label><textarea id=\"ebx-dlg-desc\" placeholder=\"What should happen, why it matters, and how you'd measure success. This is your case: it is shown under the title, and it is what persuades people to fund it.\"></textarea>" +
         "<label>Your handle</label><input type=\"text\" id=\"ebx-dlg-handle\" placeholder=\"@yourhandle\" />" +
         '<div class="ebx-dlg__actions">' +
           '<button class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
@@ -1864,7 +1923,7 @@
         const title = (bg.querySelector("#ebx-dlg-title").value || "").trim();
         const desc = (bg.querySelector("#ebx-dlg-desc").value || "").trim();
         if (!causeId) { msg.style.color = "#e8a84c"; msg.textContent = "Please select a cause."; return; }
-        if (!title || !desc) { msg.style.color = "#e8a84c"; msg.textContent = "Title and description are required."; return; }
+        if (!title || !desc) { msg.style.color = "#e8a84c"; msg.textContent = "A title and a case are both required."; return; }
         if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) {
           msg.style.color = "#e8a84c";
           msg.textContent = "Please log in to propose an initiative.";
@@ -1983,12 +2042,26 @@
     orgRegister(opts) {
       opts = opts || {};
       const causeId = opts.causeId || null;
+      // §2 (2026-09-08) — `tivId`: nominate an organization FOR ONE INITIATIVE.
+      // main.html's mission ballot puts a "+ org" button beside every slider row
+      // ("add a button beside each slider row to nominate an organization for
+      // that initiative"), and the point of pressing it on a particular row is
+      // that the row names the initiative. Without this the dialog opened on the
+      // cause's shortlist — elected initiatives first, then anything with money
+      // behind it — which may not contain the one that was clicked at all, since
+      // a benefactor nominates for an initiative BEFORE it wins. So the named
+      // initiative is guaranteed onto the list and pre-checked.
+      const tivId = opts.tivId || null;
       const all = config.initiatives || [];
       const mine = causeId ? all.filter((i) => i.cause_id === causeId) : all;
       // Elected tivs first; else anything with committed EBX; else everything.
       let picks = mine.filter((i) => ["active", "org_vote"].includes(i.status));
       if (!picks.length) picks = mine.filter((i) => (i.committed_ebx || i.ebx_committed || 0) > 0);
       if (!picks.length) picks = mine;
+      if (tivId && !picks.some((i) => i.id === tivId)) {
+        const named = all.find((i) => i.id === tivId);
+        if (named) picks = [named].concat(picks);
+      }
       const cname = causeId ? ((config.causes || []).find((c) => c.id === causeId) || {}).name : null;
       const bg = _dlgShell("ebx-dlg-orgreg",
         "Organization — Nominate or Register" + (cname ? ' <span style="opacity:0.5;font-size:0.8rem;">· ' + cname + "</span>" : ""),
@@ -2002,7 +2075,8 @@
         '<label>Initiatives this org is fit to accomplish * <span style="opacity:.6;">(pick at least 1)</span></label>' +
         '<div class="ebx-dlg__picker" id="ebx-dlg-org-picks">' +
           (picks.length
-            ? picks.map((i) => '<label><input type="checkbox" class="ebx-dlg-org-cb" value="' + i.id + '" /> ' +
+            ? picks.map((i) => '<label><input type="checkbox" class="ebx-dlg-org-cb" value="' + i.id + '"' +
+                (i.id === tivId ? " checked" : "") + " /> " +
                 (i.emoji ? i.emoji + " " : "") + i.title + "</label>").join("")
             : '<div style="font-size:0.78rem;opacity:0.6;">No initiatives found for this cause yet.</div>') +
         "</div>" +
@@ -2113,6 +2187,8 @@
     Accounts,
     initFooter,
     initPage,
+    initNav,
+    navTabs,
     getParam,
     buildURL,
     $,

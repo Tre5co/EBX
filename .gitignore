@@ -39,3 +39,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# voting bot credentials (scripts/bots/ebx_bots.py) — keep, never commit
+scripts/bots/*.local.json

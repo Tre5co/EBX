@@ -1,10 +1,171 @@
-# Sections 2–4 — Pass-Throughs, Religion, and Operating Charities
+# RESEARCH — the donation landscape, sourced
+*The evidence base*
+<!-- TOC -->
+## Contents
+- [0. This document](#0-this-document)
+  - [0a. The data beside it](#0a-the-data-beside-it)
+- [1. The essay outline](#1-the-essay-outline)
+- [2. The short version — where Earthbux fits](#2-the-short-version--where-earthbux-fits)
+  - [2a. The short version](#2a-the-short-version)
+  - [2b. The four tiers](#2b-the-four-tiers)
+  - [2c. Who holds the money, and where it goes](#2c-who-holds-the-money-and-where-it-goes)
+  - [2d. Why this matters for Earthbux](#2d-why-this-matters-for-earthbux)
+- [3. Endowed grantmakers — tier 1, the capital warehouses](#3-endowed-grantmakers--tier-1-the-capital-warehouses)
+  - [3a. Four fixes to the Section 1 draft](#3a-four-fixes-to-the-section-1-draft)
+  - [3b. Three fixes before this goes anywhere](#3b-three-fixes-before-this-goes-anywhere)
+  - [3c. The double-counting point, quantified](#3c-the-double-counting-point-quantified)
+  - [3d. The 5% rule is much weaker than "legally obligated to donate 5%" implies](#3d-the-5-rule-is-much-weaker-than-legally-obligated-to-donate-5-implies)
+  - [3e. The invested 95% — what's actually happening](#3e-the-invested-95--whats-actually-happening)
+  - [3f. Where the grants actually go](#3f-where-the-grants-actually-go)
+  - [3g. The contrast Earthbux is actually selling](#3g-the-contrast-earthbux-is-actually-selling)
+  - [3h. Verification notes — the endowed-grantmaker pass](#3h-verification-notes--the-endowed-grantmaker-pass)
+- [4. Pooled / pass-through vehicles — tier 2](#4-pooled--pass-through-vehicles--tier-2)
+  - [Draft prose](#draft-prose)
+  - [The counting question you asked about — the answer is *partly*](#the-counting-question-you-asked-about--the-answer-is-partly)
+  - [The other pass-through vehicles, ranked by opacity](#the-other-pass-through-vehicles-ranked-by-opacity)
+- [5. The religion question, answered](#5-the-religion-question-answered)
+  - [Finding 1: the number is real, and smaller than it used to be](#finding-1-the-number-is-real-and-smaller-than-it-used-to-be)
+  - [Finding 2: the category is *narrower* than readers think — and this cuts against the skeptical reading](#finding-2-the-category-is-narrower-than-readers-think--and-this-cuts-against-the-skeptical-reading)
+  - [Finding 3: this is the one — the number is not auditable, and most of it stays inside the building](#finding-3-this-is-the-one--the-number-is-not-auditable-and-most-of-it-stays-inside-the-building)
+  - [The transparency gap is actively widening — this is the freshest angle](#the-transparency-gap-is-actively-widening--this-is-the-freshest-angle)
+  - [Be fair — the strongest counter-evidence](#be-fair--the-strongest-counter-evidence)
+  - [One design idea worth stealing](#one-design-idea-worth-stealing)
+- [6. Direct operating charities — tier 3](#6-direct-operating-charities--tier-3)
+  - [The honest proportion, first](#the-honest-proportion-first)
+  - [Mechanism 1 — professional solicitors](#mechanism-1--professional-solicitors)
+  - [Mechanism 2 — gift-in-kind overvaluation](#mechanism-2--gift-in-kind-overvaluation)
+  - [Mechanism 3 — joint cost allocation](#mechanism-3--joint-cost-allocation)
+  - [Mechanism 4 — the ratio itself is systematically understated](#mechanism-4--the-ratio-itself-is-systematically-understated)
+  - [The adjudicated cases, with the corrections](#the-adjudicated-cases-with-the-corrections)
+  - [The regime that doesn't operate](#the-regime-that-doesnt-operate)
+- [7. The good, and what Earthbux should copy](#7-the-good-and-what-earthbux-should-copy)
+  - [Direct Relief — verified good](#direct-relief--verified-good)
+  - [Good360 — copy the model, not the books](#good360--copy-the-model-not-the-books)
+  - [GiveDirectly — the disclosure model](#givedirectly--the-disclosure-model)
+  - [Which evaluator to trust](#which-evaluator-to-trust)
+  - [⚠️ The hard part: does democratic allocation produce worse outcomes?](#the-hard-part-does-democratic-allocation-produce-worse-outcomes)
+  - [What Earthbux should actually copy — prioritized](#what-earthbux-should-actually-copy--prioritized)
+- [8. The per-recipient vetting checklist — moved](#8-the-per-recipient-vetting-checklist--moved)
+- [9. Verification queue](#9-verification-queue)
 
-*Companion to `Donation_Landscape_Brief.md` and `Endowed_Grantmakers_Deep_Dive.md`. Research pass August 2026. Every figure carries a source; contested and unverified items are flagged.*
+<!-- /TOC -->
+## 0. Overview
+*Edits*
+1969 reforms
+§4941 — self-dealing
+§4942 — minimum distributions
+§4943 — excess business holdings
+§4944 — jeopardizing investments
+§4945 — taxable expenditures
+
+These were followed by numerous tax reductions - corporations just found a different way to avoid taxes... I guess. Charity-related tax law became increasingly more complex.
+
+- AAgh ok tomorrow I'll go through this document like I did today with the money model.
+
+- Nonprofit news orgs - Texas Tribune, Propublica, institute for nonprofit news (INN)
+
+Investigate INN to determine validity of their news cycle.
+
+- This is supposed to be the sections of this document. Please make it so
+- Create individual documents for each part of section 1 in order to shorten this page.
+- Research fiscal sponsorships.
+### 0a. 
+0. Overview
+- Summary
+- Justification
+1. Charity landscape
+- Warehoses/Endowments/Foundations
+- Passthroughs/DAFs
+- Direct operating charities
+- Fiscal sponsorships
+- other
+2. Problems
+- GiK, Joint cost allocation, professional solicitors
+- Religion
+- Program costs, sponsorships, 10% overestimating
+- investing in themselves
+- bad policing and wealth hiding
+3. Solutions
+- Democratic allocation
+- News coverage
+- Accountability + public interest
+- Environmentalism
+
+## 1. The charity landscape
+
+### 1a. Tabulated charities
+Four CSVs in `docs/`, one per tab of the retired
+`Donation_Recipient_Landscape.xlsx` (dropped 2026-09-09 — the CSVs diff, the
+workbook did not):
+
+| File | What is in it |
+|---|---|
+| `DRL.csv` | **Classification** — the taxonomy: four tiers, legal status, payout requirement, transparency, examples, and the row where Earthbux sits. §2b is its prose. |
+| `DRL_major_players.csv` | **Major Players** — assets and annual giving for the largest funders, with what each concentrates on. |
+| `DRL_partners_targets.csv` | **Partners & Targets** — the strategy map: who Earthbux works with now, who Earthbux News investigates later, and the first move for each. |
+| `DRL_sources.csv` | **Sources** — topic, source, URL. Every new figure this file adds should land here. |
+
+## 2. The short version — where Earthbux fits
+
+*Folded in from `docs/Donation_Landscape_Brief.md` on 2026-09-09. It was written
+in June 2026 as the standalone brief; it is kept because it is the two-page
+version of the whole argument and it is what a partner or a journalist should be
+handed first.*
+
+> ⚠ **Two figures in this section are superseded by §3, which is a later and
+> better-sourced pass on the same organizations.** Lilly Endowment is **~$102B**
+> and is now the largest U.S. foundation, not $79.9B behind Gates; and "44% of
+> the assets of the 50 largest" must never be published as a share of *all* U.S.
+> foundation assets, where the real number is about **10%** of ~$1.8T. Read §3a
+> and §3b before quoting anything below.
+
+*A brief for Earthbux / Earthbux News. June 2026. Figures are 2024–2025 reporting; full citations in the spreadsheet's Sources tab.*
+
+### 2a. The short version
+
+Charitable money lands in four kinds of places. Most of the dollars sit in **endowed grantmakers** (private foundations like Gates and Lilly) that are legally required to pay out only 5% of assets a year, and in **pooled pass-through vehicles** (donor-advised funds and community foundations) that hold money on donors' behalf. The rest flows to **direct operating charities** that actually do the work, plus a tail of **trusts, platforms, and public funders**.
+
+The split that matters for Earthbux is this: the biggest pools are *capital warehouses* — they compound wealth and release a trickle — while the donor-advised money most similar to Earthbux is concentrated in **community foundations** (geographic, mission-led, public charities) and **commercial DAF sponsors** (Fidelity Charitable and peers, which have *no payout requirement at all*). Earthbux's natural allies are the community-based players; its eventual investigative targets are the opaque, low-payout warehouses.
+
+### 2b. The four tiers
+
+**1. Endowed grantmakers (capital warehouses).** Private foundations funded by one donor or family. Independent (Gates, Ford, MacArthur), family (Walton), corporate (Novo Nordisk), or operating (they run their own programs). They must distribute ~5% of assets a year and disclose every grant on a public Form 990-PF — so they are transparent, but slow.
+
+**2. Pooled / pass-through vehicles.** Money held *on behalf of* donors. Community foundations are public charities serving a geographic area and are the closest large cousins to Earthbux. Commercial DAF sponsors (Fidelity Charitable, National Philanthropic Trust, DAFgiving360, Vanguard Charitable) hold donor-advised accounts with **no payout requirement and no per-account disclosure**. Giving circles and mutual-aid pools sit here too — and are the *single closest* structural match to Earthbux.
+
+**3. Direct operating charities.** The actual end recipients — relief orgs, research institutes, GiveDirectly, food banks — plus institutional endowments (universities, hospitals).
+
+**4. Other vehicles.** Charitable trusts, online giving platforms (GlobalGiving, Benevity), and government/multilateral funders.
+
+### 2c. Who holds the money, and where it goes
+
+Lilly Endowment ($79.9B) is the largest U.S. private foundation, and its grants are strikingly concentrated: **Indiana education, community development, and religion**, ~$2.3B a year. The Gates Foundation ($78.7B in assets) gives $5.9–8.6B a year, overwhelmingly to **global health** — more than 80% of its WHO grants went to infectious disease, ~$3.2B to polio alone and ~$2.9B to vaccines — and it has pledged to spend down entirely by 2045. Together Lilly and Gates hold roughly 44% of the assets of the 50 largest U.S. foundations. Globally, the **Novo Nordisk Foundation** ($167B, biomedical research) and **Tata Trusts** ($100B+, Indian development) are even larger.
+
+By contrast, **Ford Foundation** (~$16B, $768M/yr) deliberately funds the unglamorous: civil and human rights, arts and media, civic participation.
+
+On the pooled side, **Fidelity Charitable** is now the single largest fundraiser in the country — it took in ~$16B in 2024 and moved $14.9B to 213,000 nonprofits — yet as a DAF sponsor it faces no legal obligation to distribute anything. The largest community foundation, **Silicon Valley Community Foundation** ($11B), granted $1.54B in 2024, including $327M directly to Bay Area nonprofits.
+
+### 2d. Why this matters for Earthbux
+
+Earthbux is, structurally, a **democratic pooled-giving vehicle with an independent newsroom bolted on** — a hybrid of a giving circle and a community foundation that pays out on a weekly mission cycle instead of warehousing capital for decades. That positioning suggests two distinct relationships:
+
+**Work with the community-based players now.** Community foundations, giving-circle networks (Philanthropy Together), and transparent operating charities (GiveDirectly, GlobalGiving) share Earthbux's mission-first, pooled-decision DNA. They can co-fund missions in the 7-cause rotation, supply vetted recipients, and lend legitimacy while Earthbux is small.
+
+**Investigate the warehouses later.** The transparency gap Earthbux exists to close is widest at the commercial DAF sponsors (no payout rule; in one study 35% of DAFs paid out nothing in a year) and at low-payout endowed foundations that compound assets while releasing the legal minimum. Charity-reform researchers — Inequality.org / the Institute for Policy Studies, the Donor Revolt campaign — already track this and are natural data-and-narrative partners for Earthbux News. The play isn't to fight the big funds for dollars today; it's to build the credible, transparent alternative now and turn the newsroom on the moneybags once Earthbux has the standing to be heard.
+
+The tables behind this are the four CSVs in §0a: the full **Classification** (`DRL.csv`), **Major Players** with figures, a **Partners & Targets** strategy map (allies and watchdog targets), and **Sources**.
 
 ---
 
-## Part 0 — Four fixes to your Section 1 draft
+## 3. Endowed grantmakers — tier 1, the capital warehouses
+
+*The deep pass on the tier that holds most of the money. §3a is the correction
+list for the essay's Section 1 draft; §3b–§3h are folded in from
+`docs/Endowed_Grantmakers_Deep_Dive.md` (2026-09-09), August 2026 research,
+figures 2025 reporting unless noted. Where this section and §2 disagree, this
+section wins.*
+
+### 3a. Four fixes to the Section 1 draft
 
 **1. The foundation-to-DAF figure is wrong.** You wrote $2.1B. It is **$2.6 billion in 2021** ([Inequality.org/IPS](https://inequality.org/article/private-foundations-dafs-2021/)) and **$3.2 billion in 2022** ([IPS Independent Report on DAFs, 2025](https://ips-dc.org/wp-content/uploads/2025/04/Independent-Report-on-DAFs-FINAL-04-03-2025.pdf)). Use the 2022 number — it is newer and larger. The $2.5B DAF-to-DAF figure for 2021 is correct, and the same IPS report puts DAF-to-DAF at **$4.4B in 2023** and **over $10.2B cumulative 2020–2023** between national sponsors alone.
 
@@ -16,7 +177,127 @@
 
 ---
 
-## Part 1 — Section 2 draft: Pooled / pass-through vehicles
+---
+
+### 3b. Three fixes before this goes anywhere
+
+**1. The 44% figure is wrong as written.** Total U.S. private foundation assets are roughly **$1.8 trillion** across ~120,000 foundations (2025). Lilly + Gates together are ~$179B, which is **about 10%** of all U.S. foundation assets — not 44%. The 44% number in the original brief was scoped to *the 50 largest foundations*, and that scoping has to travel with it. Published as "44% of total US foundation assets" it is a four-fold overstatement and the first thing a hostile reader will use to discredit the rest.
+
+**2. The Lilly and Gates numbers are stale, and the ranking has flipped.** Lilly Endowment is now **~$102B** and is the **largest foundation in the United States**. Gates Foundation is **~$77.2B**. Lilly's growth came almost entirely from Eli Lilly stock appreciation on GLP-1 drugs (Mounjaro/Zepbound), not from new gifts. Combined they are ~$179B, so "over $150B" is still true and now understates the case.
+
+**3. "Self-dealing" is the wrong legal term for the scenario described, and the correct framing is stronger.** Under **IRC §4941**, self-dealing means a *transaction between the foundation and a disqualified person* — a sale, lease, loan, or payment of compensation. A foundation holding or buying the founder's company stock on the open market is generally **not** self-dealing. The real, legal, and far more interesting mechanism is **permanent anchor ownership**, governed by §4943 and by the tax treatment of appreciated-stock gifts. See §3e. Use the wrong term and a foundation's counsel gets a free rebuttal; use the right one and there is no rebuttal available.
+
+---
+
+### 3c. The double-counting point, quantified
+
+The original claim is correct in substance and can now be given exact numbers.
+
+Giving USA's 2025 totals:
+
+| Line | Amount | Share |
+|---|---|---|
+| **Total U.S. giving** | **$617.20B** | 100% |
+| Giving by individuals | $394.20B | 63.9% |
+| Giving by foundations | $117.15B | 19.0% |
+| Giving by bequest | $62.19B | 10.1% |
+| Giving by corporations | $43.67B | 7.1% |
+| *— Gifts **to** grantmaking foundations (recipient category)* | *$79.05B* | *12.8%* |
+
+The last row is the tell. **$79.05B was counted as money given *to* foundations, and $117.15B was counted as money given *by* foundations, and both sit inside the same $617.20B headline.** Net out the inflow and the honest "money that reached a working charity" figure is closer to **$538B** — roughly **13% lower** than the number that gets reported every June.
+
+Five sharpenings worth adding:
+
+- **It isn't only double counting — it's time-shifted double counting.** The dollar counted flowing *out* of a foundation this year is a *different* year's inflow dollar, compounded in the market first. In a bull market the outflow dollar is materially larger than the inflow dollar that created it. So the headline both duplicates and inflates.
+- **DAFs are treated differently, which makes this specifically a foundation artifact.** Giving USA nets DAF flows: contributions into a DAF count once on the way in, and grants out of national DAF sponsors are *not* re-counted as a source. Private foundations get no such netting. Worth saying explicitly, because it pre-empts "well, they adjust for that."
+- **The intermediation share is now enormous.** Institute for Policy Studies: **over 41 cents of every individual charitable dollar goes to a private foundation (14%) or a DAF (27%)** rather than to an operating charity.
+- **The composition shift is itself partly a measurement artifact.** Over forty years the foundation share of "giving" rose from ~7% to ~18%, while the individual share fell from ~80% to ~65%. Some of the celebrated growth in American generosity is growth in *warehousing*, counted twice.
+- **Giving USA carries its own plug line.** It reports an "unallocated giving" residual for timing mismatches between when donors claim gifts and when recipients book revenue — an admission, in the methodology itself, that the ledger doesn't reconcile.
+
+---
+
+### 3d. The 5% rule is much weaker than "legally obligated to donate 5%" implies
+
+This is where the original passage leaves the most on the table. Six additions:
+
+**1. Five percent of *assets*, not of income — so the corpus grows.** A foundation returning 10–12% and paying 5% is not spending down; it is compounding. Perpetuity is the mathematically default outcome, by design. That is the whole point of the number.
+
+**2. "Qualifying distributions" are not the same as grants.** The 5% is satisfied by grants *plus* administrative overhead, staff salaries, **trustee compensation**, travel, program-related investments, and much of the cost of running the place. **29% of foundations compensate their trustees.** So a foundation reporting a 5.2% payout may be moving well under 5% out the door to charities.
+
+**3. A foundation can discharge its payout by moving money into a vehicle with no payout requirement.** Grants to donor-advised funds count as qualifying distributions. **Private foundations sent $2.6B to national DAF sponsors in 2021.** (Separately, **$2.5B moved DAF-to-DAF** that year — money circulating between warehouses while being recorded as charity.) This is the single most quotable fact in the whole file.
+
+**4. The floor is functionally the ceiling — and the biggest funds sit lowest.** IRS data, 2015–2021:
+
+| | Median payout |
+|---|---|
+| All private foundations | 5.2% – 5.6% |
+| Foundations over $1B in assets | **4.6% – 5.4%** |
+
+Billion-dollar foundations typically paid 5.0–5.1%. The distribution clusters hard at the legal minimum, and the largest institutions — the ones with the most capacity — pay the *least*.
+
+**5. Enforcement is soft and the base is smaller than it looks.** The excise tax on net investment income is a flat **1.39%**. Missing the payout triggers a 30% tax on the undistributed amount (100% if uncorrected), but there is a **five-year carryforward**, and the 5% base *excludes* assets used directly for charitable purposes (buildings, program assets), shrinking the denominator further.
+
+**6. There is a one-year lag built in.** The required distribution for a given year is due by the end of the *following* year. Even the minimum arrives late.
+
+---
+
+### 3e. The invested 95% — what's actually happening
+
+Replace the self-dealing framing with these five, in this order.
+
+**1. Excess business holdings (§4943) sets the real boundary — and it is generous.** A foundation *and all of its disqualified persons combined* may hold up to **20% of the voting stock** of a business (35% where an unrelated third party has effective control; a 2% de minimis for the foundation alone). Violations draw a 10% excise tax, and 200% if uncorrected. Since 2018 the **Newman's Own exception** permits 100% ownership of a wholly-owned business that distributes all profits to the foundation. Twenty percent of a company is not a passive stake — it is frequently the largest single bloc.
+
+**2. Lilly Endowment is the example. Use it and skip the abstraction.**
+
+> Lilly Endowment holds **90.4 million shares of Eli Lilly & Co — a 9.6% stake** — and that single position is effectively the entire **~$102B** endowment. It is now the largest foundation in America, and it got there because one stock quadrupled, not because it raised or gave anything.
+
+This is a permanent, tax-exempt, non-selling anchor shareholder in the donor's company, funded by a gift the donor deducted, sitting just under the §4943 ceiling. No law was broken. That is the story.
+
+**3. The Gates Foundation Trust is the second example, and it doubles as the double-counting illustration.** The trust's ~$36.6B equity book is led by **Berkshire Hathaway, Waste Management, Canadian National Railway, Microsoft, and Caterpillar** — the founder's company and the principal outside donor's company, at the top. And Buffett's Berkshire gifts are the cleanest possible demonstration of Part 1: the gift is counted as *individual* giving, and the Gates grants it funds are counted again as *foundation* giving.
+
+**4. The tax mechanism is the sharpest point and it's missing from the draft.** A founder donating appreciated stock **deducts the full fair market value AND avoids the capital gains tax entirely**. The lower the cost basis, the larger the subsidy — so the founder-with-near-zero-basis captures the maximum public benefit. IPS estimates the direct taxpayer subsidy for charitable giving at **~$111B a year**, with billionaire donors receiving roughly **74 cents of public support per dollar donated**. The deduction is taken in full, up front, at the instant the money enters the warehouse. **The public pays now for charity that arrives over decades — or never.**
+
+**5. Nothing requires the 95% not to work against the 5%.** A health funder may hold tobacco, ultra-processed food, or fossil assets; a climate funder may hold extraction. Mission-related investing is entirely voluntary and still rare enough that Ford's $1B MRI commitment made news *because* it was unusual. Meanwhile investment-management fees are paid out of tax-exempt corpus and can count inside the administrative expenses that satisfy the payout.
+
+**6. Governance closes the loop.** Boards are self-perpetuating. There are no members, no beneficiaries with legal standing to sue, no customers, and no election. State attorneys general are the only real supervisors and are thinly resourced. A foundation is the only large financial institution in America with no constituency that can remove its leadership.
+
+---
+
+### 3f. Where the grants actually go
+
+- **Gates has directed more than $9B to universities since 2010.** Lilly awarded **$400M+ to colleges and theological schools** in December 2025 alone.
+- The endowment-to-endowment point is worth naming: **a payout obligation is frequently discharged by moving money to an institution that has no payout obligation of its own.** University endowments face no 5% rule. Capital leaves one warehouse for another and is recorded as charity at both ends.
+- **Lilly's ~$2.3B/year is heavily concentrated in Indiana** education, community development, and religion. That is excellent for Indiana. It is not a national allocation, and it is decided by a board no Hoosier elected.
+
+---
+
+### 3g. The contrast Earthbux is actually selling
+
+Stated plainly, this is the whole pitch:
+
+| | Endowed grantmaker | Earthbux |
+|---|---|---|
+| Payout rate | 5% floor, and the floor is the ceiling | ~100% |
+| Lag from gift to impact | 12 months minimum; decades typical | one week |
+| Who decides | self-perpetuating board | community vote |
+| Counted how | twice | once |
+| Corpus | compounds in markets, possibly against the mission | none |
+
+And the newsroom's easiest first investigation writes itself: **"Of the $617 billion Americans were told they gave last year, how much actually reached an organization doing work?"**
+
+---
+
+### 3h. Verification notes — the endowed-grantmaker pass
+
+Firm and citable: the Giving USA 2025 source/recipient table, the $1.8T / 120,000 foundation totals, the IRS payout medians, the §4943 and §4941 rules, the 1.39% excise rate, the Lilly 13G share count and stake, the Gates Trust 13F composition, the $2.6B foundation-to-DAF and $2.5B DAF-to-DAF figures, the IPS 41-cent and $111B figures.
+
+Check before publishing: Lilly's ~$102B total is stock-price sensitive and moves weekly — re-pull it the day you publish, and cite the Form 990-PF or 13G date alongside it. The "$538B netted" figure is my arithmetic on Giving USA's own published lines, not a Giving USA number — present it as a calculation, showing the subtraction, not as a citation. The Gates spend-down-by-2045 pledge from the original brief should be re-confirmed against the foundation's current statement.
+
+Sources for this pass are to be added to `DRL_sources.csv` (§0a); until they are, the links inline above are the record.
+
+---
+
+## 4. Pooled / pass-through vehicles — tier 2
 
 ### Draft prose
 
@@ -77,7 +358,9 @@ Two current items worth naming because they are new:
 
 ---
 
-## Part 2 — The religion question, answered
+---
+
+## 5. The religion question, answered
 
 You asked whether religion really receives so much more than everything else. **The number is real and consistently produced. It is also narrower than readers assume, unauditable in a way no other category is, and mostly not spent on what readers picture.** Three separate findings; keep them separate.
 
@@ -142,7 +425,9 @@ The 6% "denominational dues" line in NSCEP is a **fixed top-slice for shared inf
 
 ---
 
-## Part 3 — Section 3 draft: Direct operating charities
+---
+
+## 6. Direct operating charities — tier 3
 
 ### The honest proportion, first
 
@@ -240,7 +525,9 @@ IRC **§4958 intermediate sanctions** (1996) allows a 25% excise tax on excess b
 
 ---
 
-## Part 4 — The good, and what Earthbux should copy
+---
+
+## 7. The good, and what Earthbux should copy
 
 You named Good360 and Direct Relief. **Direct Relief survives rigorous scrutiny. Good360 does not survive it equally well** — and the difference is exactly the mechanism in Part 3, Mechanism 2.
 
@@ -349,40 +636,23 @@ What they did: paused D.R.C. operations, referred staff to authorities, engaged 
 
 ---
 
-## Appendix — The per-recipient vetting checklist
+---
 
-**Tier 1 — automated, under 60 seconds, disqualifying. Run on every candidate before it reaches a ballot.**
+## 8. The per-recipient vetting checklist — moved
 
-1. EIN resolves in **IRS Tax Exempt Organization Search** and appears in **Pub 78 data** (contributions actually deductible). *Fail = off the ballot.*
-2. EIN **not** on the **IRS Automatic Revocation List** (monthly file — three consecutive years of non-filing triggers automatic loss of status). **A revoked org can still have a live website and a working donate button.** *Fail = off the ballot.*
-3. No name or officer match on the **OFAC SDN list**. *Fail = off the ballot, and stop.*
-4. **ProPublica Nonprofit Explorer API** (free, no key) returns at least one filing in the last 24 months. *Fail = manual review.*
-5. Pull revenue, expenses, program expenses, net assets, officer compensation. Compute program %; flag below 65% (the BBB floor).
-
-**Tier 2 — human, 20–30 minutes, per finalist.**
-
-6. Open the most recent **Form 990 PDF** and confirm the API numbers match. They sometimes don't.
-7. **Part VIII line 1g** — what fraction of revenue is noncash? **If >30%, escalate to Tier 3 and never publish a program ratio without a cash-only version beside it.**
-8. **Schedule G Part I** — professional fundraisers: gross raised vs. **amount retained by the fundraiser**. This is where Kids Wish Network's $12.8M of $14.4M shows up.
-9. **Schedule L** — related-party transactions (Part I excess benefit, Part II loans, Part III grants to interested persons, Part IV business transactions). **Name the counterparty and amount in the published writeup, always, even when innocuous.** GiveDirectly's ~$560,000 in 2023 fees to TTS, a payment platform formed by its co-founders, is a live example of a clean disclosure of an awkward fact.
-10. **Part IX line 26** — joint costs allocated to program? Recompute with the whole joint cost moved to fundraising and **publish both numbers**.
-11. **Part VI** — independent board majority; conflict-of-interest policy *monitored and enforced*; whistleblower policy; CEO compensation process.
-12. **Part VII / Schedule J** — top compensation against **cash** program spend, never total.
-13. **Part XII lines 3a–b** — Single Audit required? If yes, get and read the actual report; the 990 only tells you it exists.
-14. Cross-check ratings on **at least two** of CharityWatch, Charity Navigator, BBB give.org. **Never Charity Navigator alone for a GIK-heavy org.**
-
-**Tier 3 — GIK escalation, any recipient over 30% noncash revenue.**
-
-15. **Schedule M column (d) — "Method of determining noncash contribution amounts."** *This is the single most important box on the entire form.* "Donor's estimate" and "third-party published price file" are not the same answer. Direct Relief and Good360 would fill this box differently. **Publish that sentence verbatim.**
-16. **Schedule M Part II line 32b** — third party used to solicit, process or sell noncash contributions? A yes plus a big number is a pass-through structure.
-17. **Part V line 7 / Form 8282** — if donated property was disposed of within three years, the charity must report what it actually got. **Mismatch between the donor's claimed Form 8283 value and the 8282 sale price is the classic overvaluation detection route.**
-18. Ask the organization in writing: *what price source, at what granularity, refreshed how often, and what discount for used or near-expiry goods?* **Publish the answer or publish the refusal.**
-19. Run a **physical-unit sanity check** — dollars per pound, per dose, per unit shipped — and publish it.
-20. Compute and publish a **cash-only program ratio** beside the headline.
+**Moved 2026-09-09 to [`mission_model.md` §6a](mission_model.md#6a-the-per-recipient-checklist--what-payable-is-measured-against).**
+It was written here as evidence and it is used there as a gate: the checklist is
+the procedure that decides whether an elected organization is *payable*, so it
+lives with the vetting section that names the three gates. Nothing was cut — all
+twenty checks, all three tiers, and the reasoning about which box on the 990
+matters most went across whole. The findings the checks came out of are §2–§5 of
+this document.
 
 ---
 
-## Verification queue
+---
+
+## 9. Verification queue
 
 **Firm and citable:** the Giving USA and DAFRC figures; NY AG *Pennies for Charity* 2024 data; the FTC case figures and outcomes; the California AG GIK orders and the National Veterans Foundation joint-cost numbers; the Grassley WWP and Red Cross memos; the SEC Ensign Peak order; the NSCEP/FACT/NCS congregational spending splits; the Karlan & Wood, Burum et al., Kenworthy et al., and Egger et al. studies; Direct Relief's and Good360's audited financials and stated valuation policies.
 

@@ -25,12 +25,26 @@ def list_posts(
     ben_author_id: Optional[int] = None,
     type: Optional[str] = None,
     limit: int = 50,
+    sort: str = "recent",
     db: Session = Depends(get_db),
 ):
+    """The post feed.
+
+    `sort=recent` (default) is newest-first and is what every existing caller
+    wants. `sort=hot` is the NEWSFEED order added for the cause.html rebuild
+    (build-seq §3, "designed to capture attention. NOT sorted by mission") —
+    decayed engagement, replies weighted double, red-flagged posts floored, and
+    a small gravity for Earthbux's own headlines so a winner announcement is
+    visible in the hour before anyone has reacted to it. The scoring and the
+    reasoning behind each weight are in `crud._rank_hot`.
+    """
+    if sort not in ("recent", "hot"):
+        raise HTTPException(status_code=400, detail="sort must be 'recent' or 'hot'")
     return crud.list_posts(db, mission_id=mission_id, tiv_id=tiv_id,
                            cause_id=cause_id, category=category,
                            parent_id=parent_id, roots_only=roots_only,
-                           ben_author_id=ben_author_id, type=type, limit=limit)
+                           ben_author_id=ben_author_id, type=type, limit=limit,
+                           sort=sort)
 
 
 @router.get("/{post_id}/comments", response_model=list[schemas.PostRead])
@@ -52,6 +66,25 @@ def create_post(
         raise HTTPException(status_code=403, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/{post_id}", response_model=schemas.PostRead)
+def update_post(
+    post_id: str,
+    data: schemas.PostUpdate,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Edit your own benefactor post (build-seq §2: "create and update their
+    research page"). One post per type per mission means the way to change a
+    research post is to edit it."""
+    try:
+        return crud.update_post(db, post_id, data, author=user)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        msg = str(e)
+        raise HTTPException(status_code=404 if "not found" in msg.lower() else 400, detail=msg)
 
 
 @router.post("/{post_id}/resolve", response_model=schemas.PostRead)

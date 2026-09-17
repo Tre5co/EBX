@@ -1,779 +1,192 @@
+# INSTRUCTIONS — the queue, the plan, and the register
+
+*The one file the build runs from. `## BUILD SEQUENCE` is the queue and the only
+section a build pass executes; `## BACKLOG` is everything named but not queued;
+`## THE PLAN` is the two clocks and the dates (folded in from `gantt.md`,
+2026-09-09); `## REMOVAL REGISTER` is what is safe to delete and what is not
+(folded in from `to_delete.md`, 2026-09-09). Doc map and system model:
+[`README.md`](../README.md).*
+
+<!-- TOC -->
+## Contents
+
+- [AI TUNING](#ai-tuning)
+- [BUILD SEQUENCE](#build-sequence)
+- [CONVERSATION](#conversation)
+- [BACKLOG](#backlog)
+  - [▶ NOW — posting & newsfeed (phases 1–2, the focus)](#now--posting--newsfeed-phases-12-the-focus)
+  - [Cause framework (absorbed from jax notes 2.txt, 2026-07-31)](#cause-framework-absorbed-from-jax-notes-2txt-2026-07-31)
+  - [Model notes absorbed from CONVERSATION (2026-08-06) — documented, not built](#model-notes-absorbed-from-conversation-2026-08-06--documented-not-built)
+  - [Bugs (clear these for a clean phase-1/2 experience)](#bugs-clear-these-for-a-clean-phase-12-experience)
+  - [▶ NEXT — cause / election UI (phases 1–2)](#next--cause--election-ui-phases-12)
+  - [Elections / voting model](#elections--voting-model)
+  - [▶ Proposed model change — collapse the back-half phase enum](#proposed-model-change--collapse-the-back-half-phase-enum)
+  - [⏸ PARKED — end of phase 2 onward (do not build until the posting focus lands)](#parked--end-of-phase-2-onward-do-not-build-until-the-posting-focus-lands)
+  - [Phase 2 / organizations (backend)](#phase-2--organizations-backend)
+  - [Resolutions (phase 3: budget → release → resolve)](#resolutions-phase-3-budget--release--resolve)
+  - [Money / credit / donations](#money--credit--donations)
+  - [Creditcoin front/back + 3D earth (born on mission.html)](#creditcoin-frontback--3d-earth-born-on-missionhtml)
+  - [Profiles](#profiles)
+  - [Accounts / kids (12–17)](#accounts--kids-1217)
+  - [Infra / admin / testing](#infra--admin--testing)
+- [THE PLAN](#the-plan)
+  - [0. The thing that makes this plan unusual](#0-the-thing-that-makes-this-plan-unusual)
+  - [1. The build clock](#1-the-build-clock)
+  - [2. The mission clock](#2-the-mission-clock)
+  - [3. The planning aid — what to build, when the chart is not enough](#3-the-planning-aid--what-to-build-when-the-chart-is-not-enough)
+  - [4. Sources](#4-sources)
+- [REMOVAL REGISTER](#removal-register)
+  - [§A — safe now, nothing reads them](#a--safe-now-nothing-reads-them)
+  - [§B — one edit, then safe](#b--one-edit-then-safe)
+  - [§C — live, but the replacement already exists](#c--live-but-the-replacement-already-exists)
+  - [§D — looks dead, is not](#d--looks-dead-is-not)
+  - [Also worth doing while here](#also-worth-doing-while-here)
+  - [Added 2026-09-08 (build-seq §0 + §6)](#added-2026-09-08-build-seq-0--6)
+
+<!-- /TOC -->
+
 ## AI TUNING
+if a line starts with "!-" read, but do not execute it yet.
 @CLAUDE Stop process now if there are any lines in between here and ## BUILD SEQUENCE
 ## BUILD SEQUENCE
-9/3
-I edited the beginning of the readme.
-Also, let's create a slideshow for potential organizations, and one for potential employees.
-
-Slides work
-
-*EASY*
-- election page annulus center - Should say cause + Initiative/organizaiton election, not "philanthropy" or "decision".
-- Top left ME card shouldn't toggle on desktop mode. It should always show the upcoming ME. On mobile it will eventually toggle, but we aren't building mobile yet.
-
-*UI Exclusive*
-- Fix the 7 sectors in the outer annulus so that they are pointing clockwise, indicating the direction of the glowy dot. Get creative!
-- Election panels.
-
-*Backend*
-- Earthbux posts
-- Organization Experience
-
-*Platform*
-- Earthbux email address.
-
-*Legal*
-- Kids accounts
-
-There are a lot of long term things to get started on. This is the beginning of phase 3. Lets get it going!
-
-Ok. The discussion I created is a rudimentary version of what the mission will become. I need to expand this into a rich program to guarantee success. This needs to include Discussion incentives (C, I, A + B), Organization Requirements (Mission statement, binding agreements, budgeting), and earthbux plans (travel, purchases, deadlines, etc.)... This is very very complicated but will succeed with enough organization. 
-So we've established the beginning of the missions - 1. determine initiative, 2. determine organization, 3 is where we need to decide.
-This is the step where the organization has 7 weeks to claim and submit things like a mission statement and an estimation of when they will be able to start. This is the time for Earthbux and the Organization to establish a relationship. I will have to have a spiel for the organization that goes something like: "Hi, we're here to work with you to help the cause. Either we report on the cause, or we report on you. The goal is to report on the cause. If you do a good job, we'll be able to tell intersting stories about the cause."
-I also need to work out the types of content Earthbux will be initially putting out. These will start with "Winner updates" and stuff. These will be automatically posted in the feed, and a draft will be automatically created that I can edit up until they are posted. They will be posted 24 hours after the winners are finalized. They will include the highest rated cause posts, and may include content from organization members. Let's draft a post.
-We are also going to need a level of automation in communication with orgs. As soon as an organization is registered on the website, we need to send out a message like "Hi! you've been registered on Earthbux. This means someone wants to donate to you through our platform! Verify a few things to recieve the maximum donation!" We also need to send a similar message if they reach say week 5 and they are in the top 3 organization for a race, tell them "Looks like you might win! Here are some ways to incerase your chances, and here's what you'll need to do if you won". If they do win, we need to say "You have 7 weeks to claim the profile on our website. If you don't, you will only receive a small donation (which we will still investigate)." We should send them a link which will bring them to an organization registration page, and create a page kind of like spotify for creators - you need to get verified, because we will be paying you.
-How does the money transfer happen? I'd prefer if it was a check.
-I need to hammer down the vetting process. 
-What differentiates between an ebx that someone voted on and one that someone donates after the election? Mission membership? Valuation? Maybe if you voted, you get to pull it out? Maybe if you voted, you get higher ownership of the token - That's it. Voting on the winning tiv wins you ownership at a near-0 basis. On the organization, you get it at a slightly higher basis. Later on, you get it more expensive. 
-
-M: Navigate through missions, converse with members, build your version of the mission. Budget, interact with the community, get recognition, make your earthbux gain value, get spots on the mission trips, which is a whole new element. Travel...
-
-Readme and docs - 
-- Remove pilot seed
-- index for docs that is described in readme. Also we don't need all of these docs.
-
-news team -> newsroom
-
-5 navigation tabs across the top: About(index) - Elections(main) - Missions(mission) - News(cause) - Profile(profile)
-
 0. Resolve if any
-- (a) **Errors** — TWO found and fixed, and neither was the one being looked for.
-- (b) **Blockers** — `oe_check` / `ce_check` RAN, for the first time. See the
-  backlog entry for what they are, since you asked.
-- (c) **Inconsistencies** — three stale `oe_check` assertions; the dead payload
-  keys are clean.
-- (d) **Not blocking** — listed in `docs/to_delete.md` rather than here.
+- (a) **Errors**
+- (b) **Blockers**
+- (c) **Inconsistencies**
+- (d) **Not blocking** — `## REMOVAL REGISTER` (below), updated.
 
-1. **Profile page buildout**
-- Remove warning banner
+1. *Analytics* - I added my site, implement this which I copied from cloudflare.
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
 
-2. **Election page edits** — BUILT. Cards are the top 3; one thin static annulus
-   with the pie inside it; the cause bar and its guide line are on cause.html.
+2. **Landing**
+- The dates should be: week 0 - week 8 - week 15 - week 15 on
+- Make "maximizing donor control" and "publicizing charitable impact" slightly smaller and below the steps. Add "How it Works" in their place.
+- You elect the initiative / Donate to this weeks cause by funding what you want the mission to be.
+- You elect who runs it / After the mission is decided, your tokens can be put towards it's philanthropy.
+- "We verify them in the open" -> Receive your Earthbucks/ Earthbux orients the organization and it's benefactors (you). -> Mission page
+- "They get funded, you stay liquid" -> Follow along and trade / Hold on, or exchange for a different mission.-> Feed page
+- Reverse... The budget posts should be under "Research the mission to win Rewards" below research posts which should be under "A public forum budgets the missions".
 
-3. **Edit README and grep new model** — DONE, and the grep became a script:
-   `scripts/unit_sweep.js`, because a source grep cannot do this job.
+3. **Election**
+- The annulus is not toggling to the selected mission. Fix this
+- The initiative titles in the OE do need a full-row-width. They should be above the dates and times. 
+- I think we can do a 3-way horizontal toggle with the cause, me, and oe election cards where the one selected is an expanded column and the other two are collapsed columns on the left or right. This will be selected by the first, next, finally acting as the toggles.
+- Somewhere on the election page needs to have a "Show active missions for [cause]"
+- In the election cards, any initiative or organization that the logged in account backed should be highlighted.
+- The initiative title and initiative case should be seperate. Currently there is a case within the title. Those who propose an initiative should be incentivized to produce a case, but they should be displayed seperately. The description is a case.
+- You must donate at least $1 to vote in the organization eleciton. So the only way to allocate your grant there is if it is the full grant, or if you already participated in the ME, or if you add more money.
 
-**Main.html**
-- In the election cards, the titles should be on top...
-- Remove expanded row from ME table. Clicking arow should bring up the expansion in the election panel.
+> **✅ Steps 1–3 pass, 2026-09-16.**
+> **1 Analytics** — the Cloudflare Web Analytics beacon is on all six pages
+> (index, main, cause, mission, profile, admin), just before `</body>`. Counts show
+> at dash.cloudflare.com → Web Analytics once the deploy is live.
+> **2 Landing** — "How it Works" over the steps; dates week 0 · 8 · 15 · 15 on;
+> the new step wording, step 3 → mission.html and step 4 → cause.html (the feed);
+> the two halves below the steps, smaller; the research band ("Research the
+> mission to win Rewards") now above the budget band ("A public forum budgets the
+> missions"), each heading over its own trio (your answer the same day).
+> `landing_check` rewritten for this page (35, clean).
+> **3 Election** — picking a card or race now points the annulus, its centre and
+> the cause tabs at it (`_pointAnnulusAt`; the pie and centre show the picked
+> race). OE card titles take the full row above days-left and date. The cause,
+> initiative and organization election cards are one three-way toggle (`#el3`):
+> one expanded column, two collapsed, driven by First / Next / Finally, and ME/OE
+> keep the page mode in step. "Show active missions for [cause]" under the table
+> (OE scope `cause`: every mission of that cause with an elected initiative).
+> Backed initiatives and organizations are highlighted on the cards ("✓ you").
+> Title and case are separate: the propose dialog asks for a short title (90
+> characters) and "Make the case"; the detail panel shows "The case" under the
+> title, splitting old long titles at their first sentence; new titles are capped
+> at 120 characters server-side. $1 minimum in an organization election
+> (`OE_MIN_STAKE_CT`), waived when the stake was carried from that mission's
+> initiative election or the benefactor has money in an initiative election; a
+> refused commit now says why. `wallet_check` 132 · `ce_check` 79/80 (the one
+> failure predates this pass) · `render_check` clean.
 
-**Mission page creation** Complete redesign of mission page
+## BUILD BACKLOG
 
-**Discussion Page -> News** Discussion page becomes newsfeed.
+### **Bots**
+Nice, they work.
+A couple things though.
+- The initiatives pass only voted on human progress, which is the latest possible election. They should spread their votes across all elections, focusing especially on the upcoming one.
+- Same with the organizations, which all voted in a previously elected mission... future AND they voted in the OE but had not committed to the ME... This should only be possible for the active week. 
 
-## CONVERSATION
-- Need to create voting bots for admin simulation - impossible to test when I'm only administrating myself. 
-- Cause selection bar will move to discussion page too.
-- This weeks elections should have a discussion snippet.
-  *(absorbed into the backlog ▶ NEXT on 2026-08-21b — the two cards for THIS
-  week now have room for one, since the buttons came off them.)*
+### 1. **Landing**
 
-- Without permission, only execute build sequence.
-- Absorb amd modify backlog items and update structure as you see fit.
-- note - s/s/s items can be suggested any time, but they can't be voted on until the budgeting opens.
-- Until I make enough to hire security, I need to hide earthbux from corrupt organizations.
-- Does calling an organization a "philanthropy" make sense?
-- Need to start thinking about where the money lives.
-- Kids accounts need a dedicated adult account to authorize any transactions.
-- Security rule: The first time an account signs in, they are told they can't vote in any org elections except the first (most recently electeed tiv) org election. - This prevents from creating accounts just to vote your org in. - edit - they can vote in whatever election they want, but they are not allowed to buy extra votes until they've been a member long enough. 
-- I need to set goals and plan - what am I going to do when and in what order?
-- I wonder if I can create an animated diagram - kind of like a prezi - showing each step of the process.
-oe/ce check - I have run the versions on my model and everything looks good. Not sure why you want me to download chromium, I'm happy with doing the testing myself. Glad this is not blocking.
-Yes - email all users is in admin and out of scope
+### 2. **Election**
+- The ME slider bars are not working right. they should be like this: The sliders are the same no matter how many tokens you commit. They move based on the ratio of your total commit you want to split between the initiatives, in 1% increments. This means that if you donate $100, the minimum amount you can commit to any individual initiative is $1. This is helpful because the slider bars won't be affected by additional purchases. Adding more money adds an equa share across your sliders, which, of course, can be reallocated at will. (see money model 5)
+- The cause election needs to show all potential cause replacements, not just the one for the active cause - have a row where every cause with a potential replacement is highlighted and the rest are grayed out. 
+- Withdraw needs to be built into the election (and the mission page for framing)
+- Users should be able to post in any mission.
+!- Top left ME card shouldn't toggle on desktop mode. It should always show the upcoming ME. On mobile it will eventually toggle, but we aren't building mobile yet.
 
-## BACKLOG (for backlog management - ignore this section during build task)
-*The single backlog. Absorbed `docs/backlog.md` + prior loose items on 2026-07-17.*
-*Ordered by the current plan: **master the posting + newsfeed experience for phases
-1–2 first**; everything from the end of phase 2 onward is **parked** until that
-lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
-### ▶ NOW — posting & newsfeed (phases 1–2, the focus)
-- [x] **§0–§4 THE PROFILE PAGE, THE FIELD, AND ONE ANNULUS (2026-08-28)**
-  - **§0a Two errors, and neither was the one being hunted.**
-    - **`?cause=` was overriding `?state=`.** `main.html?state=oe&cause=<id>` —
-      the link the landing page and every cause card use to reach an
-      ORGANIZATION election — landed on the INITIATIVE election, because the
-      `?cause=` branch called `setMainMode('tiv')` unconditionally. So every
-      date on the page was T, the initiative election, while the reader was
-      looking for the organization decision at T+8wk. **That is the wrong-dates
-      report** ("human rights: sep 8 (correct), human progress: nov 3 (wrong),
-      atmosphere: sep 22 (wrong)"): Sep 8 IS human rights' date — for the wrong
-      race. Its org decision is Nov 3. The date model was never broken;
-      `date_audit` has been CONSISTENT throughout, and still is. The link now
-      respects an explicit `?state=` and points the HERO at the cause too, not
-      just the table.
-    - **Every phase-1 commitment was reading as ZERO.** `VoteP1.stake_ct` came
-      with migration `c5d8f2a91e67` and nothing backfilled it, so all 31
-      existing rows carried `stake_ct = 0` with their real amounts still in the
-      legacy float `ebx_committed`. `read_wallet` read the new column directly:
-      **65 tokens standing in six open initiative elections reported as 0
-      committed.** Fixed twice over — `wallet.p1_stake_ct_of` falls back the way
-      the P2 side already did, and a startup hook backfills the column
-      (idempotent). Ben 2's committed went 49.72 → 114.72 tokens, which is the
-      truth. **This is also where the "4.5 votes (not possible)" family dies**:
-      every fractional legacy value (6.25, 1.7142857…, 8.1) is resolved at the
-      centitoken boundary, and there are no fractional ct left in the database.
-      The specific hpr0 row is gone — its losing half was deleted long ago — so
-      that one still needs your case-by-case call, but the class is closed.
-  - **§0b `oe_check` and `ce_check` RAN.** Both need Playwright's Chromium and
-    both had a hardcoded `executablePath` pointing at a DIRECTORY, so neither
-    had ever executed. They resolve a browser properly now (`PW_CHROME`, then
-    the known paths, then Playwright's own). **`oe_check`: 90 assertions, CLEAN
-    — its first ever run.** `ce_check`: 80, clean.
-  - **§0c Three `oe_check` assertions were stale, not three bugs.** It was
-    rewritten for the finalized model on 2026-08-27c and never run, so it still
-    asked for the shape before it: "two sets of two" (it is **three sets of
-    two** — `docs/structure.md` says so in one line) and "no visible EBX
-    anywhere". EBX is a STATE now, and two places on that page mean exactly that
-    — the minted allocation set, and the sentence explaining what the week roll
-    does — so the rule was narrowed to what it actually protects: the part a
-    benefactor types an amount into must say tokens.
-  - **§1 THE PROFILE PAGE, to the drawing.** Three cards across the top
-    (c wallet · b allocations+conversions · a profile with aa/ab/ac), **seven
-    weekly-window cards** around the globe, the feed underneath.
-    - **A window is a WEEK, not a cause.** In any week exactly one initiative
-      election closes (a mission at T) and exactly one organization election
-      closes (a mission at T+8wk), and because 8 is not 7 those two always
-      belong to different causes — which is where "each will have 2 colors"
-      comes from, and it is now asserted (7 of 7 cards carry two).
-    - **Time rotates clockwise**, exactly as specified: the top card splits into
-      COLUMNS (organization left, initiative right); the six side cards split
-      into ROWS; the right column reads organization-then-initiative falling
-      clockwise, the left column reads it the other way coming back up.
-    - **(d) the globe is real** — an orthographic sphere with its own graticule,
-      turning continuously and easing round to the selected window. It marks
-      CAUSE ANCHORS and says so, because **no model carries lat/lon**. That is
-      the one blocker for the geolocation you want, here and on mission.html.
-    - **(ab) is gated on a coin being SELECTED**, not merely held — a coin in the
-      wallet is clickable now.
-    - **The feed was structurally empty.** It filtered the global 50-post feed on
-      `post.author === handle`, but `author` is `author_type` ("ben"/"org"), so
-      it never matched: "Your posts" was empty for every account that had ever
-      posted. `GET /posts` takes `ben_author_id` and `type` now, and the feed
-      asks for this benefactor's own rows.
-    - Gone with it: the three-column `pf-grid`, the Annulus-3 placeholder, and
-      the choices table — both of whose columns are on every window card now.
-  - **§2 THE ELECTION PAGE.**
-    - **The cards are the FIELD again**: top 3, padded to three rows so seven
-      cards keep one height. "My vote" and "N to other initiatives" were two of a
-      card's three rows and said nothing about the race; they are on
-      profile.html now, all fourteen of them, on seven cards.
-    - **One annulus.** Thin, static, 8px band. Colour = the cause the page is
-      pointed at; **white halo = this week's sector**, travelling clockwise with
-      the marker. The twenty-one chevron rays are retired — the marker is the
-      only moving thing on the ring, so it is what direction means. **The pie is
-      untouched** and the ring frames it, as asked.
-    - **The cause bar is on cause.html**, the same bar in the same styles, and
-      the sentence that used to caption the wheel came with it — it was written
-      for the seven causes, not for the wheel it ended up on. Under it, the
-      **guide line**: `Step {n} · {name}` + what is happening now + the decision
-      date + the vote link. Seven names in a row tell a newcomer nothing about
-      what happens when they pick one. **The wheel was NOT touched.**
-  - **§3 README + the unit sweep.** README's §3 Withdrawals still described the
-    three-conversion budget and a loser's cash refund, both retired; §5 still
-    said deductibility follows a "conversion"; §6's decision framework still
-    asked which states money can be in. All restated. The grep became
-    `scripts/unit_sweep.js`, which renders each page and walks its VISIBLE text,
-    because `EBX.` is the client namespace and a source grep drowns in it.
-    **Currently CLEAN.**
-  - **§4** `docs/to_delete.md` — four tiers by how safe each removal is. The
-    finding worth reading: six synthetic renderers in `ebx_shared.js`
-    (`raceCard` · `electionPanel` · `electionBanner` · `sideCard` ·
-    `upcomingCauseBanner` · `topCard`) still call the mock vote distribution and
-    **no page calls any of them** — dead code, not a live surface showing fake
-    numbers. Delete it in `frontend/src/ebx_shared.ts` or the next esbuild run
-    puts it back.
-  - **§5** Every page in `docs/structure.md` has a **PAGE LAYOUT** tree now, in
-    the shape of the one you wrote for main.html, with the convention written
-    down above them and the parked drafts consumed.
-  - **Verified**: `render_check` **CLEAN** · `landing_check` **43** ·
-    `posts_box_check` **CLEAN** · `carryover_check` **CLEAN** · `date_audit`
-    **CONSISTENT** · `ce_check` **80** · `oe_check` **90** ·
-    `profile_check` **42** (new) · `unit_sweep` **CLEAN** (new) ·
-    `token_model_check` **108** · `wallet_check` **123**.
-  - **Not built, deliberately**: the cause.html annulus merge (you said not yet,
-    and it also decides whether that page keeps a wheel at all); real geography
-    on missions, which every globe is waiting on; the user's three research
-    posts on the window cards; org registration.
-- [x] **§0–§4 THE FINALIZED ME/OE MODEL (2026-08-27c)**
-  - **The model, written down and answered.** `docs/ME_OE_FINALIZATION.md` is
-    the record: eight forks in the ME & OE Finalization block, each put to Jax
-    and each answered the same day, plus the three inventions of that file that
-    Jax corrected (the "pledge" — there is no such thing, a vote simply has no
-    amount behind it yet; `claimed` as a wallet state — it is the word for an
-    ORG claiming a mission; and the 10-way split and the 10-token grant being
-    the same 10 — they are a coincidence and neither may explain the other).
-  - **§0 Two units, four states.** Tokens are convertible; EBX is not. The
-    wallet reads `unallocated → committed → minted → donated`, and `claimed`
-    went back to meaning an organization claiming a mission. `staked_ct` and
-    `claimed_ct` are gone from every payload.
-  - **§1 The week change is the ratchet.** Inside its own week an allocation is
-    a draft — `POST /wallet/commit` sets a POSITION, up or down, floored at
-    whatever has minted — and at the roll every standing OE allocation becomes
-    EBX (`wallet.harden_due`, run by the scheduler and lazily on `GET /wallet`).
-    This retired **`MAX_CONVERSIONS = 3`** and **one-way commitment** together,
-    with `POST /wallet/convert` replaced by a free `POST /wallet/move`.
-  - **§2 A clean 10%, across the board.** `OE_SEND_WIN` / `OE_SKIM_LOSE` and the
-    four-path table are deleted; one `OE_SKIM` is paid by everyone, and the other
-    90% becomes that benefactor's EBX for the mission. Being right pays in
-    **early EBX**, an **upgraded mission membership**, and influence — never in
-    money. The influence multipliers survive intact.
-  - **§3 The initiative election splits its backers two ways.** `finalize_p1`
-    mints the winning initiative's backers on the spot (early EBX, locked in that
-    OE) and marks the rest (`marked_tiv_id` — still tokens, movable to any open
-    race by voting for a philanthropy there). `finalize_p2` mints what is left
-    and books the first donation tranche. **Both halves of settlement are booked
-    now**; the OE half used to be recomputed on every read.
-  - **§4 The ME table spends the WALLET.** `replace_p1_shares` takes one amount
-    and a percentage slate, splits by largest remainder into `VoteP1.stake_ct`,
-    and reconciles against the account — raising it spends unallocated ct,
-    lowering it hands the difference back. The client-side
-    `10 + localStorage.ebx_purchased_ebx` budget is gone, and with it the double
-    count in the allocations panel. `buyVoteEbx` says purchasing is not wired up
-    instead of faking a balance.
-  - **The grant carries its CAUSE, not a deadline.** Tokens are not granted
-    until election week, when it is too late to transfer or withdraw them, so
-    `GRANT_COMMIT_BY_WEEKS` / `roll_commit_by` had nothing left to enforce.
-    `grant_cause_id` replaces the commit-by date on the face of the token and in
-    the allocations panel.
-  - **Migration** `c5d8f2a91e67`: `grant_cause_id` on the account, `stake_ct` on
-    `votes_p1`, and `committed_week` / `minted_ct` / `donated_ct` /
-    `marked_tiv_id` on `votes_p2`. Nothing is dropped —
-    `grant_commit_by_week` and `conversions` stay, unread, so races settled under
-    the retired rules can still be explained.
-  - **Verified**: `token_model_check` **108** (rewritten) · `wallet_check`
-    **123** (rewritten: the position, the week roll with a row aged by hand, the
-    unlimited moves, withdrawal, the two doors, early EBX vs a mark, the flat
-    skim, and the ME table on the wallet) · `render_check` **CLEAN** on all six
-    pages · `landing_check` **43** · `posts_box_check` **CLEAN** ·
-    `carryover_check` **CLEAN** · `date_audit` **CONSISTENT**.
-    `oe_check` was rewritten for the new model but **could not be RUN here**: it
-    and `ce_check` need Playwright's Chromium, and this environment's network
-    allowlist blocks the download. Run both on your machine — `oe_check` is the
-    one with real changes in it; `ce_check` was not touched, because the cause
-    election is not part of this model.
-  - **Not built, deliberately**: the later donation tranches and the
-    Earthbux/organization split of one (parked with the resolutions phase); the
-    rule-8 transfer of a marked token back into an initiative election; the real
-    purchase endpoint; the influence multipliers in the tallies; the coin's
-    issuance moving from `finalize_p2` to budget; the phase-1 carryover
-    machinery, which still describes a world that ended on 2026-08-20.
-- [x] **§1 SEVEN SMALL MOVES ON THE ELECTION PAGE (2026-08-27b)**
-  - **The OE election panel opens on a race.** It wanted an explicit pick and
-    said "Pick a mission below" until it got one, so the OE side of the page
-    started empty while the ME side started on a race. `voteMissionId()` already
-    knew the answer — the open race for the cause the page is pointed at, else
-    the one closing soonest — and the panel asks it now.
-  - **Every arrow points the way the clock moves.** The election annulus's
-    chevron rays and the discussion wheel's chevron SECTORS both point
-    **clockwise**, with the glowing marker. The sectors were flipped the other
-    way on 2026-08-27 and that is what "still pointing wrong way" undoes: the
-    marker is the only moving thing on either wheel, so it is what direction
-    means.
-  - **The cause election box moved below the table**, and the cause toggle moved
-    below the ME/OE toggle at the foot of the hero. The reading order down the
-    page is now: what won → what is running → pick a cause → vote in it → the
-    field → and, last, the vote that decides a cause seven weeks out.
-  - **The side cards lock to the furniture around them.** Each column runs the
-    full height of the hero row: first card flush with the bottom of the top
-    cards, last flush with the top of the cause toggle, the middle one exactly
-    between. `justify-content: space-between` on a stretched column IS that
-    instruction.
-  - **The glow means SELECTED.** It marked the upcoming election, which the
-    layout already says by putting it first; it marks the cause the page is
-    pointed at now — a side card when you pick one, the top-left card otherwise.
-  - **Verified**: `render_check` **CLEAN** · `ce_check` **80** (the panel is
-    asserted BELOW the table now) · `oe_check` **83** · `posts_box_check`
-    **CLEAN** · `landing_check` **43**.
-  - **Answered, not built** (CONVERSATION, "maybe we just get rid of the onclick
-    for the sectors and move the cause selection bar so it is the same across
-    both pages?"): yes — that is one bar in one place on both pages, and it is
-    the smaller surface. The sector click and the tab row do the same job on
-    cause.html today, which is one too many ways to change cause. It needs your
-    word before it lands, because it also decides whether the discussion page
-    keeps a wheel at all or just a header bar.
-- [x] **§1–§2 THE CE PANEL, AND ME/OE IN ONE SHAPE (2026-08-27)**
-  - **§1 The cause election is an AREA above the election panel**, in the shape
-    of the drawing: the streak down the left as **one column of seven lines**
-    (it was seven columns of one-to-seven lines, which drew the RULE rather than
-    the progress), *Show / Hide Cause Table* on the right, and in the middle the
-    title row, then **Nominate a Cause · make your case · Commit · Cancel**,
-    then keep-or-replace, then the pager. It **persists across ME and OE** —
-    that is the whole reason it is a panel and not a card.
-    - **The CE has no toggle of its own.** "It is toggled by the main page cause
-      toggle." That works because every cause holds exactly ONE open window —
-      the active cause's is slot 7, everybody else's is 8..13 — so the seven
-      tabs and the seven replaceable windows are the same seven things. The
-      panel carries `data-slot` / `data-cause` so a check can ask which.
-    - **A vote is dialled, then committed.** Clicking keep-or-replace used to
-      POST; it marks a draft now, Commit sends it, Cancel drops it. `ce_check`
-      asserts the middle state: after the click and before Commit, the server
-      still has nothing.
-    - A row of the cause table now selects the CAUSE that holds that window, so
-      the panel can never be pointed at a confirmed window and show a ballot
-      with every button disabled.
-  - **§2 The rest of the election page.**
-    - **The ME/OE toggle moved BELOW the annulus** and lost the glowing rail;
-      **the 7 cause tabs took its place** between the top cards and the annulus.
-      (They spent one day in the top bar, where they read as site navigation.)
-      They drive the annulus, the centre panel, the CE panel, the left top card
-      and the table.
-    - **The two top cards say the same thing in ME and OE now**: LEFT is the
-      race still running, RIGHT is the race that just closed. The just-elected
-      mission moved to the right and wears two bars — **"Winner of \<cause\>"**
-      over it, **"Elected \<date\>"** under it — and the budgeting card wears the
-      same pair for the organization election one race back. The how-to line is
-      on the left card only, and reads *"Select a cause, and vote."*
-    - **The ME ring shifted one place clockwise**: the upcoming election left it
-      for the top-left card, everything moved up one, and a new card came in at
-      the top right — **+7, the active cause's own next initiative election**,
-      which had no card at all while the active cause sat in the top card. The
-      OE ring kept its orientation.
-    - **The allocations panel is parked at the bottom of the page** until its
-      design is settled; the side cards run flush to the election panel.
-    - **The filter under the table is a "Show all Initiatives" button.** The
-      select survives hidden — it is still the field every filter path reads.
-    - **Rays**: the election annulus has them now, as **chevrons pointing the
-      way the queue moves** ("<" at the top); the discussion wheel lost its
-      rays, and its chevron sectors point the other way — toward the cause whose
-      turn comes next rather than the one whose turn has passed.
-    - **Cancel beside Commit, everywhere**: the initiative slate, the
-      organization amounts, and the cause ballot.
-    - cause.html gained the line the wheel needed: *"Click on a cause to
-      participate in the discussion."*
-  - **Verified** against a copy of the live db: `render_check` **CLEAN** ·
-    `ce_check` **80** (rewritten for the panel: the card and its seven toggles
-    are gone, the panel sits above the election panel and survives the ME/OE
-    switch, each of the seven tabs points it at that cause's own open window,
-    the draft-then-commit path, and the way back out of the cause table) ·
-    `oe_check` **83** (the allocations panel is asserted at the BOTTOM now, with
-    a Cancel beside its Commit) · `posts_box_check` **CLEAN** ·
-    `landing_check` **43**.
-  - **Judgement calls, flagged rather than guessed:**
-    - "The upcoming ME election is now the top lhs card" is read as the hero's
-      top-LEFT CARD, and it follows the cause TOGGLE (defaulting to the upcoming
-      cause, which is what the page opens on). If you meant the top-left SIDE
-      card, the ring is one rotation away from that.
-    - The CE panel's default window follows that same selection, so in ME it
-      opens on the upcoming cause's window rather than the nearest open one
-      (slot 7, the active cause's). A fresh OE load does open on slot 7.
-  - **Not built**: the ME right card still shows the ACTIVE cause's winner while
-    the left card follows the toggle — one card on the clock, one on the
-    selection. It reads right today (this week we elected X, next week we decide
-    Y) but it is a split brain, and if the pair should move together, say so.
-- [x] **§1–§4 THE ELECTION PAGE, THE ANNULUS SWAP, AND THE CE DATES (2026-08-26)**
-  - **§1 main.html is the ELECTION PAGE.** Title, top-bar tag and structure.md
-    agree. The ME top-left card lost the propose-an-initiative dialogue (the
-    table's propose row is still one click away) and lost the sentence that
-    named the mission; the sentence is the card's CAPTION now, under it, in the
-    words asked for: **"Winner of \<cause\>: \<tiv\>. Elected \<date\>."** Above
-    the card, the page finally says how to vote, and the name of the other
-    election in that line is the button that switches to it.
-  - **§2 THE TWO ANNULI CHANGED PLACES.** The seven-sector WHEEL left main.html
-    for cause.html; the PIE left cause.html for main.html; no card on either
-    page moved. The wheel was always a cause SELECTOR, so it went to the page
-    whose seven tabs it replaces — clicking a sector is how the discussion page
-    changes cause now. The pie is a RACE, so it went to the page where the
-    voting happens: initiative shares in ME, the philanthropy tally in OE,
-    behind main.html's own centre panel (their radii agree, so the ring frames
-    it). The **7 cause tabs** came with it into the election page's top bar and
-    point the annulus, the centre and the table at one cause without touching a
-    card and without scrolling the page. cause.html's centre stack, which the
-    pie used to draw in SVG, is an HTML panel over the wheel's core.
-    - One real bug found in the port: a **lone front-runner** is a 360° slice,
-      and an SVG arc whose ends coincide draws NOTHING — the ring went blank on
-      every race with one candidate, which is most of them this early. It is a
-      circle now.
-  - **§3 Allocations — DIAGNOSED, NOT FIXED** ("only discuss until you are sure
-    about the solution"). Three separate things wear one word:
-    1. **"Unallocated 10 while my vote is already allocated" is the ME side not
-       being one-way.** Committing a phase-1 slate writes `VoteP1` rows and
-       nothing else — `free_ct` is untouched — while the panel paints
-       *Unallocated* from `free_ct` AND *Committed → initiatives* from those same
-       rows (`_meAllocatedCt`). The same tokens are counted twice and the
-       header total overstates the holding by exactly the ME commitment. The fix
-       is the standing backlog item **"Make the ME table one-way too"**: route
-       the p1 commit through `wallet.commit_stake` the way `/wallet/commit`
-       does. Nothing smaller is honest.
-    2. **The 10 that "carried into the OE from the ME" is not unallocated — it
-       is UNASSIGNED**, which is a different state and a different word.
-       `finalize_p1` ran on for1 this morning and wrote a `VoteP2` row of
-       1000 ct with `org_id` NULL: staked in the organization election, no
-       philanthropy named. It counts under *Committed → organizations* in the
-       panel and shows as the race's `unassigned_ebx` chip in the vote bar. Two
-       words one letter apart for two states is the actual defect here.
-    3. **"0 tokens committable to any org in wolf habitat" is the rule, not a
-       bug** — but the page never says so. `wallet.oe_rows` gives a row
-       `headroom = free_ct` only for the race that finalizes soonest ("2 options,
-       not 9"); every other row's ceiling is `purchased_ct`, and purchasing is
-       still a localStorage simulation, so that is always 0. Wolf habitat (wil0)
-       is not this week's race, so it offers 0 whatever the balance says.
-    - **The grant clock, for the question in the queue**: the grant is topped up
-      to 10 tokens per cycle week (`WEEKLY_GRANT_CT`) and carries a deadline one
-      week out (`GRANT_COMMIT_BY_WEEKS = 1`) that ROLLS if it is missed. It is
-      not issued seven weeks ahead of the election it can be spent in.
-    - **Still to decide** (Jax): the split of the panel into **This week** and
-      **Total**, with the detail on profile.html.
-  - **§4 CE dates: one clock, one date per window.** A window is a WEEK — slot
-    s is the week beginning s weeks after the week running now — but the date
-    was derived from a MISSION (`_nextInitiativeElection`) plus a rotation for
-    the far half of the table. That agreed with the clock only while the cause's
-    next mission had not opened yet; the scheduler opens one every Tuesday, so
-    the nearest open window (slot 7, always the active cause's own next
-    appearance) had already jumped a cycle and then had a rotation added on top
-    — seven weeks out and out of date order in the toggle row. The card was
-    wrong the other way: it added no rotation at all, so card and table dated
-    the same window differently. Both read `_windowRunsDay(slot)` now. The seven
-    toggles read **FOR Oct 13 · WIL Oct 20 · HR Oct 27 · HP Nov 3 · ATM Nov 10 ·
-    OCE Nov 17 · LAN Nov 24**, nearest first.
-    - **Open question for Jax**: this makes the printed date the TUESDAY the
-      window opens — the day that cause becomes active, its mission opens and
-      the previous cycle's initiative election is decided. If "1 week early"
-      meant you want the day the window CLOSES instead, that is a one-line
-      change in `_windowRunsDay`; say which and it moves.
-  - **Verified** against a copy of the live db: `render_check` **CLEAN** (with
-    new assertions for the pie, the tabs, the wheel, the two captions) ·
-    `ce_check` **67** · `oe_check` **82** · `posts_box_check` **CLEAN** ·
-    `landing_check` **43**.
-  - **Also fixed**: `ce_check` asserted that slot 11 refuses `atmosphere` as a
-    challenger, which was only true in the week it was written — slot s is held
-    by the cause at (active + s) % 7, and this week atmosphere IS slot 11's
-    incumbent, so the post was a KEEP and correctly returned 200. The check asks
-    the slate who holds the window now.
-  - **§0d — acknowledged, not fixed: the two clocks disagree for four hours
-    every Tuesday.** The browser reads `cycleStart` as `new Date("2026-04-28T12:00:00")`,
-    which has no zone and is therefore LOCAL noon; the server counts weeks from
-    the same wall-clock string as UTC (`datetime.utcnow()`). East of UTC the
-    week rolls on the server first, west of it the browser rolls first — a
-    window in which the page and the API name different active causes, and
-    `cause_slate` is asked for a slot the client numbered against a different
-    week. It is four hours wide in America/New_York and it has never been hit in
-    a check, because the checks do not run at 8am on a Tuesday. Fixing it moves
-    every date for somebody: either the browser's anchor becomes `…T12:00:00Z`
-    (the week boundary shifts to 8am ET) or the server's becomes zone-aware.
-    Jax's call, so it is written down rather than chosen.
-  - **Not built**: `_proposeDialogue` / `togglePropose` survive in main.html
-    with no caller (the card that used them is clean; the propose ROW still
-    opens the shared dialog) — dead code, deliberately left rather than swept in
-    a UX pass. cause.html's `selectInitByAnnulus` is likewise unreachable now
-    that the pie's slices are on the other page.
-- [x] **§0–§2 TOKENS, THE RACE POOL, AND THE PAGE AROUND THE WHEEL (2026-08-21b)**
-  - **§0a Voting is counted in TOKENS.** "It's confusing because votes and ebx
-    appear to be separate." Every visible EBX on main.html is now *tokens* —
-    88 replacements across the cards, both dialogs, both table heads, the buy
-    flow and the carryover panel — via `EBX.formatTokens`. `formatEBX` survives
-    for the credit badge and the ledger, which are not the voting area. The
-    other three pages still say EBX; that is a decision, not an oversight (see
-    structure.md › Backend).
-  - **§0b The race pool did not move when a vote was committed.** Real bug,
-    reproduced and fixed. `p2_tally` measured phase-2 weight with
-    `p2_ebx_by_ben` — the money phase 1 left behind — and knew nothing about
-    `VoteP2.stake_ct`, which is what `POST /wallet/commit` has written since
-    2026-08-19. The commit was real; the reported total was two days stale.
-    `crud.p2_stake_by_ben` asks `wallet.stake_ct_of`, the function that already
-    knows how to read a stake, rather than restating the rule. It took a second
-    bug with it: `unassigned_ebx` was summed from the phase-1 carry, which for a
-    stake committed straight out of the balance is ZERO — so tokens committed
-    without a philanthropy named disappeared from the pool entirely. `oe_check`
-    now guards both, in tokens, against the live server.
-  - **§0c Allocations says what it cost.** `Allocations 88 tokens $8.80`.
-  - **§1 The cause election, second pass.** All **7** replaceable windows are
-    votable at once (the server opened exactly one and capped the slot at 7, so
-    six of the seven toggles were locks and six streak clocks could never
-    start). The card's seven toggles are those seven windows **in the order they
-    run**, each carrying its own date — LAN Oct 6 · FOR Oct 13 · WIL Oct 20 · …
-    — which is what fixes "this is correct in the CE table, but not in the top
-    card": both are built from `_causeWindows()` now. The ballot is keep-or-swap
-    with a **click-through pager** over challengers, and a challenger can only
-    be a **nominated** cause — swapping two active causes inside the rotation
-    reorders it and nothing else, so the server refuses it and the streak query
-    stops crediting historical votes toward a swap it would refuse. Nominating a
-    cause is a **dialog** now, like proposing an initiative, and it asks what the
-    cause is FOR rather than just its name and a colour.
-  - **§2 The page around the wheel.** Cards: no vote counts — **Leader:** and
-    **My vote:**, two lines each, no buttons, and the card itself is the click
-    target. Layout: **two columns of three**, the bottom row and its Help and
-    Commit gone, and the **allocations panel** nestled under the annulus in BOTH
-    states — two sets of two (Unallocated: granted · purchased | Committed:
-    initiatives · organizations), no explanation, Commit inside it and
-    mode-aware. The OE panel took the three links (Mission page → **View
-    Organizations**), narrowed the ballot to the **ranked top 3**, and gained
-    the **add-more-vote** control: unallocated · purchase · **from another OE**.
-    That last one is the first way in to `POST /wallet/convert`, which has
-    existed since 2026-08-20 with no UI — a benefactor could not move a stake
-    they had changed their mind about at all. Two rows in the annulus centre.
-  - **Verified**: `token_model_check` **101** · `wallet_check` **118** ·
-    `oe_check` **82** (rewritten: the panel under the annulus, the links in the
-    dialog, the two sets, the source dropdown, the top-3 ballot, a sweep proving
-    no visible "EBX" survives on the voting surface, and the race-pool
-    regression in both its forms) · `ce_check` **67** (the seven toggles in date
-    order with the nearest first, all seven windows open, an active cause
-    refused as a challenger while keeping the incumbent is allowed, the pager,
-    the dialog) · `render_check` **CLEAN** · `landing_check` **43** ·
-    `date_audit` · `posts_box_check` · `carryover_check` — no regression.
-  - **Not built**: `slot` is RELATIVE to the active cause, so the same slot
-    number names a different calendar window each week while `_week_winner`
-    compares the same slot across weeks to build a streak. That predates this
-    pass and the seven-weeks-in-a-row rule is written in those terms; if a
-    streak should follow a fixed DATE, that is `CauseVote` and the streak query,
-    not the UI. Purchasing is still the localStorage simulation, so the
-    "Purchase" source routes to it. The ME side of the allocations bar is still
-    derived client-side, because the ME table is still not one-way.
-- [x] **§0–§2 THE CAUSE ELECTION TABLE, AND THE ALLOCATIONS BAR (2026-08-21)**
-  - **§0 The Commit button was invisible, not missing.**
-  - **§1 The cause election is a table now, and the card is a report.**
-  - **§2 The allocations bar.**
-- [x] **§1 THE ONE-WAY COMMITMENT, AND THE OE SURFACE (2026-08-20b)** —
-  - **§1 Committing is ONE WAY.** 
-  - **§2 Unallocated is granted + purchased, and nothing else.** 
-- [x] **§1 THE ONE SKIM, THE GRANT CLOCK, AND THE CONVERSION BUDGET
-  (2026-08-20)**
-  - **§1 One skim, and the initiative election is not it.**
-  - **§2 Being right pays in INFLUENCE, not in a cheaper skim.**
-  - **§3 Nothing rolls to the next election of a cause any more.**
-  - **§4 The grant carries a date; the date rolls; purchased tokens carry none.**
-  - **§5 Three conversions replace the 15-week fuse.** `MAX_CONVERSIONS = 3`
-  - **§6 The OE table: eight rows, and they do not expand.** 
-  - **Not built**: the OE half of settlement is still derived rather than booked;
-    nothing sweeps an unvoted foreign stake home at close (the read treats it
-    correctly, no row moves); the multipliers drive the wallet's reported weight
-    but are not wired into `p1_tally` / `p2_tally`, and budget/research voting do
-    not tally weight at all yet; the mint still does not exist; the ME table
-    still spends the old localStorage budget. `docs/token_model.md` §10.
-- [x] **§1 THE GRANT, THE WALLET, AND THE OE TABLE (2026-08-19)**
-- [x] **§1 THE LANDING PAGE IS THE OUTLINE (2026-08-18)**
-  - **§1 Five sections, and only five.**
-- [x] **§1 THE OE VOTE ROLLOVER, AND THE SELECTION PATH (2026-08-14)** —
-  - **§1 The slider was a ratchet.**
-- [x] **§2 DISCUSSION EDITS · BUDGETING DETAIL · main.html (2026-08-12)**
-  - **§1 Research links itself.** 
-  - **§2 The type toggle moved into k**
-  - **§3 Budgeting is a costed LIST, not prose.**
-- [x] **§1 THE DISCUSSION BOX (2026-08-12)**
-  - **§1 One box replaces four systems.**
-  - **§6 Also cleared from the cause backlog**: the header moved above the
-    annulus, "View initiatives →" deleted with **Vote** promoted into the left
-    column's header
-- [x] **§8 LANDING + CONTEXT REFINEMENTS + CAUSE NAMING (2026-08-10)**
-  - **§0 The OE annulus centre named the wrong race.**
-    **"{cause} Confirmed for {mission start} Mission"**
-- [x] **§7b BLANK PAGE FROM A STALE**
-- [x] **§7 EVERY DATE, FROM ONE ANCHOR (2026-08-10)** — build-seq §1, "I'm
-  trying to get all dates correct."
-- [x] **§7c THE DOUBLE CORRECTION, UNDONE (2026-08-10)**
-- [x] **§6 CAUSE PAGE — THE FOUR-SECTION TIMELINE (2026-08-10)**
-  - **§1 Four sections, one open.**
-  - **§5 Vote stats removed, leaderboard moved.**
-- [x] **§5 CONTEXT PAGE DESIGN UPGRADES (2026-08-10)** — **§0 The date that belonged to a different race.**
-  - **§4 The vote dialog is above the table keys.**
-  - **§5 The leader is marked.**
-- [x] **§6 P2 IS REAL: PHASE-2 MONEY, THE CAUSE-VOTE WINDOW, LANDING (2026-08-08)**
-  - **§1 One Commit for the organization election.**
-  - **§2 The cause vote has dates and display conditions.**
-  - **§4 Doc notation.** `orange` <red> [purple]
-- [x] **§1 STRUCTURE UPDATE BUILT (2026-08-05)**
-**table state 2 = active missions**,- [x] **§5 CAUSE VOTE BACKEND**- **§4 P2 shows leaders and winners.**- **§2 Propose moved into the table**- **§3 Orgs → Mission** on the side card.
-- [x] **§4 CARRYOVER + CAUSE BALLOT + LANDING (2026-08-06)**
-  - **§1 EBX vote-to-vote carryover.** - *keep here* and *roll to the next election of this cause*. `GET/PUT /missions/{id}/p1/carryover`
-  - **§2 New cause vote.** a **funding runway** chart: `weeks = pooled $ ÷ (members × 10 EBX × 10¢)`
-- [x] **§3 ME / OE (2026-08-06)**
-  - **§0d — annulus centre** 
-  - **§1 — ME / OE.** **Mission Election**-**budgeting card** 
-  - **§3 — glow logic**
-  - **Accounts console**`GET /admin/accounts` + `DELETE /admin/accounts/{id}`*Accounts · remove*
-- [x] **§2 CARDS + THE REST OF main.html (2026-08-05)**
-  - **Annulus** — Rays
-    (`localStorage.ebx_purchased_ebx`).
-- [x] **§0a Oceans p1-commit 500 FIXED (2026-08-05)**
-- [x] **THE SPLIT (2026-08-02)** — **voting happens on `main.html`, discussing happens on `cause.html`.** This is the organizing rule the two pages below implement; every future surface decision should follow it.
-- [x] **`cause.html` = discussion hub** - **top 3** - **Gray rules**
-  **Research** 
-  **review**
-- [x] **`main.html` = voting hub** — **Commit** button (`PUT /missions/{id}/p1/votes` normalized to shares + `POST .../p1/commit`, grouped per mission). **My vote** and **Total EBX** headers are **click-sortable** (▲/▼ indicator). Every initiative row carries a **Mission →** link. Cards' primary button is now **Discuss** (→ cause page), not Vote. **Convert** + **Donate** added to the expanded row (framed — the credit lifecycle is still parked). Bottom row of the 7 causes gained **Help** (left → `index.html`) and **Commit** (right).
-
-### Cause framework (absorbed from `jax notes 2.txt`, 2026-07-31)
-- [ ] Causes must be ubiquitously essential human experiences, corruption-resistant ("thick skin" — resources allocated to resilience), with a prospect of change.
-- [ ] **Cause replacement rule** — if the SAME cause is voted on by >50% of people for the whole 6-week period, it replaces the cause that would have come next.
-- [x] Annulus: main glowy marker pointing; colored sectors ray outwards. — was
-  already BUILT 2026-08-05 (§2): `.st-now` (the glowing arrowhead aimed into the
-  wheel) and the per-cause `rayGroup` in `resources/js/ebx_shared.js`, which
-  `_update()` brightens for the active + upcoming cause. Verified rendering
-  2026-08-10 (§5); the line was stale, nothing was rebuilt.
-
-### Model notes absorbed from CONVERSATION (2026-08-06) — documented, not built
-- [ ] **Donation split** — a weekly contribution is 100% a donation and lands in
-  three places: researchers (**$2** at $20/wk), Earthbux (**$0–6**), the mission
-  (**$6–18**). The last two flex against each other — money directed at an org
-  election or given under a *specified-must-donate* instruction ends up in **a**
-  mission, not necessarily the one it was cast in. Written up in README §5
-  *Where a donation goes*. No intake, no split at the door, no researcher payout.
-- [ ] **First-sign-in voting rule** — on a new account's first sign-in, tell them
-  they can't vote in any organization election except the **first one** (the most
-  recently elected tiv's). This is an anti-sockpuppet gate: a fresh account
-  can't be spun up to swing an org race that is already half-run. Needs
-  `BenefactorAccount.created_at` compared against each mission's phase-2 window
-  in `cast_p2`, plus the first-run notice on the client.
-
-### Bugs (clear these for a clean phase-1/2 experience)
-- [x] `mission.html` rendered nothing at all on any mission that had a
-  candidacy — FIXED 2026-08-08 (§7 §0a): `let _openOrgId` was declared below the
-  `render()` that reads it (TDZ ReferenceError on first paint).
-- [x] Oceans `cause.html`: "Exception in ASGI application" when committing a p1 vote —
-  **FIXED 2026-08-05 (build-seq §0a)**, reproduced and root-caused. Neither propose
-  dialog sends a `mission_id`, so every user-proposed initiative was stored ORPHANED
-  (`mission_id` NULL) — invisible to mission-scoped queries. The guard in
-  `replace_p1_shares` read `Initiative.mission_id != mission_id`, which in SQL is
-  NULL (never TRUE) for an orphan, so the orphan passed validation, was inserted
-  under a second mission, and violated `UNIQUE(ben_id, tiv_id)` → unhandled
-  `IntegrityError` → 500. Oceans hit it because ben #2 held an orphan vote row on
-  *Coastal City Water Quality Monitoring Network* under `oce0` while voting in `oce1`.
-  Four-part fix: (a) `crud.create_tiv` adopts the cause's open phase-1 mission when
-  none is given; (b) the guard now matches ids explicitly, so NULL and unknown ids
-  are both rejected; (c) `crud.adopt_orphan_tivs` repairs existing orphans (and
-  re-points + renormalizes their vote rows) from a startup hook in `main.py`;
-  (d) the router maps `IntegrityError` → 400 with a readable message so a bad slate
-  can never be a 500 again. Verified against a copy of the live db.
-
-### ▶ NEXT — cause / election UI (phases 1–2)
-- [ ] **A discussion snippet on this week's elections** (absorbed from
-  CONVERSATION, 2026-08-21b). The two top cards are the races running THIS week,
-  and since 2026-08-21b they have the room: their buttons came off. One line of
-  the leading post for that race, linking into `cause.html`, is what would turn
-  a card from a scoreboard into a reason. Reads from the same `/posts` query the
-  discussion box already runs; the open question is which post — the top-rated
-  one, or the most recent.
-- ◑ **The top cards and the third tab** (absorbed from CONVERSATION,
-  2026-08-20 — Jax's own words kept, with what each one touches):
-  - [x] "The table should have a **third tab — 'Cause Election'** — which
-    absorbs much of the cause election top card." BUILT 2026-08-21 (build-seq
-    §1). The third head, the third row renderer and the third dialog all exist;
-    what is left of the card is the state and the way in. It is reached by
-    **Decide the Cause** on the card and by `?state=ce`, and it is `_tableTab`
-    rather than `_mainMode` — the tab had to change the table without touching
-    the cards.
-  - "The **OE votes must not carry over** across elections like the ME votes do.
-    Every OE should start with no philanthropies nominated/registered and 0 votes
-    across the board." Touches `finalize_p2` (or the mission opening it), and it
-    is the phase-2 twin of the roll-forward that §1 (2026-08-20) removed from
-    phase 1 — worth doing in the same shape.
-  - "**Remove** the 'Propose an initiative' dialogue in the ME lhs top card. Also
-    remove the 'Open the mission page'. Remove the 'Propose a cause' on the rhs
-    ME top card."
-  - "**Move** 'Mission \<tiv_name\> was initiated \<date\>…' to below the card and
-    add '… The next mission election is for \<Cause_x\>' and point down to the
-    card below."
-  - "In the **OE rhs top card**, below the budgeting card, say '\<Phl\> was elected
-    to run \<tiv\> on \<date\>. The next organization election is for \<tiv\>' and
-    point to the left."
-- [ ] **Each benefactor's EBX available to donate should always be visible**
-  (CONVERSATION, 2026-08-20). The unallocated strip does this, but only on the OE
-  table; it belongs in the header on every page. Spec'd in `structure.md`
-  › profile.html.
-- [x] **Make the ME table wallet-backed** — BUILT 2026-08-27c. The item asked
-  for one-way commitment, and the answer turned out to be the other half of it:
-  the ME table now spends the WALLET (one amount, one slate), and *both* sides
-  are revisable inside the week and hard after the roll. Same wallet, one rule.
-- [ ] **Which slice funded which ct.** `wallet.set_stake` spends granted ct
-  first and returns it first, so a benefactor who spent PURCHASED ct on this
-  week's race and then dialled it back down gets it back with the grant's
-  narrower permission. Erring the other way would let a grant be laundered into
-  go-anywhere ct, which is the failure that matters, so the asymmetry stands
-  until a row can say which slice funded it. Cannot arise before the purchase
-  endpoint exists.
-- [ ] **Buying tokens.** `purchased_ct` is the column the real thing will write
-  and nothing writes it yet. The localStorage simulation was RETIRED on
-  2026-08-27c rather than left running beside a wallet-backed table, where it
-  would have been a second opinion about money. Purchased tokens are now the
-  only mobile money in the model — any race, and withdrawable at face value
-  until they vote — which is exactly why simulating them client-side could not
-  stay harmless. `POST /wallet/withdraw` is built and waiting for a buy path.
-- [ ] **Retire the phase-1 carryover machinery.** Nothing rolls to a cause's next
-  election since 2026-08-20, so `GET/PUT /missions/{id}/p1/carryover`,
-  `_send_floor`, `_reclaimable`, the `carryover` ledger bucket and the
-  unreachable `carryoverPanel` in main.html describe a world that no longer
-  exists. They still explain races finalized under the old rules, which is why
-  they survived this pass — remove them once no open mission predates the change,
-  and retire `scripts/carryover_check.js` with them. `crud.withdraw_p1` joined
-  them on 2026-08-20b: it is a named refusal with its legacy body kept beside
-  it, and `cause.html` still shows a Withdraw button wired to it.
-- [ ] **Org election experience redesign** (jax notes 2: "it's ugly"; build-seq §3: "p2 needs a strong redesign").
-- ◑ **Active cause / active mission top card** has many errors (jax notes 2) — audit every stat on the main.html top card.
-  Two found and fixed 2026-08-10 (§5): the org-election close date named one
-  race and dated another (`_orgCloseDate`), and "d left" disagreed with the date
-  printed beside it because `cycleStart` is noon (`_daysLeft` counts calendar
-  days now). The remaining stats on the card — votes, pool, leader %, my
-  commitment — read 0 across the board on the current db, so they have not been
-  exercised against real numbers yet. Re-audit once a race has votes in it.
-- [ ] **7-causes bottom row**: space left + right — add a **Help** link (→ `index.html`) on the left; the right-side link is still undecided (jax notes 2 cuts off mid-sentence — ask Jax).
-- [ ] Election-card nav buttons: View (jump to table row) · Explore (cause page) · Vote.
-- [ ] Move overview into the table; clicking a row expands it and filters discussion. **ME side only** — the OE side was decided the other way on 2026-08-20 ("the OE table rows should not be expandable"), where a click selects the race and points the dialog at it instead.
-- [ ] Pool metrics: "guaranteed pool" vs "committed pool".
-- [ ] Vote visualization (count + relative commit size per vote).
-- [ ] Start dates on every mission card; show future dates after the cause shift.
-- [ ] "Log in to vote" gating on the cause page (no phantom voting when signed out).
-- [ ] Better active/upcoming indicator: **horizontal, not diagonal** — a 2-row box between the upcoming and active causes naming both.
-- [ ] Move show & register/propose into the top "Active mission"/"Active cause" bar (adjust CSS).
-- [ ] Various locations need black-on-white Times New Roman.
-- [ ] Propose / nominate dialogs shared between context page and cause page.
-
-### Elections / voting model
-- [ ] **Tie-break rule** (from the hpr0 analysis, 2026-08-01, build-seq §3 — analyzed, nothing changed): a p1 tie is currently broken by *vote-row insertion order* (`p1_tally` sorts stably; `finalize_p1` takes `entries[0]`). Jax's 5/5 split on GEAG vs Solar Grids → GEAG won only because its vote row (id 26) predates Solar's. The "4.5 committed" was CORRECT behavior for its day, not corruption: the losing tiv rolled to hpr1 via the old `_carry_losers_forward` with the 10% commitment-fund skim (5 EBX → 4.5 EBX). **That path is gone as of 2026-08-20** — nothing rolls and nothing is skimmed at the initiative election, so a loser's 5 EBX now stays in hpr0 and funds its organization election in full. Still open: decide an explicit tie-break (earliest commit? most voters? sudden-death week?).
-- [x] **Skim ledger rounding bug** — CLOSED 2026-08-20. Fixed on 2026-08-19 (round UP at centitoken granularity), and then made moot: `COMMITMENT_FUND_SKIM` is **0** and nothing rolls to a cause's next election, so there is no loser-carryover skim left to round. The one skim, at the organization election, is computed in integer ct by `token_model.settle_oe`.
-- [x] **Winner-backer perk** — SUPERSEDED 2026-08-20. The cheaper-bonus-vote version died with the price ladder; the reward for being right is now INFLUENCE, published per arena in `token_model.influence_mult` (2x OE · 2x budgeting · 1.5x each on research, 2.25x for both). What remains open is wiring it into `p1_tally` / `p2_tally`, which is its own line below.
-- [ ] **Wire weight into the tallies.** `p1_tally` is linear and `p2_tally` counts integer votes, so neither reads `token_model.weight_ct` or the influence multipliers — today they only drive the per-row weight the wallet reports. Budget and research voting do not tally weight at all yet, which is where 2x-on-budget and 2.25x-on-research have to land.
-- [ ] Negative/block (`harmful`) org votes — schema exists; UI deferred (reputationally sensitive).
-- [ ] Beneficiary voice surface at the **start of phase 2**.
-
-### ▶ Proposed model change — collapse the back-half phase enum
-- [ ] Redesign so **budget → release = resolutions**: fold `current_phase` values `budget · credit · resolution` into a single `resolutions` phase (keep `pre · initiative` for phases 1–2). Touches `scheduler.py`, `models.py`, the phase map, and any UI reading `current_phase`. Modeled in README §3.
-
----
-## ⏸ PARKED — end of phase 2 onward (do not build until the posting focus lands)
-
-### Phase 2 / organizations (backend)
-- [ ] Org claim flow wired to backend (authority transfer + acceptance record).
-- [ ] Duplicate-org detection on nominate (fuzzy name match + "did you mean?").
-- [ ] Guaranteed-to-pool rate: set unclaimed rate, bump on claim.
-- [ ] EN verification queue (one org/week) + revoke-authority control.
-
-### Resolutions (phase 3: budget → release → resolve)
-- [ ] **S/S/S vs. context** — reconcile the parked inconsistency: Suggestions is its own post category, *not* a stance on context ("S/S/S is not context"). See README §5 flag.
+### 3. **Mission** The mission page Established in the framing stage. 
+- Mission pages need the 7 cause toggle, or else users would need to click through them too far. The same annulus from the election page is there, but there are inner (and outer?) layers - globe in middle
+- In the framing stage, you have the option to move your money to other existing missions.
+- I need to work out how the research structure is built - each user has 1 of each post.
+- I need to implement the 2 key accounting numbers - EBX sent, EBX held.
+- Gotta figure out latitude and longitude - My thoughts are budget items - They may include travel and specific purchases/services which must have a location. Also, the org should have a location.
 - [ ] Mission gantt chart / annulus ring widget (deadlines, 7–12 steps).
 - [ ] Tune step guaranteed/potential pool ratios + early-resolution bonus size.
 - [ ] Tune `resolution_value_bump` and its relation to the global coin value.
 - [ ] Suggestion → approval threshold (how many helpful reacts elevate a suggestion to org-resolvable).
 - [ ] Progress reports (org report vs. EN parallel report, benefactor-moderated); mission member communication channel.
-
-### Money / credit / donations
-- [ ] Benefactor running tally of 3 categories: **wallet value** (across all credit coins), **money donated** (each donation hashed with its send-time value; tax-deductible), **spent by Earthbux** (money consumed).
-- [ ] EBX-coin holding actions — a. **spend** (a mission spends its allocation; split between org + Earthbux; per-benefactor + combined mission-page receipts), b. **convert** (passed along), c. **withdraw** (must sacrifice value).
-- [ ] Loser-vote choice: benefactors set what % of a losing tiv commitment is sent to the winning tiv vs. rolled to the cause's next p1; changeable until end of p2 (so they can react to the winning tiv).
-- [ ] The ledger will be **public**.
-- [ ] Resolve the transactional-credit decision framework (README §5): targets, availability state machine, routing precedence, ledger/retarget type, abuse caps.
-- [ ] Credit lifecycle (generic → cause → mission → org → live), coin value parameters; exchange + donation/tax-deductibility flow; EN $100 pool threshold.
-
-### Creditcoin front/back + 3D earth (born on `mission.html`)
-- [ ] Coin card UI: front = value, initiative, org, election info, key dates; flip to back.
-- [ ] Back = 3D earth (three.js), rotate-to-location for: user home, mission location(s), org location(s).
 - [ ] Schema: `location_type` + coordinates on missions (site / region / distributed / global); home location on benefactors; location(s) on orgs.
 - [ ] Globe rendering per location-type (pin vs. shaded region vs. multi-pin).
+- Ability to edit research posts.
 
-### Profiles
+### 4. **News**
+- Currently, every post leads back here. This is correct, but it should instead just link to the post, with an option to bring up the mission page. 
+- This is the key aspect. I should learn from the likes of meta, linkedin, reddit, and tiktok. One page, always the same experience. 
+- Only page without a large annulus in the center. Corner annulus instead reflects the status regarding the mission of the post currently viewing.
+
+### 5. **Profile**
+- [ ] The coins stay updated with the amount donated and the amount held in each mission.
+- [ ] Remove login page warning banner
+- [ ] Benefactor running tally of 3 categories: **wallet value** (across all credit coins), **money donated** (each donation hashed with its send-time value; tax-deductible), **spent** (money consumed).
+- [ ] EBX-coin holding actions
+- [ ] The ledger will be **public**.
 - [ ] Benefactor profile buildout around mission-memberships + credit-coin holdings per mission.
-- [ ] Organization profile (initiative coins, tasklist, annulus 4, memberships).
+- [ ] Organization profile (initiative coins, tasklist, memberships).
 - [ ] Beneficiary profile page (unique surface; voice at phase-2 start).
 - [ ] Credit-badge colorization perk (participation threshold $10; `vvv` flag).
-- [ ] Profile ring sticky to the rhs with badge in the corner (design on backburner).
+- Admin link from profile page should be updated to mirror admin.html. We'll probably delete admin.html.
 
+### 6. **Docs**
+- Reword all phase descriptions to p1-p2-p3(framing)-p4(exchange)
+- During the exchange phase, each tranche release to the organization is registered as an exchange where the org trades actions for money. The spending of this money is tracked, and if they go over/under the price of the ebx is affected.
+- Note that resolutions and tranche releases are still an important part of the exchange process, they are just not the definition of the phase.
+- Build clock and mission clock - I should keep build items here in instructions and mission items in the other docs.
+- The duality of our purpose is coming to the forefront: 1. Network, 2. News.
+- Let's investigate fiscal sponsors and add that to research. 
+- Still need to reshuffle the docs. Some things can be combined and I need an area for research into seeking investments - fiscal sponsorships, pris, alternatives?
+- Need seperate gantt charts for the missions and for the project development
+- Need section in docs to focus on nonprofit application - Probably falls within money model. Maybe split money model into mission model, and a new (or rename money model into) banking document which describes earthbux finances. Or maybe instead of banking it's 'operations' and then we can fold 'roles' into it too.
+- Research will be recreated as 'the social network' - a document for investigating and imagining...
+- The ascii drawings on jax notes 2 (At least their current states) should all be on structure.md. 
+
+### 7. **Everywhere**
+- Need to fix the footer - Earthbux - collective action, measured in impact - A civic news and charity platform, every earthbuck tells a story. Causes/ Platform/ Community/ - Also should have an option to contact us or join the team. Tell us what you think? I will go public as soon as the money is public.
+- I'm going to need to backfill some items onto the website, because I've been only voting in my test environment and not on the real page.
+- I may need a method to reward users for being less sticky-fingered with their money.
+- Big rename - context is now going to be called situation.
+- Moderation - before individual user verification, I may need to be able to block certain ips or spam creation from accessing the site. This is theoretical for now but I want to think about how I would do this without being flooded. 
+
+## CONVERSATION
+- Without permission, only execute build sequence.
+- Absorb amd modify backlog items and update structure as you see fit.
+- Need to start thinking about where the money lives - economics
+- Kids accounts need a dedicated adult account to authorize any transactions.
+- Security rule: The first time an account signs in, they are told they can't vote in any org elections except the first (most recently electeed tiv) org election. - This prevents from creating accounts just to vote your org in. - edit - they can vote in whatever election they want, but they are not allowed to buy extra votes until they've been a member long enough. 
+- I wonder if I can create an animated diagram - kind of like a prezi - showing each step of the process.
+
+## BACKLOG
+
+*For backlog management — ignore this section during a build task.*
+
+*The single backlog. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
+
+---
 ### Accounts / kids (12–17)
 - [ ] Birthdate (or age bracket) on `BenefactorAccount` + guardian link (parent account or verified email).
 - [ ] Parental-approval flow gating every money-in action (add EBX, buy votes); voice (vote/post) ungated.
@@ -781,7 +194,7 @@ lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
 - [ ] Legal review: COPPA/GDPR-K, minimum age 12, regional definitions of minor.
 
 ---
-## Infra / admin / testing
+### Infra / admin / testing
 - [ ] **Self-serve password reset** — needs a mail transport: emailed single-use
   token, expiry, a redemption page, rate limiting. Staff can issue a temporary
   password today (§0d, 2026-08-08); this is the real flow.
@@ -791,4 +204,241 @@ lands. Page specs live in `docs/structure.md`; the model in `README.md` §5.*
 - [ ] `is_test` column + `cyclestart` config endpoint for simulations.
 - [ ] v2-compatible seeder (pilot/seed are stale against the current schema).
 - [ ] Working-tree corruption: avoid concurrent writers (mount sync vs. `uvicorn --reload`); commit often.
+- Bots.
 - [ ] Apache stack (Kafka/Flink/Airflow/Cassandra) — future.
+
+---
+
+### 1. The build clock
+
+Anchored at **Monday 2026-09-07** (W0 = the week this pass ran). Durations are
+working estimates for one builder plus this assistant, not commitments.
+
+```mermaid
+gantt
+    title Earthbux build clock — W0 = 2026-09-07
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+
+    section Unblock (not engineering)
+    Buy the earthbux domain + mailbox        :crit, unblock1, 2026-09-08, 2d
+    Nonprofit status enquiry                 :crit, unblock2, 2026-09-08, 60d
+    Banking / payee enquiry                  :crit, unblock3, 2026-09-08, 60d
+    Answer mission_model.md open questions    :active, unblock4, 2026-09-08, 7d
+
+    section Surfaces
+    Nav, profile, main.html (build-seq 1-2)  :done, s1, 2026-09-08, 1d
+    cause.html newsfeed rebuild              :s2, after unblock4, 14d
+    mission.html redesign                    :s3, after s2, 14d
+    Animated process diagram                 :s4, after s3, 7d
+
+    section Data to build against
+    Voting bots (admin simulation)           :done, bots, 2026-09-16, 1d
+    Retroactive posts for recent elections   :posts, after bots, 3d
+
+    section Money model
+    money_model.md rewrite + ladder in code  :done, m1, 2026-09-16, 1d
+    Framing: losers exchange + cash withdrawal to T+15 :m2, 2026-09-17, 10d
+    Budget day: org 5/16 claim               :m3, after m2, 3d
+    Deployment order (provenance queue)      :m4, after m3, 7d
+
+    section Counterparty
+    Mail transport                           :c1, after unblock1, 3d
+    M1 registered / M2 might-win / M3 won    :c2, after c1, 7d
+    Org registration + claim page            :c3, after s3, 14d
+    Vetting gates                            :c4, after c3, 7d
+    Check flow + payee                       :c5, after unblock3, 14d
+
+    section Trust and safety
+    New-account vote-buying gate             :t1, after m4, 4d
+    Kids accounts (legal review first)       :t2, after unblock2, 14d
+    Real content classifier                  :t3, after t1, 7d
+
+    section Housekeeping
+    Docs index, prune, pilot seed            :h1, after s4, 3d
+    ebx_shared.ts retired (js is source)     :done, h2, 2026-09-16, 1d
+```
+
+#### Why this order
+
+2. **Nonprofit status and banking.** External lead times measured in weeks. They
+   gate the check flow, and the check flow gates the first real payout. Starting
+   them late is the one mistake in this plan that a good month of building cannot
+   repair.
+3. **Voting bots.** Every remaining surface renders an election, a tally, a pool
+   or a mission in flight, and none can be *seen* in a real state with one
+   account. `mission.html` in particular is a page about eight weeks of
+   accumulated activity: built against an empty database, it gets built twice.
+   This is why they are here and not in housekeeping, where the queue files them.
+4. **`ebx_shared.ts` / `.js` reconciliation** — **done 2026-09-16** by retiring the
+   TypeScript. `resources/js/ebx_shared.js` is the source and has no build step.
+
+#### What is deliberately not on this chart
+
+**Mission trips, travel, and spots on missions.** The largest unscoped idea in
+the file — a new product with its own safety, cost and liability surface. It
+should not be designed until one mission has actually resolved. Putting a bar on
+a chart for it would imply otherwise.
+
+### 4. Sources
+
+- `docs/INSTRUCTIONS.md` ## CONVERSATION — the five swimlanes and every item.
+- `docs/_to_delete/PLAN_2026-09-02.md` — the pass ordering this chart dates (retired).
+- `docs/mission_model.md` — the phase map §2 draws.
+- `docs/money_model.md` §0 and §6 — the finality ladder the benefactor lane follows.
+- `EBX.Cycle.missionDates` in `resources/js/ebx_shared.js` — the mission clock,
+  and the reason §2 is derived rather than typed.
+
+---
+
+## REMOVAL REGISTER
+
+*Folded in from `docs/to_delete.md` on 2026-09-09, unchanged except for heading
+depth. One list, ordered by how safe each removal is: **§A** goes today with no
+code change, **§B** needs one edit first, **§C** is live code whose replacement
+already exists, **§D** only looks dead. Nothing here is deleted by reading it.*
+
+*Created 2026-08-28 (build-seq §4). One list, ordered by how safe each removal
+is. Nothing here has been deleted: this file is the inventory, and each entry
+says what would break if it went and what has to happen first.*
+
+**How to use it.** Work top down. Everything in **§A** can go today with no code
+change. **§B** needs a one-line edit somewhere first. **§C** is live code whose
+replacement exists but which still has a caller or a story to tell. **§D** is
+the stuff that only LOOKS dead.
+
+---
+
+### §A — safe now, nothing reads them
+
+| What | Where | Why it can go |
+|---|---|---|
+| 7 database backups | `backend/earthbucks.db.bak_20260809_194835`, `…bak_20260810_094142`, `…bak_aug08b`, `…bak_aug27c`, `…bak_jul19`, `…bak_jul31`, `…bak_premigrate` | ~1.7 MB of point-in-time copies going back to July. Git has the schema history and `alembic` has the path between versions; these are snapshots of *data* nobody has read since the day they were made. **Keep `…bak_aug27c`** until the finalized model has run a full cycle — it is the last state before it. |
+| `backend/earthbucks.db.migrated_jul19` | same folder | The July cutover artefact. Superseded twice. |
+| `backend/_to_delete/earthbucks.db-journal` | | An orphaned SQLite journal from an interrupted write on 2026-08-27. It is not a database and cannot be opened as one. |
+| `_ebx_snapshot.tgz` | repo root | Written 2026-08-28 to move the tree into a container with Chromium on it, so `oe_check` and `ce_check` could be run for the first time. It has served its purpose. **Add `*.tgz` to `.gitignore`.** |
+| `scripts/__pycache__/` | | Byte-code. `.gitignore` already covers `__pycache__` elsewhere. |
+
+### §B — one edit, then safe
+
+| What | Where | The edit first |
+|---|---|---|
+| `backend/seed/pilot.py` | | v1-shaped and unrunnable against the v2 schema. README §10 still lists it as "sample data" — say it is dead or rewrite it. |
+| `README.md` §11 + §12 references to `*_old.py`, `routers_old/`, `backend/earthbucks.db.pre-v2.bak`, `backend/seed/port_v1.py` | README lines ~893, ~910–912, ~932, ~934, ~952 | **None of those files exist in the tree any more** — they were removed at some point and the README still documents them, including a `./.venv/bin/python -m seed.port_v1` command that cannot run. Delete the references, not the files. |
+| `.pf-left` · `.pf-right` · `.pf-right-row` · `.pf-gear` · `.pf-badge-card*` · `.pf-orgmode` | `profile.html` CSS | Thirteen rules for the three-column rail the 2026-08-28 rebuild replaced. `.pf-grid` and `.annulus3-*` are already gone; these are what is left of the same layout. Check nothing else selects them, then cut. |
+| `EBX.formatEBX` | `resources/js/ebx_shared.js` | Still correct for the surfaces that mean the MINTED state (the credit badge, the ledger, mission.html's pool and spend). After the 2026-08-28 unit sweep it has only a handful of callers. Do not delete it — but every new call site should be `formatTokens` unless it means minted money, and `scripts/unit_sweep.js` is the way to check. |
+
+### §C — live, but the replacement already exists
+
+| What | Where | Blocked on |
+|---|---|---|
+| `GET/PUT /missions/{id}/p1/carryover` | `backend/app/routers/votes.py:74–98` | The phase-1 carryover machinery describes a world that ended 2026-08-20. `crud.p1_carryover_state` / `carryover_p1` / `_send_floor` go with it. It still explains races finalized under the old rules honestly, so it cannot go until those races are archived or restated. `scripts/carryover_check.js` guards the signed-out path and would go too. |
+| `crud._withdraw_p1_legacy` + `_send_floor` | `crud.py:1994`, `:2052` | Same story. `withdraw_p1` is a named refusal now; the legacy body is kept so an old race can still be explained. |
+| The phase-2 **withdraw button** | `cause.html` | Named in the backlog since 2026-08-20b. It posts to an endpoint that refuses. Remove the button, keep the refusal. |
+| `votes_p2.conversions`, `benefactor_accounts.grant_commit_by_week` | `models.py:307–323` | Deliberately not dropped by migration `c5d8f2a91e67` — they hold the last values written under the retired rules. Nothing reads them. Drop when the races they describe are settled. |
+| `mint_mission_coins` firing at `finalize_p2` | `crud.py` | The coin should be issued at BUDGET, not at the mint (README §5, "Credits & EBX"). Named backlog item; moving it is a behaviour change, not a deletion. |
+| `LocalElections` no-op stubs | `resources/js/ebx_shared.js:248` | Five empty methods kept so lingering call sites do not throw. Grep for callers; if there are none left, delete the object. |
+
+### §D — looks dead, is not
+
+- **`Votes.forCause`** — CHECKED 2026-08-28, and the answer is better than the
+  question. Six functions in `ebx_shared.js` still call the synthetic vote
+  distribution — `raceCard` · `electionPanel` · `electionBanner` · `sideCard` ·
+  `upcomingCauseBanner` · `topCard` — and **no page calls any of the six.** The
+  only mentions of `EBX.sideCard` and `EBX.topCard` left in `main.html` are two
+  comments saying the page builds its own faces instead. So this is a large
+  block of genuinely dead render code, not a live surface showing fake numbers,
+  and it moves to §A the moment somebody confirms the same for `frontend/src/
+  ebx_shared.ts`, which is the SOURCE these are built from — delete it there and
+  rebuild, or the next `esbuild` run puts it all back.
+  - What must stay: **`EBX.Votes.rankColor`**, which is a palette, not a
+    simulation, and is called for real by `main.html:4322` and
+    `cause.html:3943`.
+- **`backend/app/post_config.classify_flag`** — a stub that returns green. It
+  looks like dead scaffolding; it is the seam the real classifier plugs into,
+  and `posts.flag` / `GET /missions/{id}/post-support` are built around it.
+- **`ce_check.js`'s cause-table assertions** — they look stale next to the CE
+  panel, but they were rewritten for the panel on 2026-08-27 and pass.
+
+---
+
+### Also worth doing while here
+
+- **`.gitignore`**: add `*.tgz`, `backend/*.db.bak*`, `backend/*.db-journal`.
+- **`backend/.venv/` is 103 MB** and inside the repo. It is git-ignored, but it
+  is also why any archive of this tree is 11 MB instead of 800 KB. Moving it
+  outside the repo would make the tree portable.
+- **`docs/` has no index.** Nine files, three of which (`RESEARCH.md`,
+  `Donation_Landscape_Brief.md`, `Endowed_Grantmakers_Deep_Dive.md`) are
+  research rather than build documents. A `docs/README.md` naming what each one
+  is for would stop the build docs and the research docs being read as one pile.
+
+---
+
+### Added 2026-09-08 (build-seq §0 + §6)
+
+#### Done this pass — struck from the list above
+
+- **`docs/` has no index** — it has one now: `README.md` §12, "The docs index",
+  fourteen files with a verdict on each. The three folds and the one drop it
+  recommends are entered below rather than done, because folding research
+  documents is an editorial act, not a cleanup.
+- **`.ebx_shared.build.js`** — a stray candidate build written into
+  `resources/js/` while wiring the build guard, before it was taught to build
+  into a temp directory instead. Moved to `docs/_to_delete/`; delete the folder.
+- **`docs/_to_delete/gantt_probe.mmd`** — the mermaid block from the old `gantt.md` (now `## THE PLAN` §1),
+  copied out so it could be rendered and looked at in a container with a
+  browser. Served its purpose.
+
+#### New — §A, safe now
+
+| What | Where | Why it can go |
+|---|---|---|
+| `Donation_Landscape_Brief.md` · `Endowed_Grantmakers_Deep_Dive.md` | `docs/_to_delete/` | **Done 2026-09-09** — folded into `RESEARCH.md` §1 and §6 with every source link intact. The research is one document. |
+| `Donation_Recipient_Landscape.xlsx` | `docs/_to_delete/` | **Done 2026-09-09** — dropped. `DRL.csv` is the same table and it diffs; `RESEARCH.md` §0 cites it. |
+| `docs/_to_delete/` | | The whole folder, once its two files above are confirmed unwanted. |
+
+#### New — §B, one edit then safe
+
+| What | The edit first |
+|---|---|
+| `backend/seed/pilot.py` | **Retired 2026-09-08** — README §10 now says so instead of calling it "sample data". It stays on disk because the rows it generated (`init-0NN`, the GameMaster account) are the development database, and deleting the generator does not delete them. It goes when the **voting bots** replace it (`## THE PLAN` §1) — bots drive the real endpoints, so their data has the shape the code actually produces. |
+| `docs/_to_delete/PLAN_2026-09-02.md` | **Done 2026-09-09** — retired to `docs/_to_delete/`. `gantt.md` outlived it and has itself been folded into `## THE PLAN` above, so the project has one plan in one file. |
+
+#### New — §C, live and load-bearing, but wrong
+
+| What | The problem |
+|---|---|
+| ~~**`frontend/src/ebx_shared.ts`**~~ | **Resolved 2026-09-16** — the TypeScript was retired and `resources/js/ebx_shared.js` is the source. The file is now a three-line tombstone; see "Added 2026-09-16" below.
+| the six dead renderers in `ebx_shared.js` (§C above) | Unchanged, and now with a second reason to be careful: they are among the twelve functions whose `.js` and `.ts` bodies differ, so "delete it there and rebuild" is exactly the operation the guard now blocks. Resolve the divergence first. |
+
+---
+
+### Added 2026-09-16 (build-seq §1)
+
+#### New — §A, safe now
+
+| What | Where | Why it can go |
+|---|---|---|
+| `frontend/` (the whole folder: `src/ebx_shared.ts` tombstone, `src/types.ts`, `package.json`, `tsconfig.json`, `node_modules/`) | repo root | The TypeScript source was retired; `resources/js/ebx_shared.js` is edited directly. `package.json`'s build now refuses with a notice. Nothing reads the folder. |
+| `scripts/build_guard.js` | `scripts/` | Guarded the retired build. Now prints a notice and exits. |
+| `backend/earthbucks.db.bak_premigrate` | `backend/` | Written 2026-09-15 at the same size and time as the live dev DB. Keep only if that migration is in doubt. |
+
+Not deleted from this session: the computer's shell could not reach the folder,
+and file sync can write but not delete.
+
+#### Unblocked by the retirement
+
+- **The six dead renderers** in `ebx_shared.js` (§D, `Votes.forCause` callers:
+  `raceCard` · `electionPanel` · `electionBanner` · `sideCard` ·
+  `upcomingCauseBanner` · `topCard`) can be deleted directly from the `.js` —
+  there is no longer a source to put them back. Keep `EBX.Votes.rankColor`.
+
+#### New — §C, live but replaced by the 2026-09-16 model
+
+| What | Where | Blocked on |
+|---|---|---|
+| Losing-organization backers minted behind the winner at T+8 | `crud._settle_oe_stakes` | The framing exchange (money_model §12 item 1). |
+| Marked tokens movable into any open OE race during the OE | `wallet.move_stake`, `is_movable` | Same — losing-initiative backers move during framing now. |
+| `BenefactorAccount.grant_commit_by_week`, `votes_p2.conversions` | `models.py` | Unchanged from §C above; still unread. |
+

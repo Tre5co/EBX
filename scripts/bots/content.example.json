@@ -1,0 +1,31 @@
+{
+  "Jax3000": {
+    "initiatives": {
+      "vote": {"init-024": 70, "init-025": 30},
+      "propose": [{"title": "Old-Growth Corridor Buyouts", "description": "Buy and permanently protect the remaining unlogged parcels that connect two old-growth reserves.", "emoji": "🌲"}],
+      "case": {"tiv_id": "init-025", "stance": "against", "title": "Seed grants without habitat safeguards", "body": "Write the argument here, with sources."},
+      "replies": [{"parent_id": "p-REPLACE", "body": "A short reply in character."}],
+      "ratings": [{"post_id": "p-REPLACE", "fair": false}]
+    },
+    "research": {
+      "posts": [{"mission_id": "hpr2", "type": "context", "title": "Where the cause stands", "body": "Situation, with sources inline. Running research again UPDATES this post."}]
+    }
+  },
+  "JJ420": {
+    "organizations": {
+      "nominate": [{"mission_id": "wil1", "name": "A real organization you verified", "website_link": "https://example.org", "description": "What they do.", "mission_statement": "How they would run this initiative."}],
+      "vote": {"org_id": "org-001"},
+      "case": {"org_id": "org-001", "stance": "for", "title": "Why this group can deliver", "body": "The argument, with sources."}
+    },
+    "budget": {
+      "items": [{"mission_id": "wil1", "type": "service", "title": "Field survey crew", "body": "Two ecologists for a baseline survey.", "line_items": [{"job": "Ecologist", "hourly_rate": 45, "days_needed": 10}]}],
+      "upvote": ["p-REPLACE"]
+    }
+  },
+  "BotJoe9": {
+    "exchange": {
+      "moves": [{"from_mission_id": "wil1", "to_mission_id": "hmr1", "tokens": 2, "org_id": "org-002"}],
+      "withdraw": [{"mission_id": "wil1", "tokens": 1}]
+    }
+  }
+}

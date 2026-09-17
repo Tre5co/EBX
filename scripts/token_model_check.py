@@ -6,7 +6,7 @@ Pure math, no database and no server, so this is the one check that can be run
 before anything else is wired. Every number the UI or the docs are allowed to
 print about money should be derivable from something asserted here.
 
-Rewritten 2026-08-27c with the model (`docs/ME_OE_FINALIZATION.md`): one flat
+Rewritten 2026-08-27c with the model (`docs/_to_delete/ME_OE_FINALIZATION.md`): one flat
 skim, the week change as the ratchet, the vote/amount split, and the four states
 `unallocated -> committed -> minted -> donated`.
 """
@@ -100,23 +100,14 @@ ok(tm.weight_tokens(15 * T) == 12.5, "half a block into the decay")
 ok(all(tm.weight_ct(c + 1) > tm.weight_ct(c) for c in range(0, 4000, 97)),
    "strictly increasing — more money is never less weight")
 ok(tm.weight_tokens(10 * T, 2.0) == 20.0,
-   "an influence multiplier scales weight, not money")
+   "a scale factor scales weight, not money")
 
 # ---------------------------------------------------------------------------
-section("influence — one of the three things being right is worth")
-ok(tm.influence_mult("oe", me_correct=True) == 2.0,
-   "correct ME voters get twice as much influence in the OE")
-ok(tm.influence_mult("oe") == 1.0, "...and everyone else carries their stake, once")
-ok(tm.influence_mult("oe", me_correct=False, oe_correct=True) == 1.0,
-   "an OE vote cannot reward itself — the race it would weight is the race it is in")
-ok(tm.influence_mult("budget", oe_correct=True) == 2.0,
-   "correct OE voters get twice as much influence on budget voting")
-ok(tm.influence_mult("research", me_correct=True) == 1.5, "one right -> 1.5x on research")
-ok(abs(tm.influence_mult("research", True, True) - 2.25) < 1e-9,
-   "both right -> 2.25x — they MULTIPLY, exactly as Jax wrote it")
-ok(tm.influence_mult("research") == 1.0, "neither -> 1x")
-ok(tm.weight_tokens(10 * T, tm.influence_mult("research", True, True)) == 22.5,
-   "and it lands on the weight a stake actually carries")
+section("influence — being right is NOT a multiplier (2026-09-16)")
+ok(not hasattr(tm, "influence_mult"), "influence_mult is gone")
+ok(not any(hasattr(tm, n) for n in ("ME_CORRECT_OE_MULT", "OE_CORRECT_BUDGET_MULT",
+                                    "RESEARCH_MULT_EACH")),
+   "...and so are the correctness multipliers — being right is rewarded by deployment order")
 
 # ---------------------------------------------------------------------------
 section("the week change is the ratchet")
@@ -133,21 +124,18 @@ ok(not hasattr(tm, "allocate"),
    "one-way `allocate` is gone: inside the week an allocation is a position")
 
 # ---------------------------------------------------------------------------
-section("settlement — the initiative election is a routing step")
+section("settlement — the finality ladder: 10% at ME, +10% at OE, 100% on budget day")
 s = tm.settle_me(100 * T)
-ok(tm.ME_SKIM == 0.0, "the initiative election claims nothing")
-ok(s.donated_ct == 0, "100 tokens -> 0 donated at the ME")
-ok(s.held_ct == 100 * T, "...and ALL of it forward into the winner's OE")
+ok(tm.ME_SKIM == 0.10, "10% is final at the initiative election")
+ok(s.donated_ct == 10 * T and s.held_ct == 90 * T, "100 tokens -> 10 final at the ME")
 ok(all(tm.settle_me(c).total_ct == c for c in range(0, 5000, 61)),
    "conservation holds at every stake size")
-
-section("settlement — A CLEAN 10%, ACROSS THE BOARD")
-ok(tm.OE_SKIM == 0.10, "one rate")
+ok(not hasattr(tm, "settle_me_split"), "a skim marks finality; it splits nothing")
+ok(tm.OE_SKIM == 0.10, "another 10% at the organization election")
 ok(not hasattr(tm, "OE_SEND_WIN") and not hasattr(tm, "OE_SKIM_LOSE"),
    "the win/lose rates are gone — being right is not worth money")
 r = tm.settle_oe(100 * T)
-ok(r.donated_ct == 10 * T, "10% of every stake is donated")
-ok(r.held_ct == 90 * T, "...and the other 90% becomes EBX for that mission")
+ok(r.donated_ct == 10 * T, "10% of every OE stake")
 ok(all(tm.settle_oe(c).total_ct == c for c in range(0, 5000, 71)),
    "conservation holds at every stake size")
 ok(tm.settle_oe(1).donated_ct == 1,
@@ -158,10 +146,20 @@ try:
 except TypeError:
     took_won = False
 ok(not took_won, "settle_oe takes no `won` argument to quietly re-invent the fork")
+ok(tm.final_ct(100 * T, 20 * T, False) == 20 * T, "before budget day, only the skims are final")
+ok(tm.final_ct(100 * T, 20 * T, True) == 100 * T, "ALL donations are final at T+15")
+ok(tm.BUDGET_DAY_AFTER_ME_WEEKS == 15, "budget day is T + 15")
 tbl = tm.outcome_table(100 * T)
-ok(tbl["donated_ct"] == 10 * T and tbl["ebx_ct"] == 90 * T,
-   "the outcome table is ONE row now, not four")
-ok(tbl["skim_rate"] == 0.10, "...and it prints the rate it used")
+ok((tbl["final_at_me_ct"], tbl["final_at_oe_ct"], tbl["final_at_budget_day_ct"])
+   == (10 * T, 20 * T, 100 * T), "the ladder: 10 -> 20 -> 100")
+ok(tbl["ebx_after_budget_day_ct"] == 100 * T,
+   "...and ALL of it stays EBX in the benefactor's account — a skim only marks finality")
+
+section("the 32nds")
+ok(3 * tm.RESEARCH_REWARD_32NDS + 2 * tm.ADVANCE_32NDS + tm.ORG_FRAMING_RELEASE_32NDS
+   + tm.FLEXIBLE_32NDS == 32, "3 + 4 + 8 + 17 = 32")
+ok(tm.ORG_BUDGET_DAY_32NDS == 10, "the organization's budget-day claim is 10/32 = 5/16")
+ok(tm.EARTHBUX_FLEX_MAX_32NDS == 8, "Earthbux takes at most 8 of the flexible 17")
 
 section("donation is an event, and it happens more than once")
 ok(tm.tranche_ct(90 * T, 0.10) == 9 * T, "a tranche is a fraction of what is held")
@@ -218,16 +216,16 @@ ok("claimed_ct" not in d and "staked_ct" not in d,
    "`claimed` goes back to meaning an ORG claiming a mission; `staked` is `committed`")
 ok(d["free"] == 4.0 and d["committed"] == 26.0, "display copies are in tokens")
 ok(d["ct_per_token"] == 100, "the unit travels with the payload")
-ok(d["oe_skim"] == 0.10, "...and so does the one rate a benefactor is charged")
+ok(d["me_skim"] == 0.10 and d["oe_skim"] == 0.10, "...and so do the two skim rates")
 ok("max_conversions" not in d, "the wallet no longer advertises a conversion budget")
-w2 = tm.Wallet(free_ct=10 * T, purchased_ct=3 * T, grant_cause_id="forests")
+w2 = tm.Wallet(free_ct=10 * T, purchased_ct=3 * T, grant_week=20)
 d2 = w2.as_dict()
 ok(d2["grant_held_ct"] == 7 * T and d2["purchased_ct"] == 3 * T,
    "unallocated is granted + purchased, and the two are reported apart")
 ok(d2["grant_held_ct"] + d2["purchased_ct"] == d2["free_ct"],
    "...and they are the WHOLE of it — there is no third kind")
-ok(d2["grant_cause_id"] == "forests",
-   "a granted token carries its cause where the deadline used to be")
+ok(d2["grant_week"] == 20 and "grant_cause_id" not in d2,
+   "a grant carries its WEEK, never a cause (2026-09-16)")
 ok("commit_by_week" not in d2, "...and the deadline is not there any more")
 ok(d2["available_ct"] == 10 * T, "the wallet says what is votable next")
 ok(tm.Wallet(free_ct=T, purchased_ct=5 * T).as_dict()["purchased_ct"] == T,

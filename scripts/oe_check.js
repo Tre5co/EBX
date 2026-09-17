@@ -210,10 +210,17 @@ const section = t => console.log('\n=== ' + t);
   // "Instead of 'Mission page' it should say 'View Organizations'."
   ok(foot.some(t => /View Organizations/.test(t)), '…and View Organizations');
   ok(!foot.some(t => /Mission page/.test(t)), '…which replaced "Mission page"');
-  ok(!foot.some(t => /^Commit/.test(t)),
-     'Commit is NOT among them — it is all-encompassing, so it stays with the balance');
+  // §2 (2026-09-08) — **REVERSED, on Jax's instruction:** "OE ballot card is
+  // currently missing the commit button." The 2026-08-21 rule (Commit is
+  // all-encompassing, so it lives with the balance) still holds for the button
+  // in the allocations panel, which is still there and still asserted below —
+  // but the ballot is where the decision is made, and it used to end in three
+  // links with no way to act on them. Both buttons now exist and both call
+  // `commitAll`, so there is one write path and two doors to it.
+  ok(foot.some(t => /^Commit/.test(t)), '…and Commit, which is on the ballot again');
+  ok(foot.some(t => /^Cancel$/.test(t)), '…with the Cancel that arms beside it');
   ok(!!(await page.$('.unalloc__commit #oe-commit')),
-     'Commit is in the allocations panel, beside the balance it spends');
+     'and Commit is ALSO in the allocations panel, beside the balance it spends');
   // §0 (2026-08-21): the filled Commit button resolved `--vb` to nothing when it
   // sat outside `.votebar` — near-black on near-black. Contrast, not presence.
   const commitInk = await page.$eval('#oe-commit', el => {

@@ -96,6 +96,9 @@ class InitiativeBase(BaseModel):
 
 
 class InitiativeCreate(InitiativeBase):
+    # build-seq §3 (2026-09-16): a title is a short name; the case is the
+    # description. Enforced on creation only, so older long titles still read.
+    title: str = Field(min_length=3, max_length=120)
     id: str
     mission_id: Optional[str] = None
     proposer_ben_id: Optional[int] = None
@@ -158,6 +161,7 @@ class BenefactorRead(BaseModel):
     is_active: bool
     role: str = "benefactor"  # benefactor | employee | admin
     vvv: bool = False
+    is_test: bool = False            # the bot signature (build-seq §2)
     created_at: datetime
     watched_tiv_ids: list[str] = Field(default_factory=list)
 
@@ -479,6 +483,17 @@ class PostRead(PostBase):
     # investigation, evaluation) are meaningfully rated — see post_config.
     flag: str = "green"
     flag_reason: Optional[str] = None
+
+
+class PostUpdate(BaseModel):
+    """An author's edit to their own benefactor post (build-seq §2). Only the
+    fields given are changed; category, type, mission and parent never move."""
+    title: Optional[str] = None
+    body: Optional[str] = None
+    stance: Optional[str] = None
+    line_items: Optional[list[dict]] = None
+    est_setup_days: Optional[float] = None
+    est_cost_usd: Optional[float] = None
 
 
 class PostFlagUpdate(BaseModel):

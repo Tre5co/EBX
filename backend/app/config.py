@@ -15,7 +15,10 @@ class Settings(BaseSettings):
     secret_key: str = "dev-only-change-me"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080
-    cors_origins: str = "http://localhost:5173,http://localhost:8000,http://127.0.0.1:5500"
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:8000,http://127.0.0.1:5500,"
+        "https://earthbux.net,https://www.earthbux.net"
+    )
 
     # vote_weight = 1 + b_contribution / (pool_excluding_b * size_factor)
     # size_factor targets an ideal pool size. Override via SIZE_FACTOR env var.
@@ -40,6 +43,11 @@ class Settings(BaseSettings):
     resolution_value_bump: float = 0.02
     # Global coin value = 1 + net_platform_flow / coin_value_scale (placeholder).
     coin_value_scale: float = 100000.0
+    # -- Bots (build-seq §2, 2026-09-16) --------------------------------------
+    # Shared secret for the bot signature. A signup that sends it in the
+    # `X-EBX-Bot-Key` header is created with `is_test = true`. Empty disables it.
+    # Set EBX_BOT_KEY on Railway; give the same value to the bot script.
+    ebx_bot_key: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -960,10 +960,13 @@
   </style>
 </head>
 <body>
-  <div role="alert" style="margin:0;padding:11px 16px;text-align:center;background:#e8a84c;color:#1a1206;font-size:0.9rem;line-height:1.4;">
-    <strong style="letter-spacing:0.04em;">WARNING:</strong> profile page isn't developed yet —
-    <a href="main.html" style="color:#1a1206;font-weight:700;text-decoration:underline;">go to the Context page</a>
-  </div>
+  <!-- §1 (2026-09-08, build-seq Profile.html): the WARNING banner is GONE.
+       It said the page "isn't developed yet" and pointed at "the Context page",
+       which has not been called that since 2026-08-26 — and the page it was
+       apologising for was rebuilt to the drawing on 2026-08-28 (three top cards,
+       seven weekly windows, the globe, the feed). It was the last thing a
+       benefactor read before their own wallet. -->
+  <div class="ebx-navstrip"><div id="ebx-nav-mount"></div></div>
   <a href="main.html" class="ebx-home-mark">EBX</a>
 
   <!-- JS decides whether to show onboarding or profile -->
@@ -1038,13 +1041,13 @@
         const r = await EBX.Auth.fetchAuthed('/wallet');
         if (r && r.ok) {
           const j = await r.json();
-          // `GET /wallet` answers `{wallet: {...}, week, grant_cause_id, rows}`.
+          // `GET /wallet` answers `{wallet: {...}, week, grant_week, rows}`.
           // The rows come from HERE, not from `GET /wallet/rows`: that one is the
           // SIGNED-OUT variant and reports `my_stake_ct: 0` for every race, which
           // is why the organization half of every window card said "no vote yet"
           // for an account with fifty tokens standing in three of them.
           window._myWallet = Object.assign({}, j.wallet || j,
-            { grant_cause_id: j.grant_cause_id || (j.wallet || {}).grant_cause_id,
+            { grant_week: (j.grant_week != null) ? j.grant_week : (j.wallet || {}).grant_week,
               week: j.week });
           window._walletRows = Array.isArray(j.rows) ? j.rows : [];
         }
@@ -1966,7 +1969,8 @@
       const _buy  = Number(_W.purchased_ct || 0) || 0;
       const _cmt  = Number(_W.committed_ct || 0) || 0;
       const _mint = Number(_W.minted_ct || 0) || 0;
-      const _don  = Number(_W.donated_ct || 0) || 0;
+      // 2026-09-16 — final is an overlay on the position, not a segment beside it.
+      const _don  = Number(_W.final_ct != null ? _W.final_ct : (_W.donated_ct || 0)) || 0;
       // Split the committed bin the way the window cards do: initiative
       // elections vs organization elections. Both read what is already loaded,
       // so the panel and the cards can never disagree.
@@ -1978,12 +1982,11 @@
       const _orgCt = Math.max(0, _cmt - _tivCt);
       const _usd = ct => '$' + ((ct || 0) / 1000).toFixed(2);   // 1 token = 10c
       const _pctw = (tot, part) => (tot > 0 ? (100 * part / tot).toFixed(2) : '0') + '%';
-      // "The grant carries its CAUSE, not a deadline" — so the panel says which
-      // cause this week's ten were granted against, which is the only thing
-      // that limits where they may be spent.
-      const _grantCause = _W.grant_cause_id ? (causeById[_W.grant_cause_id] || null) : null;
+      // 2026-09-16 — a grant carries its WEEK, never a cause: granted tokens
+      // may enter the initiative or organization election closing that week.
+      const _grantWk = (_W.grant_week != null) ? _W.grant_week : null;
       const allocTotalLabel = _tk(_free + _cmt + _mint) + ' total'
-        + (_grantCause ? ` · granted against <b style="color:${_grantCause.color}">${_grantCause.name}</b>` : '');
+        + (_grantWk != null ? (_grantWk === _W.week ? ' · granted for this week&rsquo;s elections' : ` · granted in week ${_grantWk}`) : '');
       const _set = (name, total, segs, keys) => `
         <div class="pf2-set">
           <div class="pf2-set__head">
@@ -2004,8 +2007,8 @@
                  [['fresh', Math.max(0, _free - _buy), 'granted'], ['buy', _buy, 'purchased']])}
           ${_set('Committed', _cmt, [['tiv', _tivCt], ['org', _orgCt]],
                  [['tiv', _tivCt, 'initiatives'], ['org', _orgCt, 'organizations']])}
-          ${_set('EBX', _mint + _don, [['ebx', _mint], ['don', _don]],
-                 [['ebx', _mint, 'held'], ['don', _don, 'donated']])}
+          ${_set('EBX', _mint, [['ebx', _mint]],
+                 [['ebx', _mint, 'held'], ['don', _don, 'final (deductible)']])}
         </div>
         <div class="pf2-conv">
           <div class="pf2-conv__row">
@@ -2462,5 +2465,6 @@
 
   })();
   </script>
+  <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

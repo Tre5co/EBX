@@ -1,24 +1,133 @@
-# Earthbucks — System Overview (v2, mission-centric)
+# Earthbucks — System Overview
+*Drafting for V3.*
 
 Earthbux is a weekly charity pool elected by its community. Each week a **mission**
 for one of seven rotating **causes** opens and runs through **two elections**:
 an **initiative election** (which idea?), an **organization election** (who runs
 it?).
 
-**Earthbux News (EN)**, funded by a cut of the pool, supervises,
-publicizes, and helps organize the missions by creating a social network around each mission.
-Stimulating discussion, connecting parties, and pooling resources.
+**Earthbux News (EN)** Stimulating discussion, connecting parties, and pooling resources, funded by a cut of the pool. Supervises, publicizes, and helps organize the missions by creating a network around each mission.
+
+*The DEX* 'credit coins' traded like crypto
+
+                         EARTHBUX NETWORK
+                    /                       \
+                   /                         \
+          EARTHBUX NEWS              EARTHBUX PLATFORM
+          Journalism & research       Participation & infrastructure
+                   │                         │
+             reporting,               voting, profiles,
+             investigations,           rewards, social,
+             analysis, etc.            benefactor tools, etc.
 
 
-**Doc map** — three canonical docs; supporting files are folded into them.
+
+                 ┌───────────────────┐
+                 │   EARTHBUX NEWS   │
+                 │ research +        │
+                 │ journalism        │
+                 └─────────┬─────────┘
+                           │
+                    information
+                           ↓
+                 ┌───────────────────┐
+                 │ EARTHBUX PLATFORM │
+                 │ participation +   │
+                 │ coordination      │
+                 └─────────┬─────────┘
+                           │
+                    participation
+                           ↓
+                 ┌───────────────────┐
+                 │ real-world        │
+                 │ initiatives       │
+                 └─────────┬─────────┘
+                           │
+                    results + data
+                           │
+                           └──────────→ NEWS
+
+**Doc map** — seven documents, and everything else has been folded into one of
+them (2026-09-09). Each one opens with a `## Contents` that its body follows.
+
 - **README.md** (this file) — the system model: architecture, data model, APIs,
-  lifecycle, the discussion model, money, and the credit framework.
-- **docs/structure.md** — the page-by-page build spec (one section per route).
-- **docs/INSTRUCTIONS.md** — the build queue (`## BUILD SEQUENCE`) plus the
-  living `## BACKLOG`.
+  lifecycle, the discussion model, money, and the credit framework. It is the
+  summary layer: where a section here and a doc below disagree, **the doc is the
+  model and this file is what has to catch up.**
+- **docs/structure.md** — the page-by-page build spec, one section per route.
+  Each page's **▶ NEXT** heading is its build order, box by box.
+- **docs/INSTRUCTIONS.md** — the build queue (`## BUILD SEQUENCE`), the living
+  `## BACKLOG`, `## THE PLAN` (the build clock and the mission clock, folded in
+  from `gantt.md`), and `## REMOVAL REGISTER` (what is safe to delete, folded in
+  from `to_delete.md`).
+- **docs/mission_model.md** — each mission's process in full: the phases, who
+  owes what on which date, vetting, and the agreement an organization signs
+  (§7, folded in from `CONTRACT_DRAFT.md`). [§3](#3-mission-lifecycle) is the
+  summarized version.
+- **docs/money_model.md** — the money model in full: the finality ladder, the
+  grant, the DEX, the 32nds. [§5](#5-the-money-model) is the summarized version.
+  Its §0 lists the rulings of 2026-09-16; its §12 is what the code implements.
+- **docs/RESEARCH.md** — the evidence base: research justifying Earthbux,
+  situating it in the charity ecosystem, planning relationships, and finding
+  missions and causes to focus on. The landscape brief and the endowed-grantmaker
+  deep dive are folded in as §2 and §3. Not a build doc.
+- **docs/roles.md** — the jobs Earthbux has to staff, plus the roles a
+  benefactor plays inside a mission and the humans an organization has to name
+  before it can be paid.
+
+*Data, not documents:* `docs/DRL.csv`, `DRL_major_players.csv`,
+`DRL_partners_targets.csv`, `DRL_sources.csv` — the donation-recipient landscape
+as four tables, cited from `RESEARCH.md` §0a. *Retired:* `docs/_to_delete/`, and
+what went there and why is `INSTRUCTIONS.md` `## REMOVAL REGISTER`.
+
+<!-- TOC -->
+## Contents
+
+- [1. Architecture](#1-architecture)
+- [2. Data model (v2)](#2-data-model-v2)
+- [3. Mission lifecycle](#3-mission-lifecycle)
+  - [Goals](#goals)
+  - [Full phase map](#full-phase-map)
+  - [Phase 2 — nominate → register/claim → elect](#phase-2--nominate--registerclaim--elect)
+  - [Withdrawals](#withdrawals)
+  - [Membership roles](#membership-roles)
+- [4. The weekly cycle & bootstrap](#4-the-weekly-cycle--bootstrap)
+  - [ME and OE — the two halves a benefactor sees](#me-and-oe--the-two-halves-a-benefactor-sees)
+  - [Changing a cause](#changing-a-cause)
+- [5. The money model](#5-the-money-model)
+  - [The benefactor's loop](#the-benefactors-loop)
+  - [The finality ladder](#the-finality-ladder)
+  - [The grant](#the-grant)
+  - [The DEX](#the-dex)
+  - [The deployment schedule — the 32nds](#the-deployment-schedule--the-32nds)
+  - [Votes by phase](#votes-by-phase)
+  - [The discussion model — a post type for every phase](#the-discussion-model--a-post-type-for-every-phase)
+  - [Post rewards (refined) — which post wins, decided by which vote, paid when](#post-rewards-refined--which-post-wins-decided-by-which-vote-paid-when)
+  - [EBX, the coin, and deductibility](#ebx-the-coin-and-deductibility)
+  - [What the code does](#what-the-code-does)
+  - [S/S/S → resolutions: the budgeting procedure](#sss--resolutions-the-budgeting-procedure)
+  - [The creditcoin — front & back (planned: the 3D earth)](#the-creditcoin--front--back-planned-the-3d-earth)
+  - [Transactional credit — what the DEX answered, and what it did not](#transactional-credit--what-the-dex-answered-and-what-it-did-not)
+- [6. Voting & the election algorithm](#6-voting--the-election-algorithm)
+  - [Phase 1 — initiative election (VoteP1, one row per (ben, tiv))](#phase-1--initiative-election-votep1-one-row-per-ben-tiv)
+  - [What happens to a commitment once phase 1 closes](#what-happens-to-a-commitment-once-phase-1-closes)
+  - [Phase 2 — organization election (VoteP2, one row per (ben, mission))](#phase-2--organization-election-votep2-one-row-per-ben-mission)
+- [7. API surface (63 routes)](#7-api-surface-63-routes)
+- [8. Admin data console (admin.html)](#8-admin-data-console-adminhtml)
+- [9. Frontend status](#9-frontend-status)
+  - [The five surfaces, as of 2026-08-28](#the-five-surfaces-as-of-2026-08-28)
+- [10. Data & seeding](#10-data--seeding)
+- [11. Migrations & the v2 cutover](#11-migrations--the-v2-cutover)
+- [12. File map](#12-file-map)
+  - [12a. The docs index](#12a-the-docs-index)
+- [13. Running locally](#13-running-locally)
+- [14. The checks — what each one is, and how to run it](#14-the-checks--what-each-one-is-and-how-to-run-it)
+  - [Two flavours](#two-flavours)
+  - [The eleven](#the-eleven)
+
+<!-- /TOC -->
 
 ---
-
 ## 1. Architecture
 
 ```
@@ -33,17 +142,17 @@ Stimulating discussion, connecting parties, and pooling resources.
  │  ebx_shared.js    │                                       ▼
  └───────────────────┘                                  SQLite (earthbucks.db)
         ▲                                                Alembic-migrated
-        │ built by esbuild from
-        └ frontend/src/ebx_shared.ts
+        │ hand-edited — no build step
+        └ (the TypeScript copy was retired 2026-09-16)
 ```
 
 - **Backend** — FastAPI + SQLAlchemy 2.0 (typed ORM) + SQLite, schema-managed by
   Alembic. Served by `uvicorn app.main:app`. The same process also hosts the
   static HTML/JS, so the frontend talks to the API on the same origin.
-- **Frontend** — plain HTML pages with inline scripts, plus a shared engine
-  compiled from TypeScript: `frontend/src/ebx_shared.ts` → (esbuild) →
-  `resources/js/ebx_shared.js`, exposed as a global `EBX`. **A `.ts` edit ships
-  nothing until `npm run build` regenerates the JS.**
+- **Frontend** — plain HTML pages with inline scripts, plus a shared engine,
+  `resources/js/ebx_shared.js`, exposed as a global `EBX`. **It is edited
+  directly; there is no build step.** The TypeScript source it used to be
+  compiled from had fallen ~24 KB behind it and was retired on 2026-09-16.
 - **Auth** — JWT bearer tokens (`/auth/login`). Accounts carry a `role`
   (`benefactor | employee | admin`); employee/admin unlocks staff-only actions.
 - **Kids accounts (planned)** — benefactors aged **12–17** get full *voice*
@@ -53,15 +162,21 @@ Stimulating discussion, connecting parties, and pooling resources.
   money-in action; votes from unfunded kid accounts still carry
   `BASE_VOTE_EBX` weight. Legal review (COPPA/GDPR-K) before build — see the
   INSTRUCTIONS `## BACKLOG`.
-- **Railway** https://ebx-production.up.railway.app/ 
+- **Live** https://earthbux.net — the domain (Squarespace registrar, bought
+  2026-09-09 with Google Workspace mail on it). It is an **ALIAS `@`** and a
+  **CNAME `www`** onto the Railway service plus Railway's TXT verification
+  record; the app is same-origin (`apiBase: ''`), so nothing in the frontend
+  knows the hostname and no build changes when it moves.
+- **Railway** https://ebx-production.up.railway.app/ — the origin, and still a
+  valid URL. Keep it: it is what you test against when DNS is the suspect.
 
-
+*future*
+- add native os and mobile apps.
 ---
 
 ## 2. Data model (v2)
 
-The **Mission** is the spine: one per `(cause, cycle)`. Initiatives and
-organizations are *candidates* that point at a mission; the singular winners are
+One weekly **Mission** per `(cause, cycle)`. Initiatives and organizations are *candidates* that point at a mission; the singular winners are
 pointers on the mission itself. All money movement and vote mutations are logged
 in one append-only **Transaction** ledger.
 
@@ -117,42 +232,13 @@ Key design choices:
 - **`valence`** (`helpful | neutral | harmful`) on votes & posts — `harmful`
   means a vote *against* a tiv or a *block* on an org.
 ---
+*future*
+- Credit coins will need dex logic
 
 ## 3. Mission lifecycle
 Phases are server-authoritative (advanced by `scheduler.py`); the frontend only
 *displays* phase. Timeline is anchored on `mission.started_at` (the day the
 cause's window opens):
-
-```mermaid
-flowchart LR
-    PRE["pre<br/>(created)"] -->|window opens| P1["Phase 1 · Initiative election"]
-    P1 -->|"+7 weeks: finalize_p1"| P2["Phase 2 · Organization election"]
-    P2 -->|"+8 weeks: finalize_p2"| P3["Phase 3 · Resolutions<br/>budget → release → resolve"]
-    P3 -->|"many small resolutions, over years"| P3
-```
-
-**Three phases, but five code values (for now).** The lifecycle is now modeled as
-three phases — **initiative election**, **organization election**, and
-**resolutions** — where *resolutions* is the entire post-election back half:
-budgeting, credit release, and the ongoing stream of resolved outcomes are
-**stages within one phase, not separate phases.**
-
-The code's `current_phase` enum still carries the old five values —
-`pre · initiative · budget · credit · resolution` — which now map onto the three
-phases:
-
-| Phase | `current_phase` value(s) | Advanced by |
-|---|---|---|
-| 1 — Initiative election | `pre`, `initiative` | `finalize_p1` sets the winning tiv and keeps the mission in `initiative` while the org race runs |
-| 2 — Organization election | `initiative` (org-race sub-state) | `finalize_p2` |
-| 3 — Resolutions | `budget` → `credit` → `resolution` | `finalize_p2` opens budgeting; then per-resolution events (`distribute_mission` marks entry) |
-
-> **Budget → release → resolve is one stream.** A mission does not "reach
-> resolution" as a single event — it **opens** budgeting, releases credits in
-> stages, and closes through MANY tiny **resolutions** (see [§5 — S/S/S &
-> resolutions](#5-the-money-model)), possibly over years. Collapsing the three
-> back-half enum values into a single `resolutions` value is proposed work — see
-> the INSTRUCTIONS `## BACKLOG`.
 
 ### Goals
 
@@ -164,16 +250,23 @@ News (EN).
 
 ### Full phase map
 
-Three phases. The back half (budgeting → credit release → resolved outcomes) is
-one **Resolutions** phase with internal *stages*, not three separate phases:
+- 4 phases
 
-| Phase | Stage | Window (from `started_at`) | What happens | Driven by |
-|---|---|---|---|---|
-| **1 — Initiative election** | pre / initiative | weeks < 1 → ~week 7 | Benefactors propose and vote on initiatives | *context* + *case* posts |
-| **2 — Organization election** | — | ~week 8 (cause's final active day) | Benefactors nominate/vote on organizations | *analysis* + *review* posts |
-| **3 — Resolutions** | budget | weeks 9–16 | Elected org drafts budgets from socially-selected **budgeting** (S/S/S) items; **EN verifies the org**; advance released | *budgeting* + *investigation* posts |
-| | release | weeks 17–32 | Credits released in stages; 7–12 step progress reports (org report vs. EN parallel report, benefactor-moderated) | *mission-update* posts |
-| | resolve | weeks 33+ | Many small **resolutions** accumulate, each moving coin value; impact summary. Missions may take **many years** to fully resolve | *budgeting* (S/S/S) posts |
+**T** is the initiative election — "mission started", UX week 0 — and it is
+`started_at + 7wk`, because `started_at` is when the cause window OPENS. Every
+later date in the model is quoted from T, so the table is too, with the
+`started_at` week beside it.
+
+| Phase | Stage | Window (from T) | (from `started_at`) | What happens | Driven by |
+|---|---|---|---|---|---|
+| **1 — Initiative election** | pre / initiative | T−7wk → **T** | weeks 0 → 7 | Benefactors propose and vote on initiatives | *context* + *case* posts |
+| **2 — Organization election** | — | T → **T+8wk** | weeks 7 → 15 | Benefactors nominate/vote on organizations | *analysis* + *review* posts |
+| **3 — Resolutions** | budget | T+8wk → **T+15wk** | weeks 15 → 22 | Elected org drafts budgets from socially-selected **budgeting** (S/S/S) items; **EN verifies the org**; advance released | *budgeting* + *investigation* posts |
+| | release | T+15wk onward | weeks 22+ | Credits released in stages; 7–12 step progress reports (org report vs. EN parallel report, benefactor-moderated) | *mission-update* posts |
+| | resolve | continuous | — | Many small **resolutions** accumulate, each moving coin value; impact summary. Missions may take **many years** to fully resolve | *budgeting* (S/S/S) posts |
+
+- Framing is the phase where orgs get confirmed
+- Exchange is the phase where they do the stuff.
 
 The **organization election (phase 2) happens before any budgeting** — the org is
 chosen on credentials and a short statement, not a detailed plan. Everything after
@@ -195,7 +288,7 @@ receive funds and do the work. So phase 2 is three steps, not one:
 - **Claiming a mission (the gate).** A real representative **claims** the
   mission → their account gains authority over the budget and mission sequence.
   Claiming requires a **click-through legal agreement** (representative
-  attestation — the basis to litigate fraud; see `docs/CONTRACT_DRAFT.md`). A
+  attestation — the basis to litigate fraud; see `docs/mission_model.md` §7). A
   nominated (not self-registered) org may claim until Phase 4 starts (claim
   window: `pre|initiative|budget`). Claiming bumps the mission's
   **guaranteed-to-pool rate** (unclaimed 0.20 → claimed 0.35, in `config.py`) —
@@ -223,22 +316,21 @@ post-mission performance phases (4–5); evaluation = pre-vote.
 
 ### Withdrawals
 
-- **Phase-2 withdrawal (CLOSED 2026-08-20b, restated 2026-08-28):**
-  `crud.withdraw_p1` raises a named refusal. What it points at has changed with
-  the finalized model, and the old wording here — "convert into another
-  organization election (**one of three**)" and "a loss returns 90% **as cash**"
-  — described two mechanisms that no longer exist: the three-conversion budget
-  (retired with `MAX_CONVERSIONS`) and the loser's cash refund (there is one
-  clean 10% skim for everybody now, and the other 90% is EBX, not cash). The two
-  real exits today are: **set the allocation back down** inside its own week
-  (`POST /wallet/commit` is a position, not an addition), or **move it** to
-  another open race (`POST /wallet/move`, free and unlimited until the roll).
-  After the roll there is no exit — it is EBX and it stays with its mission.
-  `cause.html` still shows the button; removing it is a backlog item.
-- **Phase-3 org-loss withdrawal (deferred):** once orgs are decided, a
-  benefactor whose org **loses** should have their 90% immediately
-  withdrawable, but only after **acknowledging they don't trust the winning
-  organization** (wording/flow TBD). Tune after phase 2 settles.
+*Restated 2026-09-16 against [`docs/money_model.md`](docs/money_model.md) §6.*
+
+- **Purchased tokens that have not entered an election** can be withdrawn at face
+  value, to Cash, at any time. Granted tokens never can.
+- **Until budget day (T+15) the non-final part of a stake can be withdrawn as
+  cash** — `POST /wallet/withdraw-stake` (built 2026-09-16, build-seq §2), open
+  once the mission's initiative election has closed. The finality ladder decides
+  how much is final: 10% of an ME stake at T, another 10% of an OE stake at T+8,
+  everything at T+15. No page offers it yet.
+- **From budget day on there is no cash exit.** A benefactor who no longer
+  believes in a mission sells its EBX for another mission's EBX on the DEX.
+- **Losers are not refunded; they move.** Backers of a losing initiative or a
+  losing organization exchange into another mission during framing
+  (T+8 → T+15). `cause.html` still shows the old phase-2 withdraw button; removing
+  it is a REMOVAL REGISTER item.
 
 ### Membership roles
 
@@ -344,93 +436,98 @@ mission.
 
 ---
 
-## 5. The money model (in the early stages)
+## 5. The money model
 
-### At a glance — one rate, four states
+*Summary of [`docs/money_model.md`](docs/money_model.md), rewritten **2026-09-16**.
+Where this and that file disagree, that file is right. Its §0 lists every ruling;
+its §12 lists what the code does and does not implement.*
 
-*Finalized 2026-08-27c. `docs/token_model.md` is the full statement and
-`docs/ME_OE_FINALIZATION.md` is the record of the decisions; this is the short
-version.*
+**EBX is a non-withdrawable digital unit representing a holder's position in a
+mission's remaining charitable capital.** Each mission runs its own fungible EBX
+pool. After budget day EBX trades on the **Earthbux DEX** for other missions' EBX,
+and it is **consumed** as the mission's capital is deployed — to the elected
+organization, to Earthbux operations, and to authorized citizen-research rewards.
+**Cash buys a position in a mission; after budget day the only way out of a
+position is into another mission.**
 
-**In the early stages, Tokens are convertible; EBX is not.** That is the whole model, and everything
-else follows from it.
+### The benefactor's loop
 
 ```
-unallocated  →  committed  →  minted  →  donated
-free tokens     to a tiv       to a       consumed by the
-                or a phl       mission    org, or by Earthbux
+Choose mission (P1 initiative election, P2 organization election)
+   ↓
+Commit tokens ───────────────────► 10% final at T, +10% at T+8
+   ↓                                  (rest withdrawable as cash)
+Framing, T+8 → T+15 ─────────────► losers exchange into another mission
+   ↓
+Budget day, T+15 ────────────────► 100% FINAL — the donation receipt is complete
+   ↓                                  the organization claims 5/16 of the pool
+Watch · hold / sell / buy another mission (the DEX, P4)
+   ↓
+Eventually all capital is deployed
 ```
 
-- **Ten tokens appear each week**, against that week's cause, and can only be
-  spent in its elections. Ten is a floor, not a ration: hold six and four
-  arrive, hold twenty and twenty are votable. A granted token has no free window
-  — it appears in its election week — so it can be neither transferred nor
-  withdrawn. **Purchased tokens are the only mobile money**: any race, and
-  withdrawable at face value until they enter one.
-- **The vote is a split; the commit is an amount.** Percentages across up to ten
-  initiatives, and one number for the whole election. A slate can stand before
-  the tokens that will back it.
-- **The week change is the ratchet.** Inside its own week an allocation is a
-  draft — move it as often as you like, at no cost. At the roll, every standing
-  organization-election allocation becomes EBX for that mission and stops
-  moving. Initiative allocations stay soft until the election closes, because
-  EBX cannot predate its mission.
-- **A clean 10%, across the board.** Winners and losers pay the same skim. The
-  other 90% becomes the benefactor's EBX for that mission — held, mission-tied,
-  and donated in tranches as the mission runs, each deductible when it crosses.
-- **Being right is worth standing, not money**: early EBX for backing the
-  winning initiative, an upgraded mission membership for backing the winning
-  philanthropy, and influence in the next decision (2× / 2× / 1.5×).
+### The finality ladder
 
-The promise, in one clause: **10% of whatever you commit is the skim; the other
-90% becomes your EBX for that mission.**
+| When | What becomes final |
+|---|---|
+| **T** — initiative election closes | 10% of every ME stake |
+| **T+8** — organization election closes | another 10% of every OE stake (20% of money carried from the ME) |
+| **T+15** — budget day | 100% |
 
-### Where a donation goes
+- **A skim only marks finality.** A final ct is deductible and can no longer be
+  withdrawn as cash; it stays in the benefactor's position and funds nothing by
+  itself. Winners and losers pay the same rates.
+- **Until T+15 the non-final part is withdrawable as cash** (`POST /wallet/withdraw-stake`; no page yet).
+- **Losers move during framing.** Backers of a losing initiative or a losing
+  organization exchange into another mission during T+8 → T+15 and become EBX
+  there (not built — today the code mints losing-org backers behind the winner).
+- **Commit** is the button a benefactor presses. Committing to a cause or an
+  initiative is not a donation; committing to an organization makes EBX; 100% is a
+  donation only at T+15.
 
-A commitment is **10% donated and 90% held**, and the held part is donated later,
-in tranches, as the mission runs. Two words that are easy to run together and
-must not be:
+### The grant
 
-- **Donate** is the benefactor's act, and each EBX crosses that line **once**.
-  What is donated is split by percentage between **Earthbux** and the elected
-  **organization**.
-- **Spend** is what each of those two does with its share afterwards,
-  **incrementally**, over the life of the mission.
+Ten tokens a week, **stamped with the week, never a cause** — a granted token may
+enter the ME or OE closing that week. Ten is a floor (`max(0, 10 − free)`). The
+grant is **real money**: Earthbux grants $1 per user per week, funded by
+program-related investments, so granted tokens mint ordinary EBX.
 
-So a benefactor can watch their donation being used without their donation
-changing size — which is the point of holding a receipt whose worth tracks how
-well the money was spent.
+### The DEX
 
-**Not built.** There is no donation intake and no researcher payout; the
-Earthbux/organization percentages are not set, and what triggers each tranche
-after the first belongs to the parked resolutions work. The ledger's `bucket`
-field is where they will land.
+**Per-mission pools plus a common pool** (decided); constant-product pricing
+(`x · y = k`); **capital follows the claim** — converting EBX-A to EBX-B moves the
+capital to mission B. DEX price (what people expect) and coin value (what the
+mission has achieved) are different numbers and are never drawn as one. After the
+organization's guaranteed 5/16, capital is deployed in **provenance order** —
+converted-in first, then organization-election money, then the winning
+initiative's backers last. **That order is the reward for being right**; there
+are no correctness multipliers. Delisting is not yet designed.
+
+### The deployment schedule — the 32nds
+
+| Slice | 32nds | Goes to |
+|---|---:|---|
+| Research rewards | 3 | 1 each: situation · investigation · analysis |
+| Advances | 4 | 2 to Earthbux · 2 to the organization |
+| Framing release | 8 | the organization, on budget day |
+| Flexible | 17 | Earthbux (max 8) · the organization · benefactor exchange |
+| **Total** | **32** | |
+
+The organization's **guaranteed 10/32 (5/16)** — framing release plus advance — is
+claimed from the whole pool **on budget day**, before the exchange begins, so the
+DEX cannot undermine it. Earthbux can receive at most 2 + 8 = 10/32. During the
+exchange phase the organization's releases are triggered by community support for
+budget items, **weighted by the voter's EBX holdings**; a negative vote only counts
+from a holder.
 
 ### Votes by phase
 
 | Phase | Elects | Vote rule | At the close |
 |---|---|---|---|
-| **1 — Initiative** | which initiative the mission runs | a percentage split across up to 10 initiatives, times one commit | nothing is skimmed. Backers of the winner mint **early EBX**; backers of a loser keep **marked tokens** |
-| **2 — Organization** | which org runs it | one philanthropy per benefactor; weight follows the curve | a clean **10%** of every stake is donated; the rest is EBX |
-
-### Resolution split
-
-At resolution, the mission **pool** (all committed EBX — nothing is refunded; the
-remainder is held for the credit-release phase) is allocated in **32nds**:
-
-| Slice | Fraction | Notes |
-|---|---:|---|
-| EN — mission side | 8/32 (¼) | EN's operating budget |
-| EN — advance | 2/32 (1/16) | releases with the case post reward |
-| **EN total** | **10/32 (5/16)** | |
-| Org — mission side | 8/32 (¼) | guaranteed |
-| Org — advance | 2/32 (1/16) | releases with the case post reward |
-| **Org guaranteed** | **10/32 (5/16)** | the budgeting **floor** |
-| Reward — best context | 1/32 | benefactor post reward |
-| Reward — best investigation | 1/32 | benefactor post reward |
-| Reward — best analysis | 1/32 | benefactor post reward |
-| **Flexible remainder** | **9/32** | released in credit phase → org or back to benefactors |
-| **Total** | **32/32** | |
+| **P1 — Initiative** | which initiative the mission runs | a whole-percentage split across up to 10 initiatives, times one commit | 10% of every stake final; the winner's backers mint early EBX; losers hold marked tokens until framing |
+| **P2 — Organization** | which org runs it | one organization per benefactor; weight follows the block curve | another 10% final; the org is named |
+| **P3 — Framing** | — | budget items posted, not yet voted | budget day (T+15): 100% final, organization claims 5/16 |
+| **P4 — Exchange** | releases | holder-weighted support for budget items | tranches released as exchanges; DEX open |
 
 ### The discussion model — a post type for every phase
 
@@ -526,40 +623,51 @@ Only *which post type wins each slice and when it releases* changed; the 32nds
 sizes are unchanged. Enforcement reads the rewarded set from `post_config.py`
 (`REWARDED_TYPES` = context · investigation · analysis).
 
-- EN only takes its cut when the pool clears `POOL_THRESHOLD` ($100).
+- EN only draws its share once the pool clears `POOL_THRESHOLD` ($100).
 - **Budgeting range** (`mission_budget_range`): the org's **minimum** is a
-  concrete figure (its guaranteed 10/32 of today's pool); the **maximum** is
-  *uncapped* (guaranteed + the 9/32 flexible, and both grow as new donations
-  arrive). The org drafts hypothetical budgets between the two.
-- **The skim** is a clean **10%** of every stake at the organization election,
-  winners and losers alike (2026-08-27c), and it is the first donation tranche
-  rather than a charge outside the flow. The 20%/10% and 100%/20% send rates,
-  and the loser carryover with its `commitment_fund` skim, are **retired** —
-  nothing has rolled to a cause's next election since 2026-08-20. See
-  [§6](#6-voting--the-election-algorithm).
+  concrete figure (its guaranteed 10/32 of today's pool); the **maximum** adds its
+  share of the 17/32 flexible, and both grow as new donations arrive. The org
+  drafts hypothetical budgets between the two. Capital follows the claim on the
+  DEX, but the floor is paid on budget day, before the DEX opens, so the market
+  cannot move it.
+- **The skims** (2026-09-16): 10% final at the initiative election and another
+  10% at the organization election, winners and losers alike. They only mark
+  finality — nothing is paid out of a skim. Earthbux is funded from its 2/32
+  advance and up to 8/32 of the flexible, like any other line.
 - Every slice is written to the `transactions` ledger; `pools` is a derived cache.
 
-### Credits & EBX
+### EBX, the coin, and deductibility
 
-- **EBX is a state, not a second currency.** A token becomes EBX when its
-  mission identity is final — at the roll after an organization-election
-  allocation, or on the spot for a backer of the winning initiative. It is
-  mission-tied and it does not move.
-- **The mint and the coin are two events.** EBX exists at mission identity; the
-  COIN — `models.CreditCoin`, the receipt — is issued later, at budget
-  (`BUDGET_SET_WEEKS`). `mint_mission_coins` still runs at `finalize_p2`, which
-  is the older timing and a named backlog item. **Holding a coin = mission
-  membership.** Staff/test coins render greyed in the wallet.
+- **EBX is a position.** It exists from the moment a stake mints (the winning
+  initiative's backers at T, organization-election money at the week roll, losers
+  when they exchange in framing) and leaves existence when the capital it
+  represents is deployed.
+- **The mint and the coin are two events.** The COIN — `models.CreditCoin`, the
+  receipt — should issue at budget day; `mint_mission_coins` still runs at
+  `finalize_p2`. **Holding a coin = mission membership**, and membership survives
+  consumption: a donor keeps it because they hold the coin-receipt of the initial
+  advance.
+- **Deductibility follows the ladder.** 10% at T, another 10% at T+8, all of it at
+  T+15. The receipt is complete on budget day. A later DEX trade does not create,
+  reverse or resize a deduction. ⚠ Needs a lawyer — `docs/money_model.md` §14.
 - `GET /coin-value` = global value (net platform flow / `coin_value_scale`);
-  `mission.credit_value` moves with resolutions (`resolution_value_bump`).
-- Deductibility follows the **donation**, not a conversion: each EBX crosses to
-  Earthbux and the elected organization once, in tranches as the mission runs,
-  and is deductible when it crosses. "Converting" is not a step in the model any
-  more — a move between races is free and changes nothing about what is owed.
-  What determines the pool available to budget with is how much EBX stays held
-  against the mission rather than having crossed already.
-- **Design for failure:** many missions will fail (bad org, extreme costs) —
-  the coin model must tolerate that.
+  `mission.credit_value` moves with resolutions (`resolution_value_bump`). DEX
+  price is a **separate number** from coin value.
+- **Design for failure:** many missions will fail. The DEX makes failure visible
+  and tradeable, but the coin model must tolerate a mission that resolves to
+  nothing.
+
+### What the code does
+
+*`docs/money_model.md` §12 is the full list.* Built **2026-09-16**: `ME_SKIM` and
+`OE_SKIM` (0.10 each, booked into `votes_p2.donated_ct`, which now means
+final-so-far); budget-day finality (`wallet.final_ct_of`, `final_ct` on
+`GET /wallet`); grants stamped with a week (`grant_week`; `grant_cause_id` dropped,
+migration `e1a7c3b95d20`); correctness multipliers removed; the 32nds as
+constants in `token_model.py`. **Not built:** losers staying tokens through
+framing, cash withdrawal of the non-final part until T+15, the organization's 5/16
+claim, the withdrawal button on a page (the endpoint exists), percentage sliders on main.html, buying tokens, the DEX, provenance-order
+deployment, holder-weighted budget voting, and research-reward payouts.
 
 ### S/S/S → resolutions: the budgeting procedure
 
@@ -588,9 +696,9 @@ The procedure, end to end:
    Orgs post itemized cost lists; users **upvote** items (upvote-only — no down or
    neutral); the socially selected picks drive the money routing. An item is never
    revoked, and its slot frees only when it is **paid out**.
-2. **Budget (phase 3).** The org drafts hypothetical budgets between its
-   guaranteed floor (10/32) and the uncapped maximum (+9/32 flexible, growing
-   with donations). The release phase gets a projected **mission length** /
+2. **Budget (framing, P3).** The org drafts hypothetical budgets between its
+   guaranteed floor (10/32, claimed on budget day) and its maximum (+ its share
+   of the 17/32 flexible, growing with donations). The release phase gets a projected **mission length** /
    end date (`missions.projected_end_at`) — one strategy: end right before
    that cause's next phase-1, so the org can bid for another pool.
 3. **Steps.** Each release-phase **step** (`mission_steps`) carries a
@@ -601,10 +709,17 @@ The procedure, end to end:
    bumps coin value and logs an `evaluation`-bucket ledger note; early step
    resolution is flagged for bonus. Admin gantt renders the plan.
 
-Post lanes now live in `post_config.py`, not scattered constants. Authoring is
-open to any benefactor within scope; **membership gates *winning*, not posting.**
-Org/EN lanes are unchanged: `org_update` = authoring-org members · `editorial` /
-`headline` = staff.
+Post lanes now live in `post_config.py`, not scattered constants. **Membership
+gates posting as well as winning** — settled 2026-09-08 (§0c), where this line
+said the opposite of the code and the code won. `POST_REQUIRES_MEMBERSHIP` covers
+all three benefactor categories and `crud.create_post` enforces it: to author a
+*budgeting*, *research* or *review* post on a mission you must hold a membership
+there **or** have committed a phase-1 stake, which the model reads as an
+agreement to become a member. It is a low bar on purpose — a stake is one
+click — and it keeps drive-by posting off missions the author has no position in.
+Reversing it is one line in `post_config.py`; reversing it in the docs alone is
+what produced the disagreement. Org/EN lanes are unchanged: `org_update` =
+authoring-org members · `editorial` / `headline` = staff.
 
 ### The creditcoin — front & back (planned: the 3D earth)
 
@@ -622,58 +737,71 @@ region vs. distributed/global), which the globe must render appropriately.
 Requires location fields on benefactors, missions (typed), and organizations —
 see the INSTRUCTIONS `## BACKLOG`.
 
-### Transactional credit — decision framework
+### Transactional credit — what the DEX answered, and what it did not
 
-Benefactors should be able to **tune** a donation — to a cause, to an
-initiative within that cause, or simply to *the next mission* — and change the
-availability of their money throughout the process, possibly targeting a
-location, an organization, or a beneficiary type. The questions and key
-decisions to settle before building:
+Benefactors should be able to **tune** a donation — to a cause, to an initiative
+within a cause, or simply to *the next mission* — and change the availability of
+their money throughout the process. The 2026-09-04 rewrite answers the biggest
+questions in this list by making the answer structural rather than a setting:
+**you tune by trading.** What remains open is listed after.
 
-**1. Donation targets (what can EBX be aimed at?)**
-- Which target levels exist: platform-wide ("next mission") → cause →
-  initiative → mission → org → location → beneficiary type?
-- Is a target a *constraint* (money can only go there) or a *preference*
-  (routing weight)? Constraints can strand money; preferences dilute intent.
-- What happens to targeted money when the target never materializes (the
-  initiative never wins, no mission in that location)? Expiry → next mission?
-  Carryover like the loser path (90% + skim)?
-- Do targeted donations count as phase-1 votes, or is donating and voting
-  decoupled?
+**Answered by the model (2026-09-16):**
 
-**2. Availability (when can the benefactor change their mind?)**
-- ~~Which states can money be in: `available → committed → sent → converted`?~~
-  **ANSWERED 2026-08-27c** — `unallocated → committed → minted → donated`, and
-  the benefactor controls exactly one transition (commit / move), inside one
-  week. See §5. The rest of this list is still open.
-- At each phase, what fraction is withdrawable? (Today: P2 window minus the
-  send; phase-3 distrust withdrawal deferred.) Does targeting change the rates?
-- Can availability be scheduled ("release 10/week"), or only toggled?
-- Does changing a target mid-phase re-price the send rate already accrued?
+- ~~At each phase, what fraction is withdrawable?~~ The non-final part, as cash,
+  until T+15: 90% after the ME, 80% of ME-carried money after the OE, nothing
+  from budget day on. Purchased, uncommitted tokens are always withdrawable.
+- ~~Which states can money be in?~~ `unallocated → committed → EBX → consumed`,
+  with *final* as an overlay and DEX trading as a loop on EBX.
+- ~~What happens to targeted money when the target never materializes?~~ Backers
+  of a losing initiative or organization exchange into another mission during
+  framing.
+- ~~Tax-deductibility timing?~~ The ladder: 10% at T, +10% at T+8, 100% at T+15.
+- ~~Does changing a target mid-phase re-price the send rate already accrued?~~
+  There are no send rates. There are two skims and a pool price.
 
-**3. Routing & precedence**
-- When constraints conflict (org X but location Y, and X doesn't operate in
-  Y), who wins — and is the benefactor told at donate time or at routing time?
-- Order of application: location vs org vs beneficiary-type filters.
-- Does untargeted money in a pool inherit the socially-selected S/S/S picks by
-  default (it should — decide explicitly)?
-- Minimum granularity: is location a country / region / radius / mission-site
-  match (ties into the mission location-types)?
+**Still open:**
 
-**4. Ledger & value**
-- Every tuning change is a `Transaction` — new `type='retarget'` or a bucket?
-- Do targeted coins carry their target on the coin (visible on the coin
-  front)? Does a tighter target affect coin value or rewards?
-- Tax-deductibility timing: at commit, at send, or at conversion — and does
-  targeting change it?
+**1. Targets below the mission.** Committing is per-mission by construction. Is
+there any sub-mission target left worth having — a location, a beneficiary type,
+an S/S/S line — and is such a target a *constraint* (money can only go there,
+and can strand) or a *preference* (routing weight, which dilutes intent)?
 
-**5. Abuse & failure modes**
-- Can targeting be used to steer a pool toward a colluding org (a benefactor
-  "buying" an election via availability games)? Caps needed?
-- What happens to tightly-targeted money in a failed mission (design for
-  failure, as with coins)?
-- Parental-approval interaction: kids' money (see §Accounts) presumably can't
-  be retargeted without re-approval — confirm.
+**2. Does price do anything, or only say something?** Today it is pure signal.
+Candidates for giving it teeth: steering the 17/32 flexible toward
+premium missions, gating an org replacement on a sustained discount, or feeding
+the cause election. Each one turns the DEX into a governance mechanism and
+invites the manipulation in §5 below.
+
+**3. Routing & precedence.** When constraints conflict (org X but location Y, and
+X doesn't operate in Y), who wins — and is the benefactor told at commit time or
+at routing time? Does untargeted capital inherit the socially-selected S/S/S
+picks by default (it should — decide explicitly)?
+
+**4. Ledger & value.** Is a swap a `Transaction` of its own type (`swap`), or a
+paired burn/mint? Do coins carry the position that funded them, or the position
+currently held? Does DEX price appear on the coin front at all — and if it does,
+how is it kept visually distinct from coin value?
+
+**5. Abuse & failure modes.** The DEX adds a market, and markets attract the
+things markets attract:
+- **Wash trading to manufacture confidence.** A benefactor round-tripping their
+  own position moves the price without changing anyone's exposure. Caps, fees,
+  or per-account netting?
+- **Steering a pool toward a colluding org** by buying that mission's EBX to
+  make it look supported — cheaper than the old "buying an election via
+  availability games", so this got *more* pressing, not less.
+- **Thin-pool swings.** With per-mission pools, a small trade in a quiet mission
+  produces a dramatic price. Minimum liquidity before a price is displayed at
+  all?
+- **Grant-funded market pressure** — the grant is real money (PRI-funded), so
+  granted EBX is backed; the question is only whether many small accounts can
+  move thin pools.
+- **Kids' accounts.** Money gated by parental approval (see §Accounts)
+  presumably cannot be traded without re-approval — and a trade is now the
+  ordinary way to act, not an edge case. Confirm before kids' accounts ship.
+- **Failed missions.** Tightly-held EBX in a mission that resolves to nothing:
+  the holder donated, the money did little, and there is no remedy by design.
+  Confirm this is what we mean to say to them, in those words.
 
 ---
 
@@ -686,9 +814,9 @@ release.
 
 **Constants** (`crud.py`): `EBX_PER_VOTE = 10` (10 EBX = 1 vote), `BASE_VOTE_EBX
 = 10` (a vote carries weight even with no tokens committed), `SHARE_SUM_CAP = 1.0`,
-`VALENCE_SIGN = {helpful:+1, neutral:0, harmful:−1}`, `P1_SEND_* = 0` (the
-initiative election is a routing step) and `P2_SKIM = 0.10` — **one rate, paid
-by everyone**. The win/lose fork went on 2026-08-27c.
+`VALENCE_SIGN = {helpful:+1, neutral:0, harmful:−1}`, `P1_SEND_* = 0.10` and
+`P2_SKIM = 0.10` — the finality ladder's two skims (2026-09-16), mirrored from
+`token_model.py`. See [What the code does](#what-the-code-does).
 
 ### Phase 1 — initiative election (`VoteP1`, one row per `(ben, tiv)`)
 
@@ -699,11 +827,11 @@ by everyone**. The win/lose fork went on 2026-08-27c.
   so a mission's rows sum to the commit exactly. Editable any time before
   finalization; every change writes a vote `Transaction`.
   Since 2026-08-27c the commit is reconciled against the **wallet**: raising it
-  spends unallocated ct, lowering it hands the difference back (an initiative
-  allocation is soft until the close), and granted ct may only enter the
-  elections of the cause it was granted against. The client-side
-  `10 + localStorage` budget that preceded it is gone, along with the double
-  count it caused in the allocations panel.
+  spends unallocated ct and granted ct may only enter the elections closing on
+  its grant week (2026-09-16; for the ME that is the week's active cause). The client-side `10 + localStorage` budget that
+  preceded it is gone, along with the double count it caused in the allocations
+  panel. Lowering a commit before the close hands the difference back; the final
+  part of a stake (after a skim) cannot come back.
   Every tiv in a slate **must belong to that mission** — the guard matches ids
   explicitly, so an initiative with a NULL `mission_id` is rejected rather than
   silently inserted (that hole produced a `UNIQUE(ben_id, tiv_id)` 500; §0a
@@ -727,40 +855,33 @@ by everyone**. The win/lose fork went on 2026-08-27c.
 - **Loser re-listing** (`_relist_losers`, renamed 2026-08-20): every non-winning
   initiative is **re-listed automatically into its cause's next-cycle mission**
   (`status` back to `suggested`, created on demand). **The idea moves; the money
-  does not.** Until 2026-08-20 this also dragged each backer's vote row into the
-  next cycle minus a 10% skim; there is one skim now and it falls after the
-  organization election, so `COMMITMENT_FUND_SKIM` is 0 and nothing rolls.
-- **Carrying the money forward** (`_open_oe_stakes`, 2026-08-20): every backer —
-  the winner's and the losers' alike — gets a `VoteP2` stake in THIS mission's
+  does not**: losing backers hold marked tokens in this mission and exchange into
+  another mission during framing. `COMMITMENT_FUND_SKIM` is 0.
+- **Carrying the money forward** (`_open_oe_stakes`): every backer — the
+  winner's and the losers' alike — gets a `VoteP2` stake in THIS mission's
   organization election holding the whole of what they committed, with no
-  philanthropy named, plus the credit coin's **first element** (cause,
-  initiative backed, date, winning initiative). Idempotent per mission.
+  organization named, plus the credit coin's **first element** (cause, initiative
+  backed, date, winning initiative). **10% of the stake is booked final**
+  (`donated_ct`, 2026-09-16). The winner's share mints as early EBX; the rest is a
+  marked token. Idempotent per mission.
 
 ### What happens to a commitment once phase 1 closes
 
-Rewritten 2026-08-27c. `docs/token_model.md` §7 is the full statement:
+*`docs/money_model.md` §6 is the full statement (2026-09-16).*
 
-- **Nothing is skimmed and nothing rolls to another cause.** The whole
-  commitment moves into the winning initiative's organization election, in the
-  same mission. The initiative election is a routing step, not a settlement.
-- **Backers of the winner mint EARLY EBX.** Their ct become EBX for this mission
-  on the spot, a week ahead of everybody else's, locked in this organization
-  election until it finalizes and counting exactly as tokens for voting in it.
-  That is the reward for being right: the same money, sooner, in a mission they
-  chose.
-- **Backers of a loser keep MARKED TOKENS.** Still tokens, still movable,
-  carrying the initiative they voted for. They may go to any of the eight open
-  organization elections **by voting for a philanthropy there** — the vote is the
-  commitment — and a token that waits watches six more races open under it, which
-  is the model's fourteen. If it does neither, it commits to whoever wins the
-  race it is sitting in: silence is not a withdrawal.
-- **The one skim falls when the philanthropy is elected**: a clean 10% of every
-  stake, whoever it backed, with the other 90% becoming that benefactor's EBX
-  for the mission.
+- **10% of every stake is final**, winners and losers alike. It stays in the
+  benefactor's position; the other 90% can still be withdrawn as cash until T+15
+  (not built).
+- **Backers of the winning initiative mint early EBX** in the organization
+  election. There is no multiplier for being right — their reward is being
+  deployed last.
+- **Backers of a losing initiative hold marked tokens** and exchange into another
+  mission during framing (T+8 → T+15), becoming EBX there. Today's code still lets
+  a marked token move to any open OE race during the OE instead.
 - **The pre-2026-08-20 carryover machinery still exists** —
   `GET/PUT /missions/{id}/p1/carryover`, `_send_floor`, the `carryover` ledger
   bucket — and still describes races finalized under the old rules honestly.
-  Removing the endpoints is a backlog item.
+  Removing the endpoints is a REMOVAL REGISTER item.
 
 ### Phase 2 — organization election (`VoteP2`, one row per `(ben, mission)`)
 
@@ -777,17 +898,15 @@ Rewritten 2026-08-27c. `docs/token_model.md` §7 is the full statement:
 - **Finalize** (`finalize_p2`, fired **8 weeks after the initiative election** = 15
   weeks after the mission opens): elects the top net-vote org, sets `winning_org_id`, advances the mission to
   `budget`. No-op without a positive signal.
-- **Settlement** (`_settle_oe_stakes`, 2026-08-27c): everything still a token
-  becomes EBX — an unvoted stake follows the winner of the race it is sitting in,
-  and a marked token that never moved commits here too — and then the first
-  donation tranche crosses at a clean 10%. Booked per benefactor rather than
-  recomputed on every read, which is what `minted_ct` / `donated_ct` are for.
-- **Phase-2 withdrawal** (`withdraw_p1`) is a **named refusal**. Inside the week
-  an allocation is undone by setting it back down (`POST /wallet/commit` is a
-  position); after the roll it is EBX, and EBX stays with its mission. The only
-  exit from the token bin is `POST /wallet/withdraw`, open to purchased ct that
-  has not entered an election. (Phase-3 "org loses → 80% withdrawable with a
-  distrust acknowledgment" is **deferred** — see [§3 Withdrawals](#withdrawals).)
+- **Settlement** (`_settle_oe_stakes`): everything still a token mints to EBX
+  behind the winner (silence follows the winner of its own race), and **another
+  10% of every stake is booked final**, once. ⚠ The model keeps losing-organization
+  backers as tokens through framing so they can exchange into another mission;
+  the code still mints them here (`docs/money_model.md` §12, framing item 1).
+- **Withdrawal.** The model allows the non-final part of a stake to be withdrawn
+  as cash until T+15. Not built: `withdraw_p1` is still a named refusal, and the
+  only live exit is `POST /wallet/withdraw` for purchased ct that has not entered
+  a mission.
 
 ---
 
@@ -830,7 +949,7 @@ The public pages were built on a **client-side simulation** (a mock election
 engine + synthetic vote standings + per-browser localStorage votes). That layer
 has been **fully deconstructed**:
 
-- **Engine** (`ebx_shared.ts`) — `LocalElections` (which used to promote a
+- **Engine** (`ebx_shared.js`) — `LocalElections` (which used to promote a
   phase-1 winner into phase-2) and the mock `Votes` synthesizer are neutralized;
   the data loaders now read **real v2 shapes** (`loadInitiatives`,
   `loadOrganizations`, `loadFeed`, new `loadMissions`); `cycleStart` is aligned
@@ -881,26 +1000,64 @@ Three things landed on 2026-08-28 that change how two of those read:
 ## 10. Data & seeding
 
 - **Reference data** (the 7 causes) — should live in an idempotent seed.
-- **Live-data port** — `backend/seed/port_v1.py` copied the real data from the
-  pre-cutover backup into the v2 schema: 7 causes, 4 accounts (password hashes
-  preserved), 35 organizations, 55 initiatives (as a catalog, election state
-  reset). Idempotent; one-off.
-- **Sample data** — `backend/seed/pilot.py` (v1-shaped; needs a v2 rewrite).
-- Current DB: 7 causes · 4 accounts · 35 orgs · 55 tivs · 7 missions.
+- **Live-data port** — ~~`backend/seed/port_v1.py`~~ **is not in the tree.** It
+  copied the real data out of the pre-cutover backup at the v2 cutover and was
+  removed once it had run; so was the backup it read
+  (`backend/earthbucks.db.pre-v2.bak`). Both were documented here long after
+  they were gone, including a command that cannot execute. Corrected 2026-09-08
+  (build-seq §6).
+- **Sample data** — `backend/seed/pilot.py` is **retired** (build-seq §6,
+  "remove pilot seed"). It is v1-shaped, it cannot run against the v2 schema,
+  and it is the origin of the synthetic `init-0NN` initiatives and the
+  GameMaster account that still make up most of the development database. It is
+  listed in `docs/INSTRUCTIONS.md` `## REMOVAL REGISTER` §B rather than deleted here, because deleting
+  the generator does not remove the rows and the rows are what the pages are
+  currently developed against. **What replaces it is the voting bots.**
+- **Bots** (`scripts/bots/ebx_bots.py`, built 2026-09-16, rebuilt for build-seq
+  §2). Three AI benefactors with personalities (`scripts/bots/personas.json`):
+  **Jax3000** (aggressive forest-and-wildlife defender), **JJ420** (easygoing
+  ecosystem expert), **BotJoe9** (establishment-leaning, social justice). They
+  drive the REAL endpoints. Standard-library Python; one task per run, every bot
+  at once (a thread each), against any origin (`--base https://earthbux.net`):
+  `plan` (read-only JSON of the week and each bot's stakes and posts) ·
+  `initiatives` (ME vote in whole percentages, propose, case for/against, reply,
+  rate) · `organizations` (OE commit, nominate, case, reply, rate) · `budget`
+  (costed service/supply/support items, upvotes) · `research` (create or UPDATE
+  context/investigation/analysis posts) · `exchange` (move between open OE races,
+  withdraw the non-final part as cash). Words come from `--content week.json`
+  (keyed by handle, then task — `content.example.json`), or `--ai` (each bot asks
+  Claude with web search, in character; needs `ANTHROPIC_API_KEY` + `EBX_BOT_MODEL`);
+  with neither, bots still vote, rate, upvote and exchange. `--dry-run` prints
+  every write; `--only Jax3000` runs one bot.
+  - **The bot signature:** `benefactor_accounts.is_test` (migration
+    `f7b2d9e41c63`). A signup carrying the server's `EBX_BOT_KEY` in
+    `X-EBX-Bot-Key` is created as a test account; staff can mark any account with
+    `POST /admin/accounts/{id}/test`. Test accounts are excluded from `/stats`
+    member counts. Bot passwords live in `scripts/bots/bots.local.json`
+    (git-ignored).
+  - **New endpoints the bots needed:** `PUT /posts/{id}` (edit your own post) and
+    `POST /wallet/withdraw-stake` (the non-final part, as cash, until budget day).
+    A committed organization-election stake now also qualifies a benefactor to
+    post in that mission (`crud.can_post_mission`).
+- Current DB: 7 causes · 5 accounts (4 benefactors + the GameMaster admin) ·
+  35 orgs · 55 tivs · 20 missions.
 
 ---
 
 ## 11. Migrations & the v2 cutover
 
 ```
-… e8c5d2a7b491 → f4a9c1d2e6b3 (v1 head) → a9f2c1b4d7e3  (v2 rebuild — current head)
+… e8c5d2a7b491 → f4a9c1d2e6b3 (v1 head) → a9f2c1b4d7e3  (v2 rebuild)
+                                        … → c5d8f2a91e67  (aug27c finalized ME/OE — CURRENT HEAD)
 ```
 
 `a9f2c1b4d7e3` drops the v1 tables and builds the mission-centric schema. The
-cutover renamed the v2 modules into place; the v1 source is preserved inert as
-`*_old.py` (`models_old`, `schemas_old`, `crud_old`, `main_old`, `rollover_old`)
-and `routers_old/`. A pre-cutover DB backup is at
-`backend/earthbucks.db.pre-v2.bak`. Run with `uvicorn app.main:app`.
+cutover renamed the v2 modules into place. **The inert v1 source this paragraph
+used to describe — `*_old.py`, `routers_old/`, and the
+`backend/earthbucks.db.pre-v2.bak` backup — is no longer in the tree**; it was
+removed at some point and documented here anyway (corrected 2026-09-08,
+build-seq §6). Git has it if it is ever wanted. Run with
+`uvicorn app.main:app` from `backend/`.
 
 ---
 
@@ -919,19 +1076,68 @@ backend/
     database.py        engine / session / Base
     config.py          settings (DATABASE_URL, size_factor, …)
     routers/           auth, causes, organizations, initiatives, missions,
-                       candidacies, votes, posts, benefactors, transactions, admin
-    *_old.py, routers_old/   inert v1 source (reference)
-  alembic/versions/    migrations (head a9f2c1b4d7e3)
-  seed/                port_v1.py (live-data port), pilot.py (v1 sample)
-frontend/
-  src/ebx_shared.ts    shared engine source (esbuild → resources/js/ebx_shared.js)
+                       candidacies, votes, posts, benefactors, transactions,
+                       admin, stats
+    token_model.py     the money arithmetic (pure)
+    wallet.py          the only module that lets the money touch the database
+    post_config.py     post categories, types, limits, the flag classifier stub
+  alembic/versions/    migrations (head f7b2d9e41c63)
+  seed/                pilot.py (v1 sample — RETIRED, see §10)
+frontend/             RETIRED 2026-09-16 — inert; REMOVAL REGISTER §A
 index.html  main.html  cause.html  mission.html  profile.html  admin.html
-resources/js/ebx_shared.js   built engine
+resources/js/
+  ebx_shared.js      the shared engine, and its own source: edit it directly,
+                     then bump the `?v=` on the pages' script tags.
+  ebx_page.js        page helpers: the html escaper, date/number formatters,
+                     the watchlist (2026-09-08)
+  css/ebx_frontend.css   shared styles, incl. the five-tab site nav
+scripts/             the check suite — see §14
+  bots/ebx_bots.py   the voting bots (§10)
 docs/
-  structure.md       page-by-page build spec (per route)
-  INSTRUCTIONS.md    build queue (## BUILD SEQUENCE) + ## BACKLOG
-  CONTRACT_DRAFT.md  representative attestation (claim gate)
+  README's seven-file doc map, listed at the top of this file:
+  structure.md  INSTRUCTIONS.md  mission_model.md  money_model.md
+  RESEARCH.md   roles.md
+  DRL.csv  DRL_major_players.csv  DRL_partners_targets.csv  DRL_sources.csv
+  _to_delete/        retired originals — see §12a
 ```
+
+### 12a. The docs index
+
+*Build-seq §6 asked for an index and said "we don't need all of these docs".
+That was answered by pruning on 2026-09-09: fourteen files became **seven
+documents and four CSVs**, and the prune was done by folding, not deleting —
+every fold is recorded in `INSTRUCTIONS.md` `## REMOVAL REGISTER`, and the
+originals are in `docs/_to_delete/`.*
+
+| File | What it is | Standing |
+|---|---|---|
+| `structure.md` | page-by-page build spec, one section per route | **canonical** |
+| `INSTRUCTIONS.md` | the build queue + backlog + the plan + the removal register | **canonical** |
+| `money_model.md` | the money model in full — rewritten 2026-09-16 (finality ladder, grant week, 32nds, DEX) | **canonical** |
+| `mission_model.md` | what a mission IS between the two elections: phases, obligations, framing artifacts, vetting, and the org agreement | **canonical** — the spec `mission.html` is built from |
+| `RESEARCH.md` | the donation-landscape evidence base, sourced | **canonical** — evidence, not a build doc |
+| `roles.md` | the jobs Earthbux has to staff | **canonical** — one screen, and it is the org chart |
+| `README.md` | this file — the system model and the summary layer | **canonical** |
+| `DRL.csv` · `DRL_major_players.csv` · `DRL_partners_targets.csv` · `DRL_sources.csv` | the recipient landscape as data, one file per tab of the retired workbook | **data** — cited from `RESEARCH.md` §0a |
+
+**What was folded on 2026-09-09, and where it went**
+
+| Was | Now |
+|---|---|
+| `gantt.md` | `INSTRUCTIONS.md` `## THE PLAN` |
+| `to_delete.md` | `INSTRUCTIONS.md` `## REMOVAL REGISTER` |
+| `CONTRACT_DRAFT.md` | `mission_model.md` §7 |
+| the vetting checklist (was `RESEARCH.md` appendix) | `mission_model.md` §6a — it is a gate, not evidence |
+| `Donation_Landscape_Brief.md` | `RESEARCH.md` §2, with its two stale figures flagged against §3 |
+| `Endowed_Grantmakers_Deep_Dive.md` | `RESEARCH.md` §3 |
+| `Donation_Recipient_Landscape.xlsx` | dropped — all four tabs exported to CSVs beside `DRL.csv` |
+| `PLAN_2026-09-02.md` · `PLAN_2026-08-28.md` · `ME_OE_FINALIZATION.md` | `docs/_to_delete/` — spent planning passes and the superseded 2026-08-27c decision record |
+
+**The rule that keeps it at seven.** A new document is only a document if it is
+canonical for something no existing file owns. A pass, a decision record, or a
+piece of research is a **section** of the file that owns that subject, dated in
+place. That is why the plan is in the queue file and the contract is in the
+mission file.
 
 ---
 
@@ -940,25 +1146,30 @@ docs/
 ```bash
 cd backend
 ./.venv/bin/python -m alembic upgrade head        # schema (already applied)
-# ./.venv/bin/python -m seed.port_v1              # GONE — see docs/to_delete.md §B
+# ./.venv/bin/python -m seed.port_v1              # GONE — see INSTRUCTIONS.md ## REMOVAL REGISTER §B
 ./.venv/bin/python -c "from app.database import SessionLocal; from app import bootstrap; bootstrap.bootstrap(SessionLocal())"   # seed atm0..hpr0
 ./.venv/bin/uvicorn app.main:app --reload --port 8000
 # → http://localhost:8000  (pages) · /admin (console) · /docs (API)
 ```
 
-Rebuild the frontend engine after editing the TypeScript:
-
-```bash
-cd frontend && npm run build      # ebx_shared.ts → resources/js/ebx_shared.js
-```
+There is no frontend build: edit `resources/js/ebx_shared.js` directly and bump
+the `?v=` on the pages' script tags.
 
 ---
 
 ## 14. The checks — what each one is, and how to run it
 
-*Added 2026-08-28. There are eleven, they all pass, and none of them is a unit
-test: each drives the real server and asserts something a person would notice.
-Run them against a server on `127.0.0.1:8000`.*
+*Added 2026-08-28; **thirteen** since 2026-09-08. None of them is a unit test:
+each drives the real server and asserts something a person would notice. Run
+them against a server on `127.0.0.1:8000`.*
+
+> **2026-09-08:** the eight non-Chromium checks were run at the end of that pass
+> and all pass. The three Chromium ones (`oe_check`, `ce_check`,
+> `profile_check`) were **not** run — you keep Chromium and prefer to run them
+> yourself. Two of them have assertions that this pass deliberately changed and
+> that you should expect to see move: `oe_check` now requires **Commit on the OE
+> ballot** (it used to assert its ABSENCE), and its eight-row table assertions
+> now describe the *Show all races* view rather than the default.
 
 ### Two flavours
 
@@ -984,7 +1195,7 @@ PW_CHROME=/path/to/chrome node scripts/oe_check.js
 | Check | Browser | What it guards |
 |---|---|---|
 | `render_check` | jsdom | Every page mounts, every expected element is present exactly once, no script errors. The smoke test — run it first. |
-| `landing_check` | jsdom | `index.html`'s §1a–§1e say the words they are supposed to say. 43 assertions. |
+| `landing_check` | jsdom | `index.html` as rebuilt 2026-09-15 plus build-seq §2 (2026-09-16): How it Works, the four dated steps and their links, the halves below the steps, research band above budget band, runway vs `/stats`, the analytics beacon. 35 assertions. |
 | `posts_box_check` | jsdom | `cause.html`'s discussion box: the phase tabs, the category tabs, what is open when. |
 | `carryover_check` | jsdom | The signed-OUT path still renders — the failure mode where a page only works logged in. |
 | `date_audit` | jsdom | Every mission's five dates, from `EBX.Cycle.missionDates`, against the 7-week rotation. Two of them are FIXED POINTS you gave directly (atm0 → Aug 11, atm1 → Sep 29): if a change breaks either, the change is wrong. |
@@ -992,8 +1203,10 @@ PW_CHROME=/path/to/chrome node scripts/oe_check.js
 | **`ce_check`** | **Chromium** | **The CAUSE election.** Thirteen dated windows, six already confirmed and seven open; that a row of the cause table points the panel at the cause holding that window; that clicking keep-or-replace only DRAFTS a vote and Commit is what sends it; that the server refuses a confirmed window and an active cause as a challenger; that `?state=ce` deep-links. 80 assertions. |
 | **`oe_check`** | **Chromium** | **The ORGANIZATION election table**, and above all the conservation law: eight races and one unallocated balance share a single pot, so it dials amounts up and down and checks that nothing is created or destroyed on the way. Also: that a commitment is a POSITION (revisable inside its week), that the race pool moves when you commit, that an unassigned stake is still in the pool, that a refresh does not pay the grant twice. 90 assertions. |
 | **`profile_check`** | **Chromium** | The profile page's shape: three cards on top, seven weekly windows around the globe, the clockwise rule (top card in columns, side cards in rows, and the left column reversed), two cause colours per card, the globe actually turning, and that member mode is gated on a coin being *selected*. 42 assertions. |
-| `token_model_check` | — | Pure arithmetic in `token_model.py`. No server. 108 assertions. |
-| `wallet_check` | — | `wallet.py` against a live database: the position, the week roll, unlimited moves, withdrawal, early EBX vs a mark, the flat skim. 123 assertions. |
+| `token_model_check` | — | Pure arithmetic in `token_model.py`. No server. 107 assertions. Asserts the 2026-09-16 model: the finality ladder (10% / +10% / 100%), no correctness multipliers, the 32nds, the grant week. |
+| `wallet_check` | — | `wallet.py` against a live database: the position, the week roll, unlimited moves, withdrawal, early EBX vs a mark, the ME and OE skims booked as finality, the grant week, the $1 organization-election minimum, stake withdrawal. 132 assertions (2026-09-16). |
+| ~~`build_guard`~~ | — | **Retired 2026-09-16** with the TypeScript source it guarded. Prints a notice and exits; REMOVAL REGISTER §A. |
+| **`carry_audit`** | — | **New 2026-09-08.** Lists phase-1 positions standing in an initiative election that has already closed with **no phase-2 row to carry them** — money that was invisible on every surface until the `read_wallet` fix. It prints and stops: each line is a case-by-case call (carry it, refund it, or leave it), and where the organization election is already decided, carrying it would inject money into a settled race. Eight positions today, six of them mechanical. |
 
 Both Chromium checks used to carry a hardcoded `executablePath` pointing at a
 directory, so **neither had ever run** until 2026-08-28. They resolve a browser
