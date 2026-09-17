@@ -1193,6 +1193,12 @@
     }
     .vb-row__sub { font-family: var(--font-mono); font-size: 0.62rem; color: rgba(245,240,232,0.4); }
     .vb-row input[type=range] { width: 100%; accent-color: var(--vb); cursor: pointer; }
+    /* 2026-09-17: the ME commit amount, typed in the head beside the % sliders. */
+    .vb-amt {
+      width: 4.5em; font: inherit; font-family: var(--font-mono); font-weight: 700;
+      color: var(--vb); background: rgba(245,240,232,0.06);
+      border: 1px solid rgba(245,240,232,0.2); border-radius: 4px; padding: 1px 4px; margin-right: 4px;
+    }
     .vb-row__val {
       font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--vb);
       min-width: 62px; text-align: right; white-space: nowrap;
@@ -2515,9 +2521,16 @@
     //     tivs"), and whatever is left sits in the Uncommitted row;
     //   * commit normalizes the split to shares and PUTs it to the mission.
     // Everything below counts in WHOLE tokens (10 tokens = 1 vote for display).
-    let _myEbxByTiv = {};        // tiv_id → my committed tokens (server truth)
-    let _pendingEbx = {};        // tiv_id → tokens the ben has DIALED but not committed
-    let _slateExtra = {};        // tiv_id → true: in the dialog at 0 tokens (just toggled in)
+    // 2026-09-17 (build-seq §2): THE SLIDERS ARE PERCENTAGES. A slate is whole
+    // percentages of ONE commit amount, so the sliders look the same however
+    // much is committed, and adding tokens spreads them across the slate in its
+    // current proportions. Every figure is read from the benefactor's rows in
+    // the election each initiative is running in NOW — a re-listed loser's old
+    // tokens no longer show up (or get re-sent) in its new race.
+    let _myP1Rows = [];          // raw rows from /benefactors/me/p1-votes
+    let _pendingPct = {};        // tiv_id → whole % DIALED but not committed
+    let _pendingAmt = {};        // cause_id → tokens DIALED for the commit amount
+    let _slateExtra = {};        // tiv_id → true: in the dialog at 0% (just toggled in)
     // cause_id → extra tokens bought beyond the base 10. PERSISTED: structure.md
     // backlog — "after purchasing more initiative votes, my budget is reset to
     // 10 after reloading the page and it is impossible to reallocate any
@@ -2534,77 +2547,112 @@
     const MAX_SPLIT = 10;        // max initiatives one slate may be split across
     function _p1MissionForCause(causeId) {
       const ms = (EBX.config.missions || []).filter(m => m.cause_id === causeId);
-      return ms.find(m => m.current_phase === 'initiative' && !m.winning_tiv_id)
-          || ms.find(m => m.current_phase === 'initiative') || null;
+      // 2026-09-17: the UPCOMING undecided election (lowest cycle), never a
+      // decided one — a decided race takes no slate.
+      return ms.filter(m => !m.winning_tiv_id && ['pre', 'initiative'].includes(m.current_phase))
+               .sort((a, b) => (a.cycle_num || 0) - (b.cycle_num || 0))[0] || null;
     }
     async function loadMyP1Votes() {
       _myP1ByMission = {};
-      _myEbxByTiv = {};
+      _myP1Rows = [];
       if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn() && EBX.Auth.fetchAuthed)) return;
       try {
         const r = await EBX.Auth.fetchAuthed('/benefactors/me/p1-votes');
         if (r && r.ok) {
-          (await r.json()).forEach(v => {
-            const m = _myP1ByMission[v.mission_id] || (_myP1ByMission[v.mission_id] = { shares: {}, ebx: 0, committed: false });
+          _myP1Rows = await r.json();
+          _myP1Rows.forEach(v => {
+            const m = _myP1ByMission[v.mission_id] ||
+              (_myP1ByMission[v.mission_id] = { shares: {}, pct: {}, ct: 0, ebx: 0, committed: false });
             m.shares[v.tiv_id] = v.share;
-            m.ebx += (v.ebx_committed || 0);
+            m.pct[v.tiv_id] = Math.round((Number(v.share) || 0) * 100);
+            const ct = (v.stake_ct != null) ? Number(v.stake_ct) : Math.round((v.ebx_committed || 0) * 100);
+            m.ct += ct;
+            m.ebx += ct / 100;
             if (v.committed) m.committed = true;
-            _myEbxByTiv[v.tiv_id] = (_myEbxByTiv[v.tiv_id] || 0) + (v.ebx_committed || 0);
           });
         }
       } catch (e) {}
     }
     window.loadMyP1Votes = loadMyP1Votes;
-    // My committed tokens on a tiv (server truth).
-    function _myEbxFor(tivId) { return Math.round(_myEbxByTiv[tivId] || 0); }
-    // The value the dialog + the My-vote column show: a dialed edit wins.
-    function _allocFor(tivId) {
-      return (tivId in _pendingEbx) ? _pendingEbx[tivId] : _myEbxFor(tivId);
+    function _tivById(tivId) { return (EBX.config.initiatives || []).find(i => i.id === tivId) || null; }
+    // My row for an initiative, in the election it is running in now.
+    function _myRowFor(tivId) {
+      const tiv = _tivById(tivId);
+      if (!tiv) return null;
+      return _myP1Rows.find(v => v.tiv_id === tivId && v.mission_id === tiv.mission_id) || null;
     }
-    // Kept for the shared election-card code: My-vote reads in tokens now.
+    function _savedPct(tivId) {
+      const row = _myRowFor(tivId);
+      return row ? Math.round((Number(row.share) || 0) * 100) : 0;
+    }
+    // My committed tokens on a tiv (server truth), in its current election.
+    function _myEbxFor(tivId) {
+      const row = _myRowFor(tivId);
+      if (!row) return 0;
+      return Math.round(((row.stake_ct != null) ? Number(row.stake_ct) / 100 : (row.ebx_committed || 0)));
+    }
+    function _pctFor(tivId) { return (tivId in _pendingPct) ? _pendingPct[tivId] : _savedPct(tivId); }
+    // The commit amount for a cause: a dialed amount wins, else what is
+    // committed, else the whole budget (so a first vote carries the grant).
+    function _savedAmtFor(causeId) { return _meCommittedTkFor(causeId); }
+    function _amountFor(causeId) {
+      const budget = committableFor(causeId);
+      const want = (causeId in _pendingAmt) ? _pendingAmt[causeId]
+        : (_savedAmtFor(causeId) > 0 ? _savedAmtFor(causeId) : budget);
+      return Math.max(0, Math.min(budget, Math.round(Number(want) || 0)));
+    }
+    // Tokens on a tiv as the dialog stands — % × amount. Kept in tokens for the
+    // cards and table columns that read it.
+    function _allocFor(tivId) {
+      const tiv = _tivById(tivId);
+      if (!tiv) return 0;
+      const pct = _pctFor(tivId);
+      if (!pct) return 0;
+      return Math.round(pct * _amountFor(tiv.cause_id) / 100);
+    }
     function _myVotesFor(tivId) { return _myEbxFor(tivId); }
     function _shownVotesFor(tivId) { return _allocFor(tivId); }
-    // Uncommitted = tokens the ben has moved in the dialog but not yet committed.
-    // (The dialog's own Uncommitted ROW is a different, complementary number:
-    // the part of their budget still unallocated. Both are shown.)
-    function _uncommittedVotes(causeId) {
-      let sum = 0;
-      Object.keys(_pendingEbx).forEach(id => {
-        const tiv = (EBX.config.initiatives || []).find(i => i.id === id);
-        if (causeId && (!tiv || tiv.cause_id !== causeId)) return;
-        sum += Math.abs((_pendingEbx[id] || 0) - _myEbxFor(id));
+    // Is anything dialed for this cause (or any cause)?
+    function _meHasDraft(causeId) {
+      const tivDraft = Object.keys(_pendingPct).some(id => {
+        const t = _tivById(id);
+        return t && (!causeId || t.cause_id === causeId) && _pendingPct[id] !== _savedPct(id);
       });
-      return Math.round(sum);
+      const amtDraft = Object.keys(_pendingAmt).some(cid =>
+        (!causeId || cid === causeId) && _slateFor(cid).length && _amountFor(cid) !== _savedAmtFor(cid));
+      return tivDraft || amtDraft;
+    }
+    window._meHasDraft = _meHasDraft;
+    window._pctFor = _pctFor;
+    // The net tokens a draft would move into (or out of) the initiative elections.
+    function _uncommittedVotes(causeId) {
+      const causes = causeId ? [causeId] : (EBX.config.causes || []).map(c => c.id);
+      let sum = 0;
+      causes.forEach(cid => {
+        if (!_meHasDraft(cid)) return;
+        const slate = _slateFor(cid).filter(i => _pctFor(i.id) > 0);
+        const next = slate.length ? _amountFor(cid) : 0;
+        sum += next - _savedAmtFor(cid);
+      });
+      return Math.round(Math.abs(sum));
     }
     window._myVotesFor = _myVotesFor;
     window._shownVotesFor = _shownVotesFor;
     window._uncommittedVotes = _uncommittedVotes;
     window._allocFor = _allocFor;
 
-    // §2 (2026-08-21) — **what this benefactor has allocated to INITIATIVES**,
-    // in centitokens, for the allocations bar. There is no server-side ct figure
-    // for the phase-1 side yet (the ME table still spends the old client-side
-    // budget — backlog "Make the ME table one-way too"), so it is summed from
-    // the committed phase-1 vote rows the page already loads.
-    //
-    // Only rows in a mission whose initiative election is STILL OPEN count. Once
-    // `finalize_p1` runs, that commitment has been carried into the mission's
-    // organization election and is already inside `wallet.staked_ct` — counting
-    // it here as well would report the same tokens twice and make the bar's
-    // total larger than the wallet.
+    // What this benefactor has committed to INITIATIVE elections, in ct, for
+    // the allocations bar. Only elections STILL OPEN count: a decided one was
+    // carried into its organization election and is inside `wallet.staked_ct`.
     function _meAllocatedCt() {
       const missions = EBX.config.missions || [];
-      const tivs = EBX.config.initiatives || [];
-      let ebx = 0;
-      Object.keys(_myEbxByTiv).forEach(tivId => {
-        const amount = Number(_myEbxByTiv[tivId]) || 0;
-        if (amount <= 0) return;
-        const tiv = tivs.find(i => i.id === tivId);
-        const m = tiv ? missions.find(x => x.id === tiv.mission_id) : null;
-        if (m && m.winning_tiv_id) return;     // already carried into its OE
-        ebx += amount;
+      let ct = 0;
+      Object.keys(_myP1ByMission).forEach(mid => {
+        const m = missions.find(x => x.id === mid);
+        if (!m || m.winning_tiv_id) return;
+        ct += _myP1ByMission[mid].ct || 0;
       });
-      return Math.round(ebx * 100);
+      return Math.round(ct);
     }
     window._meAllocatedCt = _meAllocatedCt;
 
@@ -2651,11 +2699,23 @@
     // allocation is soft until `finalize_p1`, because the mission identity is
     // not final until the election is).
     function _meCommittedTkFor(causeId) {
-      const inits = (EBX.config.initiatives || []).filter(i => i.cause_id === causeId);
-      return inits.reduce((n, i) => n + (Number(_myEbxByTiv[i.id]) || 0), 0);
+      const m = _p1MissionForCause(causeId);
+      return m && _myP1ByMission[m.id] ? Math.round((_myP1ByMission[m.id].ct || 0) / 100) : 0;
     }
     function committableFor(causeId) {
-      const freeCt = (typeof window._walletFree === 'function') ? window._walletFree() : 0;
+      // 2026-09-17: a GRANTED token may only enter the week's active cause's
+      // initiative election (the server's door); anywhere else only purchased
+      // tokens can be committed, so the budget says so instead of promising
+      // tokens the server will clamp to zero.
+      let isDoor = true;
+      try {
+        const idx = EBX.Cycle.now().causeIndex;
+        const c = (EBX.config.causes || []).find(x => x.id === causeId);
+        isDoor = !c || c.index === idx;
+      } catch (e) {}
+      const freeCt = isDoor
+        ? ((typeof window._walletFree === 'function') ? window._walletFree() : 0)
+        : ((typeof window._walletPurchasedFree === 'function') ? window._walletPurchasedFree() : 0);
       const mine = _meCommittedTkFor(causeId);
       if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn())) return BASE_EBX;
       return Math.max(0, Math.round(freeCt / 100 + mine));
@@ -2670,56 +2730,134 @@
         ['suggested', 'debate'].includes(i.status || 'suggested') &&
         (!m || !i.mission_id || i.mission_id === m.id));
     }
-    // The rows currently in the dialog: everything with tokens on it, plus
-    // anything toggled in from the table, strongest first.
+    // The rows currently in the dialog: everything with a share, plus anything
+    // toggled in from the table, strongest first.
     function _slateFor(causeId) {
       return _p1CandidatesFor(causeId)
-        .filter(i => _allocFor(i.id) > 0 || _slateExtra[i.id])
-        .sort((a, b) => _allocFor(b.id) - _allocFor(a.id));
+        .filter(i => _pctFor(i.id) > 0 || _slateExtra[i.id])
+        .sort((a, b) => _pctFor(b.id) - _pctFor(a.id));
+    }
+    function _pctUsedFor(causeId) {
+      return _slateFor(causeId).reduce((s, i) => s + _pctFor(i.id), 0);
     }
     function _allocatedFor(causeId) {
       return _slateFor(causeId).reduce((s, i) => s + _allocFor(i.id), 0);
     }
-    function inSlate(tivId) { return _allocFor(tivId) > 0 || !!_slateExtra[tivId]; }
+    function inSlate(tivId) { return _pctFor(tivId) > 0 || !!_slateExtra[tivId]; }
     window.inSlate = inSlate;
 
-    // Set one row's allocation, clamped so the slate never exceeds the budget
-    // (the Uncommitted row absorbs the remainder).
+    function _setPendingPct(tivId, v) {
+      if (v === _savedPct(tivId)) delete _pendingPct[tivId];
+      else _pendingPct[tivId] = v;
+    }
+    // Whole percentages for `ids`, proportional to `weights`, summing to `total`
+    // (largest remainder; every id with weight keeps at least 1%).
+    function _spread(ids, weights, total) {
+      const out = {};
+      const live = ids.filter(id => (weights[id] || 0) > 0);
+      if (total <= 0 || !ids.length) { ids.forEach(id => { out[id] = 0; }); return out; }
+      const use = live.length ? live : ids;
+      const wsum = use.reduce((s, id) => s + (live.length ? weights[id] : 1), 0) || 1;
+      const raw = {};
+      use.forEach(id => { raw[id] = total * (live.length ? weights[id] : 1) / wsum; });
+      let sum = 0;
+      use.forEach(id => { out[id] = Math.max(1, Math.floor(raw[id])); sum += out[id]; });
+      const byRem = use.slice().sort((a, b) => (raw[b] - Math.floor(raw[b])) - (raw[a] - Math.floor(raw[a])));
+      let k = 0;
+      while (sum < total && byRem.length) { out[byRem[k % byRem.length]]++; sum++; k++; }
+      k = 0;
+      while (sum > total && k < 10000) {
+        const id = use.slice().sort((a, b) => out[b] - out[a])[0];
+        if (out[id] <= 1) break;
+        out[id]--; sum--; k++;
+      }
+      ids.forEach(id => { if (!(id in out)) out[id] = 0; });
+      return out;
+    }
+    // Set one row's percentage. The slate always sums to 100%: moving one slider
+    // takes from (or gives to) the others in proportion, in 1% steps.
     function setAlloc(tivId, raw, opts) {
-      const tiv = (EBX.config.initiatives || []).find(i => i.id === tivId);
+      const tiv = _tivById(tivId);
       if (!tiv) return;
       const causeId = tiv.cause_id;
-      const budget = committableFor(causeId);
+      _slateExtra[tivId] = true;
+      const others = _slateFor(causeId).map(i => i.id).filter(id => id !== tivId);
+      const liveOthers = others.filter(id => _pctFor(id) > 0);
       let v = Math.round(Number(raw));
       if (!(v >= 0)) v = 0;
-      const others = _slateFor(causeId).reduce((s, i) => s + (i.id === tivId ? 0 : _allocFor(i.id)), 0);
-      v = Math.min(v, Math.max(0, budget - others));
-      if (v === _myEbxFor(tivId)) delete _pendingEbx[tivId];
-      else _pendingEbx[tivId] = v;
-      if (v > 0) _slateExtra[tivId] = true;
+      v = Math.min(100, v);
+      if (!liveOthers.length) {
+        // Alone on the slate (or everyone else at 0): it is the whole commit.
+        v = others.length ? v : 100;
+        const rest = _spread(others, {}, 100 - v);
+        if (v === 100) others.forEach(id => { rest[id] = 0; });
+        _setPendingPct(tivId, v);
+        others.forEach(id => _setPendingPct(id, rest[id] || 0));
+      } else {
+        v = Math.min(v, 100 - liveOthers.length);          // others keep >= 1%
+        const w = {};
+        liveOthers.forEach(id => { w[id] = _pctFor(id); });
+        const rest = _spread(liveOthers, w, 100 - v);
+        _setPendingPct(tivId, v);
+        liveOthers.forEach(id => _setPendingPct(id, rest[id]));
+      }
       if (!(opts && opts.quiet)) { filterInitiatives(); renderCards(); }
       return v;
     }
+    // The commit amount, in whole tokens (0 … budget).
+    function setMeAmount(causeId, raw) {
+      const budget = committableFor(causeId);
+      let v = Math.round(Number(raw));
+      if (!(v >= 0)) v = 0;
+      v = Math.min(v, budget);
+      if (v === _savedAmtFor(causeId) && _savedAmtFor(causeId) > 0) delete _pendingAmt[causeId];
+      else _pendingAmt[causeId] = v;
+      filterInitiatives();
+      renderCards();
+    }
+    window.setMeAmount = setMeAmount;
+    // Spread what is unassigned across the slate in its current proportions
+    // (largest remainder, whole percentages, at least 1% each).
+    function _balancedPcts(causeId) {
+      const ids = _slateFor(causeId).map(i => i.id);
+      const w = {};
+      ids.forEach(id => { w[id] = _pctFor(id); });
+      const out = _spread(ids, w, ids.length ? 100 : 0);
+      // A row toggled in at 0% while others carry the slate stays out.
+      if (ids.some(id => w[id] > 0)) ids.forEach(id => { if (!(w[id] > 0)) out[id] = 0; });
+      return out;
+    }
+    function balanceSlate(causeId) {
+      const b = _balancedPcts(causeId);
+      Object.keys(b).forEach(id => _setPendingPct(id, b[id]));
+      filterInitiatives();
+      renderCards();
+    }
+    window.balanceSlate = balanceSlate;
     // Add / remove an initiative from the dialog (the row + card "Vote" button).
     function toggleSlate(tivId) {
-      const tiv = (EBX.config.initiatives || []).find(i => i.id === tivId);
+      const tiv = _tivById(tivId);
       if (!tiv) return;
       _voteCauseId = tiv.cause_id;
       if (inSlate(tivId)) {
+        // Removing a row hands its share back to the rest, in proportion.
+        const rest = _slateFor(tiv.cause_id).map(i => i.id).filter(id => id !== tivId && _pctFor(id) > 0);
+        const w = {};
+        rest.forEach(id => { w[id] = _pctFor(id); });
+        const back = _spread(rest, w, rest.length ? 100 : 0);
+        rest.forEach(id => _setPendingPct(id, back[id]));
         delete _slateExtra[tivId];
-        if (_allocFor(tivId) !== 0) _pendingEbx[tivId] = 0;
-        if (_myEbxFor(tivId) === 0) delete _pendingEbx[tivId];
+        _setPendingPct(tivId, 0);
       } else {
         const causeId = tiv.cause_id;
         if (_slateFor(causeId).length >= MAX_SPLIT) {
           alert('A slate can be split across at most ' + MAX_SPLIT + ' initiatives.\n\nDrop one first.');
           return;
         }
-        _slateExtra[tivId] = true;
-        // Seed a new row with whatever is still unallocated, so one click on a
-        // fresh slate is a whole vote rather than a no-op.
-        const free = Math.max(0, committableFor(causeId) - _allocatedFor(causeId));
-        if (free > 0) setAlloc(tivId, free, { quiet: true });
+        // A new row takes an equal share (100 / rows), and the rest of the
+        // slate gives it up in proportion.
+        const n = _slateFor(causeId).filter(i => _pctFor(i.id) > 0).length;
+        setAlloc(tivId, n ? Math.round(100 / (n + 1)) : 100, { quiet: true });
       }
       filterInitiatives();
       renderCards();
@@ -2730,26 +2868,22 @@
     // Live slider feedback without re-rendering the table (a re-render mid-drag
     // would drop the thumb). State lands on release via setAlloc.
     function dragAlloc(tivId, raw) {
-      const tiv = (EBX.config.initiatives || []).find(i => i.id === tivId);
+      const tiv = _tivById(tivId);
       if (!tiv) return;
       const causeId = tiv.cause_id;
-      const budget = committableFor(causeId);
-      const others = _slateFor(causeId).reduce((s, i) => s + (i.id === tivId ? 0 : _allocFor(i.id)), 0);
-      let v = Math.min(Math.max(0, Math.round(Number(raw) || 0)), Math.max(0, budget - others));
+      const amount = _amountFor(causeId);
+      const others = _slateFor(causeId).reduce((s, i) => s + (i.id === tivId ? 0 : _pctFor(i.id)), 0);
+      const live = _slateFor(causeId).filter(i => i.id !== tivId && _pctFor(i.id) > 0).length;
+      const v = Math.min(Math.max(0, Math.round(Number(raw) || 0)), live ? 100 - live : 100);
       const el = document.querySelector('.vb-slider[data-tiv="' + tivId + '"]');
       if (el && Number(el.value) !== v) el.value = v;
       const lbl = document.getElementById('vb-val-' + tivId);
-      if (lbl) lbl.textContent = v + ' tokens';
-      const free = Math.max(0, budget - others - v);
-      const fv = document.getElementById('vb-unc-val');
-      if (fv) fv.textContent = free + ' tokens';
-      const ff = document.getElementById('vb-unc-fill');
-      if (ff) ff.style.width = (budget ? (free / budget * 100).toFixed(0) : 0) + '%';
+      if (lbl) lbl.textContent = v + '% · ' + (Math.round(v * amount) / 100) + ' tk';
     }
     window.dragAlloc = dragAlloc;
 
     function withdrawSlate(causeId) {
-      _slateFor(causeId).forEach(i => { _pendingEbx[i.id] = 0; delete _slateExtra[i.id]; });
+      _slateFor(causeId).forEach(i => { _setPendingPct(i.id, 0); delete _slateExtra[i.id]; });
       filterInitiatives();
       renderCards();
     }
@@ -2869,6 +3003,8 @@
     }
     window._walletRowFor = mid => _walletRows.find(r => r.mission_id === mid) || null;
     window._walletFree = () => (_wallet ? Number(_wallet.free_ct) || 0 : 0);
+    window._walletPurchasedFree = () => (_wallet
+      ? Math.min(Number(_wallet.purchased_ct) || 0, Number(_wallet.free_ct) || 0) : 0);
 
     async function loadWallet() {
       if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn())) {
@@ -3295,54 +3431,44 @@
       if (!cause) return '';
       const col = cause.color || 'var(--clr-honey)';
       const budget = committableFor(causeId);
+      const amount = _amountFor(causeId);
       const slate = _slateFor(causeId);
-      const used = _slateFor(causeId).reduce((s, i) => s + _allocFor(i.id), 0);
-      const free = Math.max(0, budget - used);
-      const pending = _uncommittedVotes(causeId);
+      const usedPct = _pctUsedFor(causeId);
+      const freePct = Math.max(0, 100 - usedPct);
+      const draft = _meHasDraft(causeId);
       const pool = _p1CandidatesFor(causeId)
         .reduce((s, i) => s + (i.committed_ebx || i.ebx_committed || 0), 0);
       let decision = '';
       try { decision = _fmtFullDate(EBX.Cycle.nextDecisionDate(cause.index)); } catch (e) {}
 
-      // §4 (2026-08-10, structure.md Table → Vote dialog → ME "Highlight the
-      // leader"): the dialog is the leaderboard you vote in, so it has to say
-      // which initiative is actually winning. The leader is the highest
-      // committed tokens across the WHOLE p1 field, not just the rows you have
-      // dialed in — otherwise the mark would move with your own slate.
+      // The leader is the highest committed tokens across the WHOLE field, not
+      // just the rows on your slate.
       const field = _p1CandidatesFor(causeId);
       const _tot = i => i.committed_ebx || i.ebx_committed || 0;
       const leaderId = field.length
         ? field.reduce((a, b) => (_tot(b) > _tot(a) ? b : a)).id : null;
       const leaderEbx = leaderId ? _tot(field.find(i => i.id === leaderId)) : 0;
 
+      // 2026-09-17 (build-seq §2): the sliders are PERCENTAGES of one commit, in
+      // 1% steps. They look the same however much is committed; the amount is
+      // its own number in the head, and adding tokens keeps the ratios.
       const rows = slate.map(i => {
-        const v = _allocFor(i.id);
-        const tot = i.committed_ebx || i.ebx_committed || 0;
-        // A leader with nothing committed is not a leader, it is a tie at zero.
+        const pct = _pctFor(i.id);
+        const tk = Math.round(pct * amount) / 100;
+        const tot = _tot(i);
         const isLeader = leaderEbx > 0 && i.id === leaderId;
         return '<div class="vb-row' + (isLeader ? ' vb-row--leader' : '') + '">' +
           '<div><div class="vb-row__name">' +
             (isLeader ? '<span class="vb-lead" title="Leading the initiative election">▲ leading</span>' : '') +
             (i.emoji ? i.emoji + ' ' : '') + esc(((typeof window._titleAndCase === 'function') ? window._titleAndCase(i).title : (i.title || '')) || 'Untitled') + '</div>' +
             '<div class="vb-row__sub">pool ' + Math.round(tot).toLocaleString() + ' tokens' +
-              (pool > 0 ? ' · ' + Math.round(tot / pool * 100) + '% of the field' : '') +
-              (v > 0 && (used > 0) ? ' · ' + Math.round(v / used * 100) + '% of my slate' : '') + '</div></div>' +
-          '<input type="range" class="vb-slider" data-tiv="' + i.id + '" min="0" max="' + budget + '" step="1" value="' + v + '"' +
+              (pool > 0 ? ' · ' + Math.round(tot / pool * 100) + '% of the field' : '') + '</div></div>' +
+          '<input type="range" class="vb-slider" data-tiv="' + i.id + '" min="0" max="100" step="1" value="' + pct + '"' +
             ' oninput="event.stopPropagation();dragAlloc(\'' + i.id + '\', this.value)"' +
             ' onchange="event.stopPropagation();setAlloc(\'' + i.id + '\', this.value)"' +
-            ' onclick="event.stopPropagation()" aria-label="Tokens on ' + esc(i.title || '') + '" />' +
-          '<div class="vb-row__val" id="vb-val-' + i.id + '">' + v + ' tokens</div>' +
-          // §2 (2026-09-08) — "In the ME election panel add a button beside each
-          // slider row to nominate an organization for that initiative."
-          // Nomination has always been an ORGANIZATION-election act, reachable
-          // only from the OE panel — which means it could not be done until the
-          // initiative had already won. jax notes 2 says the opposite: "Users
-          // need to be able to suggest organizations even before the initiative
-          // has been decided… Org nomination can fire upon tiv vote." This is
-          // that door, at the moment a benefactor is deciding they want this
-          // initiative to happen, which is exactly when they know who should run
-          // it. It carries the initiative so the dialog can attach the
-          // candidacy to the mission the initiative belongs to.
+            ' onclick="event.stopPropagation()" aria-label="Share of my commit on ' + esc(i.title || '') + '" />' +
+          '<div class="vb-row__val" id="vb-val-' + i.id + '">' + pct + '% · ' + tk + ' tk</div>' +
+          // §2 (2026-09-08) — nominate an organization for this initiative.
           '<button class="vb-row__nom" title="Nominate an organization to run ' +
             esc(i.title || '') + '"' +
             ' onclick="event.stopPropagation();nominateOrgFor(\'' + i.id + '\')">+ org</button>' +
@@ -3351,20 +3477,26 @@
         '</div>';
       }).join('');
 
-      const uncRow = slate.length ? '<div class="vb-row vb-row--unc">' +
-          '<div><div class="vb-row__name">⬚ Uncommitted</div>' +
-            '<div class="vb-row__sub">unallocated — stays out of the tally until you assign it</div></div>' +
-          '<div class="vb-track"><div class="vb-track__fill" id="vb-unc-fill" style="width:' +
-            (budget ? (free / budget * 100).toFixed(0) : 0) + '%;"></div></div>' +
-          '<div class="vb-row__val" id="vb-unc-val" style="color:rgba(245,240,232,0.6);">' + free + ' tokens</div>' +
-          '<button class="vb-row__x" title="Take back the whole slate"' +
-            ' onclick="event.stopPropagation();withdrawSlate(\'' + causeId + '\')">clear</button>' +
+      const uncRow = (slate.length && freePct > 0) ? '<div class="vb-row vb-row--unc">' +
+          '<div><div class="vb-row__name">⬚ Unassigned</div>' +
+            '<div class="vb-row__sub">' + (freePct > 0
+              ? 'spread across your slate in proportion when you commit'
+              : '') + '</div></div>' +
+          '<div class="vb-track"><div class="vb-track__fill" id="vb-unc-fill" style="width:' + freePct + '%;"></div></div>' +
+          '<div class="vb-row__val" id="vb-unc-val" style="color:rgba(245,240,232,0.6);">' + freePct + '%</div>' +
+          '<button class="vb-row__x" title="Spread the unassigned share across the slate"' +
+            ' onclick="event.stopPropagation();balanceSlate(\'' + causeId + '\')"' + (freePct > 0 ? '' : ' disabled') + '>spread</button>' +
         '</div>' : '';
+
+      const amountCtl = '<label class="votebar__chip votebar__chip--amt" onclick="event.stopPropagation()">My commit' +
+          '<b><input type="number" class="vb-amt" min="0" max="' + budget + '" step="1" value="' + amount + '"' +
+            ' onchange="event.stopPropagation();setMeAmount(\'' + causeId + '\', this.value)"' +
+            ' aria-label="Tokens to commit to this election" /> of ' + budget + ' tokens</b></label>';
 
       const body = slate.length
         ? '<div class="votebar__rows">' + rows + uncRow + '</div>'
         : '<div class="votebar__empty">Your slate is empty. Press <b>Vote</b> on any initiative below to put it in ' +
-          'here, then split your ' + budget + ' tokens across up to ' + MAX_SPLIT + ' of them.</div>';
+          'here, then split your commit across up to ' + MAX_SPLIT + ' of them, in whole percentages.</div>';
 
       // The expansion that used to unfold under the table row. It is the same
       // markup (`_idxInitDetailHTML`), in a fixed place, with a way to shut it.
@@ -3386,11 +3518,9 @@
           '<span class="votebar__title">Phase 1 · ' + esc(cause.name) + ' Initiative Election</span>' +
           (decision ? '<span class="votebar__sub">decision ' + decision + '</span>' : '') +
           '<span class="votebar__spacer"></span>' +
-          '<span class="votebar__chip">My budget<b>' + budget + ' tokens</b></span>' +
-          '<span class="votebar__chip">Allocated<b>' + used + ' tokens</b></span>' +
+          amountCtl +
+          '<span class="votebar__chip">Assigned<b>' + usedPct + '%</b></span>' +
           '<span class="votebar__chip">Pool<b>' + Math.round(pool).toLocaleString() + ' tokens</b></span>' +
-          // The leader is named in the head as well as marked in the rows, so
-          // it is visible even when it isn't on your slate.
           (leaderEbx > 0
             ? '<span class="votebar__chip votebar__chip--lead">Leading<b>' +
                 esc((field.find(i => i.id === leaderId) || {}).title || '—') +
@@ -3400,15 +3530,15 @@
         body + detail +
         '<div class="votebar__foot">' +
           '<button class="vb-btn" onclick="event.stopPropagation();commitVotes(\'' + causeId + '\')"' +
-            (pending ? '' : ' disabled') + '>Commit' + (pending ? ' ' + pending + ' tokens' : '') + '</button>' +
-          // §2 (2026-08-27): the deselect. Drops the dialled slate; committed
-          // tokens are not in it, because they cannot come back.
+            (draft ? '' : ' disabled') + '>Commit' + (draft ? ' ' + amount + ' tokens' : '') + '</button>' +
           '<button class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();cancelVotes()"' +
-            (pending ? '' : ' disabled') + '>Cancel</button>' +
+            (draft ? '' : ' disabled') + '>Cancel</button>' +
           '<button class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();buyVoteEbx(\'' + causeId + '\')">+ Buy tokens</button>' +
           '<a class="vb-btn vb-btn--ghost" style="text-decoration:none;" href="cause.html?id=' + causeId + '#pb"' +
             ' onclick="event.stopPropagation()">Discuss →</a>' +
-          '<span class="vb-note">' + (pending ? pending + ' tokens dialed, not yet committed' : 'nothing to commit') + '</span>' +
+          '<span class="vb-note">' + (draft
+            ? 'dialed, not yet committed · 10% is final when the election closes; the rest can be withdrawn as cash until budget day'
+            : 'nothing to commit') + '</span>' +
         '</div>' +
       '</div>';
     }
@@ -3465,6 +3595,10 @@
         ((entryFor(b).ebx || 0) - (entryFor(a).ebx || 0)));
       const top3 = ranked.slice(0, 3);
 
+      // 2026-09-17 (build-seq §1): without an initiative-election stake in this
+      // mission, only this week's organization election is open.
+      const _wrPick = (typeof window._walletRowFor === 'function') ? window._walletRowFor(mid) : null;
+      const _locked = !!(_wrPick && _wrPick.can_take_part === false);
       const pickRow = id => {
         const t = entryFor(id);
         const nv = Number(t.net_votes) || 0;
@@ -3481,6 +3615,7 @@
             ' carried from phase 1 · ' + Math.round(Number(t.bought_ebx) || 0) + ' bought">' +
             Math.round(Number(t.ebx) || 0) + ' tokens</div>' +
           '<button class="vb-org__pick' + (myOrg === id ? ' on' : '') + '"' +
+            (_locked ? ' disabled title="Open to backers of this initiative election; this week\u2019s race is open to everyone"' : '') +
             ' onclick="event.stopPropagation();pickOrg(\'' + mid + '\', \'' + id + '\')">' +
             (myOrg === id ? (drafted ? '◆ Picked' : '✓ My vote') : 'Vote') + '</button>' +
         '</div>';
@@ -3529,7 +3664,7 @@
       const note = dirty.any
         ? [dirty.voteDirty ? 'organization picked' : null,
            dirty.carryDirty ? 'split moved' : null].filter(Boolean).join(' · ') + ' — not yet committed'
-        : 'one vote per benefactor · $1 (10 tokens) minimum unless your initiative-election tokens ride on it';
+        : 'everyone gets a vote · 0 tokens = 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5';
       // §3 (2026-08-09, structure.md backlog "Show next vote day"): this header
       // used to read "Phase 2 · Oceans Organization Election" followed by a sub
       // of "oce0 · Garbage Patch Analysis", which ran together on screen as
@@ -3588,7 +3723,11 @@
                 (cause ? cause.id : '') + '\')">Buy &rarr;</button>'
             : '');
       const _blocked = _src === 'free' && _room <= 0 && _pend <= 0 && !_convertable.length;
+      const _notOpen = !!(_wr && _wr.can_take_part === false);
       const amountRow = !_authed ? ''
+        : _notOpen
+          ? '<div class="vb-amount vb-amount--none">This organization election is open to the people who ' +
+            'backed its initiative election. This week&rsquo;s organization election is open to everyone.</div>'
         : (_blocked
             ? '<div class="vb-amount vb-amount--none">This week&rsquo;s grant can only go to the ' +
               'elections of the cause it was granted against. Purchased tokens can go anywhere, ' +
@@ -3641,6 +3780,9 @@
           (unassigned > 0 ? '<span class="votebar__chip" title="Kept here by benefactors who have not picked an organization yet">' +
             'Unassigned<b>' + Math.round(unassigned) + ' tokens</b></span>' : '') +
           '<span class="votebar__chip">My vote<b>' + (myOrg ? esc(_orgName(myOrg)) : '—') + '</b></span>' +
+          // 2026-09-17 (build-seq §2): votes follow the stake on the doubling ladder.
+          (_wr ? '<span class="votebar__chip" title="0 tokens = 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5">' +
+            'My votes<b>' + (Number(_wr.my_votes) || 1) + '</b></span>' : '') +
         '</div>' +
         // §1 (2026-08-19): the carryover slider is GONE from the dialog. It was
         // the one place a commitment could be set, and it could only ever
@@ -3745,7 +3887,8 @@
     // three drafts: the initiative slate, the organization amounts, and the
     // cause ballot (`cancelCauseVote`, beside its own Commit).
     function cancelVotes() {
-      _pendingEbx = {};
+      _pendingPct = {};
+      _pendingAmt = {};
       _slateExtra = {};
       _mountVoteBar();
       filterInitiatives();
@@ -3760,58 +3903,47 @@
     }
     window.cancelAll = cancelAll;
     window._cancelPendingLabel = () => (_mainMode === 'org')
-      ? Object.keys(_pending).length : Object.keys(_pendingEbx).length;
+      ? Object.keys(_pending).length : (Object.keys(_pendingPct).length + Object.keys(_pendingAmt).length);
     // Kept for older links/handlers that still call idxResearch (the removed
     // "View" button): it now does exactly what Vote does.
     window.idxResearch = voteOnCause;
 
-    // Commit the dialed slate. The backend takes a FULL replace per mission:
-    // PUT /missions/{id}/p1/votes {shares: {tiv: fraction<=1 total}, ebx: total}
-    // then POST /missions/{id}/p1/commit to lock it. Shares are fractions of
-    // the ben's own slate, so we normalize per mission; ebx is the slate total.
+    // Commit the dialed slate. 2026-09-17 (build-seq §2): one election per
+    // cause — the upcoming undecided one — and ONE amount with a whole-percent
+    // split. PUT /missions/{id}/p1/votes {shares: {tiv: pct/100}, ebx: amount},
+    // then POST /missions/{id}/p1/commit. Only initiatives running in that
+    // election are sent, so a re-listed loser's old tokens can never ride along.
     async function commitVotes(causeId) {
       if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn())) {
         if (EBX.Auth && EBX.Auth.openModal) EBX.Auth.openModal('login');
         else alert('Sign in to commit your votes.');
         return;
       }
-      // Group the FULL slate (pending + already-committed) by mission, because
-      // the PUT replaces every row for that mission.
-      const inits = EBX.config.initiatives || [];
-      const byMission = {};
-      const touched = new Set(Object.keys(_pendingEbx));
-      if (!touched.size) { alert('No uncommitted vote changes.'); return; }
-      inits.forEach(i => {
-        if (!i.mission_id) return;
-        if (causeId && i.cause_id !== causeId) return;
-        const v = _allocFor(i.id);
-        if (v > 0) (byMission[i.mission_id] = byMission[i.mission_id] || {})[i.id] = v;
-        else if (touched.has(i.id)) byMission[i.mission_id] = byMission[i.mission_id] || {};
-      });
-      const missionIds = Object.keys(byMission).filter(mid =>
-        inits.some(i => i.mission_id === mid && touched.has(i.id)));
-      if (!missionIds.length) { alert('Nothing to commit for this cause.'); return; }
+      const causes = causeId ? [causeId]
+        : (EBX.config.causes || []).map(c => c.id).filter(cid => _meHasDraft(cid));
+      if (!causes.length || !causes.some(cid => _meHasDraft(cid))) { alert('No uncommitted vote changes.'); return; }
       let failed = 0, failMsg = '';
-      for (const mid of missionIds) {
-        const slate = byMission[mid] || {};            // tiv_id → whole tokens
-        const totalEbx = Object.values(slate).reduce((s, v) => s + v, 0);
+      for (const cid of causes) {
+        const m = _p1MissionForCause(cid);
+        if (!m || !_meHasDraft(cid)) continue;
+        const pcts = _balancedPcts(cid);          // spreads any unassigned share
+        const ids = Object.keys(pcts).filter(id => pcts[id] > 0);
         const shares = {};
-        Object.keys(slate).forEach(id => { shares[id] = totalEbx > 0 ? slate[id] / totalEbx : 0; });
+        ids.forEach(id => { shares[id] = pcts[id] / 100; });
+        const amount = ids.length ? _amountFor(cid) : 0;
         try {
-          const r = await EBX.Auth.fetchAuthed('/missions/' + mid + '/p1/votes', {
+          const r = await EBX.Auth.fetchAuthed('/missions/' + m.id + '/p1/votes', {
             method: 'PUT',
-            body: JSON.stringify({ mission_id: mid, shares, ebx: Math.round(totalEbx) }),
+            body: JSON.stringify({ mission_id: m.id, shares, ebx: amount }),
           });
           if (!r || !r.ok) {
             failed++;
             try { const b = await r.json(); if (b && b.detail) failMsg = b.detail; } catch (e) {}
             continue;
           }
-          await EBX.Auth.fetchAuthed('/missions/' + mid + '/p1/commit', { method: 'POST' });
-          // Clear the pending edits this mission just absorbed.
-          inits.filter(i => i.mission_id === mid).forEach(i => {
-            delete _pendingEbx[i.id]; delete _slateExtra[i.id];
-          });
+          await EBX.Auth.fetchAuthed('/missions/' + m.id + '/p1/commit', { method: 'POST' });
+          _p1CandidatesFor(cid).forEach(i => { delete _pendingPct[i.id]; delete _slateExtra[i.id]; });
+          delete _pendingAmt[cid];
         } catch (e) { failed++; }
       }
       await loadMyP1Votes();
@@ -6918,6 +7050,8 @@
     if (_mainMode === 'org') {
       return (typeof window._pendingCount === 'function') ? window._pendingCount() > 0 : false;
     }
+    // 2026-09-17: a re-split at the same amount moves no tokens but is still a draft.
+    if (typeof window._meHasDraft === 'function') return window._meHasDraft();
     return _commitPending() !== 0;
   }
   function _commitBtnHTML(tk) {

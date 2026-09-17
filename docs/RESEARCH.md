@@ -2,9 +2,11 @@
 *The evidence base*
 <!-- TOC -->
 ## Contents
-- [0. This document](#0-this-document)
-  - [0a. The data beside it](#0a-the-data-beside-it)
-- [1. The essay outline](#1-the-essay-outline)
+
+- [0. Overview](#0-overview)
+  - [0a.](#0a)
+- [1. The charity landscape](#1-the-charity-landscape)
+  - [1a. Tabulated charities](#1a-tabulated-charities)
 - [2. The short version — where Earthbux fits](#2-the-short-version--where-earthbux-fits)
   - [2a. The short version](#2a-the-short-version)
   - [2b. The four tiers](#2b-the-four-tiers)

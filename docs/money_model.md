@@ -47,9 +47,15 @@ whom, and §14 says what was not.
 - [11. Liquidity — decided](#11-liquidity--decided)
 - [12. What is built, and what is not](#12-what-is-built-and-what-is-not)
   - [Built 2026-09-16](#built-2026-09-16)
+  - [Built 2026-09-17](#built-2026-09-17)
   - [Still true and still built](#still-true-and-still-built)
   - [Not built — the framing and exchange work list](#not-built--the-framing-and-exchange-work-list)
 - [13. The surfaces](#13-the-surfaces)
+  - [The allocations panel](#the-allocations-panel)
+  - [The initiative election](#the-initiative-election)
+  - [The organization election](#the-organization-election)
+  - [The DEX surface (unbuilt)](#the-dex-surface-unbuilt)
+  - [The conservation law](#the-conservation-law)
 - [14. Open questions](#14-open-questions)
 
 <!-- /TOC -->
@@ -101,6 +107,19 @@ whatever an older section, doc or code comment said.
     the claim**: converting EBX-A into EBX-B moves the capital to mission B.
 12. **Phases:** P1 initiative election · P2 organization election · P3 framing ·
     P4 exchange.
+
+*Added 2026-09-17 (INSTRUCTIONS build-seq §1–§2):*
+
+13. **Losing votes never carry into the next election.** A losing initiative is
+    re-listed in its cause's next election with zero behind it; its backers'
+    tokens stay in the mission they funded (§6) and they may vote for it again.
+14. **The ME slate is whole percentages of one commit** (§5): 1% steps, at least
+    1% per initiative on it, and adding tokens keeps the ratios.
+15. **Everyone can vote in an organization election.** Votes follow the stake on
+    a doubling ladder: 0 tokens = 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5 (§9).
+16. **Without an ME stake in a mission, only this week's organization election is
+    open.** A benefactor who backed a mission's initiative election may vote in
+    its organization election in any week.
 
 ---
 
@@ -230,8 +249,10 @@ by largest remainder, so a mission's rows sum to the commit exactly.
 same however much is committed. They move in 1% steps, so on a $100 commit the
 smallest slice any initiative can hold is $1. **Adding money keeps the ratios**:
 new tokens spread across the slate in its current proportions, and the
-benefactor can re-split at will. The backend already stores the split as
-percentages; the main.html sliders still work in tokens (§12).
+benefactor can re-split at will. **Built 2026-09-17:** the server rounds every
+slate to whole percentages (`tm.whole_percent_shares`), and the main.html ballot
+has one *My commit* amount with percentage sliders — moving one takes from the
+others in proportion, and a newly added initiative takes an equal share.
 
 A vote standing with no commit behind it is **a preference with no funding yet**.
 The split stays freely editable until `finalize_p1`.
@@ -411,6 +432,19 @@ always 3/32.
 
 ## 9. Vote weight, and what being right is worth
 
+**Organization elections count VOTES, on a doubling ladder** (2026-09-17, §0.15):
+
+```
+stake   0–9 tk → 1 vote     10 → 2     20 → 3     40 → 4     80 → 5     160 → 6
+```
+
+`tm.oe_votes(stake_ct)`; `crud.p2_tally` ranks by it (tokens break ties). Every
+benefactor gets the first vote free, so a room of small backers can outvote one
+large one, and each further vote needs twice the stake of the one before.
+
+The older weight curve below is kept for budget voting (§12 item 10) and is no
+longer how an organization election counts:
+
 Weight is 1:1 for the first block of 10 tokens, then each further block of 10
 counts for `r ×` the block before it, `r = 0.5`:
 
@@ -485,6 +519,21 @@ Earthbux seeding liquidity with charitable capital needs the same legal review a
 | The 32nds as constants (`RESEARCH_REWARD_32NDS`, `ADVANCE_32NDS`, `ORG_FRAMING_RELEASE_32NDS`, `FLEXIBLE_32NDS`, `EARTHBUX_FLEX_MAX_32NDS`, `ORG_BUDGET_DAY_32NDS`) | `token_model.py` |
 | `token_model_check` (107) and `wallet_check` (130) assert the ladder and the withdrawal | `scripts/` |
 
+### Built 2026-09-17
+
+| Change | Where |
+|---|---|
+| Initiative totals count only the election an initiative is running in; `votes_p1` unique per (ben, mission, tiv) | `crud.p1_ebx_by_tiv`, migration `a7c1e9d3b5f2` |
+| Whole-percentage slates; decided elections refuse a slate | `tm.whole_percent_shares`, `crud.replace_p1_shares` |
+| ME sliders as percentages of one commit amount (§5) | main.html |
+| Organization votes on the doubling ladder; `my_votes` + `can_take_part` on each row | `tm.oe_votes`, `crud.p2_tally`, `wallet.oe_rows` |
+| Only this week's organization election without an ME stake | `wallet._check_takes_part` (`set_stake`, `set_org`) |
+| Staff: recount open initiative elections; elect an organization in a past race with none | `POST /admin/elections/me-reset`, `POST /admin/missions/{id}/backfill-org` |
+| A counted figure that drifted from its money (`ebx_committed` vs `stake_ct`) is repaired wherever it is, decided races included — a repair is not a re-vote | `crud.reset_open_me_slates` |
+| A re-listed loser's RATING starts empty too: a rating counts only votes cast in the race the initiative is running in | `crud.recompute_tiv_rating` |
+| Adopting an orphan initiative folds into an existing row instead of colliding with `uq_votep1_ben_mission_tiv` | `crud.adopt_orphan_tivs` |
+| `election_check` (41) asserts all of the above | `scripts/` |
+
 ### Still true and still built
 
 - centitoken arithmetic and the rounding rule (§3);
@@ -511,7 +560,7 @@ In rough build order. **Framing (P3) first:**
    No page offers it yet, and `crud.withdraw_p1` is still a named refusal.
 3. **The organization's 5/16 claim on budget day** — the first deployment, pro
    rata from every position, and the first thing that reduces held EBX.
-4. **ME sliders in whole percentages** (main.html; backend already stores shares).
+4. ~~**ME sliders in whole percentages**~~ — built 2026-09-17.
 5. **Buying tokens.** `purchased_ct` is the column the real thing will write.
 6. **`mint_mission_coins` still runs at `finalize_p2`**; the coin should issue at
    budget day.

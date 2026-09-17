@@ -142,3 +142,54 @@ def distribute(
     except ValueError as e:
         msg = str(e)
         raise HTTPException(status_code=404 if "not found" in msg.lower() else 409, detail=msg)
+
+
+@router.post("/elections/me-reset", response_model=dict)
+def me_reset(
+    dry_run: bool = True,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only (build-seq §2, 2026-09-17): recount every OPEN initiative
+    election by the whole-percentage rule. `?dry_run=false` writes."""
+    return crud.reset_open_me_slates(db, dry_run=dry_run)
+
+
+@router.get("/elections/unelected-orgs", response_model=list)
+def unelected_orgs(
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only (build-seq §1): past organization elections that never elected
+    an organization — the backfill list."""
+    from datetime import datetime
+    from sqlalchemy import select
+    from .. import models, wallet as w
+    now = datetime.utcnow()
+    out = []
+    for m in db.scalars(select(models.Mission).where(models.Mission.winning_tiv_id.is_not(None),
+                                                     models.Mission.winning_org_id.is_(None))).all():
+        if w._vote_day(m) <= now:
+            out.append({"mission_id": m.id, "cause_id": m.cause_id, "tiv_id": m.winning_tiv_id,
+                        "vote_date": w._vote_day(m).isoformat(),
+                        "candidates": [{"org_id": c.org_id, "status": c.status,
+                                        "has_statement": bool((c.mission_statement or "").strip())}
+                                       for c in db.scalars(select(models.MissionCandidacy).where(
+                                           models.MissionCandidacy.mission_id == m.id)).all()]})
+    return out
+
+
+@router.post("/missions/{mission_id}/backfill-org", response_model=dict)
+def backfill_org(
+    mission_id: str,
+    org_id: Optional[str] = Body(default=None, embed=True),
+    mission_statement: Optional[str] = Body(default=None, embed=True),
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only (build-seq §1): elect an organization in a past race that never
+    got one."""
+    try:
+        return crud.backfill_org_election(db, mission_id, staff, org_id, mission_statement)
+    except (ValueError, PermissionError) as e:
+        raise HTTPException(status_code=400, detail=str(e))

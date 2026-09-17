@@ -191,6 +191,34 @@ def normalize_shares(shares: Mapping[str, float]) -> dict[str, float]:
     return {k: v / total for k, v in clean.items()}
 
 
+def whole_percent_shares(shares: Mapping[str, float]) -> dict[str, int]:
+    """A slate as WHOLE percentages summing to exactly 100 (2026-09-17).
+
+    INSTRUCTIONS build-seq §2 / money_model §5: the ME sliders are ratios of the
+    benefactor's total commit, in 1% steps, and they look the same however much
+    is committed. Largest remainder, and every initiative that was given any
+    share keeps at least 1% — on a $100 commit the smallest slice is $1.
+    """
+    norm = normalize_shares(shares)
+    if not norm:
+        return {}
+    raw = {k: 100.0 * v for k, v in norm.items()}
+    out = {k: max(1, int(x)) for k, x in raw.items()}
+    diff = 100 - sum(out.values())
+    order = sorted(raw, key=lambda k: (raw[k] - int(raw[k])), reverse=(diff > 0))
+    i = 0
+    while diff != 0 and order:
+        k = order[i % len(order)]
+        if diff > 0:
+            out[k] += 1; diff -= 1
+        elif out[k] > 1:
+            out[k] -= 1; diff += 1
+        i += 1
+        if i > 10000:
+            break
+    return out
+
+
 def split_ct(commit_ct: int, shares: Mapping[str, float]) -> dict[str, int]:
     """Apply an amount to a normalized split, in whole ct, losing nothing.
 
@@ -265,6 +293,22 @@ def weight_ct(stake_ct: int, mult: float = 1.0) -> float:
 
 def weight_tokens(stake_ct: int, mult: float = 1.0) -> float:
     return weight_ct(stake_ct, mult) / CT_PER_TOKEN
+
+
+# ---------------------------------------------------------------------------
+# Organization-election votes — the doubling ladder (2026-09-17)
+# ---------------------------------------------------------------------------
+# INSTRUCTIONS build-seq §2: "everyone should be able to vote on an
+# organization. A 0 ebx vote is 1 vote, 10 is 2, 20 is 3, 40 is 4, 80 is 5."
+# Each extra vote needs double the stake of the one before it, so money counts
+# but cannot drown out the room.
+OE_VOTE_BLOCK_CT = 10 * CT_PER_TOKEN
+
+
+def oe_votes(stake_ct: int) -> int:
+    """Votes a benefactor casts in an organization election for a stake."""
+    blocks = max(0, int(stake_ct or 0)) // OE_VOTE_BLOCK_CT
+    return 1 if blocks <= 0 else 1 + blocks.bit_length()
 
 
 # ===========================================================================

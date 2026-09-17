@@ -229,7 +229,13 @@ def p1_ebx_by_tiv(db: Session, tiv_ids: Optional[list[str]] = None) -> dict[str,
 
     This is the public pool aggregate the homepage cards + cause-page leaderboards
     rank by (10 EBX = 1 vote). Pass tiv_ids to scope the sum."""
-    q = select(models.VoteP1.tiv_id, sqlfunc.sum(models.VoteP1.ebx_committed))
+    # 2026-09-17 (build-seq §2): only votes cast in the election the initiative
+    # is running in NOW. `_relist_losers` moves a losing initiative into its
+    # cause's next election, and without this join every token that backed it
+    # last time was counted again in the new race — losing votes carrying over.
+    q = (select(models.VoteP1.tiv_id, sqlfunc.sum(models.VoteP1.ebx_committed))
+         .join(models.Initiative, models.Initiative.id == models.VoteP1.tiv_id)
+         .where(models.VoteP1.mission_id == models.Initiative.mission_id))
     if tiv_ids:
         q = q.where(models.VoteP1.tiv_id.in_(tiv_ids))
     q = q.group_by(models.VoteP1.tiv_id)
@@ -238,7 +244,7 @@ def p1_ebx_by_tiv(db: Session, tiv_ids: Optional[list[str]] = None) -> dict[str,
 
 def open_p1_mission(db: Session, cause_id: str) -> Optional[models.Mission]:
     """The cause's mission whose phase-1 election is still open — i.e. no winner
-    yet and the phase hasn't moved past `initiative`. Newest cycle wins.
+    yet and the phase hasn't moved past `initiative`. The upcoming (lowest) cycle wins.
 
     This is the same choice the frontends make (`_p1MissionForCause` on
     main.html / `_v2Mission` on cause.html), lifted server-side so a proposal
@@ -251,7 +257,9 @@ def open_p1_mission(db: Session, cause_id: str) -> Optional[models.Mission]:
             models.Mission.winning_tiv_id.is_(None),
             models.Mission.current_phase.in_(("pre", "initiative")),
         )
-        .order_by(models.Mission.cycle_num.desc())
+        # 2026-09-17: the UPCOMING election (lowest cycle), the same one the
+        # ballot and the bots vote in — not the newest.
+        .order_by(models.Mission.cycle_num.asc())
     ).first()
 
 
@@ -673,10 +681,27 @@ def adopt_orphan_tivs(db: Session) -> list[str]:
         # has just joined — otherwise the row keeps a stale mission_id and the
         # ben's own slate reads short.
         moved = db.scalars(
-            select(models.VoteP1).where(models.VoteP1.tiv_id == tiv.id)
+            select(models.VoteP1).where(models.VoteP1.tiv_id == tiv.id,
+                                        models.VoteP1.mission_id != m.id)
         ).all()
-        for row in moved:
+        # 2026-09-17: the key is UNIQUE(ben, mission, tiv) now, so re-pointing a
+        # row into a mission where that benefactor already voted for this
+        # initiative would collide. Keep the row that is already there and drop
+        # the stray, folding its share in.
+        here = {r.ben_id: r for r in db.scalars(
+            select(models.VoteP1).where(models.VoteP1.tiv_id == tiv.id,
+                                        models.VoteP1.mission_id == m.id)).all()}
+        for row in list(moved):
+            twin = here.get(row.ben_id)
+            if twin is not None:
+                twin.share = float(twin.share or 0) + float(row.share or 0)
+                twin.stake_ct = int(twin.stake_ct or 0) + int(row.stake_ct or 0)
+                twin.ebx_committed = float(twin.ebx_committed or 0) + float(row.ebx_committed or 0)
+                moved.remove(row)
+                db.delete(row)
+                continue
             row.mission_id = m.id
+            here[row.ben_id] = row
         # Re-pointing can push a benefactor's slate for the target mission over
         # the 1.0 share cap (their orphan vote joins a slate they already
         # filled). Scale that ben's rows back down proportionally so the tally
@@ -716,8 +741,13 @@ def recompute_tiv_rating(db: Session, tiv_id: str) -> models.Initiative:
     tiv = db.get(models.Initiative, tiv_id)
     if tiv is None:
         raise ValueError("Initiative not found")
+    # 2026-09-17 (build-seq §2): only the votes cast in the election this
+    # initiative is running in NOW. A re-listed loser starts its new race with
+    # nothing behind it — the rating is a vote like any other and does not
+    # carry either.
     valences = db.scalars(
-        select(models.VoteP1.valence).where(models.VoteP1.tiv_id == tiv_id)
+        select(models.VoteP1.valence).where(models.VoteP1.tiv_id == tiv_id,
+                                            models.VoteP1.mission_id == tiv.mission_id)
     ).all()
     if valences:
         avg_sign = sum(VALENCE_SIGN[v] for v in valences) / len(valences)
@@ -1859,6 +1889,10 @@ def replace_p1_shares(
     mission = db.get(models.Mission, mission_id)
     if mission is None:
         raise ValueError("Mission not found")
+    if mission.winning_tiv_id or mission.current_phase not in ("pre", "initiative"):
+        # 2026-09-17: a decided initiative election takes no new slate. Its rows
+        # were carried into the organization election at `finalize_p1`.
+        raise ValueError("That initiative election is already decided")
     ben = db.get(models.BenefactorAccount, ben_id)
     if ben is None:
         raise ValueError("Benefactor not found")
@@ -1867,7 +1901,9 @@ def replace_p1_shares(
     # to 1.0, so a partial slate is a proportion of the commit rather than a
     # silent under-spend.
     try:
-        cleaned = tm.normalize_shares(shares)
+        # 2026-09-17 (build-seq §2): the slate is WHOLE percentages of the
+        # commit, 1% steps, min 1% per initiative on it.
+        cleaned = {k: pct / 100.0 for k, pct in tm.whole_percent_shares(shares).items()}
     except ValueError as e:
         raise ValueError(str(e))
 
@@ -1967,6 +2003,82 @@ def replace_p1_shares(
     return get_p1_votes(db, ben_id, mission_id)
 
 
+def reset_open_me_slates(db: Session, dry_run: bool = True) -> dict:
+    """The ME vote-count reset of 2026-09-17 (INSTRUCTIONS build-seq §2).
+
+    For every initiative election still open, rebuild each benefactor's rows
+    from the one number that is money — the sum of their `stake_ct` — and a
+    whole-percentage slate, so every open race counts by the same rule:
+
+      * shares become whole percentages summing to 100;
+      * `stake_ct` is re-split by largest remainder, `ebx_committed` follows it;
+      * a row for an initiative no longer running in this election is dropped,
+        and its ct stays with the benefactor's other rows (or returns to the
+        wallet when there are none).
+
+    Decided elections are history and are not touched. `dry_run` reports
+    without writing.
+    """
+    from . import token_model as tm
+
+    report = {"dry_run": dry_run, "missions": {}, "rows_repaired": 0}
+
+    # First, everywhere: `ebx_committed` is DERIVED from the money (`stake_ct`),
+    # and it is the number every phase-1 tally and the phase-2 carry count. A
+    # row where the two disagree is an election counting something the wallet
+    # does not hold — one of the ways the count "behaved differently in almost
+    # every election". Repair is not a re-vote, so decided elections get it too;
+    # a row whose money predates the ct column (stake_ct 0) is left alone.
+    for r in db.scalars(select(models.VoteP1).where(models.VoteP1.stake_ct > 0)).all():
+        want = int(r.stake_ct) / tm.CT_PER_TOKEN
+        if abs(float(r.ebx_committed or 0) - want) > 0.005:
+            report["rows_repaired"] += 1
+            if not dry_run:
+                r.ebx_committed = want
+
+    open_ms = db.scalars(select(models.Mission).where(
+        models.Mission.winning_tiv_id.is_(None),
+        models.Mission.current_phase.in_(("pre", "initiative")))).all()
+    for m in open_ms:
+        running = set(db.scalars(select(models.Initiative.id).where(
+            models.Initiative.mission_id == m.id)).all())
+        per_ben: dict[int, list[models.VoteP1]] = {}
+        for r in db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == m.id)).all():
+            per_ben.setdefault(r.ben_id, []).append(r)
+        changed = dropped = refunded = 0
+        for ben_id, rows in per_ben.items():
+            commit = sum(max(0, int(r.stake_ct or 0)) for r in rows)
+            keep = [r for r in rows if r.tiv_id in running]
+            gone = [r for r in rows if r.tiv_id not in running]
+            dropped += len(gone)
+            pct = tm.whole_percent_shares({r.tiv_id: float(r.share or 0) for r in keep})
+            if not pct and commit > 0:
+                refunded += commit
+                if not dry_run:
+                    ben = db.get(models.BenefactorAccount, ben_id)
+                    if ben is not None:
+                        ben.free_ct = int(ben.free_ct or 0) + commit
+            split = tm.split_ct(commit, {k: v / 100 for k, v in pct.items()}) if pct else {}
+            for r in keep:
+                new_share = pct.get(r.tiv_id, 0) / 100.0
+                new_ct = int(split.get(r.tiv_id, 0))
+                if abs(float(r.share or 0) - new_share) > 1e-9 or int(r.stake_ct or 0) != new_ct:
+                    changed += 1
+                    if not dry_run:
+                        r.share, r.stake_ct = new_share, new_ct
+                        r.ebx_committed = new_ct / tm.CT_PER_TOKEN
+                if not dry_run and new_ct == 0 and new_share == 0:
+                    db.delete(r)
+            if not dry_run:
+                for r in gone:
+                    db.delete(r)
+        report["missions"][m.id] = {"benefactors": len(per_ben), "rows_changed": changed,
+                                    "rows_dropped": dropped, "ct_refunded": refunded}
+    if not dry_run:
+        db.commit()
+    return report
+
+
 def commit_p1_ebx(
     db: Session,
     ben_id: int,
@@ -1986,6 +2098,7 @@ def commit_p1_ebx(
     row = db.scalar(
         select(models.VoteP1).where(
             models.VoteP1.ben_id == ben_id,
+            models.VoteP1.mission_id == mission_id,
             models.VoteP1.tiv_id == tiv_id,
         )
     )
@@ -2567,6 +2680,7 @@ def p2_tally(db: Session, mission_id: str) -> dict:
     "Race pool". Ranking is by **votes first, EBX second** — the rule the org
     faces already follow (§4, 2026-08-06).
     """
+    from .token_model import oe_votes as tm_oe_votes
     votes = db.scalars(select(models.VoteP2).where(models.VoteP2.mission_id == mission_id)).all()
     # §0 (2026-08-21): the STAKE, not the phase-1 carry. See `p2_stake_by_ben` —
     # committing tokens into a race used to leave this number untouched.
@@ -2585,7 +2699,11 @@ def p2_tally(db: Session, mission_id: str) -> dict:
             continue
         e = per_org.setdefault(v.org_id, {"net_votes": 0, "voters": 0,
                                           "carried": 0.0, "bought": 0.0})
-        e["net_votes"] += int(v.votes) * int(VALENCE_SIGN[v.valence])
+        # 2026-09-17 (build-seq §2): votes come from the stake on the doubling
+        # ladder — 0 tokens = 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5. Bought
+        # extra votes (`v.votes`) are retired with the price ladder.
+        stake_ct = int(round(float(carried.get(v.ben_id, 0.0)) * 100))
+        e["net_votes"] += tm_oe_votes(stake_ct) * int(VALENCE_SIGN[v.valence])
         e["voters"] += 1
         e["bought"] += float(v.ebx_spent or 0)
         e["carried"] += float(carried.get(v.ben_id, 0.0))
@@ -2911,6 +3029,75 @@ def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
     mint_mission_coins(db, mission_id)
     db.commit()
     return winner_org
+
+
+def backfill_org_election(db: Session, mission_id: str, staff: models.BenefactorAccount,
+                          org_id: Optional[str] = None,
+                          mission_statement: Optional[str] = None,
+                          now: Optional[datetime] = None) -> dict:
+    """Staff backfill (INSTRUCTIONS build-seq §1, 2026-09-17): make sure a past
+    organization election that never got an organization elects one.
+
+    Only for a race whose vote day has PASSED, with an elected initiative and no
+    organization. If the race already has a vote signal it finalizes normally.
+    Otherwise the named organization (or the best-placed candidate) is given a
+    mission statement if it lacks one, staff casts the one free vote every
+    benefactor has (0 tokens = 1 vote), and the race finalizes through the same
+    `finalize_p2` every other race uses — so the winner, candidacies, stakes and
+    coins land exactly as they would have on the day.
+    """
+    require_staff(staff)
+    from . import wallet as wallet_mod
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    if mission.winning_org_id:
+        return {"mission_id": mission_id, "winning_org_id": mission.winning_org_id, "already": True}
+    if not mission.winning_tiv_id:
+        raise ValueError("That mission has no elected initiative yet")
+    if wallet_mod._vote_day(mission) > (now or datetime.utcnow()):
+        raise ValueError("That organization election is still open — its vote day has not passed")
+
+    winner = finalize_p2(db, mission_id)
+    if winner:
+        return {"mission_id": mission_id, "winning_org_id": winner, "backfilled": False}
+
+    cands = db.scalars(select(models.MissionCandidacy).where(
+        models.MissionCandidacy.mission_id == mission_id,
+        models.MissionCandidacy.status != "rejected")).all()
+    pick = next((c for c in cands if c.org_id == org_id), None) if org_id else None
+    if pick is None and org_id:
+        if db.get(models.Organization, org_id) is None:
+            raise ValueError("Organization not found")
+        pick = models.MissionCandidacy(mission_id=mission_id, org_id=org_id,
+                                       submitted_by_id=staff.id, status="pending")
+        db.add(pick)
+        db.flush()
+    if pick is None:
+        tally = {e["org_id"]: e for e in p2_tally(db, mission_id)["entries"]}
+        ranked = sorted(cands, key=lambda c: (-(tally.get(c.org_id, {}).get("net_votes", 0)),
+                                              not (c.mission_statement or "").strip()))
+        pick = ranked[0] if ranked else None
+    if pick is None:
+        raise ValueError("No organization is running in that race — nominate one first")
+    if not (pick.mission_statement or "").strip():
+        if not (mission_statement or "").strip():
+            raise ValueError("The organization needs a mission statement to be elected")
+        pick.mission_statement = mission_statement.strip()
+    v = db.scalars(select(models.VoteP2).where(models.VoteP2.ben_id == staff.id,
+                                               models.VoteP2.mission_id == mission_id)).first()
+    if v is None:
+        v = models.VoteP2(ben_id=staff.id, mission_id=mission_id, votes=1, ebx_spent=0,
+                          valence="helpful", committed=True, stake_ct=0,
+                          origin_mission_id=mission_id, conversions=0, minted_ct=0, donated_ct=0)
+        db.add(v)
+    v.org_id = pick.org_id
+    v.valence = "helpful"
+    db.commit()
+    winner = finalize_p2(db, mission_id)
+    if not winner:
+        raise ValueError("The race still could not elect an organization")
+    return {"mission_id": mission_id, "winning_org_id": winner, "backfilled": True}
 
 
 # ===========================================================================

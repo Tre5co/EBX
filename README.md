@@ -109,11 +109,11 @@ what went there and why is `INSTRUCTIONS.md` `## REMOVAL REGISTER`.
   - [The creditcoin — front & back (planned: the 3D earth)](#the-creditcoin--front--back-planned-the-3d-earth)
   - [Transactional credit — what the DEX answered, and what it did not](#transactional-credit--what-the-dex-answered-and-what-it-did-not)
 - [6. Voting & the election algorithm](#6-voting--the-election-algorithm)
-  - [Phase 1 — initiative election (VoteP1, one row per (ben, tiv))](#phase-1--initiative-election-votep1-one-row-per-ben-tiv)
+  - [Phase 1 — initiative election (`VoteP1`, one row per `(ben, tiv)`)](#phase-1--initiative-election-votep1-one-row-per-ben-tiv)
   - [What happens to a commitment once phase 1 closes](#what-happens-to-a-commitment-once-phase-1-closes)
-  - [Phase 2 — organization election (VoteP2, one row per (ben, mission))](#phase-2--organization-election-votep2-one-row-per-ben-mission)
+  - [Phase 2 — organization election (`VoteP2`, one row per `(ben, mission)`)](#phase-2--organization-election-votep2-one-row-per-ben-mission)
 - [7. API surface (63 routes)](#7-api-surface-63-routes)
-- [8. Admin data console (admin.html)](#8-admin-data-console-adminhtml)
+- [8. Admin data console (`admin.html`)](#8-admin-data-console-adminhtml)
 - [9. Frontend status](#9-frontend-status)
   - [The five surfaces, as of 2026-08-28](#the-five-surfaces-as-of-2026-08-28)
 - [10. Data & seeding](#10-data--seeding)
@@ -1029,6 +1029,17 @@ Three things landed on 2026-08-28 that change how two of those read:
   Claude with web search, in character; needs `ANTHROPIC_API_KEY` + `EBX_BOT_MODEL`);
   with neither, bots still vote, rate, upvote and exchange. `--dry-run` prints
   every write; `--only Jax3000` runs one bot.
+  - **2026-09-17 (build-seq §1):** `initiatives` votes in **every** open
+    initiative election — tokens in the upcoming one, a 0-token preference in the
+    others — and `organizations` votes only in this week's race plus races whose
+    initiative election the bot backed (the same rule the server now enforces for
+    everyone). Two staff commands: `sync --from-db backend/earthbucks.db` adds the
+    local version's non-pilot initiatives and organizations to the site (a bot
+    for open elections, the `--staff-handle` account for windows that have
+    passed), and `backfill` elects an organization in every past race that never
+    got one (`GET /admin/elections/unelected-orgs`, `POST
+    /admin/missions/{id}/backfill-org`). The staff password comes from
+    `EBX_STAFF_PASSWORD` or a prompt and is never stored.
   - **The bot signature:** `benefactor_accounts.is_test` (migration
     `f7b2d9e41c63`). A signup carrying the server's `EBX_BOT_KEY` in
     `X-EBX-Bot-Key` is created as a test account; staff can mark any account with
@@ -1048,7 +1059,8 @@ Three things landed on 2026-08-28 that change how two of those read:
 
 ```
 … e8c5d2a7b491 → f4a9c1d2e6b3 (v1 head) → a9f2c1b4d7e3  (v2 rebuild)
-                                        … → c5d8f2a91e67  (aug27c finalized ME/OE — CURRENT HEAD)
+                                        … → c5d8f2a91e67  (aug27c finalized ME/OE)
+                                        … → e1a7c3b95d20 → f7b2d9e41c63 → a7c1e9d3b5f2  (sep17 votes_p1 per mission — CURRENT HEAD)
 ```
 
 `a9f2c1b4d7e3` drops the v1 tables and builds the mission-centric schema. The
@@ -1204,7 +1216,8 @@ PW_CHROME=/path/to/chrome node scripts/oe_check.js
 | **`oe_check`** | **Chromium** | **The ORGANIZATION election table**, and above all the conservation law: eight races and one unallocated balance share a single pot, so it dials amounts up and down and checks that nothing is created or destroyed on the way. Also: that a commitment is a POSITION (revisable inside its week), that the race pool moves when you commit, that an unassigned stake is still in the pool, that a refresh does not pay the grant twice. 90 assertions. |
 | **`profile_check`** | **Chromium** | The profile page's shape: three cards on top, seven weekly windows around the globe, the clockwise rule (top card in columns, side cards in rows, and the left column reversed), two cause colours per card, the globe actually turning, and that member mode is gated on a coin being *selected*. 42 assertions. |
 | `token_model_check` | — | Pure arithmetic in `token_model.py`. No server. 107 assertions. Asserts the 2026-09-16 model: the finality ladder (10% / +10% / 100%), no correctness multipliers, the 32nds, the grant week. |
-| `wallet_check` | — | `wallet.py` against a live database: the position, the week roll, unlimited moves, withdrawal, early EBX vs a mark, the ME and OE skims booked as finality, the grant week, the $1 organization-election minimum, stake withdrawal. 132 assertions (2026-09-16). |
+| `wallet_check` | — | `wallet.py` against a live database: the position, the week roll, unlimited moves, withdrawal, early EBX vs a mark, the ME and OE skims booked as finality, the grant week, the $1 organization-election minimum, stake withdrawal, and (2026-09-17) far races closed without an ME stake. 133 assertions. |
+| `election_check` | — | The 2026-09-17 counting rules against a throwaway copy of the database: no losing-vote carryover (totals, tally, re-vote), whole-percentage slates that keep their ratios, decided elections refuse slates, the organization vote ladder, only this week's race without an ME stake, the staff ME reset and organization backfill, and (2026-09-17b) the repair of a counted figure that drifted from its money, a re-listed loser's rating starting empty, and an adopted orphan folding instead of colliding with the per-mission key. 41 assertions. |
 | ~~`build_guard`~~ | — | **Retired 2026-09-16** with the TypeScript source it guarded. Prints a notice and exits; REMOVAL REGISTER §A. |
 | **`carry_audit`** | — | **New 2026-09-08.** Lists phase-1 positions standing in an initiative election that has already closed with **no phase-2 row to carry them** — money that was invisible on every surface until the `read_wallet` fix. It prints and stops: each line is a case-by-case call (carry it, refund it, or leave it), and where the organization election is already decided, carrying it would inject money into a settled race. Eight positions today, six of them mechanical. |
 

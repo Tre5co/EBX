@@ -452,7 +452,9 @@ class MissionStep(Base):
 class VoteP1(Base):
     __tablename__ = "votes_p1"
     __table_args__ = (
-        UniqueConstraint("ben_id", "tiv_id", name="uq_votep1_ben_tiv"),
+        # 2026-09-17: per MISSION. A losing initiative is re-listed in its cause's
+        # next election, and a backer must be able to vote for it again there.
+        UniqueConstraint("ben_id", "mission_id", "tiv_id", name="uq_votep1_ben_mission_tiv"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

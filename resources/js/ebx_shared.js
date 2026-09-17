@@ -1580,8 +1580,10 @@
   // Rendered only when there is something uncommitted for this cause.
   function _uncommittedStrip(d) {
     var n = 0;
+    var draft = false;
     try { n = (typeof window !== "undefined" && window._uncommittedVotes) ? window._uncommittedVotes(d.causeId) : 0; } catch (e) { n = 0; }
-    if (!n) return "";
+    try { draft = (typeof window !== "undefined" && window._meHasDraft) ? window._meHasDraft(d.causeId) : !!n; } catch (e) { draft = !!n; }
+    if (!draft) return "";
     var cid = String(d.causeId || "").replace(/'/g, "");
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--font-mono);font-size:0.72rem;color:' + d.color + ';padding-top:2px;">' +
       '<span><span style="color:rgba(245,240,232,0.62);font-size:0.56rem;letter-spacing:0.1em;text-transform:uppercase;">Uncommitted</span> ' + n + ' EBX</span>' +

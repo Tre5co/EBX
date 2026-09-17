@@ -55,70 +55,73 @@ if a line starts with "!-" read, but do not execute it yet.
 - (c) **Inconsistencies**
 - (d) **Not blocking** — `## REMOVAL REGISTER` (below), updated.
 
-1. *Analytics* - I added my site, implement this which I copied from cloudflare.
-<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
+1. **Backfill**
+- improve healthcare and wolf habitat have no organizations. We need to retroactively implant them as winners.
 
-2. **Landing**
-- The dates should be: week 0 - week 8 - week 15 - week 15 on
-- Make "maximizing donor control" and "publicizing charitable impact" slightly smaller and below the steps. Add "How it Works" in their place.
-- You elect the initiative / Donate to this weeks cause by funding what you want the mission to be.
-- You elect who runs it / After the mission is decided, your tokens can be put towards it's philanthropy.
-- "We verify them in the open" -> Receive your Earthbucks/ Earthbux orients the organization and it's benefactors (you). -> Mission page
-- "They get funded, you stay liquid" -> Follow along and trade / Hold on, or exchange for a different mission.-> Feed page
-- Reverse... The budget posts should be under "Research the mission to win Rewards" below research posts which should be under "A public forum budgets the missions".
+2. **Elections** The vote counting is wrong and likely needs a reset.
+- The ME voting is the main culprit. 
+- It's behaving differetnly in almost every election, 
+- I think it has something to do with losing votes carrying over into the next election, which should not happen anymore.
+- Also, we need to convert it to the 
+- They should be like this: The sliders are the same no matter how many tokens you commit. They move based on the ratio of your total commit you want to split between the initiatives, in 1% increments. This means that if you donate $100, the minimum amount you can commit to any individual initiative is $1. This is helpful because the slider bars won't be affected by additional purchases. Adding more money adds an equa share across your sliders, which, of course, can be reallocated at will. (see money model 5)
 
-3. **Election**
-- The annulus is not toggling to the selected mission. Fix this
-- The initiative titles in the OE do need a full-row-width. They should be above the dates and times. 
-- I think we can do a 3-way horizontal toggle with the cause, me, and oe election cards where the one selected is an expanded column and the other two are collapsed columns on the left or right. This will be selected by the first, next, finally acting as the toggles.
-- Somewhere on the election page needs to have a "Show active missions for [cause]"
-- In the election cards, any initiative or organization that the logged in account backed should be highlighted.
-- The initiative title and initiative case should be seperate. Currently there is a case within the title. Those who propose an initiative should be incentivized to produce a case, but they should be displayed seperately. The description is a case.
-- You must donate at least $1 to vote in the organization eleciton. So the only way to allocate your grant there is if it is the full grant, or if you already participated in the ME, or if you add more money.
+- Also, everyone should be able to vote on an organization. A 0 ebx vote is 1 vote, 10 is 2 votes, 20 is 3, 40 is 4, 80 is 5, etc.
 
-> **✅ Steps 1–3 pass, 2026-09-16.**
-> **1 Analytics** — the Cloudflare Web Analytics beacon is on all six pages
-> (index, main, cause, mission, profile, admin), just before `</body>`. Counts show
-> at dash.cloudflare.com → Web Analytics once the deploy is live.
-> **2 Landing** — "How it Works" over the steps; dates week 0 · 8 · 15 · 15 on;
-> the new step wording, step 3 → mission.html and step 4 → cause.html (the feed);
-> the two halves below the steps, smaller; the research band ("Research the
-> mission to win Rewards") now above the budget band ("A public forum budgets the
-> missions"), each heading over its own trio (your answer the same day).
-> `landing_check` rewritten for this page (35, clean).
-> **3 Election** — picking a card or race now points the annulus, its centre and
-> the cause tabs at it (`_pointAnnulusAt`; the pie and centre show the picked
-> race). OE card titles take the full row above days-left and date. The cause,
-> initiative and organization election cards are one three-way toggle (`#el3`):
-> one expanded column, two collapsed, driven by First / Next / Finally, and ME/OE
-> keep the page mode in step. "Show active missions for [cause]" under the table
-> (OE scope `cause`: every mission of that cause with an elected initiative).
-> Backed initiatives and organizations are highlighted on the cards ("✓ you").
-> Title and case are separate: the propose dialog asks for a short title (90
-> characters) and "Make the case"; the detail panel shows "The case" under the
-> title, splitting old long titles at their first sentence; new titles are capped
-> at 120 characters server-side. $1 minimum in an organization election
-> (`OE_MIN_STAKE_CT`), waived when the stake was carried from that mission's
-> initiative election or the benefactor has money in an initiative election; a
-> refused commit now says why. `wallet_check` 132 · `ce_check` 79/80 (the one
-> failure predates this pass) · `render_check` clean.
+> **✅ Steps 1–2 built and checked 2026-09-17 — NOT YET LIVE.**
+> **1 Backfill** — `GET /admin/elections/unelected-orgs` lists every past race
+> with an elected initiative and no organization; `POST
+> /admin/missions/{id}/backfill-org` elects one through the same `finalize_p2`
+> the day would have used (staff casts the free vote every benefactor has, the
+> named organization needs a mission statement). wolf habitat and improve
+> healthcare are backfilled by running it once each against the live site, after
+> the deploy — wil0 now has a nominated organization, hmr0 still needs one.
+> **2 Elections** — losing votes no longer carry: `p1_ebx_by_tiv` counts only
+> votes cast in the election an initiative is running in, `votes_p1` is unique
+> per (ben, mission, tiv) (migration `a7c1e9d3b5f2`) so a backer can back a
+> re-listed loser again, and `recompute_tiv_rating` is scoped the same way —
+> the rating does not carry either. The ME slate is whole percentages of one
+> commit (`tm.whole_percent_shares`; main.html has one *My commit* amount and
+> 1% sliders that rebalance each other), and a decided election refuses a new
+> slate. Organization elections count VOTES on the doubling ladder — 0 tokens =
+> 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5 (`tm.oe_votes`), everyone may vote in
+> this week's race, and a race you have no ME stake in stays closed to you.
+> The reset is `POST /admin/elections/me-reset` (dry run by default): it rebuilds
+> every OPEN slate as whole percentages of the money behind it, drops rows for
+> initiatives that left the race, and repairs any row whose counted figure had
+> drifted from its ct — decided races keep their history. On the local database
+> it left every open election clean and moved no money.
+> `election_check` 41 · `wallet_check` 133 · `token_model_check` 107 ·
+> `render_check` clean · `ce_check` 79/80 (the one failure predates this pass).
+> `oe_check` cannot run against this database — it wants eight open races and
+> the pilot data has moved on; it fails the same way before this pass.
+> **Still to do:** push and deploy, then run the ME reset and the two backfills
+> against earthbux.net.
+
+3. **Bots**
+- Let's seperate the tasks so that we can run each individually. 
+*Task Categories* may include: 
+- Voting - cause, initiative, org, budget item,
+- Researching - suggestion, analysis, investigation
+- Proposing - cause, initiative, organization, budget item
+- Exchangeing - commits, ebx
+- Budgeting/replying - critiquing posts.
+Separate tasks between AI API necessary or not
+Each bot may run any task. Multiple bots can run the same task, or one bot can run many tasks.
+*bugs*
+- The initiatives pass only voted on human progress, which is the latest possible election. (This weeks election is atmosphere) They should spread their votes across all elections, focusing especially on the upcoming one.
+- When the ME voting is fixed, select initiatives in each of the elecitons for each bot.
+
+
+999. Housekeeping
+- (a) **Update ToC** in each doc.
+- (b) **Update Structre** Update page layouts on structure.md.
+- (c) **Update Gantt Chart** Add new items, flag behind schedule and update completed.
 
 ## BUILD BACKLOG
-
-### **Bots**
-Nice, they work.
-A couple things though.
-- The initiatives pass only voted on human progress, which is the latest possible election. They should spread their votes across all elections, focusing especially on the upcoming one.
-- Same with the organizations, which all voted in a previously elected mission... future AND they voted in the OE but had not committed to the ME... This should only be possible for the active week. 
-
-### 1. **Landing**
-
-### 2. **Election**
-- The ME slider bars are not working right. they should be like this: The sliders are the same no matter how many tokens you commit. They move based on the ratio of your total commit you want to split between the initiatives, in 1% increments. This means that if you donate $100, the minimum amount you can commit to any individual initiative is $1. This is helpful because the slider bars won't be affected by additional purchases. Adding more money adds an equa share across your sliders, which, of course, can be reallocated at will. (see money model 5)
-- The cause election needs to show all potential cause replacements, not just the one for the active cause - have a row where every cause with a potential replacement is highlighted and the rest are grayed out. 
-- Withdraw needs to be built into the election (and the mission page for framing)
-- Users should be able to post in any mission.
-!- Top left ME card shouldn't toggle on desktop mode. It should always show the upcoming ME. On mobile it will eventually toggle, but we aren't building mobile yet.
+### **Open Questions**
+What are the locations on the globe for each mission?
+Globe 1: Benefactor's home
+Globe 2: Mission
 
 ### 3. **Mission** The mission page Established in the framing stage. 
 - Mission pages need the 7 cause toggle, or else users would need to click through them too far. The same annulus from the election page is there, but there are inner (and outer?) layers - globe in middle
@@ -135,12 +138,47 @@ A couple things though.
 - [ ] Globe rendering per location-type (pin vs. shaded region vs. multi-pin).
 - Ability to edit research posts.
 
+### **Bots**
+
+
+### 1. **Landing**
+- Strongest work needs to be on the landing page - Annulus with cards and a globe in the center. 
+- Need to make it more clear that the research and budget posts are posts. Maximizing donor control and publicizing charitable impact can probably be removed and replaced with some description of this. 
+- Research posts should take us to the mission page, so.. so should budgeting posts?
+
+- If I create a new annulus with cards showing active missions (Maybe with images) this would be a strong display. 
+
+So
+How it works
+------------
+Active Missions
+-----------
+Discussion
+Research
+Budgeting
+-----------
+
+- Receive your Earthbucks / Our team, the Earthbux community, and the Philanthropy create a preliminary mission plan.
+
+### 2. **Election**
+- Benefactors need to be able to tell which OE elections they have tokens available to vote in. This is where our allocations area comes in. Also needs something to notify you whether your votes won. 
+- The 3 step toggles should be synced with the OE/ME toggle. 
+- Show active missions for [cause] leads us to the missions page. 
+
+- The cause election needs to show all potential cause replacements, not just the one for the active cause - have a row where every cause with a potential replacement is highlighted and the rest are grayed out. 
+- Withdraw needs to be built into the election (and the mission page for framing)
+- Users should be able to post in any mission.
+!- Top left ME card shouldn't toggle on desktop mode. It should always show the upcoming ME. On mobile it will eventually toggle, but we aren't building mobile yet.
+
+
+
 ### 4. **News**
 - Currently, every post leads back here. This is correct, but it should instead just link to the post, with an option to bring up the mission page. 
 - This is the key aspect. I should learn from the likes of meta, linkedin, reddit, and tiktok. One page, always the same experience. 
 - Only page without a large annulus in the center. Corner annulus instead reflects the status regarding the mission of the post currently viewing.
 
 ### 5. **Profile**
+- The choice cards are in the reverse order as they should be. Each tiv/org should be swapped, and it should be week+1 on top left counterclockwise to week+6 on top right
 - [ ] The coins stay updated with the amount donated and the amount held in each mission.
 - [ ] Remove login page warning banner
 - [ ] Benefactor running tally of 3 categories: **wallet value** (across all credit coins), **money donated** (each donation hashed with its send-time value; tax-deductible), **spent** (money consumed).
@@ -171,6 +209,7 @@ A couple things though.
 - I may need a method to reward users for being less sticky-fingered with their money.
 - Big rename - context is now going to be called situation.
 - Moderation - before individual user verification, I may need to be able to block certain ips or spam creation from accessing the site. This is theoretical for now but I want to think about how I would do this without being flooded. 
+- On mobile, the 5 page tabs should be across the bottom of the screen and always visible unless the user is scrolling down, like on social media.
 
 ## CONVERSATION
 - Without permission, only execute build sequence.

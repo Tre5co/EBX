@@ -330,6 +330,11 @@ the toggles; picking a card or race points the annulus at it; OE card titles tak
 the full row; backed entries are highlighted on the cards; "Show active missions
 for [cause]" sits under the table; an initiative's title and case display apart;
 an organization-election stake is $1 minimum.*
+*2026-09-17 (build-seq §2): the ME ballot is **percentages of one commit** — a
+*My commit* number in the head, 0–100% sliders in 1% steps that rebalance each
+other, "N% · x tk" per row; the OE ballot shows **My votes** (0 tokens = 1 vote,
+10 = 2, 20 = 3, 40 = 4, 80 = 5), and a race the benefactor has no ME stake in
+shows why it is closed instead of an amount row.*
 *backlog*
 - [x] **Perfect instructions/help** — DONE 2026-09-08 (build-seq §2). The
   election-experience block sits between the seven cause toggles and the cause
@@ -403,6 +408,13 @@ an organization-election stake is $1 minimum.*
   - ◑ **Table**
     - ◑  **Election Panel** 
       - ✅ **ME** - Sliders to split vote - | starred | My commitment | tiv title | total ebx | cause | [vote] | — columns BUILT 2026-08-10 (§8)
+        - ✅ **Ballot head** (2026-09-17): cause · decision date · **My commit
+          [n] of N tokens** · Assigned % · Pool · Leading.
+        - ✅ **Slider rows** (2026-09-17): `name · pool · field %` | 0–100% slider |
+          `N% · x tk` | + org | ✕. Moving one slider takes from the others in
+          proportion; ✕ hands its share back; a new row takes an equal share.
+          The budget is the whole balance only in the week's cause (a grant's
+          door); elsewhere it is purchased tokens.
         - ✅ **Expanded rows** — REPLACED 2026-09-08. A row click paints
           `_idxInitDetailHTML` into `.vb-detail` inside the ME ballot and lights
           the row; clicking the same row again closes it. No `<tr>` unfolds.
@@ -426,6 +438,9 @@ an organization-election stake is $1 minimum.*
         - ✅ **Commit + Cancel** are back on the ballot's foot, beside the three
           links, and arm with the race. Same `commitAll`; two doors.
         - ✅ The panel says **Organization Election**, not Philanthropy.
+        - ✅ **My votes** chip (2026-09-17) — the ladder, from the row's
+          `my_votes`. Pick buttons and the amount row are disabled with a reason
+          where `can_take_part` is false.
       - [ ] **CE** Expands when CE panel is interacted with
     - [ ] **CE Panel**
 

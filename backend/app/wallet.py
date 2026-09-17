@@ -330,6 +330,7 @@ def oe_rows(db: Session, ben_id: Optional[int],
         if ben_id and m.winning_tiv_id:
             backed_winner = db.scalars(
                 select(models.VoteP1).where(models.VoteP1.ben_id == ben_id,
+                                            models.VoteP1.mission_id == m.id,
                                             models.VoteP1.tiv_id == m.winning_tiv_id)
             ).first() is not None
         headroom = free if m.id == active_id else purchased
@@ -359,6 +360,8 @@ def oe_rows(db: Session, ben_id: Optional[int],
             # deployment order, so weight is the stake through the block curve.
             "backed_winner": backed_winner,
             "my_weight": tm.weight_tokens(my_ct),
+            "my_votes": tm.oe_votes(my_ct),            # 2026-09-17: the doubling ladder
+            "can_take_part": bool(ben_id) and (m.id == active_id or _carried_from_me(v)),
             "my_final_ct": final_ct_of(db, v, now) if v else 0,
             "born_week": (v.born_week if v else None),
             "origin_mission_id": ((v.origin_mission_id if v and v.origin_mission_id
@@ -478,6 +481,21 @@ def _check_oe_minimum(v: Optional[models.VoteP2], target_ct: int,
         "initiative election first")
 
 
+def _check_takes_part(is_active: bool, v: Optional[models.VoteP2], have_ct: int,
+                      adding: bool) -> None:
+    """2026-09-17 (INSTRUCTIONS build-seq §1): without a stake carried in from
+    this mission's own initiative election, a benefactor takes part only in THIS
+    WEEK'S organization election. Everyone may vote there (0 tokens = 1 vote);
+    the other open races belong to the people who funded their initiative
+    election. Lowering or clearing an existing position is always allowed, and
+    so is naming an organization for tokens already moved into the race."""
+    if not adding or is_active or _carried_from_me(v) or int(have_ct or 0) > 0:
+        return
+    raise ValueError(
+        "This organization election is not this week's. You can vote in it only "
+        "if you backed its initiative election; this week's race is open to everyone")
+
+
 def _spendable_ct(ben: models.BenefactorAccount, is_active_race: bool) -> int:
     """What may enter THIS race out of the unallocated bar.
 
@@ -526,6 +544,7 @@ def set_stake(db: Session, ben_id: int, mission_id: str, target_ct: int,
     v = _vote_row(db, ben_id, mission_id)
     derived = crud.p2_ebx_by_ben(db, mission_id).get(ben_id, 0.0)
     have = stake_ct_of(v, derived) if (v or derived) else 0
+    _check_takes_part(is_active, v, have, int(target_ct or 0) > have or org_id is not None)
     minted = minted_ct_of(v)
     unminted = max(0, have - minted)
     if unminted > 0 and not is_movable(v, week):
@@ -727,6 +746,10 @@ def set_org(db: Session, ben_id: int, mission_id: str, org_id: Optional[str],
     week = current_week(now)
     harden_due(db, ben_id, now)
     v = _vote_row(db, ben_id, mission_id)
+    open_missions = _open_p2_missions(db)
+    is_active = bool(open_missions) and open_missions[0].id == mission_id
+    _check_takes_part(is_active, v, stake_ct_of(v) if v is not None else 0,
+                      org_id is not None)
     if v is None:
         v = models.VoteP2(ben_id=ben_id, mission_id=mission_id, votes=1, ebx_spent=0,
                           valence="helpful", committed=False, stake_ct=0,

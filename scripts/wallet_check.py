@@ -301,19 +301,22 @@ ok(r.status_code == 400, "…and you cannot withdraw more purchased ct than you 
    f"HTTP {r.status_code}")
 
 # ---------------------------------------------------------------------------
-section("two doors: granted ct enters this week's race, purchased ct enters any")
+section("two doors: this week's race is open to everyone; the others need an ME stake (2026-09-17)")
 _rows4 = c.get("/wallet", headers=H4).json()["rows"]
 _active = _rows4[0]["mission_id"]
 _far = _rows4[-1]["mission_id"]
 ok(_rows4[0]["is_active_race"], "the race closing soonest is this week's")
 ok(not _rows4[-1]["is_active_race"], "…and the last row is not")
 r = c.post("/wallet/commit", headers=H4,
-           json={"mission_id": _far, "target_ct": 99 * T}).json()
-ok(r["stake_ct"] == 13 * T,
-   "a far race takes the PURCHASED slice and no more", f'{r["stake_ct"]} ct')
+           json={"mission_id": _far, "target_ct": 99 * T})
+ok(r.status_code == 400 and "this week" in r.json().get("detail", ""),
+   "a far race refuses a benefactor who did not back its initiative election",
+   f"HTTP {r.status_code}")
+r = c.put("/wallet/org", headers=H4, json={"mission_id": _far, "org_id": "earthbux"})
+ok(r.status_code == 400, "…and so does a free vote there", f"HTTP {r.status_code}")
 r = c.post("/wallet/commit", headers=H4,
            json={"mission_id": _active, "target_ct": 99 * T}).json()
-ok(r["stake_ct"] == 10 * T,
+ok(r["stake_ct"] == 23 * T,
    "…while this week's race can take the whole balance", f'{r["stake_ct"]} ct')
 ok(r["free_ct"] == 0, "…leaving nothing unallocated")
 
