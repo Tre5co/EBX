@@ -12,28 +12,22 @@ section a build pass executes; `## BACKLOG` is everything named but not queued;
 
 - [AI TUNING](#ai-tuning)
 - [BUILD SEQUENCE](#build-sequence)
+- [BUILD BACKLOG](#build-backlog)
+  - [**Open Questions**](#open-questions)
+  - [3. **Mission** The mission page Established in the framing stage.](#3-mission-the-mission-page-established-in-the-framing-stage)
+  - [**Bots**](#bots)
+  - [1. **Landing**](#1-landing)
+  - [2. **Election**](#2-election)
+  - [4. **News**](#4-news)
+  - [5. **Profile**](#5-profile)
+  - [6. **Docs**](#6-docs)
+  - [7. **Everywhere**](#7-everywhere)
 - [CONVERSATION](#conversation)
 - [BACKLOG](#backlog)
-  - [▶ NOW — posting & newsfeed (phases 1–2, the focus)](#now--posting--newsfeed-phases-12-the-focus)
-  - [Cause framework (absorbed from jax notes 2.txt, 2026-07-31)](#cause-framework-absorbed-from-jax-notes-2txt-2026-07-31)
-  - [Model notes absorbed from CONVERSATION (2026-08-06) — documented, not built](#model-notes-absorbed-from-conversation-2026-08-06--documented-not-built)
-  - [Bugs (clear these for a clean phase-1/2 experience)](#bugs-clear-these-for-a-clean-phase-12-experience)
-  - [▶ NEXT — cause / election UI (phases 1–2)](#next--cause--election-ui-phases-12)
-  - [Elections / voting model](#elections--voting-model)
-  - [▶ Proposed model change — collapse the back-half phase enum](#proposed-model-change--collapse-the-back-half-phase-enum)
-  - [⏸ PARKED — end of phase 2 onward (do not build until the posting focus lands)](#parked--end-of-phase-2-onward-do-not-build-until-the-posting-focus-lands)
-  - [Phase 2 / organizations (backend)](#phase-2--organizations-backend)
-  - [Resolutions (phase 3: budget → release → resolve)](#resolutions-phase-3-budget--release--resolve)
-  - [Money / credit / donations](#money--credit--donations)
-  - [Creditcoin front/back + 3D earth (born on mission.html)](#creditcoin-frontback--3d-earth-born-on-missionhtml)
-  - [Profiles](#profiles)
   - [Accounts / kids (12–17)](#accounts--kids-1217)
   - [Infra / admin / testing](#infra--admin--testing)
 - [THE PLAN](#the-plan)
-  - [0. The thing that makes this plan unusual](#0-the-thing-that-makes-this-plan-unusual)
   - [1. The build clock](#1-the-build-clock)
-  - [2. The mission clock](#2-the-mission-clock)
-  - [3. The planning aid — what to build, when the chart is not enough](#3-the-planning-aid--what-to-build-when-the-chart-is-not-enough)
   - [4. Sources](#4-sources)
 - [REMOVAL REGISTER](#removal-register)
   - [§A — safe now, nothing reads them](#a--safe-now-nothing-reads-them)
@@ -42,12 +36,31 @@ section a build pass executes; `## BACKLOG` is everything named but not queued;
   - [§D — looks dead, is not](#d--looks-dead-is-not)
   - [Also worth doing while here](#also-worth-doing-while-here)
   - [Added 2026-09-08 (build-seq §0 + §6)](#added-2026-09-08-build-seq-0--6)
+  - [Added 2026-09-16 (build-seq §1)](#added-2026-09-16-build-seq-1)
 
 <!-- /TOC -->
 
 ## AI TUNING
 if a line starts with "!-" read, but do not execute it yet.
 @CLAUDE Stop process now if there are any lines in between here and ## BUILD SEQUENCE
+
+*Ballot Notes*
+- Same topbar as election cards. 
+- Row 1.
+
+*Other*
+We're going to simply remove the pie chart and center display??? No. Its outer -> pie -> globe. The pie can be a thin annulus. 
+
+
+- Need a record of commits... I'm sure thats in admin
+- Need to fix admin.
+- Centered around missions, user accounts, organizations, and full.
+  - 'purchases'
+- Design mission-descussion "Frame"
+- Remove all posting gates. Everyone can post and everyone can reply
+- Home -> Elect -> Missions -> News -> Profile
+  - 'Post'? Seperate Earthbux/Orgs from Bens?
+
 ## BUILD SEQUENCE
 0. Resolve if any
 - (a) **Errors**
@@ -56,48 +69,44 @@ if a line starts with "!-" read, but do not execute it yet.
 - (d) **Not blocking** — `## REMOVAL REGISTER` (below), updated.
 
 1. **Backfill**
-- improve healthcare and wolf habitat have no organizations. We need to retroactively implant them as winners.
+- There are more issues with the improve healthcare retroactive missed election. The Initiative election is showing as an organization election, and I can't select human rights from the 7-cause toggle. This might be carrying over from before the budget card was added... I think we need to retroactively add a human rights initiative too.
+Account GameMaster pass J62uCae72ar
 
-2. **Elections** The vote counting is wrong and likely needs a reset.
-- The ME voting is the main culprit. 
-- It's behaving differetnly in almost every election, 
-- I think it has something to do with losing votes carrying over into the next election, which should not happen anymore.
-- Also, we need to convert it to the 
-- They should be like this: The sliders are the same no matter how many tokens you commit. They move based on the ratio of your total commit you want to split between the initiatives, in 1% increments. This means that if you donate $100, the minimum amount you can commit to any individual initiative is $1. This is helpful because the slider bars won't be affected by additional purchases. Adding more money adds an equa share across your sliders, which, of course, can be reallocated at will. (see money model 5)
+> **✅ 1 Backfill built 2026-09-18 — the live run is one deploy away.**
+> **What was actually wrong.** hmr1 (human rights, cycle 1) reached its decision
+> day, 2026-09-08, with three preferences standing and **no tokens behind any of
+> them**. A live election counts money — 10 EBX = 1 vote — so `finalize_p1` had
+> nothing to elect on and answered None every time it was asked. Everything you
+> saw follows from that one stuck mission: the annulus centre reads *Initiative
+> election · Sep 8, 2026* with 0 days left while the ballot below it offers
+> hmr2's Oct 27 election, and the organization column, having no human-rights
+> race to show (there is none until hmr1 elects something), falls back to
+> **another cause's** race — hpr1's "Make solar grids more efficient" was sitting
+> on the human-rights page.
+> **The fix.** `GET /admin/elections/unelected-tivs` lists every initiative
+> election whose day has passed with nothing elected, and what is standing in
+> each one; `POST /admin/missions/{id}/backfill-tiv` elects one. Where money was
+> committed it finalizes on the money, exactly as the day would have. Where there
+> is none it elects on the PEOPLE — `crud.p1_preferences`, ranked by voters, then
+> EBX, then helpfulness, then the initiative's age — or on the initiative staff
+> names, and the answer says which it used. It refuses an election whose day has
+> not come. `finalize_p1`'s effects are now `_elect_tiv`, so a retroactive
+> election carries the stakes and re-lists the losers through the same code the
+> real one uses.
+> **The bots chose.** Run 2026-09-18, `initiatives` across all seven open
+> elections (0 tokens each — this week's grant was already spent, so these are
+> preferences, not money). In hmr1: **Frontline Community Health Clinics**
+> (init-022) has 3 people behind it, **Climate Displacement Legal Aid**
+> (init-021) has 2 — Jax3000 and JJ420 backed the legal aid, BotJoe9 and one
+> earlier voter the clinics. So the backfill will elect init-022 unless staff
+> names another.
+> **Still to do:** push and deploy, then `POST /admin/missions/hmr1/backfill-tiv`
+> as GameMaster and re-check the human-rights page. `election_check` 52.
+> **Logged, not fixed:** main.html's organization column falls back to another
+> cause's race when the selected cause has none — it should say the cause has no
+> organization election yet. Added to the Election backlog.
 
-- Also, everyone should be able to vote on an organization. A 0 ebx vote is 1 vote, 10 is 2 votes, 20 is 3, 40 is 4, 80 is 5, etc.
-
-> **✅ Steps 1–2 built and checked 2026-09-17 — NOT YET LIVE.**
-> **1 Backfill** — `GET /admin/elections/unelected-orgs` lists every past race
-> with an elected initiative and no organization; `POST
-> /admin/missions/{id}/backfill-org` elects one through the same `finalize_p2`
-> the day would have used (staff casts the free vote every benefactor has, the
-> named organization needs a mission statement). wolf habitat and improve
-> healthcare are backfilled by running it once each against the live site, after
-> the deploy — wil0 now has a nominated organization, hmr0 still needs one.
-> **2 Elections** — losing votes no longer carry: `p1_ebx_by_tiv` counts only
-> votes cast in the election an initiative is running in, `votes_p1` is unique
-> per (ben, mission, tiv) (migration `a7c1e9d3b5f2`) so a backer can back a
-> re-listed loser again, and `recompute_tiv_rating` is scoped the same way —
-> the rating does not carry either. The ME slate is whole percentages of one
-> commit (`tm.whole_percent_shares`; main.html has one *My commit* amount and
-> 1% sliders that rebalance each other), and a decided election refuses a new
-> slate. Organization elections count VOTES on the doubling ladder — 0 tokens =
-> 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5 (`tm.oe_votes`), everyone may vote in
-> this week's race, and a race you have no ME stake in stays closed to you.
-> The reset is `POST /admin/elections/me-reset` (dry run by default): it rebuilds
-> every OPEN slate as whole percentages of the money behind it, drops rows for
-> initiatives that left the race, and repairs any row whose counted figure had
-> drifted from its ct — decided races keep their history. On the local database
-> it left every open election clean and moved no money.
-> `election_check` 41 · `wallet_check` 133 · `token_model_check` 107 ·
-> `render_check` clean · `ce_check` 79/80 (the one failure predates this pass).
-> `oe_check` cannot run against this database — it wants eight open races and
-> the pilot data has moved on; it fails the same way before this pass.
-> **Still to do:** push and deploy, then run the ME reset and the two backfills
-> against earthbux.net.
-
-3. **Bots**
+2. **Bots**
 - Let's seperate the tasks so that we can run each individually. 
 *Task Categories* may include: 
 - Voting - cause, initiative, org, budget item,
@@ -116,12 +125,23 @@ Each bot may run any task. Multiple bots can run the same task, or one bot can r
 - (a) **Update ToC** in each doc.
 - (b) **Update Structre** Update page layouts on structure.md.
 - (c) **Update Gantt Chart** Add new items, flag behind schedule and update completed.
+- (d) **Suggest** Modifications to align readme with project.
+
+> **✅ 999 done 2026-09-17.** (a) `scripts/toc.py` rebuilt the `## Contents`
+> block in README.md and docs/*.md. (b) structure.md carries the percentage
+> ballot and the My-votes chip (§2 of this pass). (c) The build clock has the
+> elections pass on it, done.
 
 ## BUILD BACKLOG
 ### **Open Questions**
 What are the locations on the globe for each mission?
 Globe 1: Benefactor's home
 Globe 2: Mission
+
+**Admin** Cores:
+Mission -
+Benefactors - 
+Financial - 
 
 ### 3. **Mission** The mission page Established in the framing stage. 
 - Mission pages need the 7 cause toggle, or else users would need to click through them too far. The same annulus from the election page is there, but there are inner (and outer?) layers - globe in middle
@@ -161,6 +181,21 @@ Budgeting
 - Receive your Earthbucks / Our team, the Earthbux community, and the Philanthropy create a preliminary mission plan.
 
 ### 2. **Election**
+- The organization column shows ANOTHER CAUSE'S race when the selected cause has
+  none of its own (found 2026-09-18 on human rights, which had no organization
+  election because hmr1 never elected an initiative). It should say so instead:
+  a cause with no race is a state, not a reason to borrow one.
+- The annulus centre and the ballot can name two different missions at once —
+  the centre took the overdue election, the ballot the next one. Once an overdue
+  election cannot happen (backfill, §1) this is rare, but the two should read
+  from the same mission either way.
+- Remove all automatic scrolling on this page
+- The free vote and the posting gate disagree (found 2026-09-17, live): everyone
+  can now vote in this week's organization election on 0 tokens, but
+  `crud.can_post_mission` still wants a committed stake — Jax3000 voted for
+  Western Watersheds Project in wil0 and was then refused when it tried to post
+  the case for it. Either the free vote earns a voice in that race, or the ballot
+  says why it does not.
 - Benefactors need to be able to tell which OE elections they have tokens available to vote in. This is where our allocations area comes in. Also needs something to notify you whether your votes won. 
 - The 3 step toggles should be synced with the OE/ME toggle. 
 - Show active missions for [cause] leads us to the missions page. 
@@ -201,7 +236,7 @@ Budgeting
 - Need seperate gantt charts for the missions and for the project development
 - Need section in docs to focus on nonprofit application - Probably falls within money model. Maybe split money model into mission model, and a new (or rename money model into) banking document which describes earthbux finances. Or maybe instead of banking it's 'operations' and then we can fold 'roles' into it too.
 - Research will be recreated as 'the social network' - a document for investigating and imagining...
-- The ascii drawings on jax notes 2 (At least their current states) should all be on structure.md. 
+- [x] The ascii drawings on jax notes 2 (At least their current states) should all be on structure.md. — DONE 2026-09-18: every page section carries a **DRAWING** above its PAGE LAYOUT; Election (§7) and Admin (§9) were drawn new.
 
 ### 7. **Everywhere**
 - Need to fix the footer - Earthbux - collective action, measured in impact - A civic news and charity platform, every earthbuck tells a story. Causes/ Platform/ Community/ - Also should have an option to contact us or join the team. Tell us what you think? I will go public as soon as the money is public.
@@ -248,7 +283,18 @@ Budgeting
 
 ---
 
+## THE PLAN
+
+*The two clocks and the dates. The heading is restored here 2026-09-17
+(§999a): it went missing in the 2026-09-16 restructure, which left the build
+clock reading as a backlog item and the ToC unable to find it.*
+
 ### 1. The build clock
+
+*The mission clock that used to sit beside it here was dropped in the
+2026-09-16 restructure; `docs/mission_model.md` §0 "The clock" is the live
+version, and this file's opening line should point there or the section should
+come back (flagged 2026-09-17, §999a).*
 
 Anchored at **Monday 2026-09-07** (W0 = the week this pass ran). Durations are
 working estimates for one builder plus this assistant, not commitments.
@@ -267,6 +313,7 @@ gantt
 
     section Surfaces
     Nav, profile, main.html (build-seq 1-2)  :done, s1, 2026-09-08, 1d
+    Elections: counting, vote ladder, backfill :done, s1b, 2026-09-17, 1d
     cause.html newsfeed rebuild              :s2, after unblock4, 14d
     mission.html redesign                    :s3, after s2, 14d
     Animated process diagram                 :s4, after s3, 7d

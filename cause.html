@@ -973,388 +973,6 @@
       font-family: var(--font-mono); font-size: 0.68rem;
     }
     .p1-chip b { display: block; font-size: 0.85rem; margin-top: 2px; color: var(--cause-color); }
-    /* ══ §2 (2026-08-09) — THE TIMELINE ════════════════════════════════════
-       A vertical rail down the left, and one full-width line across the page
-       for the mission start day. Replaces the phase blocks and the phase bar. */
-    .ct { padding: 0 0 var(--sp-xl); }
-    .ct__container { display: block; }
-    .ct-body { min-width: 0; }
-
-    /* ══ BUILD-SEQ §1 (2026-08-12) — THE DISCUSSION BOX ═════════════════════
-       Jax's second drawing, top to bottom:
-         k  results of the last completed stage, notched onto its own tab
-         a–d  the four stages, dated — the old vertical rail laid flat
-         i  the input dialogue (title · body · the five link rails)
-         b  the type selector, where a category has more than one type
-         h  about: what this post type is for, its reward, its rating
-         e–g  Research · Reviews · Budgeting, grayed by the stage above
-         j  the leading post in that category, with a pager
-       The tabs sit BELOW h on purpose: h is about the post you are writing in
-       i, and e–g is the switch that changes what j shows underneath it. */
-    .pb__heading {
-      margin: 18px 0 6px; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.015em;
-    }
-    .pb {
-      display: block; border: 1px solid rgba(255,255,255,0.13);
-      border-radius: var(--radius-sm); background: rgba(255,255,255,0.02);
-      overflow: hidden; margin-top: 4px;
-    }
-    /* k — the results panel, the post-type toggle beside it, and the joint that
-       ties the panel to one tab. */
-    .pb__k { padding: 0; background: color-mix(in srgb, var(--cause-color) 9%, rgba(255,255,255,0.02)); }
-    .pb-k__row {
-      display: grid; grid-template-columns: 1fr minmax(0, 240px); gap: 14px;
-      padding: 10px 14px 9px; align-items: start;
-    }
-    @media (max-width: 720px) { .pb-k__row { grid-template-columns: 1fr; gap: 8px; } }
-    .pb-k__main { min-width: 0; }
-    .pb-k__body { padding: 10px 14px 9px; }
-    .pb-k__head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
-    .pb-k__eyebrow {
-      font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--cause-color);
-    }
-    .pb-k__date {
-      margin-left: auto; font-family: var(--font-mono); font-size: 0.54rem;
-      letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,232,0.45);
-    }
-    .pb-k__name { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.015em; }
-    .pb-k__sub { font-size: 0.78rem; line-height: 1.5; opacity: 0.78; margin-top: 3px; }
-    .pb-k__case {
-      margin-top: 7px; border-left: 2px solid var(--cause-color); padding: 2px 0 2px 9px;
-      font-size: 0.76rem; line-height: 1.5; opacity: 0.85;
-    }
-    .pb-k__case b { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.12em;
-                    text-transform: uppercase; opacity: 0.7; display: block; }
-    /* The notch: four cells under the panel, one of them open. */
-    .pb-k__joint { display: grid; grid-template-columns: repeat(4, 1fr); }
-    @media (max-width: 720px) { .pb-k__joint { grid-template-columns: repeat(2, 1fr); } }
-    .pb-k__joint > i { display: block; height: 7px; border-top: 1px solid rgba(255,255,255,0.13); }
-    .pb-k__joint > i.on {
-      border-top: none;
-      background: color-mix(in srgb, var(--cause-color) 9%, rgba(255,255,255,0.02));
-    }
-    .pb-tab--linked { background: color-mix(in srgb, var(--cause-color) 9%, rgba(20,24,20,0.55)); }
-    .pb__tabs { display: grid; gap: 1px; background: rgba(255,255,255,0.08); }
-    .pb__tabs--phase { grid-template-columns: repeat(4, 1fr); }
-    .pb__tabs--cat { grid-template-columns: repeat(3, 1fr); }
-    @media (max-width: 720px) {
-      .pb__tabs--phase { grid-template-columns: repeat(2, 1fr); }
-      .pb__tabs--cat { grid-template-columns: 1fr; }
-    }
-    .pb-tab {
-      display: flex; flex-direction: column; gap: 2px; min-width: 0;
-      font: inherit; text-align: left; cursor: pointer; color: inherit;
-      padding: 8px 11px; border: none; background: rgba(20,24,20,0.55);
-      border-bottom: 2px solid transparent; transition: background 0.15s, color 0.15s;
-    }
-    .pb-tab:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
-    .pb-tab__key {
-      font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--cause-color); opacity: 0.75;
-    }
-    .pb-tab__name {
-      font-size: 0.8rem; font-weight: 700; letter-spacing: -0.01em;
-      color: rgba(245,240,232,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .pb-tab__date {
-      font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.08em;
-      text-transform: uppercase; color: rgba(245,240,232,0.42);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .pb-tab--now .pb-tab__date { color: var(--cause-color); }
-    .pb-tab--future .pb-tab__name { color: rgba(245,240,232,0.45); }
-    .pb-tab--on {
-      background: color-mix(in srgb, var(--cause-color) 13%, rgba(20,24,20,0.55));
-      border-bottom-color: var(--cause-color);
-    }
-    .pb-tab--on .pb-tab__name { color: rgba(245,240,232,0.98); }
-    .pb-tab--gray { opacity: 0.32; cursor: not-allowed; }
-    /* h · i · j — one composer, one about box, one leading post. */
-    .pb__i { padding: 12px 14px; background: rgba(255,255,255,0.015); }
-    /* b — the post-type toggle, in k. Every type of the category is always
-       drawn; the ones this stage has not opened are visible but dead, so the
-       ladder is legible from any stage. */
-    .pb__b { display: flex; align-items: flex-start; gap: 5px; flex-wrap: wrap; align-content: flex-start; }
-    .pb__b:empty { display: none; }
-    .pb-b__label {
-      flex: 1 0 100%; font-family: var(--font-mono); font-size: 0.54rem;
-      letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.4);
-      margin-bottom: 1px;
-    }
-    .pb__h { padding: 11px 14px 12px; border-top: 1px solid rgba(255,255,255,0.09); }
-    .pb__j { padding: 10px 14px 13px; border-top: 1px solid rgba(255,255,255,0.09); }
-    /* i — the composer, drawn to the H+I detail: title (c) over the body (d),
-       with the five link rails (e–i) stacked down the right. */
-    .pb-c { display: grid; grid-template-columns: 1fr 168px; gap: 10px; align-items: start; }
-    @media (max-width: 720px) { .pb-c { grid-template-columns: 1fr; } }
-    .pb-c__main { min-width: 0; }
-    .pb-c__title, .pb-c__body {
-      width: 100%; font: inherit; font-size: 0.8rem; color: inherit;
-      background: rgba(255,255,255,0.05); border: 1px solid rgba(245,240,232,0.18);
-      border-radius: 6px; padding: 7px 10px;
-    }
-    .pb-c__title { font-weight: 700; margin-bottom: 6px; }
-    .pb-c__body { resize: vertical; line-height: 1.5; }
-    .pb-c__title:focus, .pb-c__body:focus { outline: none; border-color: var(--cause-color); }
-    .pb-c__foot { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
-    /* the link rail — one row per kind, each opening its picker */
-    .pb-rail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .pb-rail__btn {
-      display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0;
-      font: inherit; font-family: var(--font-mono); font-size: 0.6rem; cursor: pointer;
-      text-align: left; color: rgba(245,240,232,0.8); padding: 4px 7px;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(245,240,232,0.16);
-      border-radius: 6px;
-    }
-    .pb-rail__btn:hover:not(:disabled) { border-color: var(--cause-color); color: var(--cause-color); }
-    .pb-rail__btn:disabled { opacity: 0.32; cursor: not-allowed; }
-    .pb-rail__btn.req { border-color: color-mix(in srgb, var(--cause-color) 55%, transparent); }
-    .pb-rail__n {
-      margin-left: auto; font-size: 0.56rem; padding: 0 5px; border-radius: 999px;
-      background: var(--cause-color); color: #14140f; font-weight: 700;
-    }
-    .pb-rail__note { font-size: 0.54rem; line-height: 1.35; opacity: 0.45; margin-top: 2px; }
-    .pb-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
-    .pb-chip {
-      display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
-      font-family: var(--font-mono); font-size: 0.6rem; padding: 2px 4px 2px 8px;
-      border-radius: 999px; border: 1px solid var(--cause-color);
-      background: color-mix(in srgb, var(--cause-color) 12%, transparent);
-      color: rgba(245,240,232,0.92);
-    }
-    .pb-chip__x {
-      font: inherit; cursor: pointer; background: transparent; border: none;
-      color: inherit; opacity: 0.6; padding: 0 3px;
-    }
-    .pb-chip__x:hover { opacity: 1; }
-    /* the picker, opened by a rail button */
-    .pb-pick {
-      margin-top: 7px; border: 1px solid var(--cause-color); border-radius: var(--radius-sm);
-      background: rgba(20,24,20,0.92); padding: 8px 10px;
-    }
-    .pb-pick__head {
-      display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px;
-      font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--cause-color);
-    }
-    .pb-pick__close { margin-left: auto; font: inherit; cursor: pointer; background: none;
-                      border: none; color: rgba(245,240,232,0.6); }
-    .pb-pick__opt {
-      display: block; width: 100%; text-align: left; font: inherit; font-size: 0.74rem;
-      cursor: pointer; color: inherit; background: transparent; border: none;
-      padding: 4px 6px; border-radius: 5px;
-    }
-    .pb-pick__opt:hover { background: rgba(255,255,255,0.07); color: var(--cause-color); }
-    .pb-pick__empty { font-size: 0.72rem; opacity: 0.55; padding: 3px 0; }
-    .pb-ex { margin-bottom: 9px; }
-    .pb-ex:last-child { margin-bottom: 0; }
-    .pb-ex__head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
-    .pb-ex__kind {
-      font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.13em;
-      text-transform: uppercase; color: var(--cause-color);
-    }
-    .pb-ex__title { margin: 0; font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em; }
-    .pb-ex__body { margin: 4px 0 0; font-size: 0.8rem; line-height: 1.55; opacity: 0.84; }
-    .pb-ex__body a { color: var(--cause-color); }
-    .pb-ex__eg {
-      font-size: 0.74rem; line-height: 1.5; margin-top: 5px; opacity: 0.6;
-      border-left: 2px solid rgba(245,240,232,0.18); padding-left: 9px;
-    }
-    .pb-ex__eg b { font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase;
-                   letter-spacing: 0.1em; opacity: 0.8; }
-    .pb-meta { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 7px; }
-    .pb-meta__i { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-    .pb-meta__k {
-      font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.13em;
-      text-transform: uppercase; color: rgba(245,240,232,0.38);
-    }
-    .pb-meta__v { font-size: 0.72rem; color: rgba(245,240,232,0.8); }
-    .pb-compose__bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
-    .pb-compose__state {
-      margin-left: auto; font-family: var(--font-mono); font-size: 0.54rem;
-      letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.4);
-    }
-    .pb-shut {
-      font-size: 0.76rem; line-height: 1.5; color: rgba(245,240,232,0.55);
-      border-left: 2px solid rgba(245,240,232,0.18); padding: 3px 0 3px 10px;
-    }
-    .pb-shut b { color: rgba(245,240,232,0.8); }
-    .pb-j__bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 7px; }
-    .pb-pager {
-      margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--font-mono); font-size: 0.62rem; color: rgba(245,240,232,0.6);
-    }
-    .pb-pager button {
-      font: inherit; cursor: pointer; background: transparent; color: rgba(245,240,232,0.85);
-      border: 1px solid rgba(245,240,232,0.25); border-radius: 5px; padding: 1px 9px;
-    }
-    .pb-pager button:disabled { opacity: 0.3; cursor: default; }
-    .pb-post { border-left: 3px solid var(--cause-color); padding: 4px 0 0 10px; }
-    .pb-post__title { font-size: 0.84rem; font-weight: 700; margin-bottom: 2px; }
-    .pb-post__body { font-size: 0.79rem; line-height: 1.55; color: rgba(245,240,232,0.88); }
-    .pb-post__est { display: flex; gap: 12px; margin-top: 5px; }
-    /* what a post links without being asked */
-    .pb-auto { font-size: 0.7rem; line-height: 1.5; color: rgba(245,240,232,0.55); margin-top: 6px; }
-    .pb-auto b { color: var(--cause-color); font-weight: 600; }
-    .pb-auto a { color: var(--cause-color); }
-    .pb-auto--edit { opacity: 0.8; }
-    /* ── budgeting: the row that replaces the title, and the three tables ──
-       A budget item is a COSTED LIST, so the composer takes rows and the area
-       below prints them as service / supply / support. */
-    .pb-c--wide { grid-template-columns: 1fr; }
-    .pb-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 7px; }
-    .pb-row__in { min-width: 0; }
-    .pb-row__hint { font-size: 0.72rem; opacity: 0.5; margin: 4px 0 7px; }
-    .pb-sss { display: flex; flex-direction: column; gap: 3px; margin-bottom: 9px; }
-    .pb-sss__row {
-      display: flex; align-items: baseline; gap: 8px; text-align: left;
-      padding: 4px 8px; border-radius: 6px; border: 1px solid transparent;
-      font-size: 0.78rem; caption-side: top;
-    }
-    .pb-sss__row.on {
-      border-color: color-mix(in srgb, var(--cause-color) 50%, transparent);
-      background: color-mix(in srgb, var(--cause-color) 9%, transparent);
-    }
-    .pb-sss__icon { flex: 0 0 auto; }
-    .pb-sss__kind {
-      font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--cause-color);
-    }
-    .pb-sss__what { opacity: 0.78; }
-    .pb-tbl {
-      width: 100%; border-collapse: collapse; margin: 0 0 12px; font-size: 0.74rem;
-    }
-    .pb-tbl:last-child { margin-bottom: 0; }
-    .pb-tbl th {
-      text-align: left; font-family: var(--font-mono); font-size: 0.54rem;
-      letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.4);
-      font-weight: 400; padding: 3px 8px 3px 0; border-bottom: 1px solid rgba(255,255,255,0.12);
-    }
-    .pb-tbl td {
-      padding: 4px 8px 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.07);
-      color: rgba(245,240,232,0.88);
-    }
-    .pb-tbl__act { text-align: right; white-space: nowrap; }
-    .pb-tbl__empty { opacity: 0.5; font-style: italic; }
-    .pb-tbl__total {
-      font-family: var(--font-mono); font-size: 0.64rem; text-align: right;
-      color: var(--cause-color); margin: -6px 0 8px;
-    }
-    .pb-tbl--draft { margin-bottom: 6px; }
-    /* A stage that is only a frame says so rather than looking unfinished. */
-    .ct-frame {
-      font-size: 0.78rem; line-height: 1.55; color: rgba(245,240,232,0.55);
-      border-left: 2px solid rgba(245,240,232,0.18); padding: 2px 0 2px 10px;
-    }
-    .ct-frame b { color: rgba(245,240,232,0.8); }
-    .ct-secnote { font-size: 0.8rem; line-height: 1.55; opacity: 0.8; margin-bottom: 10px; }
-    .ct-secnote b { opacity: 1; }
-    /* The read-out a closed stage leaves behind: what won, and the best case. */
-    .ct-won {
-      display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
-      border: 1px solid color-mix(in srgb, var(--cause-color) 40%, transparent);
-      background: color-mix(in srgb, var(--cause-color) 8%, transparent);
-      border-radius: var(--radius-sm); padding: 8px 11px; margin-bottom: 10px;
-    }
-    .ct-won__label {
-      font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--cause-color);
-    }
-    .ct-won__name { font-size: 0.86rem; font-weight: 700; }
-    .ct-topcase {
-      border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm);
-      padding: 9px 11px; margin-bottom: 10px;
-    }
-    .ct-topcase__label {
-      font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: rgba(245,240,232,0.4); margin-bottom: 4px;
-    }
-    .ct-topcase__body { font-size: 0.8rem; line-height: 1.55; opacity: 0.85; }
-    /* "Migrated here" — the same thread, one stage further down. */
-    .ct-moved {
-      font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.1em;
-      text-transform: uppercase; color: rgba(245,240,232,0.38); margin: 2px 0 8px;
-    }
-    /* The reference a post must carry — the whole point of these types, so it
-       sits above the body rather than beside the Post button. */
-    .ct-ref { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
-    .ct-ref__label {
-      font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.12em;
-      text-transform: uppercase; color: rgba(245,240,232,0.4); flex: 0 0 auto;
-    }
-    .ct-ref__val { font-size: 0.78rem; font-weight: 600; color: var(--cause-color); }
-    .ct-ref__val--missing { color: rgba(245,240,232,0.4); font-weight: 400; font-style: italic; }
-    .ct-ref__sel {
-      flex: 1; min-width: 0; font: inherit; font-size: 0.76rem; padding: 4px 8px;
-      color: inherit; background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(245,240,232,0.2); border-radius: 6px;
-    }
-    .ct-hint { font-size: 0.72rem; line-height: 1.5; color: rgba(245,240,232,0.5); margin: 4px 0 2px; }
-    .ct-hint b { color: rgba(245,240,232,0.75); }
-    .ct-compose { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
-
-    /* THE MISSION START DAY — the one key date, a full line across the screen.
-       It breaks out of the container on purpose: this is the moment the page
-       is organised around, and it should cut the whole page in half. */
-    .ct-startline {
-      position: relative; margin: 20px 0 22px; height: 0;
-      border-top: 2px solid var(--cause-color);
-      box-shadow: 0 0 14px color-mix(in srgb, var(--cause-color) 55%, transparent);
-      width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
-    }
-    .ct-startline__label {
-      position: absolute; left: 50%; top: -11px; transform: translateX(-50%);
-      font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.16em;
-      text-transform: uppercase; white-space: nowrap;
-      padding: 3px 12px; border-radius: 999px;
-      background: var(--clr-bg, #0f1a14); border: 1px solid var(--cause-color);
-      color: var(--cause-color);
-    }
-    .ct-startline--future { border-top-style: dashed; opacity: 0.72; }
-
-    /* ── the rows, inputs and pills the posts box inherited from the deleted
-       three-band P3 box (2026-08-08). The bands, tiles and org groups went
-       with `renderP3Bands`; these are the parts the box still paints. */
-    .p3-row {
-      display: flex; align-items: center; gap: 8px; padding: 5px 0;
-      font-size: 0.76rem; border-bottom: 1px dashed rgba(255,255,255,0.07);
-      color: inherit; text-decoration: none; min-width: 0;
-    }
-    .p3-row:last-child { border-bottom: none; }
-    .p3-row--link:hover { color: var(--cause-color); }
-    .p3-row__icon, .p3-row__rank { flex: 0 0 auto; font-family: var(--font-mono); font-size: 0.64rem; opacity: 0.7; }
-    .p3-row__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .p3-row__kind {
-      font-family: var(--font-mono); font-size: 0.54rem; text-transform: uppercase;
-      letter-spacing: 0.1em; opacity: 0.5; margin-left: 6px;
-    }
-    .p3-row__est, .p3-row__score {
-      flex: 0 0 auto; font-family: var(--font-mono); font-size: 0.62rem;
-      font-variant-numeric: tabular-nums; opacity: 0.75;
-    }
-    .p3-row__est { min-width: 58px; text-align: right; }
-    .p3-pill {
-      font-family: var(--font-mono); font-size: 0.54rem; text-transform: uppercase;
-      letter-spacing: 0.08em; border-radius: 3px; padding: 1px 6px; flex: 0 0 auto;
-      border: 1px solid rgba(255,255,255,0.22); opacity: 0.85;
-    }
-    .p3-pill--res { color: #5abd6c; border-color: rgba(90,189,108,0.5); }
-    .p3-pill--case { color: var(--cause-color); border-color: currentColor; }
-    .p3-pill--evaluation { color: #e0a341; border-color: rgba(224,163,65,0.5); }
-    .p3-compose { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
-    .p3-in {
-      font: inherit; font-size: 0.72rem; background: transparent; color: inherit;
-      border: 1px solid rgba(245,240,232,0.25); border-radius: 6px; padding: 5px 8px;
-    }
-    .p3-in:focus { outline: none; border-color: var(--cause-color); }
-    .p3-in--grow { flex: 1 1 180px; min-width: 140px; }
-    .p3-in--num { width: 108px; font-variant-numeric: tabular-nums; }
-    .p3-in--sort { margin-left: auto; font-size: 0.66rem; }
-    .p3-in--search { flex: 0 1 200px; font-size: 0.68rem; }
-    .p3-btn { flex: 0 0 auto; }
-    .p3-msg { font-family: var(--font-mono); font-size: 0.58rem; opacity: 0.7; margin-top: 5px; min-height: 12px; }
-
     .p1-disc__row {
       display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;
       padding: 6px 8px; border: 1px solid rgba(255,255,255,0.08);
@@ -1625,6 +1243,101 @@
     .cause-guide__cta a { color: var(--guide-color, var(--clr-honey)); text-decoration: none; }
     .cause-guide__cta a:hover { text-decoration: underline; }
 
+
+    /* ══ THE FEED (2026-09-17) ═══════════════════════════════════════════════
+       structure.md §8 boxes a · b · d · f. One column of cards, the control
+       panel above it, reactions down each card's right edge. Deliberately
+       plainer than the box it replaces: the feed's job is to be scrolled. */
+    .fd { padding: 0 0 var(--sp-xl); }
+    .fd-panel {
+      position: sticky; top: 0; z-index: 5;
+      background: color-mix(in srgb, var(--clr-ink, #12181a) 92%, transparent);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-sm);
+      padding: 10px 12px; margin-bottom: var(--sp-md);
+    }
+    .fd-panel__row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .fd-panel__title {
+      font-family: var(--font-display); font-size: 1rem; margin: 0 auto 0 0;
+      letter-spacing: 0.04em; text-transform: uppercase; color: var(--cause-color);
+    }
+    .fd-in {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      color: inherit; border-radius: var(--radius-sm); padding: 6px 9px;
+      font-family: var(--font-mono); font-size: 0.7rem;
+    }
+    .fd-in:focus { outline: none; border-color: var(--cause-color); }
+    .fd-in--search { flex: 1 1 220px; min-width: 140px; }
+    .fd-compose {
+      flex: 0 0 auto; text-decoration: none; font-family: var(--font-mono);
+      font-size: 0.68rem; padding: 6px 10px; border-radius: var(--radius-sm);
+      background: var(--cause-color); color: #10161a; font-weight: 600;
+    }
+    .fd-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .fd-chip {
+      font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.04em;
+      padding: 4px 9px; border-radius: 999px; cursor: pointer;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(245,240,232,0.72);
+    }
+    .fd-chip:hover { color: var(--clr-parchment); }
+    .fd-chip--on { border-color: var(--cause-color); color: var(--cause-color); background: color-mix(in srgb, var(--cause-color) 14%, transparent); }
+    .fd-list { display: flex; flex-direction: column; gap: 10px; }
+    .fd-empty { font-family: var(--font-mono); font-size: 0.72rem; opacity: 0.6; padding: var(--sp-lg) 0; text-align: center; }
+    .fd-card {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px;
+      background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: var(--radius-sm); padding: 12px 14px;
+    }
+    .fd-card--red { border-color: rgba(200,80,70,0.45); }
+    .fd-card__main { min-width: 0; }
+    .fd-card__meta {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.04em;
+      color: rgba(245,240,232,0.55); margin-bottom: 5px;
+    }
+    .fd-kind { color: var(--cause-color); border: 1px solid currentColor; border-radius: 999px; padding: 1px 7px; }
+    .fd-card__mission { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+    .fd-card__mission:hover { color: var(--cause-color); }
+    .fd-card__title { font-family: var(--font-display); font-size: 0.98rem; margin: 0 0 4px;
+      color: var(--clr-parchment, #f5f0e8); }
+    .fd-card__body { font-size: 0.82rem; line-height: 1.5; opacity: 0.86; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .fd-card__foot { display: flex; gap: 10px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+    .fd-link {
+      background: none; border: none; cursor: pointer; padding: 0;
+      font-family: var(--font-mono); font-size: 0.64rem; color: rgba(245,240,232,0.6);
+    }
+    .fd-link:hover { color: var(--cause-color); }
+    .fd-reacts { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+    .fd-react {
+      font-family: var(--font-mono); font-size: 0.6rem; cursor: pointer;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(245,240,232,0.75); border-radius: var(--radius-sm); padding: 3px 8px;
+      white-space: nowrap;
+    }
+    .fd-react:hover { border-color: var(--cause-color); color: var(--cause-color); }
+    .fd-replies { margin-top: 8px; border-left: 2px solid rgba(255,255,255,0.1); padding-left: 10px; display: none; }
+    .fd-replies--open { display: block; }
+    .fd-reply { font-size: 0.78rem; opacity: 0.85; padding: 4px 0; }
+    .fd-reply__who { font-family: var(--font-mono); font-size: 0.58rem; opacity: 0.6; }
+    .fd-replybox { display: flex; gap: 6px; margin-top: 6px; }
+    .fd-replybox textarea {
+      flex: 1; min-height: 34px; resize: vertical; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm);
+      color: inherit; font: inherit; font-size: 0.78rem; padding: 6px 8px;
+    }
+    .fd-msg { font-family: var(--font-mono); font-size: 0.58rem; opacity: 0.7; margin-top: 4px; }
+    .fd-more { text-align: center; padding-top: var(--sp-md); }
+    .fd-morebtn {
+      font-family: var(--font-mono); font-size: 0.68rem; cursor: pointer;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14);
+      color: inherit; border-radius: var(--radius-sm); padding: 7px 16px;
+    }
+    .fd-morebtn:hover { border-color: var(--cause-color); color: var(--cause-color); }
+    @media (max-width: 720px) {
+      .fd-card { grid-template-columns: 1fr; }
+      .fd-reacts { flex-direction: row; flex-wrap: wrap; }
+    }
   </style>
 </head>
 <body>
@@ -1710,50 +1423,50 @@
     </div>
   </section>
 
-  <!-- ══ BUILD-SEQ §1 (2026-08-11) — THE POSTS BOX ═════════════════════════
-       Jax's drawing replaces the four-section accordion built 2026-08-10 (and,
-       through it, the 2026-08-09 rail + the 2026-08-08 three-band P3 box):
+  <!-- ══ THE FEED (2026-09-17) ═════════════════════════════════════════════
+       structure.md §8: "the feed itself — articles, conversations, reactions,
+       short-form, image and video. The hub for scrolling." Two rules decide the
+       shape: ALL posts are included, and it is NOT sorted by mission — which is
+       why the order is `GET /posts?sort=hot` (decayed engagement) and why the
+       filters are a control panel rather than a frame.
 
-         |__a__|__b__|__c__|__d__|   phase tabs — the four stages, each dated
-         |___e___|___f___|___g___|   category tabs — Research · Reviews · Budgeting
-         |           h           |   explanation — one per combined toggle
-         |           i           |   input dialogue
-         |           j           |   the leading post in that category
+         |            d            |   control panel: search · filters · compose
+         |  a  |b|   the cards, reactions down the right edge
+         |     f     |               reply, per card
 
-       The RAIL survives as the a–d row: the four dates it carried are now on
-       the tabs themselves, which is where the thing you click already was.
-       One key date is still drawn all the way across the page — the mission
-       start day, above which is deciding and below which is doing. -->
-  <section class="ct">
-    <div class="container ct__container">
+       The DISCUSSION BOX that stood here until today is on mission.html now
+       (structure.md §6 box i, resources/js/ebx_postsbox.js) — one mission's own
+       conversation is the opposite of a feed, and it kept this page from being
+       one. Boxes c (the smaller annulus) and e (the per-card mission annulus)
+       are the next two and are not in this pass. -->
+  <section class="fd">
+    <div class="container">
 
-      <div class="ct-body">
-        <!-- THE MISSION START DAY — one key date, one full line across. -->
-        <div class="ct-startline" id="ct-startline">
-          <span class="ct-startline__label" id="ct-startline-label">Mission start</span>
+      <!-- d · the control panel -->
+      <div class="fd-panel" id="fd-panel">
+        <div class="fd-panel__row">
+          <h2 class="fd-panel__title">News</h2>
+          <input class="fd-in fd-in--search" id="fd-search" type="search"
+                 placeholder="Search the feed…" autocomplete="off" />
+          <select class="fd-in fd-in--sort" id="fd-sort" aria-label="Order">
+            <option value="hot">Hot</option>
+            <option value="recent">Newest</option>
+          </select>
+          <a class="fd-compose" id="fd-compose" href="mission.html">+ Post in a mission</a>
         </div>
-
-        <h2 class="pb__heading" id="pb-heading">Discussion</h2>
-        <section class="pb" id="pb" aria-label="Discussion">
-          <!-- k · the result that opened this stage, with the post-type toggle
-               beside it (2026-08-12) and the notch that ties it to one tab. -->
-          <div class="pb__k">
-            <div class="pb-k__row">
-              <div class="pb-k__main" id="pb-results"></div>
-              <div class="pb__b" id="pb-types"></div>
-            </div>
-            <div id="pb-joint"></div>
-          </div>
-          <div class="pb__tabs pb__tabs--phase" id="pb-phase" role="tablist" aria-label="Stage"></div>
-          <div class="pb__i" id="pb-compose"></div>
-          <div class="pb__h" id="pb-explain"></div>
-          <div class="pb__tabs pb__tabs--cat" id="pb-cat" role="tablist" aria-label="Category"></div>
-          <div class="pb__j" id="pb-leading"></div>
-        </section>
+        <!-- the phase and category tabs, as FILTERS rather than as a frame -->
+        <div class="fd-filters" id="fd-filters"></div>
       </div>
+
+      <!-- a · the feed -->
+      <div class="fd-list" id="fd-list" aria-live="polite">
+        <div class="fd-empty">Loading the feed…</div>
+      </div>
+      <div class="fd-more"><button class="fd-morebtn" id="fd-more" type="button">Show more</button></div>
 
     </div>
   </section>
+
 
 
   <div id="ebx-footer-mount"></div>
@@ -2008,1138 +1721,14 @@
         (!_refMission && opts.missionRef.winning_org)));
       const p2RecapRef = _refOrgDone ? opts.missionRef : null;
 
-      // build-seq §1 (2026-08-11): the four sections are gone too. The posts
-      // box reads the same context object — the stage the selected mission is
-      // in decides which phase tab opens, and the four dates ride on the tabs.
-      const _sugMission = _displayMission(cause);
-      renderPostsBox(cause, {
-        decisionDate: decisionDate,
-        orgVoteDate: orgVoteDate,
-        releaseDate: releaseDate,
-        leader: leader,
-        p2Active: p2Active,
-        p2Recap: !!p2RecapRef,
-        mission: _sugMission,
-      });
+      // 2026-09-17 (the feed pass): the DISCUSSION BOX left this page for
+      // mission.html (structure.md §6 box i) — a mission's own conversation
+      // is not a newsfeed. What this page paints here now is the feed itself,
+      // which is cause-agnostic by design, so it takes no context from the
+      // cause render; it only wants to know the page has repainted.
+      if (window.Feed && Feed.noteCause) Feed.noteCause(cause);
     }
 
-    // ══ BUILD-SEQ §1 (2026-08-11) — THE POSTS BOX ═══════════════════════════
-    // Jax's drawing, and it REPLACES the four-section accordion built one day
-    // earlier (2026-08-10):
-    //
-    //   |__a__|__b__|__c__|__d__|    phase tabs — the four stages, each dated
-    //   |___e___|___f___|___g___|    category tabs — Research · Reviews · Budgeting
-    //   |           h           |    explanation — ONE per combined toggle
-    //   |           i           |    input dialogue
-    //   |           j           |    the leading post in that category
-    //
-    // WHY A MATRIX, NOT AN ACCORDION. The accordion asked one question — which
-    // stage are you reading — and answered it with four bespoke bodies, each
-    // growing its own thread and composer. The matrix asks that question on one
-    // axis and "which kind of post" on the other, so EVERY cell is the same
-    // three things: one explanation, one composer, one leading post. Twelve
-    // cells, one renderer.
-    //
-    // MIGRATION IS GONE, AND IT IS NOT MISSED. `_CT_HOME` moved a thread down
-    // the timeline as stages closed, so a type lived in exactly one section.
-    // Jax's rule for the new box is CUMULATIVE instead — "Context only in a-b,
-    // Context&Investigation in c, Context&Investigation&Analysis in d" — a
-    // stage OPENS a type and later stages keep it. That is the same statement
-    // migration was making (context is readable wherever the mission is now)
-    // without the surprise of a thread vanishing from where you last read it.
-    //
-    // THE GRAY RULES ARE THE SPEC'S, VERBATIM:
-    //   e Research   — grayed until the cause is confirmed (so: never, on this
-    //                  page; every mission here is past that)
-    //   f Reviews    — tiv cases in a-b, phl cases in c, evaluations in d
-    //   g Budgeting  — grayed until the initiative is elected (tabs c and d)
-    //
-    // The three-band P3 box (`renderP3Bands`, a·Budgeting b·Research c·Reviews)
-    // is ABSORBED here — its three bands were these three categories, so it was
-    // the same surface for one stage only. Budgeting's costed composer and
-    // ranked list are tab g; the research tiles are e's type pills and its
-    // ranked list is j's pager + search; reviews-by-organization is f, with the
-    // sort-by-philanthropy select moved onto j.
-    const PB_PHASES = [
-      { key: 'a', n: 1, name: 'Cause confirmed' },
-      { key: 'b', n: 2, name: 'Mission open' },
-      { key: 'c', n: 3, name: 'Initiative elected' },
-      { key: 'd', n: 4, name: 'Philanthropy elected' },
-    ];
-    const PB_CATS = [
-      { key: 'e', cat: 'research',  label: 'Research' },
-      { key: 'f', cat: 'reviews',   label: 'Reviews' },
-      { key: 'g', cat: 'budgeting', label: 'Budgeting' },
-    ];
-    // Which post types a (category, phase) cell holds. `case:tiv` and `case:phl`
-    // are the same backend type — a case carrying a tiv tag or an org tag.
-    const PB_TYPES = {
-      research:  { 1: ['context'], 2: ['context'], 3: ['context', 'investigation'],
-                   4: ['context', 'investigation', 'analysis'] },
-      reviews:   { 1: ['case:tiv'], 2: ['case:tiv'], 3: ['case:phl'], 4: ['evaluation'] },
-      budgeting: { 1: [], 2: [], 3: ['service', 'supply', 'support'],
-                   4: ['service', 'supply', 'support'] },
-    };
-    // Every type a CATEGORY has, in ladder order — the toggle in k always shows
-    // all of them and grays the ones this stage has not opened.
-    const PB_CAT_TYPES = {
-      research:  ['context', 'investigation', 'analysis'],
-      reviews:   ['case:tiv', 'case:phl', 'evaluation'],
-      budgeting: ['service', 'supply', 'support'],
-    };
-    // The type a phase OPENS — the one its explanation is about. Budgeting is
-    // the exception the spec names: it explains all three of s/s/s at once.
-    const PB_OPENS = {
-      research: { 1: null, 2: 'context', 3: 'investigation', 4: 'analysis' },
-      reviews:  { 1: null, 2: 'case:tiv', 3: 'case:phl', 4: 'evaluation' },
-      budgeting: { 3: 'sss', 4: 'sss' },
-    };
-    const PB_LABEL = {
-      context: 'Context', investigation: 'Investigation', analysis: 'Analysis',
-      'case:tiv': 'Case · initiative', 'case:phl': 'Case · philanthropy',
-      evaluation: 'Evaluation', service: 'Service', supply: 'Supply', support: 'Support',
-    };
-    // Post-config's rules, restated for the client (backend/app/post_config.py
-    // is the source of truth; these are the labels it declares).
-    const PB_REACTIONS = {
-      context:       [['helpful', 'Helpful'], ['neutral', 'Neutral'], ['harmful', 'Harmful']],
-      investigation: [['helpful', 'Helpful'], ['neutral', 'Neutral'], ['harmful', 'Harmful']],
-      analysis:      [['helpful', 'Helpful'], ['neutral', 'Neutral'], ['harmful', 'Harmful']],
-      'case:tiv':    [['helpful', 'Fair'], ['harmful', 'Unfair']],
-      'case:phl':    [['helpful', 'Fair'], ['harmful', 'Unfair']],
-      evaluation:    [['helpful', 'Fair'], ['harmful', 'Unfair']],
-      service:       [['helpful', 'Approve']],
-      supply:        [['helpful', 'Approve']],
-      support:       [['helpful', 'Approve']],
-    };
-
-    let _ctCtx = null;            // last context, so a click can re-render
-    // The box's whole state. Kept outside the render so a tab click, a search
-    // or a pager step never resets the others.
-    const _pb = {
-      phase: null,      // null = follow the mission's own stage
-      cat: 'research',
-      type: {},         // "cat/n" → chosen type key
-      page: {},         // "cat/n" → which post in the ranked list is showing
-      search: '',       // research: filter inside the open type
-      sortOrg: 'all',   // reviews: filter to one philanthropy
-      msg: '',          // composer feedback
-      pick: null,       // which link rail has its picker open
-      draft: {},        // "cat/n/type" → the links attached to the post being written
-    };
-
-    function _p3esc(s) {
-      return String(s === null || s === undefined ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    // The stage the SELECTED mission is actually in, which is also the phase
-    // tab that opens by default. 2 = electing an initiative, 3 = electing a
-    // philanthropy, 4 = underway. (1 is never "now": every mission on the page
-    // is past its cause-confirmed stage, per the spec.)
-    function _ctStage(ctx) {
-      const m = ctx && ctx.mission;
-      if (ctx && ctx.p2Recap) return 4;
-      if (m && m.winning_org_id) return 4;
-      if (m && ['budget', 'credit', 'resolution'].includes(m.current_phase)) return 4;
-      if (m && m.winning_tiv_id) return 3;
-      if (ctx && ctx.p2Active) return 3;
-      return 2;
-    }
-    // The four dates, straight off the shared helper — one anchor, one owner.
-    // §1 carries a RANGE (`from`/`to`); the other three are points.
-    function _ctDates(ctx) {
-      const m = ctx && ctx.mission;
-      if (!m) return { 1: null, 2: null, 3: null, 4: null, range1: null };
-      const d = EBX.Cycle.missionDates(m);
-      return {
-        1: d.causeFinalizedTo,          // the edge the tabs sort/compare on
-        2: d.causeOpened,
-        3: d.missionStarted,
-        4: d.phlElected,
-        range1: { from: d.causeFinalizedFrom, to: d.causeFinalizedTo },
-      };
-    }
-    // §1's date. structure.md: "`T−14wk .. T−7wk` (Display T-14 wk until
-    // election actually running)" — so it shows the WINDOW OPENING as a single
-    // date, and only becomes a range once a cause election is genuinely live in
-    // it. There is no live cause-election signal on this page yet, so it prints
-    // the point; `range1` is carried so the switch is one condition away.
-    function _ctDateText(n, dates) {
-      if (n === 1) return dates.range1 ? fmtDate(dates.range1.from) : 'not scheduled';
-      return dates[n] ? fmtDate(dates[n]) : 'not scheduled';
-    }
-
-    // ── the posts this page reads ────────────────────────────────────────────
-    let _ctPosts = { missionId: null, posts: [] };
-    async function _ctLoadPosts(mission, force) {
-      if (!mission) { _ctPosts = { missionId: null, posts: [] }; return; }
-      if (!force && _ctPosts.missionId === mission.id) return;
-      let posts = [];
-      try {
-        const r = await fetch('/posts?mission_id=' + encodeURIComponent(mission.id) +
-          '&roots_only=true&limit=200');
-        if (r.ok) posts = await r.json();
-      } catch (e) {}
-      _ctPosts = { missionId: mission.id, posts: posts || [] };
-    }
-    const _ctTypeOf = p => p.type || p.stance || p.category || '';
-    const _ctScore  = p => (p.helpful_count || 0) - (p.harmful_count || 0) + (p.reply_count || 0);
-    const _score    = p => (p.helpful_count || 0) - (p.harmful_count || 0);
-    // A "case for a philanthropy" is a case post carrying an org tag; a case for
-    // the initiative carries a tiv tag (or neither, legacy).
-    const _ctIsPhlCase = p => _ctTypeOf(p) === 'case' && !!p.org_id;
-    // A budgeting post is category 'budgeting' with type service|supply|support.
-    // Pre-2026-08-08 rows were written as category 'context' with the kind in
-    // `stance`, so both shapes are read; only the new shape is ever written.
-    const _sssKind = p =>
-      (p.category === 'budgeting' && ['service', 'supply', 'support'].includes(p.type)) ? p.type
-      : (['service', 'supply', 'support'].includes(p.stance) ? p.stance : null);
-    const _fmtCost = n => (n === null || n === undefined || n === '') ? '—'
-      : '$' + Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
-    const _fmtSetup = n => (n === null || n === undefined || n === '') ? '—'
-      : Number(n).toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' d';
-    const _SSS_META = {
-      service: ['🛠', 'Service', 'Something we can send people to DO. Carried by philanthropies.'],
-      supply:  ['📦', 'Supply', 'WHAT those people need to do it. Carried by benefactors.'],
-      support: ['🤝', 'Support', 'Assurance the issue is being resolved honestly. Carried by Earthbux.'],
-    };
-    // Does a post belong to this type key?
-    function _pbIs(p, key) {
-      const t = _ctTypeOf(p);
-      if (key === 'case:tiv') return t === 'case' && !_ctIsPhlCase(p);
-      if (key === 'case:phl') return _ctIsPhlCase(p);
-      if (['service', 'supply', 'support'].includes(key)) return _sssKind(p) === key;
-      return t === key;
-    }
-    function _ctTivName(id) {
-      const i = (EBX.config.initiatives || []).find(x => x.id === id);
-      return i ? ((i.emoji ? i.emoji + ' ' : '') + (i.title || i.id)) : (id || '—');
-    }
-    function _ctOrgName(id) {
-      const o = (EBX.config.organizations || []).find(x => x.id === id);
-      return o ? (o.name || o.id) : (id || '—');
-    }
-    // The initiative a `case` post must reference: the one selected in the
-    // cards to the left of the annulus (spec: "toggled by the selected tiv").
-    function _ctSelectedTiv(cause) {
-      const id = window._p1SelectedId || null;
-      if (id) return (EBX.config.initiatives || []).find(i => i.id === id) || null;
-      const m = _ctCtx && _ctCtx.ctx && _ctCtx.ctx.mission;
-      if (m && m.winning_tiv_id) {
-        return (EBX.config.initiatives || []).find(i => i.id === m.winning_tiv_id) || null;
-      }
-      return (_ctCtx && _ctCtx.ctx && _ctCtx.ctx.leader) || null;
-    }
-    // The philanthropies an investigation / case / evaluation may name. Before
-    // the mission starts an investigation still "requires at least 1 specific
-    // philanthropy", so the list is every registered one; once the race is
-    // running the spec narrows it to those in the mission.
-    let _ctOrgs = { missionId: null, list: [] };
-    async function _ctLoadOrgs(mission) {
-      if (!mission) { _ctOrgs = { missionId: null, list: [] }; return; }
-      if (_ctOrgs.missionId === mission.id) return;
-      let list = [];
-      try {
-        const r = await fetch('/candidacies?mission_id=' + encodeURIComponent(mission.id));
-        if (r.ok) {
-          const cands = await r.json();
-          list = (cands || []).map(c => ({ id: c.org_id, name: _ctOrgName(c.org_id) }));
-        }
-      } catch (e) {}
-      _ctOrgs = { missionId: mission.id, list };
-    }
-    function _ctOrgOptions(stage) {
-      const inMission = _ctOrgs.list || [];
-      const all = (EBX.config.organizations || []).map(o => ({ id: o.id, name: o.name || o.id }));
-      const list = (stage >= 3 && inMission.length) ? inMission : all;
-      const seen = new Set();
-      return list.filter(o => o.id && !seen.has(o.id) && seen.add(o.id));
-    }
-
-    // ── the rules ────────────────────────────────────────────────────────────
-    // g is grayed until the initiative is elected; e until the cause is
-    // confirmed, which on this page is always true (§1 is the earliest tab).
-    function _pbCatEnabled(cat, n) {
-      if (cat === 'budgeting') return n >= 3;
-      return true;
-    }
-    // Can this type be WRITTEN right now? The phase tabs are free to browse —
-    // reading a stage you are not in is the whole point of them — but a post
-    // lands in the mission's real stage, so the composer follows that and says
-    // so when it is shut.
-    function _pbOpenNow(type, stage) {
-      switch (type) {
-        case 'context':       return stage >= 2;
-        case 'case:tiv':      return stage === 2;
-        case 'investigation': return stage >= 2;   // opens early, per the spec
-        case 'case:phl':      return stage === 3;
-        case 'analysis':      return stage >= 4;
-        case 'evaluation':    return stage >= 4;
-        case 'service': case 'supply': case 'support': return stage >= 3;
-      }
-      return false;
-    }
-    function _pbWhyShut(type, stage, dates) {
-      const on = d => d ? fmtDate(d) : 'a date not yet set';
-      if (type === 'case:tiv') return stage > 2
-        ? 'The initiative election closed on ' + on(dates[3]) + ' — a case for an initiative can no longer be posted.'
-        : 'Opens when the initiative election opens on ' + on(dates[2]) + '.';
-      if (type === 'case:phl') return stage < 3
-        ? 'Opens when the philanthropy election opens on ' + on(dates[3]) + '.'
-        : 'The philanthropy election closed on ' + on(dates[4]) + '.';
-      if (type === 'analysis' || type === 'evaluation')
-        return 'Opens when a philanthropy is elected on ' + on(dates[4]) + '.';
-      if (['service', 'supply', 'support'].includes(type))
-        return 'Opens when the initiative is elected on ' + on(dates[3]) + '.';
-      return 'Not open at this stage.';
-    }
-    function _pbCurPhase() {
-      const stage = _ctStage(_ctCtx ? _ctCtx.ctx : null);
-      let n = _pb.phase || stage;
-      // Never leave the box on a category that this phase grays out.
-      if (!_pbCatEnabled(_pb.cat, n)) _pb.cat = 'research';
-      return n;
-    }
-    function _pbTypes(cat, n) { return (PB_TYPES[cat] || {})[n] || []; }
-    function _pbCurType(cat, n) {
-      const key = cat + '/' + n;
-      const types = _pbTypes(cat, n);
-      if (!types.length) return null;
-      if (!types.includes(_pb.type[key])) _pb.type[key] = types[0];
-      return _pb.type[key];
-    }
-
-    // ══ the render ══════════════════════════════════════════════════════════
-    function renderPostsBox(cause, ctx) {
-      _ctCtx = { cause: cause, ctx: ctx };
-      const stage = _ctStage(ctx);
-      // The one key date, drawn all the way across the page.
-      const dates = _ctDates(ctx);
-      const startDay = dates[3];
-      const started = startDay ? startDay.getTime() <= Date.now() : false;
-      const line = document.getElementById('ct-startline');
-      const label = document.getElementById('ct-startline-label');
-      if (line && label) {
-        line.classList.toggle('ct-startline--future', !started);
-        label.textContent = (started ? 'Mission started · ' : 'Mission starts · ') +
-          (startDay ? fmtDate(startDay) : 'date not set');
-      }
-      _pbPaint();
-      // Data arrives after the frame does; repaint when it lands.
-      const mission = ctx.mission || null;
-      Promise.all([_ctLoadPosts(mission), _ctLoadOrgs(mission)]).then(_pbPaint);
-      // The annulus follows the stage: initiative shares while the initiative
-      // is being elected, the philanthropy race once it is.
-      try { renderAnnulus(stage >= 3 ? 'me-oe' : 'pre-me'); } catch (e) {}
-    }
-    window.renderPostsBox = renderPostsBox;
-
-    // ── the composer survives its own repaint ────────────────────────────────
-    // Everything in the box repaints together, and an innerHTML swap throws
-    // away whatever was typed into the composer. So a repaint CAPTURES the
-    // fields into the cell's draft first, re-renders them from it, and puts the
-    // caret back where it was. (Bug, 2026-08-12: "my dialogue is deleting every
-    // time I try to link something from the rhs of the screen".)
-    let _pbPainted = null;      // draft key the composer on screen belongs to
-    function _pbCapture() {
-      if (!_pbPainted) return;
-      const d = _pb.draft[_pbPainted];
-      if (!d) return;
-      const val = id => { const el = document.getElementById(id); return el ? el.value : undefined; };
-      const t = val('pb-title'); if (t !== undefined) d.title = t;
-      const b = val('pb-body');  if (b !== undefined) d.body = b;
-      Object.keys(PB_ROW_FIELDS).forEach(k => (PB_ROW_FIELDS[k] || []).forEach(([f]) => {
-        const v = val('pb-row-' + f);
-        if (v !== undefined) d.row[f] = v;
-      }));
-    }
-    function _pbFocusState() {
-      const el = document.activeElement;
-      if (!el || !el.id || !/^pb-/.test(el.id)) return null;
-      let pos = null;
-      try { pos = el.selectionStart; } catch (e) {}
-      return { id: el.id, pos: pos };
-    }
-    function _pbRestoreFocus(f) {
-      if (!f) return;
-      const el = document.getElementById(f.id);
-      if (!el || typeof el.focus !== 'function') return;
-      el.focus();
-      if (f.pos !== null && f.pos !== undefined) {
-        try { el.selectionStart = el.selectionEnd = f.pos; } catch (e) {}
-      }
-    }
-
-    function _pbPaint() {
-      const box = document.getElementById('pb');
-      if (!box || !_ctCtx) return;
-      _pbCapture();
-      const focus = _pbFocusState();
-      const cause = _ctCtx.cause, ctx = _ctCtx.ctx;
-      const stage = _ctStage(ctx);
-      const dates = _ctDates(ctx);
-      const n = _pbCurPhase();
-      const cat = _pb.cat;
-      const type = _pbCurType(cat, n);
-      // k carries the result that opened the stage the mission is in, notched
-      // onto that stage's tab.
-      const notch = _pbNotchTab(stage);
-
-      // a–d — the phase tabs, each dated. This is the old rail, laid flat.
-      const phaseTabs = PB_PHASES.map(p => {
-        const st = p.n < stage ? 'past' : p.n === stage ? 'now' : 'future';
-        return '<button type="button" role="tab" class="pb-tab pb-tab--' + st +
-          (p.n === n ? ' pb-tab--on' : '') + (p.n === notch ? ' pb-tab--linked' : '') +
-          '" data-phase="' + p.n + '"' +
-          ' aria-selected="' + (p.n === n) + '" onclick="pbPhase(' + p.n + ')">' +
-          '<span class="pb-tab__key">' + p.key + '</span>' +
-          '<span class="pb-tab__name">' + _p3esc(p.name) + '</span>' +
-          '<span class="pb-tab__date">' + _ctDateText(p.n, dates) +
-            (st === 'now' ? ' · now' : '') + '</span></button>';
-      }).join('');
-
-      // e–g — the category tabs, grayed by the phase.
-      const catTabs = PB_CATS.map(c => {
-        const on = _pbCatEnabled(c.cat, n);
-        const types = _pbTypes(c.cat, n).map(t => PB_LABEL[t]).join(' · ');
-        return '<button type="button" role="tab" class="pb-tab pb-tab--cat' +
-          (c.cat === cat ? ' pb-tab--on' : '') + (on ? '' : ' pb-tab--gray') + '"' +
-          ' data-cat="' + c.cat + '" aria-selected="' + (c.cat === cat) + '"' +
-          (on ? '' : ' disabled title="Opens when the initiative is elected"') +
-          ' onclick="pbCat(\'' + c.cat + '\')">' +
-          '<span class="pb-tab__key">' + c.key + '</span>' +
-          '<span class="pb-tab__name">' + c.label + '</span>' +
-          '<span class="pb-tab__date">' + (on ? _p3esc(types || '—') : 'grayed until the initiative is elected') +
-          '</span></button>';
-      }).join('');
-
-      const set = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
-      set('pb-results', _pbResults(notch, cause, ctx, dates));
-      set('pb-types', _pbTypeRow(cat, n, type));
-      set('pb-joint', _pbJoint(notch));
-      set('pb-phase', phaseTabs);
-      set('pb-compose', _pbCompose(cat, n, type, cause, stage, dates));
-      set('pb-explain', _pbAbout(cat, n, type, cause, ctx, stage, dates));
-      set('pb-cat', catTabs);
-      set('pb-leading', _pbLeading(cat, n, type, cause, stage));
-      _pbPainted = _pbDraftKey(cat, n, type);
-      _pbBind();
-      _pbRestoreFocus(focus);
-    }
-
-    window.pbPhase = function (n) { _pbCapture(); _pb.phase = n; _pb.msg = ''; _pb.pick = null; _pbPaint(); };
-    window.pbCat = function (c) { _pbCapture(); _pb.cat = c; _pb.msg = ''; _pb.pick = null; _pbPaint(); };
-    window.pbType = function (t) {
-      _pbCapture();
-      const n = _pbCurPhase();
-      _pb.type[_pb.cat + '/' + n] = t;
-      _pb.page[_pb.cat + '/' + n] = 0;
-      _pb.msg = ''; _pb.pick = null;
-      _pbPaint();
-    };
-    window.pbPage = function (d) {
-      const n = _pbCurPhase(), key = _pb.cat + '/' + n;
-      _pb.page[key] = Math.max(0, (_pb.page[key] || 0) + d);
-      _pbPaint();
-    };
-    // ── k — THE RESULT THAT OPENED THE STAGE WE ARE IN ───────────────────────
-    // "Results of previous section ... whichever section has the most recent
-    //  date should be connected to this area visually", with the example
-    //  "assume we are post initiative election and pre philanthropy election"
-    //  and the notch drawn over tab c.
-    //
-    // The tab with the most recent PAST date is the stage the mission is in
-    // right now — its date is the day it opened — so the notch sits there, and
-    // the panel carries the election that opened it. At stage 3 that reads
-    // "Initiative elected · {tiv}", exactly the drawing. k therefore does NOT
-    // follow the tab you are browsing; you can read stage d's rules with the
-    // result that is actually on the table still in front of you.
-    //
-    // §1 (2026-08-12): the POST-TYPE TOGGLE moved in here, beside the result —
-    // "always show every post type, making only the available ones clickable".
-    function _pbNotchTab(stage) { return stage; }
-    function _pbJoint(notch) {
-      return '<div class="pb-k__joint">' +
-        PB_PHASES.map(p => '<i class="' + (p.n === notch ? 'on' : '') + '"></i>').join('') + '</div>';
-    }
-    function _pbResults(notch, cause, ctx, dates) {
-      const mission = ctx.mission;
-      const wrap = (eyebrow, name, sub, extra) =>
-        '<div class="pb-k__head">' +
-          '<span class="pb-k__eyebrow">' + eyebrow + '</span>' +
-          '<span class="pb-k__date">' + _ctDateText(notch, dates) + '</span></div>' +
-        '<div class="pb-k__name">' + name + '</div>' +
-        (sub ? '<div class="pb-k__sub">' + sub + '</div>' : '') + (extra || '');
-      const topOf = (key, label) => {
-        const p = _ctPosts.posts.filter(q => _pbIs(q, key))
-          .sort((a, b) => _ctScore(b) - _ctScore(a))[0];
-        return p ? '<div class="pb-k__case"><b>' + label + ' · +' + _ctScore(p) + '</b>' +
-          _p3esc(p.title || p.body || '') + '</div>' : '';
-      };
-      // stage 4 — the philanthropy election is the result on the table.
-      if (notch >= 4) {
-        return wrap('Philanthropy elected',
-          _p3esc(mission && mission.winning_org_id ? _ctOrgName(mission.winning_org_id) : 'not recorded'),
-          'Running <b>' + _p3esc(_ctTivName(mission && mission.winning_tiv_id)) + '</b> for ' +
-          _p3esc(cause.name) + '. Budgeting is open.', topOf('case:phl', 'Top case · philanthropy'));
-      }
-      // stage 3 — the initiative election just decided; the philanthropy race
-      // it opened runs until T+8wk.
-      if (notch === 3) {
-        return wrap('Initiative elected',
-          _p3esc(mission && mission.winning_tiv_id ? _ctTivName(mission.winning_tiv_id) : 'not recorded'),
-          'The philanthropy election it opened runs until <b>' +
-          (dates[4] ? fmtDate(dates[4]) : '—') + '</b>.', topOf('case:tiv', 'Top case'));
-      }
-      // stage 2 — the cause vote is what opened the initiative election.
-      const inits = (EBX.config.initiatives || []).filter(i =>
-        i.cause_id === cause.id || i.cause_index === cause.index).length;
-      const leader = ctx.leader;
-      return wrap('Cause confirmed', _p3esc(cause.name),
-        inits + ' initiative' + (inits === 1 ? '' : 's') + ' on the ballot' +
-        (leader && leader.title ? ', leading <b>' + _p3esc(leader.title) + '</b>' : '') +
-        '. The election closes on <b>' + (dates[3] ? fmtDate(dates[3]) : '—') + '</b>.',
-        topOf('case:tiv', 'Top case'));
-    }
-
-    // ── b — THE TYPE TOGGLE, now in k ────────────────────────────────────────
-    // Every type the CATEGORY has, always drawn; the ones this stage has not
-    // opened are visible but not clickable, so the ladder a benefactor is
-    // climbing is legible from any stage instead of appearing a tab at a time.
-    function _pbTypeRow(cat, n, type) {
-      const all = PB_CAT_TYPES[cat] || [];
-      const open = _pbTypes(cat, n);
-      return '<div class="pb-b__label">Post type</div>' + all.map(t => {
-        const on = open.includes(t);
-        return '<button type="button" class="dual-type' + (t === type ? ' on' : '') +
-          (on ? '' : ' off') + '"' + (on ? '' : ' disabled title="' +
-            _p3esc(_pbWhyShut(t, _ctStage(_ctCtx ? _ctCtx.ctx : null), _ctDates(_ctCtx ? _ctCtx.ctx : null))) + '"') +
-          ' onclick="pbType(\'' + t + '\')">' + _p3esc(PB_LABEL[t]) + '</button>';
-      }).join('');
-    }
-
-    // ── i — THE INPUT DIALOGUE ───────────────────────────────────────────────
-    // The H+I detail drawing: a title (c) over the body (d), with the link
-    // rails (e–i) down the right — "I'm talking about THIS", each chip pointing
-    // at the entity it names.
-    //   e linked initiatives → posts.tiv_id      f linked organizations → posts.org_id
-    //   g budget items       → NO COLUMN — stub  h media → posts.image_url
-    //   i external links     → NO COLUMN — stub
-    //
-    // §1 (2026-08-12), two rules from Jax:
-    //   · RESEARCH REQUIRES NOTHING. A context/investigation/analysis post is
-    //     about the mission you are reading, so it links itself; analysis also
-    //     auto-links the elected initiative and philanthropy. The rails stay
-    //     for anything MORE the author wants to point at.
-    //   · BUDGETING HAS NO LINKS AT ALL. It is a costed list, not an argument
-    //     about an entity.
-    const PB_RAILS = [
-      { key: 'tivs',     label: 'Linked Initiatives',   icon: '◆' },
-      { key: 'phls',     label: 'Linked Organizations', icon: '🏛' },
-      { key: 'budget',   label: 'Budget items',         icon: '🧾', stub: true },
-      { key: 'media',    label: 'Media',                icon: '🖼' },
-      { key: 'external', label: 'External links',       icon: '↗', stub: true },
-    ];
-    const _PB_DRAFT0 = () => ({ tivs: [], phls: [], budget: [], media: [], external: [],
-                                title: '', body: '', rows: [], row: {} });
-    function _pbDraftKey(cat, n, type) { return cat + '/' + n + '/' + (type || ''); }
-    function _pbDraft() {
-      const n = _pbCurPhase(), cat = _pb.cat;
-      const k = _pbDraftKey(cat, n, _pbCurType(cat, n));
-      return _pb.draft[k] || (_pb.draft[k] = _PB_DRAFT0());
-    }
-    // Only reviews require a link now.
-    function _pbRequiredRail(type) {
-      if (type === 'case:tiv') return 'tivs';
-      if (['case:phl', 'evaluation'].includes(type)) return 'phls';
-      return null;
-    }
-    // What a post links WITHOUT being asked: the mission it is written under,
-    // and for analysis the initiative + philanthropy that mission elected.
-    function _pbAutoLinks(type, ctx) {
-      const m = ctx && ctx.mission;
-      if (!m) return [];
-      const out = [{ label: 'this mission', name: _ctTivName(m.winning_tiv_id) || m.id }];
-      if (type === 'analysis') {
-        if (m.winning_tiv_id) out.push({ label: 'initiative', name: _ctTivName(m.winning_tiv_id) });
-        if (m.winning_org_id) out.push({ label: 'philanthropy', name: _ctOrgName(m.winning_org_id) });
-      }
-      return out;
-    }
-
-    function _pbCompose(cat, n, type, cause, stage, dates) {
-      if (!type) {
-        return '<div class="pb-shut">Budgeting opens when the initiative is elected on <b>' +
-          (dates[3] ? fmtDate(dates[3]) : '—') + '</b>.</div>';
-      }
-      if (!_pbOpenNow(type, stage)) {
-        return '<div class="pb-shut"><b>' + _p3esc(PB_LABEL[type]) + '</b> — ' +
-          _p3esc(_pbWhyShut(type, stage, dates)) + '</div>';
-      }
-      const draft = _pbDraft();
-      const send = '<div class="pb-c__foot">' +
-        '<button class="election-card__commit-btn" style="padding:5px 14px;font-size:0.64rem;"' +
-          ' onclick="pbSend()">Post</button>' +
-        '<span id="pb-msg" class="p3-msg" style="margin:0;">' + _p3esc(_pb.msg) + '</span></div>';
-
-      // ── budgeting: the row REPLACES the title, and the post is a list of rows
-      if (cat === 'budgeting') {
-        return '<div class="pb-c pb-c--wide">' +
-          '<div class="pb-c__main">' + _pbRowEditor(type, draft) +
-            '<textarea id="pb-body" class="pb-c__body" rows="3" placeholder="Why this is needed…">' +
-              _p3esc(draft.body) + '</textarea>' + send +
-          '</div></div>';
-      }
-
-      // ── research / reviews
-      const req = _pbRequiredRail(type);
-      const rail = PB_RAILS.map(r => {
-        const nsel = (draft[r.key] || []).length;
-        return '<button type="button" class="pb-rail__btn' + (req === r.key ? ' req' : '') + '"' +
-          (r.stub ? ' disabled title="No field for this on a post yet — see the backlog"' : '') +
-          ' onclick="pbPick(\'' + r.key + '\')">' +
-          '<span>' + r.icon + '</span><span>' + r.label + (req === r.key ? ' *' : '') + '</span>' +
-          (nsel ? '<span class="pb-rail__n">' + nsel + '</span>' : '') + '</button>';
-      }).join('') + '<div class="pb-rail__note">Budget items and external links have no field on a ' +
-        'post yet — they are drawn, not wired.</div>';
-      const chips = ['tivs', 'phls', 'media'].map(k => (draft[k] || []).map((v, idx) =>
-        '<span class="pb-chip">' + _p3esc(_pbChipLabel(k, v)) +
-          '<button class="pb-chip__x" title="Unlink" onclick="pbUnlink(\'' + k + '\',' + idx + ')">✕</button>' +
-        '</span>').join('')).join('');
-      const auto = (cat === 'research') ? _pbAutoLinks(type, _ctCtx ? _ctCtx.ctx : null) : [];
-      const autoLine = auto.length
-        ? '<div class="pb-auto">Linked automatically: ' + auto.map(a =>
-            '<b>' + _p3esc(a.name) + '</b> <i>(' + a.label + ')</i>').join(' · ') +
-          '. Anything else is optional.</div>'
-        : '';
-      const editLine = (cat === 'research')
-        ? '<div class="pb-auto pb-auto--edit">Already posted one? You get <b>one of each research ' +
-          'type per mission</b> — <a href="profile.html">edit it on your profile &rarr;</a></div>'
-        : '';
-
-      return '<div class="pb-c">' +
-        '<div class="pb-c__main">' +
-          '<input id="pb-title" class="pb-c__title" type="text" placeholder="Post title" value="' +
-            _p3esc(draft.title) + '" />' +
-          '<textarea id="pb-body" class="pb-c__body" rows="4" placeholder="Write your ' +
-            _p3esc((PB_LABEL[type] || type).toLowerCase()) + '…">' + _p3esc(draft.body) + '</textarea>' +
-          autoLine + editLine +
-          (chips ? '<div class="pb-chips">' + chips + '</div>' : '') +
-          (_pb.pick ? _pbPicker(_pb.pick, cause, stage) : '') +
-          send +
-        '</div>' +
-        '<div class="pb-rail">' + rail + '</div>' +
-      '</div>';
-    }
-
-    // ── the budgeting row editor ─────────────────────────────────────────────
-    // "Users toggle s/s/s and input into this: Service |Job|hourly_rate|
-    //  days_needed| · Supply |Item|Supplier|Cost| · Support |Item|", and the
-    // post carries the LIST of rows (posts.line_items, migration a1f6b3c92d47).
-    const PB_ROW_FIELDS = {
-      service: [['job', 'Job', 'text'], ['hourly_rate', 'Hourly rate ($)', 'number'],
-                ['days_needed', 'Days needed', 'number']],
-      supply:  [['item', 'Item', 'text'], ['supplier', 'Supplier', 'text'],
-                ['cost', 'Cost ($)', 'number']],
-      support: [['item', 'Item — approval, professional help, legal help…', 'text']],
-    };
-    function _pbRowEditor(kind, draft) {
-      const fields = PB_ROW_FIELDS[kind] || [];
-      const inputs = fields.map(([k, label, t]) =>
-        '<input id="pb-row-' + k + '" class="p3-in pb-row__in' + (t === 'number' ? ' p3-in--num' : ' p3-in--grow') +
-          '" type="' + t + '"' + (t === 'number' ? ' min="0" step="any"' : '') +
-          ' placeholder="' + _p3esc(label) + '" value="' + _p3esc(draft.row[k] || '') + '" />').join('');
-      const rows = (draft.rows || []).map((r, i) =>
-        '<tr><td>' + fields.map(([k]) => _p3esc(r[k])).join('</td><td>') + '</td>' +
-        '<td><button class="pb-chip__x" title="Remove" onclick="pbRowDel(' + i + ')">✕</button></td></tr>').join('');
-      const total = _pbRowTotals(kind, draft.rows);
-      return '<div class="pb-row">' + inputs +
-          '<button class="election-card__commit-btn p3-btn" onclick="pbRowAdd()">+ Add</button></div>' +
-        (rows
-          ? '<table class="pb-tbl pb-tbl--draft"><thead><tr><th>' +
-              fields.map(([, l]) => _p3esc(l)).join('</th><th>') + '</th><th></th></tr></thead>' +
-              '<tbody>' + rows + '</tbody></table>' +
-              (total ? '<div class="pb-tbl__total">' + total + '</div>' : '')
-          : '<div class="pb-row__hint">Add at least one row — a suggestion is costed or it is not a ' +
-            'suggestion.</div>');
-    }
-    function _pbRowTotals(kind, rows) {
-      if (!rows || !rows.length) return '';
-      const n = v => Number(v) || 0;
-      if (kind === 'service') {
-        const days = rows.reduce((t, r) => t + n(r.days_needed), 0);
-        const cost = rows.reduce((t, r) => t + n(r.hourly_rate) * n(r.days_needed) * 8, 0);
-        return days + ' day' + (days === 1 ? '' : 's') + ' · ' + _fmtCost(cost) +
-               ' <i style="opacity:0.6;">(rate × days × 8h)</i>';
-      }
-      if (kind === 'supply') return _fmtCost(rows.reduce((t, r) => t + n(r.cost), 0));
-      return rows.length + ' connection' + (rows.length === 1 ? '' : 's') + ' — no cost';
-    }
-    window.pbRowAdd = function () {
-      const n = _pbCurPhase(), type = _pbCurType(_pb.cat, n), d = _pbDraft();
-      const fields = PB_ROW_FIELDS[type] || [];
-      const row = {};
-      let missing = null;
-      fields.forEach(([k, label]) => {
-        const el = document.getElementById('pb-row-' + k);
-        const v = el ? String(el.value || '').trim() : '';
-        if (!v) missing = missing || label;
-        row[k] = v;
-      });
-      if (missing) { _pb.msg = 'That row needs a value for “' + missing + '”.'; _pbPaint(); return; }
-      d.rows.push(row);
-      d.row = {};
-      _pb.msg = '';
-      _pbPaint();
-    };
-    window.pbRowDel = function (i) { _pbDraft().rows.splice(i, 1); _pbPaint(); };
-
-    function _pbChipLabel(kind, v) {
-      if (kind === 'tivs') return _ctTivName(v);
-      if (kind === 'phls') return _ctOrgName(v);
-      return String(v).slice(0, 40);
-    }
-    // The picker a rail button opens. Every option is an ENTITY on this page,
-    // so a link is always a pointer at something the reader can open.
-    function _pbPicker(kind, cause, stage) {
-      const head = '<div class="pb-pick__head"><span>' +
-        (kind === 'tivs' ? 'Link an initiative' : kind === 'phls' ? 'Link an organization' : 'Link media') +
-        '</span><button class="pb-pick__close" onclick="pbPick(null)">✕</button></div>';
-      if (kind === 'media') {
-        return '<div class="pb-pick">' + head +
-          '<div style="display:flex;gap:6px;">' +
-            '<input id="pb-media-url" class="p3-in p3-in--grow" placeholder="Image URL…" />' +
-            '<button class="election-card__commit-btn p3-btn" onclick="pbLinkMedia()">Attach</button>' +
-          '</div></div>';
-      }
-      const opts = kind === 'tivs'
-        ? (EBX.config.initiatives || [])
-            .filter(i => i.cause_id === cause.id || i.cause_index === cause.index)
-            .map(i => [i.id, _ctTivName(i.id)])
-        : _ctOrgOptions(stage).map(o => [o.id, o.name]);
-      const body = opts.length
-        ? opts.map(([id, name]) => '<button class="pb-pick__opt" onclick="pbLink(\'' + kind +
-            '\',\'' + _p3esc(id) + '\')">' + _p3esc(name) + '</button>').join('')
-        : '<div class="pb-pick__empty">Nothing to link here yet.</div>';
-      return '<div class="pb-pick">' + head + body + '</div>';
-    }
-    window.pbPick = function (kind) { _pb.pick = kind; _pbPaint(); };
-    window.pbLink = function (kind, id) {
-      const d = _pbDraft();
-      if (!d[kind].includes(id)) d[kind].push(id);
-      _pb.pick = null; _pbPaint();
-    };
-    window.pbLinkMedia = function () {
-      const v = ((document.getElementById('pb-media-url') || {}).value || '').trim();
-      if (!v) return;
-      _pbDraft().media = [v];   // one image per post — posts.image_url is one column
-      _pb.pick = null; _pbPaint();
-    };
-    window.pbUnlink = function (kind, idx) { _pbDraft()[kind].splice(idx, 1); _pbPaint(); };
-
-    const _PB_SEND_CAT = {
-      context: 'mission_support', investigation: 'mission_support', analysis: 'mission_support',
-      'case:tiv': 'review', 'case:phl': 'review', evaluation: 'review',
-      service: 'budgeting', supply: 'budgeting', support: 'budgeting',
-    };
-    window.pbSend = async function () {
-      const n = _pbCurPhase(), cat = _pb.cat, type = _pbCurType(cat, n);
-      const say = s => { _pb.msg = s; const el = document.getElementById('pb-msg'); if (el) el.textContent = s; };
-      if (!type) return;
-      _pbCapture();
-      if (!_v2LoggedIn()) { say('Sign in to post.'); return; }
-      const ctx = _ctCtx ? _ctCtx.ctx : {};
-      const cause = _ctCtx ? _ctCtx.cause : null;
-      const mission = ctx.mission || null;
-      const draft = _pbDraft();
-      const payload = {
-        id: 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
-        category: _PB_SEND_CAT[type] || 'mission_support',
-        type: type.startsWith('case') ? 'case' : type,
-        body: draft.body, author_type: 'ben',
-        mission_id: mission ? mission.id : null,
-        cause_id: cause ? cause.id : null,
-      };
-      if (!draft.body.trim()) { say('Write the post first.'); return; }
-      if (cat === 'budgeting') {
-        if (!draft.rows.length) { say('Add at least one row — a budget item is costed or it is not one.'); return; }
-        payload.line_items = draft.rows.map(r => Object.assign({ kind: type }, r));
-        payload.title = _pbRowTitle(type, draft.rows);
-      } else {
-        payload.title = draft.title.trim() || null;
-        payload.image_url = draft.media[0] || null;
-        // Research links itself: the mission is already on the payload, and
-        // analysis takes the initiative and philanthropy that mission elected.
-        payload.tiv_id = draft.tivs[0] || null;
-        payload.org_id = draft.phls[0] || null;
-        if (cat === 'research' && mission) {
-          if (type === 'analysis') {
-            payload.tiv_id = payload.tiv_id || mission.winning_tiv_id || null;
-            payload.org_id = payload.org_id || mission.winning_org_id || null;
-          }
-        }
-        const req = _pbRequiredRail(type);
-        if (req && !(draft[req] || []).length) {
-          say(req === 'tivs' ? 'Link the initiative this case is for — a case must name one.'
-                             : 'Link the organization this post is about — this type requires one.');
-          return;
-        }
-      }
-      say('Posting…');
-      try {
-        const r = await EBX.Auth.fetchAuthed('/posts', { method: 'POST', body: JSON.stringify(payload) });
-        if (r && !r.ok) {
-          const d = await r.json().catch(() => ({}));
-          say(d.detail || ('Failed (HTTP ' + r.status + ')')); return;
-        }
-      } catch (e) { say('Network error — try again.'); return; }
-      _pb.msg = '';
-      _pb.draft[_pbDraftKey(cat, n, type)] = _PB_DRAFT0();
-      await _ctLoadPosts(mission, true);
-      _pbPaint();
-    };
-    // A budgeting post's title is its list, so it is written rather than typed.
-    function _pbRowTitle(kind, rows) {
-      const first = rows[0] || {};
-      const head = kind === 'service' ? first.job : first.item;
-      return (rows.length > 1 ? head + ' +' + (rows.length - 1) + ' more' : head) || kind;
-    }
-    window.pbReact = async function (postId, value) {
-      const say = s => { _pb.msg = s; const el = document.getElementById('pb-msg'); if (el) el.textContent = s; };
-      if (!_v2LoggedIn()) { say('Sign in to rate posts.'); return; }
-      try {
-        const r = await EBX.Auth.fetchAuthed('/posts/' + postId + '/react',
-          { method: 'POST', body: JSON.stringify({ value: value }) });
-        if (r && !r.ok) {
-          const d = await r.json().catch(() => ({}));
-          say(d.detail || 'Could not rate that post.'); return;
-        }
-      } catch (e) { say('Network error — try again.'); return; }
-      await _ctLoadPosts(_ctCtx && _ctCtx.ctx ? _ctCtx.ctx.mission : null, true);
-      _pbPaint();
-    };
-
-    // ── h — ABOUT THE POST YOU ARE WRITING ───────────────────────────────────
-    // "with the exception of budgeting, there is only 1 explanation per
-    //  combined-tab-toggle" — one block per (category, phase), and for
-    //  budgeting the three one-line table titles instead (Jax, 2026-08-12:
-    //  "remove the target/open/reward/rating displays ... title each table in
-    //  1 row, delete examples").
-    function _pbExplainBlock(o) {
-      return '<div class="pb-ex">' +
-        '<div class="pb-ex__head"><span class="pb-ex__kind">' + _p3esc(o.kind) + '</span>' +
-          '<h4 class="pb-ex__title">' + _p3esc(o.title) + '</h4></div>' +
-        '<p class="pb-ex__body">' + o.body + '</p>' +
-        (o.example ? '<div class="pb-ex__eg"><b>e.g.</b> ' + _p3esc(o.example) + '</div>' : '') +
-        (o.meta ? '<div class="pb-meta">' + o.meta.map(([k, v]) =>
-          '<span class="pb-meta__i"><span class="pb-meta__k">' + k + '</span>' +
-          '<span class="pb-meta__v">' + v + '</span></span>').join('') + '</div>' : '') +
-      '</div>';
-    }
-    function _pbAbout(cat, n, type, cause, ctx, stage, dates) {
-      const mission = ctx.mission;
-      const winTiv = mission && mission.winning_tiv_id ? _ctTivName(mission.winning_tiv_id) : null;
-      const winOrg = mission && mission.winning_org_id ? _ctOrgName(mission.winning_org_id) : null;
-      const tiv = _ctSelectedTiv(cause);
-      const tivName = tiv ? _ctTivName(tiv.id) : 'the selected initiative';
-      const on = d => d ? fmtDate(d) : '—';
-      let out = '';
-
-      if (n === 1) {
-        out += _pbExplainBlock({
-          kind: 'Cause confirmed', title: 'How a cause changes',
-          body: 'The seven causes are the standing subjects everything else is elected inside, ' +
-            'so a week of enthusiasm should not move one. A challenger has to win the same window ' +
-            'in <b>6 successive votes</b>; lose one and the streak resets and the swap date moves ' +
-            'back a full rotation. <b>' + _p3esc(cause.name) + '</b> was confirmed for the mission ' +
-            'starting <b>' + on(dates[3]) + '</b>, somewhere in the 7–14 weeks before it.',
-          meta: [['Target', 'the cause itself'],
-                 ['Window', dates.range1 ? fmtRange(dates.range1.from, dates.range1.to) : '—'],
-                 ['Reward', 'none — this stage is frame'],
-                 ['Rating', 'n/a']],
-        });
-        out += '<div class="ct-frame">' + (cat === 'research'
-          ? 'Research at this stage is <b>context</b> only — the background a voter needs before ' +
-            'the initiative election opens.'
-          : 'Reviews at this stage are the <b>case for an initiative</b>. The case for the CAUSE ' +
-            'will live here once that logic is settled.') + '</div>';
-        return out;
-      }
-
-      // BUDGETING — three tables, one titled row each. No target/open/reward/
-      // rating chips: a budget item is not judged, it is bought.
-      if (cat === 'budgeting') {
-        return '<div class="pb-sss">' + ['service', 'supply', 'support'].map(k => {
-          const m = _SSS_META[k];
-          return '<div class="pb-sss__row' + (k === type ? ' on' : '') + '">' +
-            '<span class="pb-sss__icon">' + m[0] + '</span>' +
-            '<b class="pb-sss__kind">' + k + '</b>' +
-            '<span class="pb-sss__what">' + m[1] + '</span></div>';
-        }).join('') + '</div>' +
-        '<div class="ct-secnote">Suggestions are open from the moment the initiative is elected; ' +
-          (n === 4
-            ? 'now the philanthropy is elected they are filtered to this mission and <b>' +
-              _p3esc(winOrg || 'its philanthropy') + '</b>, and they can be voted on.'
-            : 'they cannot be <b>voted on</b> until budgeting opens on <b>' + on(dates[4]) + '</b>.') +
-          ' Budget threads are shared between benefactors and the philanthropy running the mission.' +
-        '</div>';
-      }
-
-      const T = {
-        context: {
-          title: 'Context', kind: 'Research · opens at Mission open',
-          body: 'Background that teaches voters about the initiatives and the news around them. ' +
-            'It links itself to this mission — anything else you point at is optional — and it ' +
-            'stays readable for the whole mission.',
-          example: 'What the 2025 satellite survey actually measured, and what it left out.',
-          meta: [['Target', 'this mission — linked automatically'],
-                 ['Open', 'from ' + on(dates[2]) + ', onward'],
-                 ['Reward', '1/32 of the pool — released with the advances'],
-                 ['Rating', 'helpful · neutral · harmful']],
-        },
-        investigation: {
-          title: 'Investigation', kind: 'Research · opens at Initiative elected',
-          body: 'Digging into the philanthropies that would run the mission — leadership, ' +
-            'proposal quality, credibility. Link the one you are investigating if it is about a ' +
-            'single organization; the mission itself is linked for you.',
-          example: 'Three years of this philanthropy’s filings, and where the overhead went.',
-          meta: [['Target', 'this mission · an organization is optional'],
-                 ['Open', 'from ' + on(dates[2]) + ' (early), through the race'],
-                 ['Reward', '1/32 — winner decided at the end of phase 3'],
-                 ['Rating', 'helpful · neutral · harmful']],
-        },
-        analysis: {
-          title: 'Analysis', kind: 'Research · opens at Philanthropy elected',
-          body: 'Combined research: an independent assessment of financials, track record or ' +
-            'method, backing what context and investigation have gathered. It is linked to the ' +
-            'elected initiative and philanthropy automatically. Never cost-based — costing ' +
-            'belongs in budgeting.',
-          example: 'Comparing the funded plan against two comparable programmes and their outcomes.',
-          meta: [['Target', (winTiv || 'the initiative') + ' + ' + (winOrg || 'the philanthropy') +
-                            ' — linked automatically'],
-                 ['Open', 'from ' + on(dates[4]) + ', onward'],
-                 ['Reward', '1/32 — winner decided after phase 3'],
-                 ['Rating', 'helpful · neutral · harmful']],
-        },
-        'case:tiv': {
-          title: 'Case for an initiative', kind: 'Reviews · opens at Mission open',
-          body: 'Argues for one initiative in this cause — for or against. It must link the ' +
-            'initiative it argues for (the cards beside the wheel start you on <b>' +
-            _p3esc(tivName) + '</b>), because a case that names nothing cannot be counted for ' +
-            'anything.',
-          example: 'Why leak detection buys more tonnes per dollar than capture at this stage.',
-          meta: [['Target', 'one initiative — required'],
-                 ['Open', on(dates[2]) + ' → ' + on(dates[3])],
-                 ['Reward', 'the most-fair case earns a direct line to Earthbux and the philanthropy'],
-                 ['Rating', 'fair · unfair']],
-        },
-        'case:phl': {
-          title: 'Case for a philanthropy', kind: 'Reviews · opens at Initiative elected',
-          body: 'Argues for the organization that should run <b>' + _p3esc(winTiv || tivName) +
-            '</b>. It is shown beside your case for the initiative and <b>the two are scored as ' +
-            'one</b> — the post vote is the aggregate of the pair.',
-          example: 'Why this philanthropy’s field presence beats the better-funded bid.',
-          meta: [['Target', 'an organization — required'],
-                 ['Open', on(dates[3]) + ' → ' + on(dates[4])],
-                 ['Reward', 'aggregate score with your case for the initiative'],
-                 ['Rating', 'fair · unfair']],
-        },
-        evaluation: {
-          title: 'Evaluation', kind: 'Reviews · opens at Philanthropy elected',
-          body: 'Reviews the elected organization’s effort on the mission once it is actually ' +
-            'running it. Grayed out through the whole election — there is nothing to evaluate ' +
-            'until someone is doing the work.',
-          example: 'Six weeks in: what was promised in the plan, and what has been delivered.',
-          meta: [['Target', winOrg ? _p3esc(winOrg) : 'the elected organization'],
-                 ['Open', 'from ' + on(dates[4]) + ', onward'],
-                 ['Reward', 'the most-fair evaluation earns a direct line to Earthbux and the philanthropy'],
-                 ['Rating', 'fair · unfair']],
-        },
-      };
-      // The explanation belongs to the CELL (the spec's "combined-tab-toggle"),
-      // so it follows the type that stage opens — unless you have toggled to
-      // another type in k, which is a direct request to read about that one.
-      const opens = PB_OPENS[cat][n];
-      const spec = T[type] || T[opens];
-      if (spec) out += _pbExplainBlock(spec);
-      if (cat === 'reviews' && n === 3) out += _pbAggregateCase(cause, ctx);
-      return out;
-    }
-
-    // The benefactor's case for the initiative and their case for a
-    // philanthropy, side by side with the aggregate the spec asks for:
-    // "the post vote is the aggregate of the 2".
-    function _pbAggregateCase(cause, ctx) {
-      const tivCase = _ctPosts.posts.filter(p => _pbIs(p, 'case:tiv'))
-        .sort((a, b) => _ctScore(b) - _ctScore(a))[0] || null;
-      const phlCase = _ctPosts.posts.filter(p => _pbIs(p, 'case:phl'))
-        .sort((a, b) => _ctScore(b) - _ctScore(a))[0] || null;
-      if (!tivCase && !phlCase) return '';
-      const agg = (tivCase ? _ctScore(tivCase) : 0) + (phlCase ? _ctScore(phlCase) : 0);
-      const cell = (label, p) =>
-        '<div class="ct-topcase" style="flex:1;min-width:0;margin-bottom:0;">' +
-          '<div class="ct-topcase__label">' + label + (p ? ' · +' + _ctScore(p) : '') + '</div>' +
-          '<div class="ct-topcase__body">' + (p ? _p3esc(p.body || '')
-            : '<i style="opacity:0.6;">not written yet</i>') + '</div></div>';
-      return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0;">' +
-          cell('Case · initiative', tivCase) + cell('Case · philanthropy', phlCase) + '</div>' +
-        '<div class="ct-moved">Aggregate score for the pair: ' +
-          '<b style="color:var(--cause-color);">+' + agg + '</b></div>';
-    }
-    // ── j — THE LEADING POST, or the three budget tables ─────────────────────
-    // "Leading post in that category for that mission" — the highest-rated one,
-    // with a pager through the ranked rest, the reactions post_config declares
-    // for the type, and the two filters the deleted P3 bands owned: a search
-    // inside research, sort-by-organization inside reviews.
-    // Budgeting is the exception Jax drew: "the 3 tables are displayed in the
-    // area below" — service, supply and support, each titled in one row.
-    function _pbRanked(cat, n) {
-      const types = _pbTypes(cat, n);
-      let list = _ctPosts.posts.filter(p => types.some(t => _pbIs(p, t)));
-      if (cat === 'research' && _pb.search) {
-        const q = _pb.search.toLowerCase();
-        list = list.filter(p => ((p.title || '') + ' ' + (p.body || '')).toLowerCase().includes(q));
-      }
-      if (cat === 'reviews' && _pb.sortOrg !== 'all') {
-        list = list.filter(p => _pb.sortOrg === '__tiv__' ? !p.org_id : String(p.org_id) === _pb.sortOrg);
-      }
-      return list.sort((a, b) => _ctScore(b) - _ctScore(a));
-    }
-    function _pbLeading(cat, n, type, cause, stage) {
-      if (cat === 'budgeting') return _pbBudgetTables();
-      const key = cat + '/' + n;
-      const list = _pbRanked(cat, n);
-      let i = Math.min(_pb.page[key] || 0, Math.max(0, list.length - 1));
-      _pb.page[key] = i;
-      const p = list[i] || null;
-      const label = (cat === 'research' ? 'Research' : 'Reviews');
-
-      let filter = '';
-      if (cat === 'research') {
-        filter = '<input id="pb-search" class="p3-in p3-in--search" placeholder="Search ' +
-          label.toLowerCase() + '…" value="' + _p3esc(_pb.search) + '" />';
-      } else {
-        const groups = _pbReviewGroups();
-        filter = '<select id="pb-sortorg" class="p3-in p3-in--sort">' +
-          ['<option value="all">all organizations</option>']
-            .concat(groups.map(g => '<option value="' + _p3esc(g.id) + '"' +
-              (_pb.sortOrg === String(g.id) ? ' selected' : '') + '>' + _p3esc(g.name) + '</option>'))
-            .join('') + '</select>';
-      }
-      const pager = '<span class="pb-pager">' +
-        '<button ' + (i <= 0 ? 'disabled' : '') + ' onclick="pbPage(-1)">&lsaquo;</button>' +
-        (list.length ? (i + 1) + ' of ' + list.length : '0') +
-        '<button ' + (i >= list.length - 1 ? 'disabled' : '') + ' onclick="pbPage(1)">&rsaquo;</button></span>';
-
-      let body;
-      if (!p) {
-        body = '<div class="phase-disc__empty">Nothing posted in ' + label.toLowerCase() +
-          ' for this mission yet' + (_pb.search ? ' matching that search' : '') + '.</div>';
-      } else {
-        const t = _pbIs(p, 'case:phl') ? 'case:phl'
-                : _pbIs(p, 'case:tiv') ? 'case:tiv' : _ctTypeOf(p);
-        const re = p.tiv_id ? _ctTivName(p.tiv_id) : (p.org_id ? _ctOrgName(p.org_id) : '');
-        const reacts = (PB_REACTIONS[t] || []).map(([v, lab]) =>
-          '<button class="dual-react" onclick="pbReact(\'' + _p3esc(p.id) + '\',\'' + v + '\')">' +
-            lab + ' · ' + (v === 'helpful' ? (p.helpful_count || 0)
-              : v === 'harmful' ? (p.harmful_count || 0) : (p.neutral_count || 0)) + '</button>').join('');
-        body = '<div class="pb-post">' +
-          '<div class="phase-disc__meta"><b>' + _p3esc(PB_LABEL[t] || t) + '</b> · ' +
-            new Date(p.created_at || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
-            (re ? ' · re: ' + _p3esc(re) : '') + ' · ' + (_ctScore(p) >= 0 ? '+' : '') + _ctScore(p) +
-            (i === 0 ? ' · leading' : '') + '</div>' +
-          (p.title ? '<div class="pb-post__title">' + _p3esc(p.title) + '</div>' : '') +
-          '<div class="pb-post__body">' + _p3esc(p.body || '') + '</div>' +
-          '<div class="dual-post__actions">' + reacts +
-            (cat === 'research'
-              ? '<a class="dual-react" style="text-decoration:none;" href="profile.html">Edit yours &rarr;</a>'
-              : '') +
-          '</div></div>';
-      }
-      return '<div class="pb-j__bar"><span class="dual-panel__label">Leading ' + label.toLowerCase() +
-          '</span>' + filter + pager + '</div>' + body;
-    }
-
-    // The three budget tables. Rows come from `posts.line_items` (migration
-    // a1f6b3c92d47); pre-2026-08-12 budgeting posts have no rows, so they are
-    // shown as a single row built from the post's own title and estimates
-    // rather than dropped.
-    function _pbBudgetTables() {
-      return ['service', 'supply', 'support'].map(kind => {
-        const fields = PB_ROW_FIELDS[kind];
-        const meta = _SSS_META[kind];
-        const rows = [];
-        _ctPosts.posts.filter(p => _sssKind(p) === kind).forEach(p => {
-          const items = (Array.isArray(p.line_items) && p.line_items.length)
-            ? p.line_items : [_pbLegacyRow(kind, p)];
-          items.forEach(it => rows.push({ p: p, it: it }));
-        });
-        rows.sort((a, b) => _score(b.p) - _score(a.p));
-        const head = '<tr><th>' + fields.map(([, l]) => _p3esc(l)).join('</th><th>') +
-          '</th><th>approval</th></tr>';
-        const body = rows.length
-          ? rows.map(({ p, it }) =>
-              '<tr><td>' + fields.map(([k]) => _p3esc(_pbRowCell(k, it))).join('</td><td>') + '</td>' +
-              '<td class="pb-tbl__act">' +
-                '<button class="dual-react" onclick="pbReact(\'' + _p3esc(p.id) + '\',\'helpful\')">' +
-                  'approve · ' + (p.helpful_count || 0) + '</button></td></tr>').join('')
-          : '<tr><td colspan="' + (fields.length + 1) + '" class="pb-tbl__empty">' +
-            'Nothing suggested yet.</td></tr>';
-        return '<table class="pb-tbl">' +
-          '<caption class="pb-sss__row"><span class="pb-sss__icon">' + meta[0] + '</span>' +
-            '<b class="pb-sss__kind">' + kind + '</b>' +
-            '<span class="pb-sss__what">' + meta[1] + '</span></caption>' +
-          '<thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
-      }).join('');
-    }
-    function _pbRowCell(field, it) {
-      const v = it ? it[field] : '';
-      if (field === 'cost' || field === 'hourly_rate') return _fmtCost(v);
-      if (field === 'days_needed') return _fmtSetup(v);
-      return v === undefined || v === null || v === '' ? '—' : v;
-    }
-    function _pbLegacyRow(kind, p) {
-      const text = p.title || (p.body || '').slice(0, 60);
-      if (kind === 'service') {
-        return { job: text, hourly_rate: null, days_needed: p.est_setup_days };
-      }
-      if (kind === 'supply') return { item: text, supplier: '—', cost: p.est_cost_usd };
-      return { item: text };
-    }
-
-    // Reviews are grouped by the organizations running / registered for this
-    // mission, with the INITIATIVE as its own group — a case can argue for the
-    // initiative without naming one.
-    function _pbReviewGroups() {
-      const shares = (typeof causeOrgShares === 'function' ? causeOrgShares() : [])
-        .filter(sh => !sh.isOther);
-      const groups = shares.map(sh => ({ id: sh.org_id, name: sh.org_name }));
-      _ctPosts.posts.forEach(p => {
-        if (!p.org_id || groups.some(g => String(g.id) === String(p.org_id))) return;
-        groups.push({ id: p.org_id, name: _ctOrgName(p.org_id) });
-      });
-      const leader = _ctCtx && _ctCtx.ctx ? _ctCtx.ctx.leader : null;
-      groups.push({ id: '__tiv__', name: '◆ ' + ((leader && leader.title) || 'the initiative') });
-      return groups;
-    }
-    function _pbBind() {
-      const s = document.getElementById('pb-search');
-      if (s) {
-        s.oninput = () => {
-          _pb.search = s.value;
-          _pb.page[_pb.cat + '/' + _pbCurPhase()] = 0;
-          _pbPaint();
-        };
-      }
-      const so = document.getElementById('pb-sortorg');
-      if (so) so.onchange = () => {
-        _pb.sortOrg = so.value;
-        _pb.page[_pb.cat + '/' + _pbCurPhase()] = 0;
-        _pbPaint();
-      };
-    }
     // ── EVERY DISCUSSION SYSTEM THIS PAGE HAS HAD, AND WHERE IT WENT ────────
     //   2026-08-01  per-phase checkbox threads   (`renderPhaseDiscussions`)
     //   2026-08-02  the dual mission-support / review panels (`renderP1DualPanels`)
@@ -4526,5 +3115,255 @@
   })();
   </script>
   <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
+  <!-- ══ THE FEED (2026-09-17) — structure.md §8 boxes a · b · d · f ═════════
+       Its own script, deliberately: the feed is cause-agnostic and the page's
+       other script is a cause render. The two talk through `Feed.noteCause`. -->
+  <script>
+  (function () {
+    'use strict';
+
+    // Every category the API can hand back, as FILTERS (structure.md §8: the
+    // phase/category tabs "move into d's filter set … as filters rather than as
+    // a frame"). `null` is the one that matters — all posts, one feed.
+    const CATS = [
+      ['', 'Everything'],
+      ['mission_support', 'Research'],
+      ['review', 'Reviews'],
+      ['budgeting', 'Budgeting'],
+      ['editorial', 'Earthbux'],
+    ];
+    const TYPE_LABEL = {
+      context: 'Context', investigation: 'Investigation', analysis: 'Analysis',
+      case: 'Case', evaluation: 'Evaluation',
+      service: 'Service', supply: 'Supplies', support: 'Support',
+    };
+    // Which reactions a post actually takes. The API rejects the rest (a
+    // budgeting suggestion is approved or not; a case is fair or unfair), so
+    // the card shows the buttons that exist rather than three that 400.
+    const REACTS_ALL = [['helpful', '▲', 'Helpful'], ['neutral', '•', 'Neutral'], ['harmful', '▼', 'Harmful']];
+    const REACTS_FAIR = [['helpful', '▲', 'Fair'], ['harmful', '▼', 'Unfair']];
+    const REACTS_OK = [['helpful', '▲', 'Approve']];
+    function reactsFor(p) {
+      if (['service', 'supply', 'support'].includes(p.type)) return REACTS_OK;
+      if (['case', 'evaluation'].includes(p.type)) return REACTS_FAIR;
+      return REACTS_ALL;
+    }
+    const PAGE = 15;
+
+    const st = { sort: 'hot', q: '', cat: '', cause: '', limit: PAGE, posts: [], cause_obj: null,
+                 open: {}, replies: {}, msg: {} };
+
+    const esc = s => String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const $ = id => document.getElementById(id);
+    const loggedIn = () => !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
+
+    function missionName(id) {
+      if (!id) return null;
+      const m = ((EBX.config || {}).missions || []).find(x => x.id === id);
+      if (!m) return id;
+      const tiv = ((EBX.config || {}).initiatives || []).find(t => t.id === m.winning_tiv_id);
+      return tiv ? (tiv.title || m.id) : m.id;
+    }
+    function causeName(id) {
+      const c = ((EBX.config || {}).causes || []).find(x => x.id === id);
+      return c ? (c.name || c.id) : null;
+    }
+    function ago(iso) {
+      const t = new Date(iso).getTime();
+      if (!t) return '';
+      const s = Math.max(0, (Date.now() - t) / 1000);
+      if (s < 3600) return Math.round(s / 60) + 'm';
+      if (s < 86400) return Math.round(s / 3600) + 'h';
+      if (s < 2592000) return Math.round(s / 86400) + 'd';
+      return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    }
+    function who(p) {
+      if (p.author_type === 'earthbux') return 'Earthbux';
+      if (p.author_type === 'org') return p.org_author_id || 'Organization';
+      return 'Benefactor #' + (p.ben_author_id || '—');
+    }
+    function kind(p) {
+      return TYPE_LABEL[p.type] || (p.category === 'editorial' ? 'News'
+        : (p.category || 'post').replace(/_/g, ' '));
+    }
+
+    async function load() {
+      const qs = new URLSearchParams({ sort: st.sort, roots_only: 'true', limit: '120' });
+      let posts = [];
+      try {
+        const r = await fetch((EBX.config.apiBase || '') + '/posts?' + qs.toString());
+        if (r.ok) posts = await r.json();
+      } catch (e) { /* drawn as the empty state below */ }
+      st.posts = Array.isArray(posts) ? posts : [];
+      paint();
+    }
+
+    function visible() {
+      const q = st.q.trim().toLowerCase();
+      return st.posts.filter(p => {
+        if (st.cat && p.category !== st.cat) return false;
+        if (st.cause && p.cause_id !== st.cause) return false;
+        if (q && !((p.title || '') + ' ' + (p.body || '')).toLowerCase().includes(q)) return false;
+        return true;
+      });
+    }
+
+    function card(p) {
+      const mid = p.mission_id;
+      const mname = missionName(mid);
+      const cname = causeName(p.cause_id);
+      const reacts = reactsFor(p).map(([v, glyph, label]) =>
+        '<button class="fd-react" type="button" title="' + label + '" data-react="' + v +
+        '" data-post="' + esc(p.id) + '">' + glyph + ' ' + ((p[v + '_count'] || 0)) + '</button>').join('');
+      const replies = (st.replies[p.id] || []).map(r =>
+        '<div class="fd-reply"><span class="fd-reply__who">' + esc(who(r)) + ' · ' + ago(r.created_at) +
+        '</span><br>' + esc(r.body || '') + '</div>').join('');
+      // A reply inherits its parent's category, and the API gates categories:
+      // editorial and headline are Earthbux's own, org_update belongs to the
+      // organization. Rather than offer a box that always 403s, say so.
+      const STAFF_CATS = ['editorial', 'headline', 'org_update', 'mission_update', 'testimonial'];
+      const replyBox = STAFF_CATS.includes(p.category)
+        ? '<div class="fd-msg">Earthbux and organization posts do not take replies here yet.</div>'
+        : (loggedIn()
+          ? '<div class="fd-replybox"><textarea data-replyfor="' + esc(p.id) + '" placeholder="Reply…"></textarea>' +
+            '<button class="fd-morebtn" type="button" data-send="' + esc(p.id) + '">Send</button></div>'
+          : '<div class="fd-msg">Sign in to reply.</div>');
+      return '' +
+      '<article class="fd-card' + (p.flag === 'red' ? ' fd-card--red' : '') + '" data-id="' + esc(p.id) + '">' +
+        '<div class="fd-card__main">' +
+          '<div class="fd-card__meta">' +
+            '<span class="fd-kind">' + esc(kind(p)) + '</span>' +
+            '<span>' + esc(who(p)) + '</span><span>·</span><span>' + ago(p.created_at) + '</span>' +
+            (cname ? '<span>·</span><span>' + esc(cname) + '</span>' : '') +
+            (mid ? '<span>·</span><a class="fd-card__mission" href="mission.html?mission=' + esc(mid) + '">' +
+                   esc(mname) + ' →</a>' : '') +
+          '</div>' +
+          (p.title ? '<h3 class="fd-card__title">' + esc(p.title) + '</h3>' : '') +
+          '<div class="fd-card__body">' + esc((p.body || '').slice(0, 600)) +
+            ((p.body || '').length > 600 ? '…' : '') + '</div>' +
+          '<div class="fd-card__foot">' +
+            '<button class="fd-link" type="button" data-toggle="' + esc(p.id) + '">' +
+              (st.open[p.id] ? 'Hide replies' : 'Reply') + '</button>' +
+            (mid ? '<a class="fd-link" href="mission.html?mission=' + esc(mid) + '">Open the mission</a>' : '') +
+          '</div>' +
+          '<div class="fd-replies' + (st.open[p.id] ? ' fd-replies--open' : '') + '" data-repliesfor="' + esc(p.id) + '">' +
+            replies + replyBox +
+            (st.msg[p.id] ? '<div class="fd-msg">' + esc(st.msg[p.id]) + '</div>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div class="fd-reacts">' + reacts + '</div>' +
+      '</article>';
+    }
+
+    function paint() {
+      const f = $('fd-filters');
+      if (f) {
+        const chips = CATS.map(([v, lab]) =>
+          '<button class="fd-chip' + (st.cat === v ? ' fd-chip--on' : '') + '" type="button" data-cat="' +
+          v + '">' + lab + '</button>').join('');
+        const cid = st.cause_obj ? st.cause_obj.id : '';
+        const causeChip = cid
+          ? '<button class="fd-chip' + (st.cause ? ' fd-chip--on' : '') + '" type="button" data-cause="' +
+            esc(cid) + '">Only ' + esc(st.cause_obj.name || cid) + '</button>'
+          : '';
+        f.innerHTML = chips + causeChip;
+      }
+      const list = $('fd-list');
+      if (!list) return;
+      const rows = visible();
+      list.innerHTML = rows.length
+        ? rows.slice(0, st.limit).map(card).join('')
+        : '<div class="fd-empty">' + (st.posts.length ? 'Nothing matches those filters.' : 'No posts yet.') + '</div>';
+      const more = $('fd-more');
+      if (more) more.style.display = rows.length > st.limit ? '' : 'none';
+    }
+
+    async function toggleReplies(id) {
+      st.open[id] = !st.open[id];
+      if (st.open[id] && !st.replies[id]) {
+        try {
+          const r = await fetch((EBX.config.apiBase || '') + '/posts/' + encodeURIComponent(id) + '/comments');
+          st.replies[id] = r.ok ? await r.json() : [];
+        } catch (e) { st.replies[id] = []; }
+      }
+      paint();
+    }
+
+    async function react(id, value) {
+      if (!loggedIn()) { st.msg[id] = 'Sign in to react.'; st.open[id] = true; return paint(); }
+      try {
+        const r = await EBX.Auth.fetchAuthed('/posts/' + encodeURIComponent(id) + '/react',
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: value }) });
+        if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).detail) || ('HTTP ' + r.status));
+        // The endpoint answers with the updated post, so the counts come back
+        // without a second request — and without re-sorting the feed under the
+        // reader, which is what reloading it would do.
+        const fresh = await r.json();
+        const i = st.posts.findIndex(x => x.id === id);
+        if (i >= 0) st.posts[i] = fresh;
+      } catch (e) { st.msg[id] = 'That reaction did not stick: ' + String(e.message || e).slice(0, 160); st.open[id] = true; }
+      paint();
+    }
+
+    async function sendReply(id, body) {
+      const parent = st.posts.find(p => p.id === id);
+      if (!parent || !body.trim()) return;
+      st.msg[id] = 'Sending…'; paint();
+      try {
+        const r = await EBX.Auth.fetchAuthed('/posts', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6),
+            author_type: 'ben', category: parent.category, type: parent.type,
+            mission_id: parent.mission_id, cause_id: parent.cause_id,
+            parent_id: id, body: body.trim(),
+          }),
+        });
+        if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).detail) || ('HTTP ' + r.status));
+        st.replies[id] = null; st.msg[id] = '';
+        st.open[id] = false; await toggleReplies(id);
+      } catch (e) {
+        st.msg[id] = String(e.message || e).slice(0, 200);
+        paint();
+      }
+    }
+
+    function bind() {
+      const s = $('fd-search');
+      if (s) s.oninput = () => { st.q = s.value; st.limit = PAGE; paint(); };
+      const so = $('fd-sort');
+      if (so) so.onchange = () => { st.sort = so.value; load(); };
+      const more = $('fd-more');
+      if (more) more.onclick = () => { st.limit += PAGE; paint(); };
+      document.addEventListener('click', ev => {
+        const t = ev.target.closest ? ev.target.closest('[data-cat],[data-cause],[data-react],[data-toggle],[data-send]') : null;
+        if (!t) return;
+        if (t.dataset.cat !== undefined) { st.cat = t.dataset.cat; st.limit = PAGE; return paint(); }
+        if (t.dataset.cause !== undefined) { st.cause = st.cause ? '' : t.dataset.cause; st.limit = PAGE; return paint(); }
+        if (t.dataset.react) return react(t.dataset.post, t.dataset.react);
+        if (t.dataset.toggle) return toggleReplies(t.dataset.toggle);
+        if (t.dataset.send) {
+          const ta = document.querySelector('[data-replyfor="' + t.dataset.send.replace(/"/g, '\\"') + '"]');
+          return sendReply(t.dataset.send, ta ? ta.value : '');
+        }
+      });
+    }
+
+    // The cause render tells the feed which cause the page is standing on, so
+    // the one cause-shaped filter can name it. The feed itself stays global.
+    window.Feed = {
+      noteCause: function (cause) { st.cause_obj = cause || null; paint(); },
+      reload: load,
+      state: st,
+    };
+
+    function start() { bind(); load(); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
+  })();
+  </script>
+
 </body>
 </html>

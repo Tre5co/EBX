@@ -14,9 +14,11 @@ behind the pages is [`README.md`](../README.md).*
 - [4. index.html (Landing) — **About Earthbux**](#4-indexhtml-landing--about-earthbux)
 - [5. profile.html — Profiles](#5-profilehtml--profiles)
 - [6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout)](#6-missionhtml--mission-page-rebuilt-2026-08-01--jax-notes-2-layout)
+  - [◑ Box **i** LANDED EARLY, 2026-09-17 — the discussion box moved in.](#box-i-landed-early-2026-09-17--the-discussion-box-moved-in)
   - [▶ NEXT — the redesign (build-seq §3). Build order, box by box.](#next--the-redesign-build-seq-3-build-order-box-by-box)
 - [7. main.html (Election Page) — **the VOTING surface**](#7-mainhtml-election-page--the-voting-surface)
 - [8. cause.html (Discussion → **NEWS**) **the DISCUSSION hub**](#8-causehtml-discussion--news-the-discussion-hub)
+  - [◑ THE NEWSFEED — boxes a · b · d · f BUILT 2026-09-17; c · e next.](#the-newsfeed--boxes-a--b--d--f-built-2026-09-17-c--e-next)
   - [▶ NEXT — the newsfeed rebuild (build-seq §3). Build order, box by box.](#next--the-newsfeed-rebuild-build-seq-3-build-order-box-by-box)
   - [✅ The discussion box (BUILT 2026-08-12, build-seq §1)](#the-discussion-box-built-2026-08-12-build-seq-1)
 - [9. admin.html — Data console](#9-adminhtml--data-console)
@@ -41,6 +43,10 @@ Navigation drawn by `EBX.initNav` in `resources/js/ebx_shared.js`
 **Member spiel** M: Navigate through missions, converse with members, build your version of the mission. Budget, interact with the community, get recognition, make your earthbux gain value, get spots on the mission trips...
 
 Every page section below ends in a **PAGE LAYOUT** node, which represents the final polished state of the page.
+Directly above it sits the page's **DRAWING** — the ASCII layout, moved here from
+`jax notes 2.md` on 2026-09-18 and brought up to this spec (drawings that did not
+exist yet were drawn from the built page). The letters in a PAGE LAYOUT are the
+drawing's letters. `[ ]` in a legend = drawn but not built.
 
 ## 4. index.html (Landing) — **About Earthbux**
 *2026-09-16 (build-seq §2): "How it Works" heads the four steps (week 0 · week 8 ·
@@ -96,8 +102,52 @@ Each mission is slated to last a year, but can last longer or end sooner.
 
 *end backlog*
 
-- ✅ **PAGE LAYOUT** — REBUILT 2026-09-15 to the `jax notes 2.md` ASCII
-  **Landing** drawing. That drawing is the spec now; the §1a–§1e outline the
+**DRAWING — Landing** *(the 2026-09-15 drawing, re-ordered to the 2026-09-16 build:
+steps first under "How it Works", c/d headings below them, research band before
+the budget band)*
+```
+ ____________________________________________________________________________
+|EBX____________________________five tabs_________________________|_badge____|
+|                                                                            |
+|                                a                                           |
+|                                                                            |
+|                                b                                           |
+|                                                                            |
+|                                u                                           |
+|  _______e_______   _______f_______   _______g_______   _______h_______     |
+| |               | |               | |               | |               |    |
+| |_______________| |_______________| |_______________| |_______________|    |
+|  ______c_______________________________________________________d________   |
+|                                                                            |
+|                                  m                                         |
+|------------------n---------------o-----------------p-----------------------|
+|                                  i                                         |
+|------------------j---------------k-----------------l-----------------------|
+|                                  q                                         |
+|                                  r                                         |
+|                                  s                                         |
+|                                  t                                         |
+|  [ ] v      [ ] w      [ ] x      [ ] y      [ ] z                         |
+|________________________________footer______________________________________|
+```
+- **a** The Social Network for Charities.
+- **b** Earthbux News · "you donate, we follow" · Log in / Sign up — UNCHANGED
+- **u** "How it Works"
+- **e** 01 · Week 0 — *You elect the initiative* · "Initiative election →" `main.html`
+- **f** 02 · Week 8 — *You elect who runs it* · "Organization election →" `main.html?state=oe`
+- **g** 03 · Week 15 — *Receive your Earthbucks* · "Mission page →" `mission.html`
+- **h** 04 · Week 15 on — *Follow along and trade* · "Feed →" `cause.html`
+- **c / d** Maximizing Donor Control · Publicizing Charitable Impact — below the steps, smaller
+- **m** "Research the mission to win Rewards" — over **n** Situation · **o** Investigation · **p** Analysis (short description under each)
+- **i** "A **public forum** budgets the missions" (*public forum* → `cause.html`) — over **j** Service · **k** Supply · **l** Support (short description under each)
+- **q** In 2026, the world seemed at risk of total destruction.
+- **r** Earthbux was invented to give us control so we save it.
+- **s** "So control is what we hand out: every member is granted 10 tokens a week — a dollar of real say in where the pool goes." + ten dimes
+- **t** Funding runway
+- [ ] **v** Phase strip (p1 → main · p2 → cause · p3 → mission) · [ ] **w** Examples (one ACTIVE, one UPCOMING) · [ ] **x** Instructions · [ ] **y** FAQ · [ ] **z** Vocabulary
+
+- ✅ **PAGE LAYOUT** — REBUILT 2026-09-15 to the **Landing** drawing above
+  (then in `jax notes 2.md`). That drawing is the spec now; the §1a–§1e outline the
   page carried from 2026-08-18 is superseded and the letters below are the
   drawing's.
   - ✅ **Topbar** — EBX brand · five tabs · profile badge
@@ -108,13 +158,11 @@ Each mission is slated to last a year, but can last longer or end sooner.
     (left, owns steps 1–2) · **Publicizing Charitable Impact** (right, owns
     steps 3–4)
   - ✅ **e–h The four steps** — the drawing's own wording was placeholder and
-    asked to be reworded ("especially with g-h"). Built as:
+    asked to be reworded ("especially with g-h"). As built 2026-09-16:
     - ✅ **e · 01 · Week 0** — *You elect the initiative* → `main.html`
-    - ✅ **f · 02 · Week 7** — *You elect who runs it* → `main.html?state=oe`
-    - ✅ **g · 03 · Weeks 7–15** — *We verify them in the open* (no link yet —
-      the newsroom surface does not exist)
-    - ✅ **h · 04 · Week 15 on** — *They get funded, you stay liquid* (no link
-      yet — the exchange is phase 4)
+    - ✅ **f · 02 · Week 8** — *You elect who runs it* → `main.html?state=oe`
+    - ✅ **g · 03 · Week 15** — *Receive your Earthbucks* → `mission.html`
+    - ✅ **h · 04 · Week 15 on** — *Follow along and trade* → the feed (`cause.html`)
   - ✅ **i + j/k/l** — "A **public forum** to direct pooled philanthropic
     missions", *public forum* → `cause.html` (live link; that page is mid-rebuild,
     see §8 ▶ NEXT) over **Service** · **Supply** · **Support**
@@ -152,6 +200,27 @@ not deleted — the copy and the built markup are in git):
   undergoes 2 key elections" and "1 token = 10¢". Steps e and f now say it;
   the 10¢ figure survives only in the dime caption.
 
+**Copy parked from the retired 2026-08 landing drawing** (moved out of `jax notes 2.md`
+2026-09-18 with the drawing; its p1/p2/p3 cards are box **v** above):
+- *"In 2023, Earthbux was created with one goal: Democratize and publicize charity.
+  Capital warehouses of large private endowments hold trillions of dollars,
+  incentivizing the most capable organizations to work for the richest grantmakers
+  while ignoring the opinions of most people. Meanwhile, public charities fund
+  professional fundraisers instead of the missions they allegedly support. (1)
+  Earthbux operates ethically inside a system that doesn't require transparency by
+  leveraging community engagement and independent news production to give donors
+  control of their donations."*
+- *"The System - 3 Phases - All Community-Controlled: 1 Initiative Election ·
+  2 Organization Election · 3 Budgeting & Resolution"*
+- Earthbux gives donors ability to be real benefactors with a say in the budget and
+  execution of missions. The system relies on your voting and participation in
+  weekly elections of the pooled donation recipient. This organization claims an
+  elected initiative and undertakes the mission alongside the whole community.
+  Each mission gets a credit coin, which changes based on their credibility and
+  determines the amount of allocations available to them at any moment.
+  ⚠ "3/32 of the total funds are used to compensate researchers" — matches the
+  3 research 32nds in `money_model.md` §0; check before reuse.
+
 **Flagged 2026-09-15 — the Situation rename is live on ONE page.** `n` is built
 as **Situation**, per the drawing and per INSTRUCTIONS.md BUILD SEQUENCE §2
 ("Big rename - context is now going to be called situation"). The backend type
@@ -175,6 +244,38 @@ surface using the new name. The rename is NOT done.
 - [ ] Beneficiary profiles
 - [ ] Credit badge colorization (participation perk)
 *end backlog*
+
+**DRAWING — Profile**
+```
+ ____________________________________________________________________________
+|EBX______________________________________________________________|_badge____|
+|  ____________   _________________________________________   _____________  |
+| |            | |                                         | |             | |
+| |      c     | |                     b                   | |      a      | |
+| |            | |                                         | |             | |
+| |____________| |_________________________________________| |_aa_ab_ac____| |
+|                       _____________e0_______________                       |
+|  ____________        |_organization_|__initiative__|         ____________  |
+| |_____e6_____|                                              |_____e1_____| |
+|  ____________                                                ____________  |
+| |_____e5_____|                      d                       |_____e2_____| |
+|  ____________                                                ____________  |
+| |_____e4_____|                                              |_____e3_____| |
+|  ________________________________________________________________________  |
+| |                                                                        | |
+| |                            f                                           | |
+| |                                                                        | |
+```
+- **a** Profile — **aa** Settings · **ab** Member mode (gated on a coin in **c** being SELECTED) / Benefactor mode when already a member · **ac** Sign out
+- **b** Allocations — one bar, three sets of two: `unallocated (granted · purchased)` · `committed (initiatives · organizations)` · `EBX (held)`, with `final (deductible)` as a figure; the grant's week on the head; the conversion row (`POST /wallet/move`)
+- **c** EBX wallet — credit coins, horizontal strip; a coin is selectable
+- **d** The globe — rotates to the selected window's causes; marks CAUSE ANCHORS until a model carries lat/lon [ ] real geography
+- **e0–e6** Seven weekly windows (the choices table, evolved). Each holds one initiative and one organization, two cause colours. Time runs clockwise:
+  - **e0** this week — split into COLUMNS, organization left, initiative right
+  - **e1–e3** right column, weeks +1 +2 +3 — ROWS, organization on top, initiative below
+  - **e4–e6** left column, weeks +4 +5 +6 (bottom to top) — initiative on top, organization below
+  - each half: `{cause}` · my pick · `{ct}` committed → the election
+- **f** Feed — Benefactor mode: Posts · Comments · Research. Member mode: the user's research + research they commented on
 
 - ✅ **PAGE LAYOUT**
   - ✅ **Topbar** — brand · profile badge
@@ -220,11 +321,58 @@ surface using the new name. The rename is NOT done.
 
 ## 6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout)
 
+### ◑ Box **i** LANDED EARLY, 2026-09-17 — the discussion box moved in.
+
+*Out of build order (i was 7th) because the feed pass needed cause.html's spine.
+The box is the one built 2026-08-12, lifted whole into
+`resources/js/ebx_postsbox.js` and mounted here by `renderDiscussion()`: four
+dated stage tabs, three category tabs, one composer and one leading post per
+cell. The context it reads is now four facts about THIS mission rather than
+whatever mission the cause page was pointed at — which is the argument for the
+move. It keeps its own dark panel (`.mp-disc`) because the box is drawn for a
+dark surface and this page is parchment; the redesign below (d · f · g) is where
+that gets resolved, not here.*
+
 ### ▶ NEXT — the redesign (build-seq §3). Build order, box by box.
 
-*The ASCII in `jax notes 2` under **Mission**, mapped. `docs/mission_model.md` §10
-maps the same layout onto the mission PROCESS; read the two together. Not started
-2026-09-08.*
+*The **TARGET** drawing below (moved from `jax notes 2` 2026-09-18), mapped.
+`docs/mission_model.md` §10 maps the same layout onto the mission PROCESS; read the
+two together. Not started 2026-09-08.*
+
+**DRAWING — Mission, TARGET** *(the redesign; boxes carry their build order)*
+```
+ __________________________________________________________________________________________
+|EBX___________________________________five tabs__________________________________|_badge__|
+|  __________                                                       _____________________  |
+| |          |                                                     |                     | |
+| |     a    |                                                     |                     | |
+| |          |                         b                           |          c          | |
+| |          |                                                     |                     | |
+| |          |                                                     |                     | |
+| |__________|                        h                            |_____________________| |
+|  ________________________________________________________________                        |
+| |                                                                |                       |
+| |                         d                                      |          e            |
+| |________________________________________________________________|                       |
+|  ________________________________________   ___________________________________________  |
+| |  f  IN PROGRESS                        | |  g  DONE                                  | |
+| |  [ ] framing checklist (proposed)      | |                                           | |
+| |  open steps · open S/S/S               | |  resolutions, accumulating                | |
+| |                                        | |                                           | |
+| |________________________________________| |___________________________________________| |
+|  ______________________________________________________________________________________  |
+| |                                         i                                            | |
+| |______________________________________________________________________________________| |
+```
+- **a** (6) 3 previous missions in this cause, pager ABOVE them
+- **b** (5) the globe from profile.html inside main.html's 7-sector annulus — globe + annulus built; ⚠ real geography is not
+- **h** (6) the 7-cause selection — the same bar main.html and cause.html carry
+- **c** (4) high-level mission detail: membership, allocations, my votes & allocations, activity status, inbox
+- **d** (1) about · reviews · status graph — mission statement, org overview, case and context, status update
+- **e** credit coin UI (money dynamics)
+- **f** (2) IN PROGRESS — any input to the page is done from here. ⚠ PROPOSED (`mission_model.md` §10): the framing checklist (3a) sits at the top of f and empties into g
+- **g** (3) DONE — mission-out reporting, resolutions as they land
+- **i** (7) ◑ LANDED 2026-09-17 — the discussion box, "a less addictive version of cause.html" (drawing under §8)
 
 | Box | What it is | Blocked on | Order |
 |---|---|---|---|
@@ -248,7 +396,7 @@ Organization? on a new MissionSite?) and it should be answered before the globe
 is built into a second page.
 
 *backlog*
-- [ ] **ASCII** DRAWING INCOMING!
+- [x] **ASCII** — both drawings are in this section (target under ▶ NEXT, as-built below), 2026-09-18
 - [ ] **My three research posts**, editable, on the card whose mission they target
 - [ ] **Mission-member messageboard** — member pages carry a deeper messageboard / discussion console
 - [ ] **Organization Nomination - Registration - Claim** - mission.html...
@@ -279,6 +427,44 @@ is built into a second page.
 - [ ] Member communication channel (contributor / representative / executive / beneficiary).
 - [ ] Mission annulus / ring widget (deadlines, 7–12 steps).
 - [ ] Creditcoin front/back + 3D earth (born here).
+
+**DRAWING — Mission, AS BUILT** *(the 2026-08-01 grid, live until the target lands;
+updated 2026-09-18 with what has been added under it)*
+```
+ _________________________________________________________________________________________
+|                  |                                                  |                  |
+|       a          |                   g                              |         b        |
+|__________________|                                                  |__________________|
+|                   \                      ____                      /                   |
+|                     \                                            /                     |
+|                       \                                        /                       |
+|                         \ /                                \ /                         |
+|                          |                                  |                          |
+|         c                                  e                                 d         |
+|                          |                                  |                          |
+|                         / \                                / \                         |
+|                       /                                        \                       |
+|                     /                    _____                   \                     |
+|___________________/                                                \___________________|
+|      f                                                                                 |
+|________________________________________________________________________________________|
+|      ps  post-support annulus · legend · per-org thread list                           |
+|________________________________________________________________________________________|
+|      lb  initiative election · leaderboard                                             |
+|________________________________________________________________________________________|
+|      i   discussion box (§8 drawing)                                                   |
+|________________________________________________________________________________________|
+|      co  competing organizations card                                                  |
+|________________________________________________________________________________________|
+```
+- **a** mission toggle ← → + initiative search (every initiative has its own page)
+- **g** name + core info
+- **b** profile badge + membership status (in an active mission every user has one)
+- **c** stream of recent posts for this mission, 3 category tabs at its foot
+- **e** phase circle → ultimately the 3D globe
+- **d** dated progress log — "Elected `{tiv}` with `{EBX}`", "Advanced to P2 with `{amount}` EBX", "Approved `{step}` for `{cost}`"
+- **f** pool — in the pool / committed / withdrawn (two units: EBX and tokens)
+- **ps** annulus layer 1 (post support) · **lb** full leaderboard · **i** discussion box · **co** competing organizations, with the click-through agreement gating register/claim
 
 - ◑ **PAGE LAYOUT**
   - ✅ **Topbar**
@@ -356,6 +542,87 @@ shows why it is closed instead of an amount row.*
   exists to make; the OE rows stopped expanding on 2026-08-20 for the same
   reason.
 *end backlog*
+
+**DRAWING — Election** *(NEW 2026-09-18 — no drawing of the whole page existed;
+drawn from the built page. The two panel drawings under it replace the old
+`jax notes 2` ME/CE panel and side-card drawings)*
+```
+ ____________________________________________________________________________
+|EBX____________________________five tabs_________________________|_badge____|
+|  __________________________________   __________________________________   |
+| |                a                 | |                b                 |  |
+| |__________________________________| |__________________________________|  |
+|  ___________            ______________________            ___________      |
+| |    c1     |         /           l            \         |    d1     |     |
+| |___________|        |      ______________      |        |___________|     |
+|  ___________         |     |              |     |         ___________      |
+| |    c2     |        |     |      m       |     |        |    d2     |     |
+| |___________|        |     |______________|     |        |___________|     |
+|  ___________          \________________________/          ___________      |
+| |    c3     |          [ Mission  --n--  Organization ]  |    d3     |     |
+| |___________|                                            |___________|     |
+|  __o1__ __o2__ __o3__ __o4__ __o5__ __o6__ __o7__                          |
+|   p  1 First, the cause…  2 Next, a mission…  3 Finally, an organization…  |
+|  ____ ______________________________________________________ ____          |
+| | q  ||                          r                           || s  |       |
+| |    ||                                                      ||    |       |
+| |____||______________________________________________________||____|       |
+|  __________________________________t_____________________________________  |
+|  ________________________________________________________________________  |
+| |                                  u                                     | |
+| |________________________________________________________________________| |
+|   v  Show all · Show all races · Show active missions for [cause] · filter |
+|  ________________________________________________________________________  |
+| |                                  w                                     | |
+| |________________________________________________________________________| |
+|_________________________________footer_____________________________________|
+```
+- **a / b Top cards** — **ME:** a = this week's initiative election for the focused cause (glows) · b = *Winner of {cause}* — the just-elected initiative → its OE. **OE:** a = this week's organization election · b = the just-elected organization → **Budgeting**. The tall card swaps sides with the mode.
+- **c1–c3 / d1–d3 Election cards** — two columns of three race faces (drawing below). ME: left +2 +3 +4, right +7 +6 +5. OE: left +1 +2 +3, right −1 −2 −3. The glow is SELECTION.
+- **l** the thin ring — seven chevron sectors pointing clockwise; colour = selected cause, white halo = this week's sector
+- **m** the pie inside it + the centre stack: today · cause · which election · closes · sub (OE: the initiative)
+- **n** ME/OE toggle, under the wheel
+- **o1–o7** the seven cause tabs
+- **p** the election experience — First / Next / Finally ARE the toggles for q r s, then "The leaderboards are above. The candidates and ballots are below."
+- **q r s** `#el3` — the three election cards, one expanded, two collapsed: **1** Cause election (CE panel, drawing below) · **2** Initiative election (ME ballot) · **3** Organization election (OE ballot). Drawn with ME selected.
+- **t** action row — unallocated balance · discuss · register/nominate · mission page
+- **u** the table — the leaderboard; CE / ME / OE tables; every header sorts
+- **v** table controls
+- **w** allocations panel
+
+**Election card (race face)** — c/d above, and the left half of the ME top card
+```
+ ____________________________________
+|<days> d        <title>      <date> |   title: ME `{cause} {mission_num}` · OE `{tiv_title}`
+|1  <name> (<pct>%)          ✓ you   |   top 3, padded to three rows; a decided OE
+|2  <name> (<pct>%)                  |   race leads with its winner, marked
+|3  <name> (<pct>%)                  |
+|   <from cause> → <to cause>        |   only when a cause election swapped the window
+|____________________________________|
+```
+*Outdated and dropped from the old front/back drawing:* the user's commit lines
+("`<user_commit_amount>` → `<user_org_vote>`", "votes to other initiatives or
+uncommitted") and the back face with [vote] [orgs] [discuss] — the cards are
+**the field, and only the field** since 2026-08-28; a backed row carries **✓ you**.
+- [ ] **Counts, not %s** (from the old drawing's notes) — show EBX counts instead
+  of percentages, because counts let a reader estimate the pool.
+- [ ] **Active missions table** (from the same notes) — top row the org voting
+  dialog; columns `<cause#> | <tiv_name> | <org> (or phase 2) | <pool> |
+  <pool_spent> | <credit_value>`.
+
+**Cause election panel** — q expanded
+```
+ _______________________________________________________________________________
+|   | c  Cause Election — <cause> holds the window that runs <date>             |       |
+| a |    [This week  N votes]  [My vote  <cause>]                               |   b   |
+|   | f [+ Nominate a Cause]   g make your case →   h [Commit · x]  i [Cancel]  |       |
+|   | d keep [<incumbent> %]   or replace with [<challenger> %]                 |       |
+|___| e «  <challenger> (x% of this week's vote) · k of N nominated  »          |_______|
+```
+- **a** one column of 7 lines, coloured as the weeks go by (a challenger must hold 7 in a row)
+- **b** Show / Hide Cause Table
+- **c** title row · **f** Nominate a Cause · **g** make your case (→ cause.html) · **h** Commit · **i** Cancel
+- **d** keep [x] or replace with [y] · **e** click-through of the nominated causes
 
 - ◑ **PAGE LAYOUT**
   - ✅ **Topbar** Logo and login and site nav
@@ -446,13 +713,64 @@ shows why it is closed instead of an amount row.*
 
 ## 8. cause.html (Discussion → **NEWS**) **the DISCUSSION hub**
 
+### ◑ THE NEWSFEED — boxes a · b · d · f BUILT 2026-09-17; c · e next.
+
+*The preliminary build. cause.html's spine is the FEED now: `GET /posts?sort=hot`
+in one column (**a**), a sticky control panel above it (**d** — search, Hot ·
+Newest, the category tabs as filter chips plus one "Only \<cause\>" chip, and a
+compose link), the reactions a post's TYPE actually takes down each card's right
+edge (**b** — three for research, Fair/Unfair for a case, Approve for a budgeting
+suggestion; anything else is a 400 from the API), and a per-card reply that opens
+the thread in place (**f**). Every card names its mission and links to it.*
+
+*And the DISCUSSION BOX left the page — §6 box **i** on mission.html has it,
+markup and behaviour intact, in `resources/js/ebx_postsbox.js`. That is the move
+the pass is really about: a mission's own conversation was holding the cause page
+hostage, and a feed cannot be "not sorted by mission" while the thing below it
+is. Its CSS moved with it into `resources/css/ebx_frontend.css`.*
+
+*What is NOT built: **c** (the wheel, smaller, no sector text) and **e** (the
+small per-card annulus to the post's mission) — orders 4 and 5, untouched. The
+feed reads the first 120 posts and pages client-side at 15; a reply to an
+editorial is refused by the API (staff category) and the card says so instead of
+offering a box; a benefactor without a stake in the mission is refused by the
+posting gate, which is the same conflict INSTRUCTIONS §2 Election carries.*
+
+*Checks: `feed_check` (32) drives this page, `posts_box_check` (82) drives the
+box on mission.html, `render_check` paints both.*
+
 ### ▶ NEXT — the newsfeed rebuild (build-seq §3). Build order, box by box.
 
-*`jax notes 2` **Newsfeed**: "designed to capture attention. NOT sorted by
+*The **Newsfeed** drawing below: "designed to capture attention. NOT sorted by
 mission." The ASCII is five boxes and a reply affordance. This is the order to
 build them in, and what each one already has to build on. Nothing below was
 started on 2026-09-08 — the pass stopped here deliberately rather than leave a
 feed half-swapped over a working discussion page.*
+
+**DRAWING — Newsfeed** *(unchanged from `jax notes 2`, status added 2026-09-18)*
+```
+ __________________________________________________________________________________________
+|EBX___________________________________five tabs__________________________________|_badge__|
+|                 _______________________________________________________________________  |
+|                |                                                              e  |     | |
+|                |                                                                 |     | |
+|       c        |                                a                                |  b  | |
+|                |                                                                 |     | |
+|  ____________  |______________________________________________________________f__|_____| |
+| |            |  _______________________________________________________________________  |
+| |            | |                                                                 |     | |
+| |     d      | |                                                                 |     | |
+| |            | |_________________________________________________________________|_____| |
+| |            |  _______________________________________________________________________  |
+| |____________| |                                                                 |     | |
+|                |_________________________________________________________________|_____| |
+```
+- ✅ **a** the feed — articles, conversations, reactions, short-form, image and video; "the hub for scrolling". NOT sorted by mission
+- ✅ **b** reactions, per card, the ones the post's TYPE takes
+- [ ] **c** the cause annulus, smaller — no sector text, no white marker, glow kept on the active sector, rotates so the active sector is on top; centre = active cause + days left
+- ✅ **d** control panel — search · Hot/Newest · category chips · "Only ‹cause›" · compose
+- [ ] **e** small per-card annulus → that post's mission home
+- ✅ **f** reply, opens the thread in place
 
 | Box | What it is | Build on | Order |
 |---|---|---|---|
@@ -539,6 +857,46 @@ rebuild rather than before it, so the page is renamed once. The nav already says
 | 4 | Philanthropy Elected | `T + 8wk` | Before: **S/S/S budgeting only**. After: context + investigation migrated here, **analysis** and **evaluation** open, budgeting filtered to mission + philanthropy. |
 `T` = **mission started**
 
+**DRAWING — the discussion box** *(was "outdated" in `jax notes 2`; updated
+2026-09-18. It now mounts on mission.html as box **i**, `resources/js/ebx_postsbox.js`)*
+```
+ __________________________________________________
+|________________________k_           _____________|
+|_____a______|_____b______||_____c____||_____d_____|  phase tabs, dated
+|                                                  |
+|                       i                          |  compose
+|__________________________________________________|
+|                       h                          |  explanation
+|__________________________________________________|
+|_______e________|_______f________|_______g________|  category tabs
+|                      j                           |  leading posts
+|__________________________________________________|
+```
+- [ ] **k** results strip — the previous section's outcome, joined visually to the most recent dated tab
+- **a** Cause confirmed (`T−14wk`) · **b** Mission open (`T−49d`) · **c** Initiative elected (`T`) · **d** Philanthropy elected (`T+8wk`) — what each opens is the table above
+- **e** Research (greyed until the cause is confirmed) · **f** Reviews · **g** Budgeting (greyed until the tiv is elected)
+- [ ] **h** one explanation per combined tab pair, except budgeting, which explains each of S/S/S
+- **i** compose (detail below)
+- **j** leading post(s) — one row per post TYPE when research is toggled; the toggled row highlighted
+
+**i — compose, detail**
+```
+ ____________________________________________________________
+|  __c______________________________________________  Add links
+| |                                                 |    e   |
+| | d                                               |    f   |
+| |                                                 |    g   |
+| |                                                 |    h   |
+| |_________________________________________________|    i   |
+|______________________ b              ______________________|
+|  _______________________________________________________   |
+| |_______________________a_______________________________|  |
+|____________________________________________________________|
+```
+- **a** about strip (reward, voting) · **b** post type (Context / Investigation / Analysis — the Situation rename is not done) · **c** title · **d** body
+- **e–i** the link rails, headed **"Add links"**: e initiatives · f philanthropies · g budget items · h media · i external. [ ] Case posts max 1 link; research any number; Context links tivs, Investigation links phls, all link budget items
+
+
 
 
 - ◑ **PAGE LAYOUT**
@@ -600,6 +958,24 @@ rebuild rather than before it, so the page is renamed once. The nav already says
   rebuilds `Pool` and `MissionCandidacy.p2_vote_tally` for every mission it
   touched, and a startup hook repairs what earlier removals left behind (atm0
   was carrying 150 phase-2 EBX and a 5-vote tally from a deleted pilot account).
+
+**DRAWING — Admin** *(NEW 2026-09-18, drawn from the built page)*
+```
+ ____________________________________________________________________________
+|Earthbux admin · <sub>                                       <who> [logout] |
+|_________________|__________________________________________________________|
+|  a              |                                                          |
+|  staff:         |                           b                              |
+|   the 15 tables |       the selected table — search · filter · sort ·      |
+|                 |       export CSV · row actions (reset password …)        |
+|  org:           |                                                          |
+|   my orgs       |                                                          |
+|_________________|__________________________________________________________|
+            c  login overlay, until signed in
+```
+- **a** sidebar — staff: the filetree of all 15 tables; an organization rep sees their organizations instead
+- **b** main — the table or record picked in a (Accounts · Elections · Organizations · Ledger …)
+- **c** login form, over everything, until a session exists
 
 - ◑ **PAGE LAYOUT**
   - ✅ **Sidebar nav** — the filetree of all 15 tables

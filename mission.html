@@ -15,6 +15,15 @@
        The claim / register / agreement machinery (the one legal gate) is kept
        verbatim below the grid — it shipped earlier and still gates authority. */
     :root { --mp-accent: var(--clr-moss, #4a7c59); }
+    /* i · the discussion box's panel (2026-09-17). The box's own rules live in
+       ebx_frontend.css; this is only the dark surface it expects, and the room
+       it needs at the foot of the page. */
+    .mp-disc {
+      max-width: 1180px; margin: 22px auto 0; padding: 18px 18px 26px;
+      background: var(--clr-ink, #12181a); color: var(--clr-parchment, #f5f0e8);
+      border-radius: 10px; --cause-color: var(--mp-accent);
+    }
+    .mp-disc .pb__heading { color: var(--cause-color); }
     body { background: var(--clr-parchment, #f5f0e8); }
     .mp-shell { max-width: 1180px; margin: 0 auto; padding: 18px 18px 48px; }
     .mp-grid {
@@ -390,6 +399,39 @@
       <div class="mh-note" id="ml-note" style="margin-top:10px;"></div>
     </div>
 
+    <!-- ══ i · THE DISCUSSION (moved here 2026-09-17) ═══════════════════════
+         structure.md §6 box i — "the mission's own conversation". This is the
+         box that stood on cause.html until today, markup and behaviour intact
+         (resources/js/ebx_postsbox.js): four dated stages across, three post
+         categories down, one composer and one leading post per cell. cause.html
+         is the newsfeed now, and a feed is not where a mission argues with
+         itself.
+
+         It is drawn for a DARK surface and this page is parchment, so it keeps
+         its own panel rather than being restyled into a page that the redesign
+         (§6 boxes d · f · g) is about to change anyway. `--cause-color` is set
+         on the panel from the mission's cause. -->
+    <section class="mp-disc" id="mp-disc" style="display:none;">
+      <div class="ct-startline" id="ct-startline">
+        <span class="ct-startline__label" id="ct-startline-label">Mission start</span>
+      </div>
+      <h2 class="pb__heading" id="pb-heading">Discussion</h2>
+      <section class="pb" id="pb" aria-label="Discussion">
+        <div class="pb__k">
+          <div class="pb-k__row">
+            <div class="pb-k__main" id="pb-results"></div>
+            <div class="pb__b" id="pb-types"></div>
+          </div>
+          <div id="pb-joint"></div>
+        </div>
+        <div class="pb__tabs pb__tabs--phase" id="pb-phase" role="tablist" aria-label="Stage"></div>
+        <div class="pb__i" id="pb-compose"></div>
+        <div class="pb__h" id="pb-explain"></div>
+        <div class="pb__tabs pb__tabs--cat" id="pb-cat" role="tablist" aria-label="Category"></div>
+        <div class="pb__j" id="pb-leading"></div>
+      </section>
+    </section>
+
     <!-- ── Competing organizations (kept from the previous page — the org race
          and the register/claim gate live on; design slot TBD in the globe era) ── -->
     <div class="mp-card" style="margin-top:14px;">
@@ -474,6 +516,8 @@
   <div id="ebx-footer-mount"></div>
 
   <script src="resources/js/ebx_shared.js"></script>
+  <!-- the discussion box, lifted off cause.html on 2026-09-17 -->
+  <script src="resources/js/ebx_postsbox.js?v=20260917"></script>
   <script>
   (async function () {
     // ── resolve the mission this page targets ──────────────────────────────
@@ -1037,7 +1081,36 @@
       renderLeaderboard();   // §3 (2026-08-10) — moved off cause.html
       loadP1Tally().then(renderLeaderboard).catch(() => {});
       renderPostSupport();   // the annulus, layer 1
+      renderDiscussion();    // i (2026-09-17) — also moved off cause.html
       try { drawFunnel(); setTimeout(drawFunnel, 250); } catch (e) {}
+    }
+
+    // ── i · THE DISCUSSION (2026-09-17) ──────────────────────────────────────
+    // The box asks for a cause and a context; the context is four facts about
+    // THIS mission, which is the point of the move — on cause.html they had to
+    // be inferred from whichever mission the cause page happened to be showing.
+    // The dates it prints come from `EBX.Cycle.missionDates(mission)`, the same
+    // shared clock every other surface reads, so nothing is recomputed here.
+    function renderDiscussion() {
+      const host = document.getElementById('mp-disc');
+      if (!host || !window.EBX || !EBX.PostsBox) return;
+      if (!mission || !cause) { host.style.display = 'none'; return; }
+      host.style.display = '';
+      if (cause.color) host.style.setProperty('--cause-color', cause.color);
+      const ph = displayPhase();
+      EBX.PostsBox.render(cause, {
+        mission: mission,
+        leader: winningTiv || null,
+        p2Active: ph >= 2,
+        p2Recap: !!mission.winning_org_id,
+      });
+      try { EBX.PostsBox.bind(); } catch (e) {}
+      const line = document.getElementById('ct-startline-label');
+      if (line && mission.started_at) {
+        const d = EBX.Cycle.missionDates(mission);
+        line.textContent = 'Mission start · ' +
+          d.missionStarted.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      }
     }
 
     // §0 (2026-08-08) — ORG-PANEL STATE MOVED UP. These five were declared

@@ -12,18 +12,27 @@ const PAGES = [
   ['index.html', '', ['.ld-claim', '#ld-cta .ld-cta__btn', '.ld-how', '.ld-steps .ld-step',
                       '.ld-heads__h', '.ld-band', '.ld-trio__cell', '#ld-dime-viz svg',
                       '.ld-runway__bars', '#ld-active-users b', '.ld-term--org']],
+  // 2026-09-17: the DISCUSSION BOX is on this page now (structure.md §6 box i),
+  // so the selectors that pinned it on cause.html moved here with it.
   ['mission.html', '?mission=oce1', ['#ps-ring svg', '.ps-leg',
-                                     '#ml-board .ml-row', '.ml-row__bar i', '#ml-note']],
-  ['cause.html', '?id=atmosphere', ['#pb', '#pb-heading', '#pb-phase .pb-tab', '#pb-cat .pb-tab',
-                                    '#pb-phase .pb-tab--on', '#pb-cat .pb-tab--on',
-                                    '#pb-phase .pb-tab--now', '#pb-phase .pb-tab--linked',
-                                    '#pb-phase .pb-tab__date',
-                                    '#pb-results .pb-k__name', '#pb-joint .pb-k__joint > i.on',
-                                    '#pb-types .dual-type',
-                                    '#pb-explain .pb-ex', '#pb-explain .pb-meta',
-                                    '#pb-compose .pb-c__body', '#pb-compose .pb-rail__btn',
-                                    '#pb-leading .pb-j__bar', '#pb-leading .pb-pager',
-                                    '#ct-startline', '#leading-initiatives-panel',
+                                     '#ml-board .ml-row', '.ml-row__bar i', '#ml-note',
+                                     '#pb', '#pb-heading', '#pb-phase .pb-tab', '#pb-cat .pb-tab',
+                                     '#pb-phase .pb-tab--on', '#pb-cat .pb-tab--on',
+                                     '#pb-phase .pb-tab--now', '#pb-phase .pb-tab--linked',
+                                     '#pb-phase .pb-tab__date',
+                                     '#pb-results .pb-k__name', '#pb-joint .pb-k__joint > i.on',
+                                     '#pb-types .dual-type',
+                                     '#pb-explain .pb-ex', '#pb-explain .pb-meta',
+                                     '#pb-compose .pb-c__body', '#pb-compose .pb-rail__btn',
+                                     '#pb-leading .pb-j__bar', '#pb-leading .pb-pager',
+                                     '#ct-startline']],
+  // 2026-09-17: the feed took the page's spine; the box's selectors went to
+  // mission.html above. feed_check.js drives the feed's behaviour — these are
+  // only "it painted".
+  ['cause.html', '?id=atmosphere', ['#fd-panel', '#fd-search', '#fd-sort', '#fd-compose',
+                                    '#fd-filters .fd-chip', '#fd-filters .fd-chip--on',
+                                    '.fd-card', '.fd-card .fd-react', '.fd-card [data-toggle]',
+                                    '#leading-initiatives-panel',
                                     '#mission-header #mission-overview', '#lhs-vote',
                                     // §2 (2026-08-26) — THE ANNULUS SWAP. This page has the
                                     // seven-sector WHEEL now (EBX.Annulus), with the centre

@@ -975,10 +975,18 @@ state. Pages render honest empty vote states.
 |---|---|---|
 | `index.html` | About Earthbux — §1a–§1e, the runway off `GET /stats` | built |
 | `main.html` | **The Election Page** — the voting surface | ◑ |
-| `cause.html` | **The Discussion** — the posts box, the wheel, the cause bar | ◑ |
-| `mission.html` | Mission page — grid a–g, post-support annulus layer 1 | ◑ |
+| `cause.html` | **NEWS** — the feed (`sort=hot`), its control panel, the wheel, the cause bar | ◑ |
+| `mission.html` | Mission page — grid a–g, post-support annulus layer 1, **the discussion box** | ◑ |
 | `profile.html` | **The benefactor's own side of the election page** | ◑ |
 | `admin.html` | Read-only back office over the live DB | ◑ |
+
+**2026-09-17 — the feed pass, and the move.** `cause.html` is the newsfeed: one
+column of cards in the API's hot order, a control panel above them, reactions and
+replies per card (structure.md §8 boxes a · b · d · f; c and e are next). The
+DISCUSSION BOX it used to carry is on `mission.html` now — `structure.md` §6 box
+i — as `resources/js/ebx_postsbox.js`, unchanged code with its CSS moved into
+`resources/css/ebx_frontend.css`. A mission's own conversation belongs to the
+mission; a feed that is "not sorted by mission" cannot sit on top of one.
 
 Three things landed on 2026-08-28 that change how two of those read:
 
@@ -1040,6 +1048,12 @@ Three things landed on 2026-08-28 that change how two of those read:
     got one (`GET /admin/elections/unelected-orgs`, `POST
     /admin/missions/{id}/backfill-org`). The staff password comes from
     `EBX_STAFF_PASSWORD` or a prompt and is never stored.
+  - **2026-09-18:** the same backfill for the OTHER election. `GET
+    /admin/elections/unelected-tivs` · `POST /admin/missions/{id}/backfill-tiv`
+    elect an initiative in a race whose day passed with nothing elected — on the
+    money where there is any, and on the people standing in it where there is not
+    (`crud.p1_preferences`). hmr1 is why: three preferences, no tokens, and a
+    cause page that had no organization election to show because of it.
   - **The bot signature:** `benefactor_accounts.is_test` (migration
     `f7b2d9e41c63`). A signup carrying the server's `EBX_BOT_KEY` in
     `X-EBX-Bot-Key` is created as a test account; staff can mark any account with
@@ -1208,16 +1222,17 @@ PW_CHROME=/path/to/chrome node scripts/oe_check.js
 |---|---|---|
 | `render_check` | jsdom | Every page mounts, every expected element is present exactly once, no script errors. The smoke test — run it first. |
 | `landing_check` | jsdom | `index.html` as rebuilt 2026-09-15 plus build-seq §2 (2026-09-16): How it Works, the four dated steps and their links, the halves below the steps, research band above budget band, runway vs `/stats`, the analytics beacon. 35 assertions. |
-| `posts_box_check` | jsdom | `cause.html`'s discussion box: the phase tabs, the category tabs, what is open when. |
+| **`posts_box_check`** | jsdom | The discussion box: the phase tabs, the category tabs, what is open when. **2026-09-17: the box moved to `mission.html` and the check followed it — same assertions, same ids, a different page and a second mission for stage 4.** Its second half still drives `cause.html`'s hero. 82 assertions. |
 | `carryover_check` | jsdom | The signed-OUT path still renders — the failure mode where a page only works logged in. |
 | `date_audit` | jsdom | Every mission's five dates, from `EBX.Cycle.missionDates`, against the 7-week rotation. Two of them are FIXED POINTS you gave directly (atm0 → Aug 11, atm1 → Sep 29): if a change breaks either, the change is wrong. |
 | `unit_sweep` | jsdom | **Tokens vs EBX.** Walks the visible text of every page and flags any "EBX" sitting beside a vote or commit word. A source grep cannot do this — `EBX.` is the client namespace. |
 | **`ce_check`** | **Chromium** | **The CAUSE election.** Thirteen dated windows, six already confirmed and seven open; that a row of the cause table points the panel at the cause holding that window; that clicking keep-or-replace only DRAFTS a vote and Commit is what sends it; that the server refuses a confirmed window and an active cause as a challenger; that `?state=ce` deep-links. 80 assertions. |
+| **`feed_check`** | **Chromium/JSDOM** | **New 2026-09-17.** cause.html's FEED: the two rules from structure.md §8 (all posts, not sorted by mission), the control panel, the API's hot order reprinted unsorted, the reactions each post TYPE takes, a reply opening in place, the filters filtering, and that the discussion box has left the page. 32 assertions. |
 | **`oe_check`** | **Chromium** | **The ORGANIZATION election table**, and above all the conservation law: eight races and one unallocated balance share a single pot, so it dials amounts up and down and checks that nothing is created or destroyed on the way. Also: that a commitment is a POSITION (revisable inside its week), that the race pool moves when you commit, that an unassigned stake is still in the pool, that a refresh does not pay the grant twice. 90 assertions. |
 | **`profile_check`** | **Chromium** | The profile page's shape: three cards on top, seven weekly windows around the globe, the clockwise rule (top card in columns, side cards in rows, and the left column reversed), two cause colours per card, the globe actually turning, and that member mode is gated on a coin being *selected*. 42 assertions. |
 | `token_model_check` | — | Pure arithmetic in `token_model.py`. No server. 107 assertions. Asserts the 2026-09-16 model: the finality ladder (10% / +10% / 100%), no correctness multipliers, the 32nds, the grant week. |
 | `wallet_check` | — | `wallet.py` against a live database: the position, the week roll, unlimited moves, withdrawal, early EBX vs a mark, the ME and OE skims booked as finality, the grant week, the $1 organization-election minimum, stake withdrawal, and (2026-09-17) far races closed without an ME stake. 133 assertions. |
-| `election_check` | — | The 2026-09-17 counting rules against a throwaway copy of the database: no losing-vote carryover (totals, tally, re-vote), whole-percentage slates that keep their ratios, decided elections refuse slates, the organization vote ladder, only this week's race without an ME stake, the staff ME reset and organization backfill, and (2026-09-17b) the repair of a counted figure that drifted from its money, a re-listed loser's rating starting empty, and an adopted orphan folding instead of colliding with the per-mission key. 41 assertions. |
+| `election_check` | — | The 2026-09-17 counting rules against a throwaway copy of the database: no losing-vote carryover (totals, tally, re-vote), whole-percentage slates that keep their ratios, decided elections refuse slates, the organization vote ladder, only this week's race without an ME stake, the staff ME reset and organization backfill, and (2026-09-17b) the repair of a counted figure that drifted from its money, a re-listed loser's rating starting empty, and an adopted orphan folding instead of colliding with the per-mission key. Plus (2026-09-18) the RETROACTIVE initiative election: a past race with preferences and no money elects on the people standing in it, an election whose day has not come is refused, and the loser is still re-listed. 52 assertions. |
 | ~~`build_guard`~~ | — | **Retired 2026-09-16** with the TypeScript source it guarded. Prints a notice and exits; REMOVAL REGISTER §A. |
 | **`carry_audit`** | — | **New 2026-09-08.** Lists phase-1 positions standing in an initiative election that has already closed with **no phase-2 row to carry them** — money that was invisible on every surface until the `read_wallet` fix. It prints and stops: each line is a case-by-case call (carry it, refund it, or leave it), and where the organization election is already decided, carrying it would inject money into a settled race. Eight positions today, six of them mechanical. |
 

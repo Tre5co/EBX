@@ -670,3 +670,394 @@ em { font-style: italic; }
   padding: 10px 12px;
   box-sizing: border-box;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE DISCUSSION BOX  (.ct · .pb · .p3 rows)
+   Moved out of cause.html's inline <style> on 2026-09-17 with the box itself
+   (resources/js/ebx_postsbox.js). It lives on mission.html now — structure.md
+   §6 box i — and the rules are unchanged; a page that mounts the box must set
+   --cause-color on an ancestor, and the box is drawn for a DARK surface.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* ══ §2 (2026-08-09) — THE TIMELINE ════════════════════════════════════
+   A vertical rail down the left, and one full-width line across the page
+   for the mission start day. Replaces the phase blocks and the phase bar. */
+.ct { padding: 0 0 var(--sp-xl); }
+.ct__container { display: block; }
+.ct-body { min-width: 0; }
+
+/* ══ BUILD-SEQ §1 (2026-08-12) — THE DISCUSSION BOX ═════════════════════
+   Jax's second drawing, top to bottom:
+     k  results of the last completed stage, notched onto its own tab
+     a–d  the four stages, dated — the old vertical rail laid flat
+     i  the input dialogue (title · body · the five link rails)
+     b  the type selector, where a category has more than one type
+     h  about: what this post type is for, its reward, its rating
+     e–g  Research · Reviews · Budgeting, grayed by the stage above
+     j  the leading post in that category, with a pager
+   The tabs sit BELOW h on purpose: h is about the post you are writing in
+   i, and e–g is the switch that changes what j shows underneath it. */
+.pb__heading {
+  margin: 18px 0 6px; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.015em;
+}
+.pb {
+  display: block; border: 1px solid rgba(255,255,255,0.13);
+  border-radius: var(--radius-sm); background: rgba(255,255,255,0.02);
+  overflow: hidden; margin-top: 4px;
+}
+/* k — the results panel, the post-type toggle beside it, and the joint that
+   ties the panel to one tab. */
+.pb__k { padding: 0; background: color-mix(in srgb, var(--cause-color) 9%, rgba(255,255,255,0.02)); }
+.pb-k__row {
+  display: grid; grid-template-columns: 1fr minmax(0, 240px); gap: 14px;
+  padding: 10px 14px 9px; align-items: start;
+}
+@media (max-width: 720px) { .pb-k__row { grid-template-columns: 1fr; gap: 8px; } }
+.pb-k__main { min-width: 0; }
+.pb-k__body { padding: 10px 14px 9px; }
+.pb-k__head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.pb-k__eyebrow {
+  font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--cause-color);
+}
+.pb-k__date {
+  margin-left: auto; font-family: var(--font-mono); font-size: 0.54rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,232,0.45);
+}
+.pb-k__name { font-size: 0.95rem; font-weight: 800; letter-spacing: -0.015em; }
+.pb-k__sub { font-size: 0.78rem; line-height: 1.5; opacity: 0.78; margin-top: 3px; }
+.pb-k__case {
+  margin-top: 7px; border-left: 2px solid var(--cause-color); padding: 2px 0 2px 9px;
+  font-size: 0.76rem; line-height: 1.5; opacity: 0.85;
+}
+.pb-k__case b { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.12em;
+                text-transform: uppercase; opacity: 0.7; display: block; }
+/* The notch: four cells under the panel, one of them open. */
+.pb-k__joint { display: grid; grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 720px) { .pb-k__joint { grid-template-columns: repeat(2, 1fr); } }
+.pb-k__joint > i { display: block; height: 7px; border-top: 1px solid rgba(255,255,255,0.13); }
+.pb-k__joint > i.on {
+  border-top: none;
+  background: color-mix(in srgb, var(--cause-color) 9%, rgba(255,255,255,0.02));
+}
+.pb-tab--linked { background: color-mix(in srgb, var(--cause-color) 9%, rgba(20,24,20,0.55)); }
+.pb__tabs { display: grid; gap: 1px; background: rgba(255,255,255,0.08); }
+.pb__tabs--phase { grid-template-columns: repeat(4, 1fr); }
+.pb__tabs--cat { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 720px) {
+  .pb__tabs--phase { grid-template-columns: repeat(2, 1fr); }
+  .pb__tabs--cat { grid-template-columns: 1fr; }
+}
+.pb-tab {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  font: inherit; text-align: left; cursor: pointer; color: inherit;
+  padding: 8px 11px; border: none; background: rgba(20,24,20,0.55);
+  border-bottom: 2px solid transparent; transition: background 0.15s, color 0.15s;
+}
+.pb-tab:hover:not(:disabled) { background: rgba(255,255,255,0.05); }
+.pb-tab__key {
+  font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--cause-color); opacity: 0.75;
+}
+.pb-tab__name {
+  font-size: 0.8rem; font-weight: 700; letter-spacing: -0.01em;
+  color: rgba(245,240,232,0.8); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pb-tab__date {
+  font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: rgba(245,240,232,0.42);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pb-tab--now .pb-tab__date { color: var(--cause-color); }
+.pb-tab--future .pb-tab__name { color: rgba(245,240,232,0.45); }
+.pb-tab--on {
+  background: color-mix(in srgb, var(--cause-color) 13%, rgba(20,24,20,0.55));
+  border-bottom-color: var(--cause-color);
+}
+.pb-tab--on .pb-tab__name { color: rgba(245,240,232,0.98); }
+.pb-tab--gray { opacity: 0.32; cursor: not-allowed; }
+/* h · i · j — one composer, one about box, one leading post. */
+.pb__i { padding: 12px 14px; background: rgba(255,255,255,0.015); }
+/* b — the post-type toggle, in k. Every type of the category is always
+   drawn; the ones this stage has not opened are visible but dead, so the
+   ladder is legible from any stage. */
+.pb__b { display: flex; align-items: flex-start; gap: 5px; flex-wrap: wrap; align-content: flex-start; }
+.pb__b:empty { display: none; }
+.pb-b__label {
+  flex: 1 0 100%; font-family: var(--font-mono); font-size: 0.54rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.4);
+  margin-bottom: 1px;
+}
+.pb__h { padding: 11px 14px 12px; border-top: 1px solid rgba(255,255,255,0.09); }
+.pb__j { padding: 10px 14px 13px; border-top: 1px solid rgba(255,255,255,0.09); }
+/* i — the composer, drawn to the H+I detail: title (c) over the body (d),
+   with the five link rails (e–i) stacked down the right. */
+.pb-c { display: grid; grid-template-columns: 1fr 168px; gap: 10px; align-items: start; }
+@media (max-width: 720px) { .pb-c { grid-template-columns: 1fr; } }
+.pb-c__main { min-width: 0; }
+.pb-c__title, .pb-c__body {
+  width: 100%; font: inherit; font-size: 0.8rem; color: inherit;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(245,240,232,0.18);
+  border-radius: 6px; padding: 7px 10px;
+}
+.pb-c__title { font-weight: 700; margin-bottom: 6px; }
+.pb-c__body { resize: vertical; line-height: 1.5; }
+.pb-c__title:focus, .pb-c__body:focus { outline: none; border-color: var(--cause-color); }
+.pb-c__foot { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
+/* the link rail — one row per kind, each opening its picker */
+.pb-rail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.pb-rail__btn {
+  display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0;
+  font: inherit; font-family: var(--font-mono); font-size: 0.6rem; cursor: pointer;
+  text-align: left; color: rgba(245,240,232,0.8); padding: 4px 7px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(245,240,232,0.16);
+  border-radius: 6px;
+}
+.pb-rail__btn:hover:not(:disabled) { border-color: var(--cause-color); color: var(--cause-color); }
+.pb-rail__btn:disabled { opacity: 0.32; cursor: not-allowed; }
+.pb-rail__btn.req { border-color: color-mix(in srgb, var(--cause-color) 55%, transparent); }
+.pb-rail__n {
+  margin-left: auto; font-size: 0.56rem; padding: 0 5px; border-radius: 999px;
+  background: var(--cause-color); color: #14140f; font-weight: 700;
+}
+.pb-rail__note { font-size: 0.54rem; line-height: 1.35; opacity: 0.45; margin-top: 2px; }
+.pb-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.pb-chip {
+  display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
+  font-family: var(--font-mono); font-size: 0.6rem; padding: 2px 4px 2px 8px;
+  border-radius: 999px; border: 1px solid var(--cause-color);
+  background: color-mix(in srgb, var(--cause-color) 12%, transparent);
+  color: rgba(245,240,232,0.92);
+}
+.pb-chip__x {
+  font: inherit; cursor: pointer; background: transparent; border: none;
+  color: inherit; opacity: 0.6; padding: 0 3px;
+}
+.pb-chip__x:hover { opacity: 1; }
+/* the picker, opened by a rail button */
+.pb-pick {
+  margin-top: 7px; border: 1px solid var(--cause-color); border-radius: var(--radius-sm);
+  background: rgba(20,24,20,0.92); padding: 8px 10px;
+}
+.pb-pick__head {
+  display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px;
+  font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--cause-color);
+}
+.pb-pick__close { margin-left: auto; font: inherit; cursor: pointer; background: none;
+                  border: none; color: rgba(245,240,232,0.6); }
+.pb-pick__opt {
+  display: block; width: 100%; text-align: left; font: inherit; font-size: 0.74rem;
+  cursor: pointer; color: inherit; background: transparent; border: none;
+  padding: 4px 6px; border-radius: 5px;
+}
+.pb-pick__opt:hover { background: rgba(255,255,255,0.07); color: var(--cause-color); }
+.pb-pick__empty { font-size: 0.72rem; opacity: 0.55; padding: 3px 0; }
+.pb-ex { margin-bottom: 9px; }
+.pb-ex:last-child { margin-bottom: 0; }
+.pb-ex__head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.pb-ex__kind {
+  font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--cause-color);
+}
+.pb-ex__title { margin: 0; font-size: 0.92rem; font-weight: 700; letter-spacing: -0.01em; }
+.pb-ex__body { margin: 4px 0 0; font-size: 0.8rem; line-height: 1.55; opacity: 0.84; }
+.pb-ex__body a { color: var(--cause-color); }
+.pb-ex__eg {
+  font-size: 0.74rem; line-height: 1.5; margin-top: 5px; opacity: 0.6;
+  border-left: 2px solid rgba(245,240,232,0.18); padding-left: 9px;
+}
+.pb-ex__eg b { font-family: var(--font-mono); font-size: 0.6rem; text-transform: uppercase;
+               letter-spacing: 0.1em; opacity: 0.8; }
+.pb-meta { display: flex; flex-wrap: wrap; gap: 5px 14px; margin-top: 7px; }
+.pb-meta__i { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pb-meta__k {
+  font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: rgba(245,240,232,0.38);
+}
+.pb-meta__v { font-size: 0.72rem; color: rgba(245,240,232,0.8); }
+.pb-compose__bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.pb-compose__state {
+  margin-left: auto; font-family: var(--font-mono); font-size: 0.54rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.4);
+}
+.pb-shut {
+  font-size: 0.76rem; line-height: 1.5; color: rgba(245,240,232,0.55);
+  border-left: 2px solid rgba(245,240,232,0.18); padding: 3px 0 3px 10px;
+}
+.pb-shut b { color: rgba(245,240,232,0.8); }
+.pb-j__bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 7px; }
+.pb-pager {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 0.62rem; color: rgba(245,240,232,0.6);
+}
+.pb-pager button {
+  font: inherit; cursor: pointer; background: transparent; color: rgba(245,240,232,0.85);
+  border: 1px solid rgba(245,240,232,0.25); border-radius: 5px; padding: 1px 9px;
+}
+.pb-pager button:disabled { opacity: 0.3; cursor: default; }
+.pb-post { border-left: 3px solid var(--cause-color); padding: 4px 0 0 10px; }
+.pb-post__title { font-size: 0.84rem; font-weight: 700; margin-bottom: 2px; }
+.pb-post__body { font-size: 0.79rem; line-height: 1.55; color: rgba(245,240,232,0.88); }
+.pb-post__est { display: flex; gap: 12px; margin-top: 5px; }
+/* what a post links without being asked */
+.pb-auto { font-size: 0.7rem; line-height: 1.5; color: rgba(245,240,232,0.55); margin-top: 6px; }
+.pb-auto b { color: var(--cause-color); font-weight: 600; }
+.pb-auto a { color: var(--cause-color); }
+.pb-auto--edit { opacity: 0.8; }
+/* ── budgeting: the row that replaces the title, and the three tables ──
+   A budget item is a COSTED LIST, so the composer takes rows and the area
+   below prints them as service / supply / support. */
+.pb-c--wide { grid-template-columns: 1fr; }
+.pb-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 7px; }
+.pb-row__in { min-width: 0; }
+.pb-row__hint { font-size: 0.72rem; opacity: 0.5; margin: 4px 0 7px; }
+.pb-sss { display: flex; flex-direction: column; gap: 3px; margin-bottom: 9px; }
+.pb-sss__row {
+  display: flex; align-items: baseline; gap: 8px; text-align: left;
+  padding: 4px 8px; border-radius: 6px; border: 1px solid transparent;
+  font-size: 0.78rem; caption-side: top;
+}
+.pb-sss__row.on {
+  border-color: color-mix(in srgb, var(--cause-color) 50%, transparent);
+  background: color-mix(in srgb, var(--cause-color) 9%, transparent);
+}
+.pb-sss__icon { flex: 0 0 auto; }
+.pb-sss__kind {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--cause-color);
+}
+.pb-sss__what { opacity: 0.78; }
+.pb-tbl {
+  width: 100%; border-collapse: collapse; margin: 0 0 12px; font-size: 0.74rem;
+}
+.pb-tbl:last-child { margin-bottom: 0; }
+.pb-tbl th {
+  text-align: left; font-family: var(--font-mono); font-size: 0.54rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.4);
+  font-weight: 400; padding: 3px 8px 3px 0; border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.pb-tbl td {
+  padding: 4px 8px 4px 0; border-bottom: 1px dashed rgba(255,255,255,0.07);
+  color: rgba(245,240,232,0.88);
+}
+.pb-tbl__act { text-align: right; white-space: nowrap; }
+.pb-tbl__empty { opacity: 0.5; font-style: italic; }
+.pb-tbl__total {
+  font-family: var(--font-mono); font-size: 0.64rem; text-align: right;
+  color: var(--cause-color); margin: -6px 0 8px;
+}
+.pb-tbl--draft { margin-bottom: 6px; }
+/* A stage that is only a frame says so rather than looking unfinished. */
+.ct-frame {
+  font-size: 0.78rem; line-height: 1.55; color: rgba(245,240,232,0.55);
+  border-left: 2px solid rgba(245,240,232,0.18); padding: 2px 0 2px 10px;
+}
+.ct-frame b { color: rgba(245,240,232,0.8); }
+.ct-secnote { font-size: 0.8rem; line-height: 1.55; opacity: 0.8; margin-bottom: 10px; }
+.ct-secnote b { opacity: 1; }
+/* The read-out a closed stage leaves behind: what won, and the best case. */
+.ct-won {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  border: 1px solid color-mix(in srgb, var(--cause-color) 40%, transparent);
+  background: color-mix(in srgb, var(--cause-color) 8%, transparent);
+  border-radius: var(--radius-sm); padding: 8px 11px; margin-bottom: 10px;
+}
+.ct-won__label {
+  font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--cause-color);
+}
+.ct-won__name { font-size: 0.86rem; font-weight: 700; }
+.ct-topcase {
+  border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm);
+  padding: 9px 11px; margin-bottom: 10px;
+}
+.ct-topcase__label {
+  font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(245,240,232,0.4); margin-bottom: 4px;
+}
+.ct-topcase__body { font-size: 0.8rem; line-height: 1.55; opacity: 0.85; }
+/* "Migrated here" — the same thread, one stage further down. */
+.ct-moved {
+  font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(245,240,232,0.38); margin: 2px 0 8px;
+}
+/* The reference a post must carry — the whole point of these types, so it
+   sits above the body rather than beside the Post button. */
+.ct-ref { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.ct-ref__label {
+  font-family: var(--font-mono); font-size: 0.54rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(245,240,232,0.4); flex: 0 0 auto;
+}
+.ct-ref__val { font-size: 0.78rem; font-weight: 600; color: var(--cause-color); }
+.ct-ref__val--missing { color: rgba(245,240,232,0.4); font-weight: 400; font-style: italic; }
+.ct-ref__sel {
+  flex: 1; min-width: 0; font: inherit; font-size: 0.76rem; padding: 4px 8px;
+  color: inherit; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(245,240,232,0.2); border-radius: 6px;
+}
+.ct-hint { font-size: 0.72rem; line-height: 1.5; color: rgba(245,240,232,0.5); margin: 4px 0 2px; }
+.ct-hint b { color: rgba(245,240,232,0.75); }
+.ct-compose { margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+
+/* THE MISSION START DAY — the one key date, a full line across the screen.
+   It breaks out of the container on purpose: this is the moment the page
+   is organised around, and it should cut the whole page in half. */
+.ct-startline {
+  position: relative; margin: 20px 0 22px; height: 0;
+  border-top: 2px solid var(--cause-color);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--cause-color) 55%, transparent);
+  width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+}
+.ct-startline__label {
+  position: absolute; left: 50%; top: -11px; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.16em;
+  text-transform: uppercase; white-space: nowrap;
+  padding: 3px 12px; border-radius: 999px;
+  background: var(--clr-bg, #0f1a14); border: 1px solid var(--cause-color);
+  color: var(--cause-color);
+}
+.ct-startline--future { border-top-style: dashed; opacity: 0.72; }
+
+/* ── the rows, inputs and pills the posts box inherited from the deleted
+   three-band P3 box (2026-08-08). The bands, tiles and org groups went
+   with `renderP3Bands`; these are the parts the box still paints. */
+.p3-row {
+  display: flex; align-items: center; gap: 8px; padding: 5px 0;
+  font-size: 0.76rem; border-bottom: 1px dashed rgba(255,255,255,0.07);
+  color: inherit; text-decoration: none; min-width: 0;
+}
+.p3-row:last-child { border-bottom: none; }
+.p3-row--link:hover { color: var(--cause-color); }
+.p3-row__icon, .p3-row__rank { flex: 0 0 auto; font-family: var(--font-mono); font-size: 0.64rem; opacity: 0.7; }
+.p3-row__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p3-row__kind {
+  font-family: var(--font-mono); font-size: 0.54rem; text-transform: uppercase;
+  letter-spacing: 0.1em; opacity: 0.5; margin-left: 6px;
+}
+.p3-row__est, .p3-row__score {
+  flex: 0 0 auto; font-family: var(--font-mono); font-size: 0.62rem;
+  font-variant-numeric: tabular-nums; opacity: 0.75;
+}
+.p3-row__est { min-width: 58px; text-align: right; }
+.p3-pill {
+  font-family: var(--font-mono); font-size: 0.54rem; text-transform: uppercase;
+  letter-spacing: 0.08em; border-radius: 3px; padding: 1px 6px; flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,0.22); opacity: 0.85;
+}
+.p3-pill--res { color: #5abd6c; border-color: rgba(90,189,108,0.5); }
+.p3-pill--case { color: var(--cause-color); border-color: currentColor; }
+.p3-pill--evaluation { color: #e0a341; border-color: rgba(224,163,65,0.5); }
+.p3-compose { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.p3-in {
+  font: inherit; font-size: 0.72rem; background: transparent; color: inherit;
+  border: 1px solid rgba(245,240,232,0.25); border-radius: 6px; padding: 5px 8px;
+}
+.p3-in:focus { outline: none; border-color: var(--cause-color); }
+.p3-in--grow { flex: 1 1 180px; min-width: 140px; }
+.p3-in--num { width: 108px; font-variant-numeric: tabular-nums; }
+.p3-in--sort { margin-left: auto; font-size: 0.66rem; }
+.p3-in--search { flex: 0 1 200px; font-size: 0.68rem; }
+.p3-btn { flex: 0 0 auto; }
+.p3-msg { font-family: var(--font-mono); font-size: 0.58rem; opacity: 0.7; margin-top: 5px; min-height: 12px; }
+

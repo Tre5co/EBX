@@ -48,6 +48,11 @@ from app.database import SessionLocal             # noqa: E402
 BAD = N = 0
 
 
+def _dt_now():
+    from datetime import datetime as _d
+    return _d.utcnow()
+
+
 def ok(cond, what, detail=""):
     global BAD, N
     N += 1
@@ -329,6 +334,71 @@ try:
     db.close()
 except Exception as e:                                   # pragma: no cover
     ok(False, "adopting an orphan does not raise", repr(e)[:160])
+
+# ---------------------------------------------------------------------------
+section("staff: the retroactive INITIATIVE election (2026-09-18)")
+# The hmr1 case: a decision day that passed with preferences standing and no
+# tokens behind them. A live election cannot elect on that — 10 EBX = 1 vote —
+# so the backfill elects on the PEOPLE, and says that is what it did.
+db = SessionLocal()
+from datetime import timedelta as _td                      # noqa: E402
+stuck = _m.Mission(id="electcheck-stuck", cause_id=CAUSE, cycle_num=97,
+                   started_at=_dt_now() - _td(weeks=9), current_phase="initiative")
+db.add(stuck)
+db.add(_m.Initiative(id="electcheck-wanted", title="The one people stood behind",
+                     cause_id=CAUSE, mission_id=stuck.id, approved=True, status="suggested"))
+db.add(_m.Initiative(id="electcheck-other", title="The one nobody backed",
+                     cause_id=CAUSE, mission_id=stuck.id, approved=True, status="suggested"))
+db.commit()
+# two preferences, no money at all
+for h in ("electcheckA", "electcheckB"):
+    db.add(_m.VoteP1(ben_id=ben_id(h), mission_id=stuck.id, tiv_id="electcheck-wanted",
+                     share=1.0, stake_ct=0, ebx_committed=0.0, valence="helpful"))
+db.commit()
+db.close()
+ok(c.post(f"/admin/missions/{'electcheck-stuck'}/backfill-tiv", headers=HA).status_code == 403,
+   "the initiative backfill is staff-only")
+stuck_list = c.get("/admin/elections/unelected-tivs", headers=HS).json()
+row = next((x for x in stuck_list if x["mission_id"] == "electcheck-stuck"), None)
+ok(row is not None, "a past election with nothing elected is on the backfill list",
+   f"{len(stuck_list)} race(s)")
+ok(row and row["preferences"] and row["preferences"][0]["tiv_id"] == "electcheck-wanted",
+   "…and the list says who is standing behind what, most people first",
+   str(row["preferences"][0]) if row and row["preferences"] else "none")
+r = c.post("/admin/missions/electcheck-stuck/backfill-tiv", headers=HS)
+ok(r.status_code == 200 and r.json().get("winning_tiv_id") == "electcheck-wanted",
+   "the backfill elects the initiative with the most people behind it", r.text[:150])
+ok(r.status_code == 200 and "preference" in (r.json().get("on") or ""),
+   "…and records that it elected on preferences, not money",
+   (r.json().get("on") if r.status_code == 200 else ""))
+m = c.get("/missions/electcheck-stuck").json()
+ok(m.get("winning_tiv_id") == "electcheck-wanted", "the mission carries the winner")
+ok(not any(x["mission_id"] == "electcheck-stuck"
+           for x in c.get("/admin/elections/unelected-tivs", headers=HS).json()),
+   "…and drops off the backfill list")
+db = SessionLocal()
+loser = db.get(_m.Initiative, "electcheck-other")
+ok(loser is not None and loser.mission_id != "electcheck-stuck",
+   "the loser is re-listed in the cause's next election, as it would have been",
+   f"now in {loser.mission_id if loser else '—'}")
+ok(db.get(_m.Initiative, "electcheck-wanted").status == "active",
+   "…and the winner is active")
+db.close()
+ok(c.post("/admin/missions/electcheck-stuck/backfill-tiv", headers=HS).json().get("already") is True,
+   "running it again is a no-op, not a second election")
+# an election still to come is refused
+db = SessionLocal()
+# 99, not 98: electing `stuck` (97) re-listed its loser into the cause's next
+# cycle, which created 98 — the same behaviour a real election has.
+soon = _m.Mission(id="electcheck-soon", cause_id=CAUSE, cycle_num=99,
+                  started_at=_dt_now(), current_phase="initiative")
+db.add(soon)
+db.add(_m.Initiative(id="electcheck-soon-tiv", title="Not yet", cause_id=CAUSE,
+                     mission_id=soon.id, approved=True, status="suggested"))
+db.commit(); db.close()
+rs = c.post("/admin/missions/electcheck-soon/backfill-tiv", headers=HS)
+ok(rs.status_code == 400 and "still open" in rs.text,
+   "an election whose day has not come is refused", f"HTTP {rs.status_code}")
 
 print(f"\n{N} assertions · " + ("ELECTIONS CLEAN" if BAD == 0 else f"PROBLEMS: {BAD}"))
 sys.exit(1 if BAD else 0)

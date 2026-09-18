@@ -179,6 +179,47 @@ def unelected_orgs(
     return out
 
 
+@router.get("/elections/unelected-tivs", response_model=list)
+def unelected_tivs(
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only (build-seq §1, 2026-09-18): initiative elections whose day has
+    passed with nothing elected — the backfill list, with what is standing in
+    each one so the choice can be made from this response."""
+    from datetime import datetime
+    from sqlalchemy import select
+    from .. import models
+    now = datetime.utcnow()
+    out = []
+    for m in db.scalars(select(models.Mission).where(models.Mission.winning_tiv_id.is_(None))).all():
+        if crud._p1_decision_day(m) > now:
+            continue
+        out.append({
+            "mission_id": m.id, "cause_id": m.cause_id, "cycle_num": m.cycle_num,
+            "decision_day": crud._p1_decision_day(m).isoformat(),
+            "running": [{"tiv_id": t.id, "title": t.title} for t in db.scalars(
+                select(models.Initiative).where(models.Initiative.mission_id == m.id)).all()],
+            "preferences": crud.p1_preferences(db, m.id),
+        })
+    return out
+
+
+@router.post("/missions/{mission_id}/backfill-tiv", response_model=dict)
+def backfill_tiv(
+    mission_id: str,
+    tiv_id: Optional[str] = Body(default=None, embed=True),
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only (build-seq §1): elect an initiative in a past initiative
+    election that never elected one."""
+    try:
+        return crud.backfill_tiv_election(db, mission_id, staff, tiv_id)
+    except (ValueError, PermissionError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.post("/missions/{mission_id}/backfill-org", response_model=dict)
 def backfill_org(
     mission_id: str,

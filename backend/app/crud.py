@@ -2566,6 +2566,14 @@ def commit_p2(db: Session, ben_id: int, mission_id: str) -> int:
 # ===========================================================================
 # Tallies & finalization
 # ===========================================================================
+def _p1_decision_day(m: models.Mission) -> datetime:
+    """The day a mission's INITIATIVE election is decided: T, seven weeks after
+    the mission opens (`wallet._vote_day` is the organization election, eight
+    weeks after that). Same anchor as `EBX.Cycle.missionDates` on the pages."""
+    from .bootstrap import GENESIS, WEEK
+    return (m.started_at or GENESIS) + 7 * WEEK
+
+
 def p1_tally(db: Session, mission_id: str, size_factor: float = 1.0) -> dict:
     """Per-tiv raw + vote-weighted shares for a mission's phase-1 election.
 
@@ -2887,7 +2895,19 @@ def finalize_p1(db: Session, mission_id: str) -> Optional[str]:
     tally = p1_tally(db, mission_id)
     if not tally["entries"] or tally["entries"][0]["weighted_share"] <= 0:
         return None
-    winner_id = tally["entries"][0]["tiv_id"]
+    return _elect_tiv(db, mission, tally["entries"][0]["tiv_id"])
+
+
+def _elect_tiv(db: Session, mission: models.Mission, winner_id: str) -> str:
+    """Everything electing an initiative DOES, once the winner is known.
+
+    Split out of `finalize_p1` on 2026-09-18 so the retroactive election
+    (`backfill_tiv_election`) lands through the same path rather than a second
+    copy of it: the winner is marked, the phase-1 stakes are carried into the
+    organization election, and the losers are re-listed in the next cycle.
+    `finalize_p1` still decides the winner the only way a live election may —
+    by the money behind it."""
+    mission_id = mission.id
     mission.winning_tiv_id = winner_id
     mission.current_phase = "initiative"
     # Status vocabulary is just suggested | active | resolved. The elected tiv
@@ -3029,6 +3049,84 @@ def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
     mint_mission_coins(db, mission_id)
     db.commit()
     return winner_org
+
+
+def p1_preferences(db: Session, mission_id: str) -> list[dict]:
+    """Who is standing behind each initiative in a mission's phase-1 election,
+    counted as PEOPLE rather than money (2026-09-18).
+
+    A phase-1 vote with no commitment behind it is "a preference with no funding
+    yet" (money_model §5). The live election does not count those — 10 EBX = 1
+    vote, and a slate with nothing behind it moves nothing — but a RETROACTIVE
+    election has nothing else to read, because money cannot be committed into a
+    week that has already gone. So the backfill ranks by: people, then the money
+    if any of them did fund it, then helpfulness, then the initiative's own age.
+    """
+    per: dict[str, dict] = {}
+    for v in db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == mission_id)).all():
+        if float(v.share or 0) <= 0 and float(v.ebx_committed or 0) <= 0:
+            continue
+        e = per.setdefault(v.tiv_id, {"tiv_id": v.tiv_id, "voters": 0, "ebx": 0.0, "helpful": 0})
+        e["voters"] += 1
+        e["ebx"] += float(v.ebx_committed or 0)
+        e["helpful"] += 1 if v.valence == "helpful" else (-1 if v.valence == "harmful" else 0)
+    rows = list(per.values())
+    for r in rows:
+        tiv = db.get(models.Initiative, r["tiv_id"])
+        r["title"] = tiv.title if tiv else r["tiv_id"]
+        r["born"] = (tiv.proposed_at.isoformat() if tiv is not None and tiv.proposed_at else "")
+    rows.sort(key=lambda r: (-r["voters"], -r["ebx"], -r["helpful"], r["born"]))
+    return rows
+
+
+def backfill_tiv_election(db: Session, mission_id: str, staff: models.BenefactorAccount,
+                          tiv_id: Optional[str] = None,
+                          now: Optional[datetime] = None) -> dict:
+    """Staff backfill (INSTRUCTIONS build-seq §1, 2026-09-18): elect an
+    initiative in a PAST initiative election that never elected one.
+
+    hmr1 is why this exists. Its decision day passed with preferences standing
+    and no tokens behind them, so `finalize_p1` had nothing to elect on and
+    returned None every time it was asked — and a cause whose middle mission
+    never elected an initiative has no organization election to show, which is
+    what put another cause's race on the human-rights page.
+
+    The rule, and the one difference from a live election: where money was
+    committed, this finalizes on the money, exactly as the day would have
+    (`finalize_p1`). Where there is none, it elects the initiative with the most
+    PEOPLE behind it (`p1_preferences`) — or the one staff names — and records
+    that it did so. It refuses an election whose day has not come: a retroactive
+    election is for a race that is already over."""
+    require_staff(staff)
+    mission = db.get(models.Mission, mission_id)
+    if mission is None:
+        raise ValueError("Mission not found")
+    if mission.winning_tiv_id:
+        return {"mission_id": mission_id, "winning_tiv_id": mission.winning_tiv_id, "already": True}
+    if _p1_decision_day(mission) > (now or datetime.utcnow()):
+        raise ValueError("That initiative election is still open — its decision day has not passed")
+
+    winner = finalize_p1(db, mission_id)
+    if winner:
+        return {"mission_id": mission_id, "winning_tiv_id": winner, "backfilled": False,
+                "on": "the money committed to it"}
+
+    running = {t.id for t in db.scalars(select(models.Initiative).where(
+        models.Initiative.mission_id == mission_id)).all()}
+    if not running:
+        raise ValueError("No initiative is running in that election — propose one first")
+    prefs = p1_preferences(db, mission_id)
+    if tiv_id:
+        if tiv_id not in running:
+            raise ValueError("That initiative is not running in this election")
+        pick, on = tiv_id, "staff's choice"
+    elif prefs:
+        pick, on = prefs[0]["tiv_id"], f"{prefs[0]['voters']} preference(s) standing"
+    else:
+        raise ValueError("Nobody voted in that election — name an initiative, or have one backed first")
+    winner = _elect_tiv(db, mission, pick)
+    return {"mission_id": mission_id, "winning_tiv_id": winner, "backfilled": True, "on": on,
+            "preferences": prefs}
 
 
 def backfill_org_election(db: Session, mission_id: str, staff: models.BenefactorAccount,

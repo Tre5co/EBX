@@ -1,6 +1,13 @@
-// Drives the DISCUSSION BOX on cause.html in a headless DOM (build-seq §1,
-// 2026-08-11, extended 2026-08-12). Replaces scripts/timeline_check.js, which
-// drove the four-section accordion this box deletes.
+// Drives the DISCUSSION BOX in a headless DOM (build-seq §1, 2026-08-11,
+// extended 2026-08-12). Replaces scripts/timeline_check.js, which drove the
+// four-section accordion this box deletes.
+//
+// 2026-09-17: THE BOX MOVED. It is mounted on mission.html now (structure.md §6
+// box i, resources/js/ebx_postsbox.js) and cause.html is the newsfeed, so the
+// first half of this file drives the mission page. Nothing else changed: the
+// assertions are the same ones, against the same ids and the same window.pb*
+// handlers, which is the point — a move that needs the check rewritten is not
+// a move. The second half still drives cause.html's hero, which stayed.
 //
 // What it asserts:
 //   · 4 phase tabs (a–d), every one dated; 3 category tabs (e–g)
@@ -12,6 +19,9 @@
 //   · nothing survives from the deleted accordion / bands / dual panels
 const { JSDOM, VirtualConsole } = require('jsdom');
 const BASE = process.argv[2] || 'http://127.0.0.1:8000';
+// The box needs a mission with an elected initiative and an open organization
+// race — the stage where every one of the twelve cells has something to say.
+const MISSION = process.argv[3] || 'oce1';   // elected initiative, open org race WITH a candidate
 
 (async () => {
   const errs = [];
@@ -21,7 +31,7 @@ const BASE = process.argv[2] || 'http://127.0.0.1:8000';
     if (!/fonts\.googleapis\.com/.test(m)) errs.push(m.slice(0, 240));
   });
   vc.on('error', (...a) => errs.push('console.error: ' + a.join(' ').slice(0, 200)));
-  const dom = await JSDOM.fromURL(BASE + '/cause.html?id=atmosphere', {
+  const dom = await JSDOM.fromURL(BASE + '/mission.html?mission=' + MISSION, {
     runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       w.fetch = (u, o) => fetch(String(u).startsWith('http') ? u : BASE + u, o);
@@ -36,6 +46,12 @@ const BASE = process.argv[2] || 'http://127.0.0.1:8000';
     if (!ok) bad++;
   };
   const q = s => [...d.querySelectorAll(s)];
+  // the stage the mission is actually standing on (the tab marked now)
+  const _pbNowPhase = doc => {
+    const tabs = [...doc.querySelectorAll('#pb-phase .pb-tab')];
+    const i = tabs.findIndex(t => t.classList.contains('pb-tab--now'));
+    return i >= 0 ? i + 1 : 2;
+  };
   const txt = s => (d.querySelector(s) || {}).textContent || '';
 
   // ── the two tab rows ──
@@ -172,13 +188,18 @@ const BASE = process.argv[2] || 'http://127.0.0.1:8000';
       rails.filter(e => e.disabled).length === 2);
   say('the composer has a title and a body',
       !!d.getElementById('pb-title') && !!d.getElementById('pb-body'));
-  W.pbCat('reviews');                       // case for an initiative — tiv required
+  // 2026-09-17: read the required rail AT THE STAGE THE MISSION IS IN. A case
+  // composer is only open on the stage that takes that case — on cause.html the
+  // page could be pointed at a mission still in its initiative election, and a
+  // mission page is the mission it is. Stage c takes a case for a philanthropy,
+  // so `phls` is the rail that must be marked, and the picker lists orgs.
+  W.pbPhase(_pbNowPhase(d)); W.pbCat('reviews');
   const req = q('#pb-compose .pb-rail__btn.req');
-  say('a case marks the initiative rail required', req.length === 1,
-      req.length ? req[0].textContent.trim() : '');
-  W.pbPick('tivs');
+  say('a case marks its target rail required', req.length === 1,
+      req.length ? req[0].textContent.trim() : 'none marked');
+  W.pbPick(req.length && /organization/i.test(req[0].textContent) ? 'phls' : 'tivs');
   const opts = q('#pb-compose .pb-pick__opt');
-  say('the picker lists this cause\'s initiatives to link', opts.length > 0, opts.length + ' options');
+  say('the picker lists something to link', opts.length > 0, opts.length + ' options');
   if (opts.length) {
     opts[0].onclick ? opts[0].onclick() : opts[0].click();
     say('picking one attaches a chip', q('#pb-compose .pb-chip').length === 1,
@@ -212,41 +233,51 @@ const BASE = process.argv[2] || 'http://127.0.0.1:8000';
       txt('#ct-startline-label').trim());
 
   // ── a mission whose philanthropy is already elected reads as stage 4 ──
-  const elected = (W.EBX.config.initiatives || []).find(i => {
-    const m = (W.EBX.config.missions || []).find(x => x.id === i.mission_id);
-    return m && m.winning_org_id;
-  });
-  if (elected) {
-    W.setSelectedMission(elected.id, { scroll: false });
-    await new Promise(r => setTimeout(r, 1500));
+  // 2026-09-17: on cause.html this was `setSelectedMission` — one page, many
+  // missions. A mission page IS one mission, so the way to read another stage
+  // is to open another mission, which is the honest version of the same test.
+  const electedMission = (W.EBX.config.missions || []).find(m => m.winning_org_id);
+  if (electedMission) {
+    const dom3 = await JSDOM.fromURL(BASE + '/mission.html?mission=' + electedMission.id, {
+      runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
+      beforeParse(w) {
+        w.fetch = (u, o) => fetch(String(u).startsWith('http') ? u : BASE + u, o);
+        w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {} }));
+      },
+    });
+    await new Promise(r => setTimeout(r, 4000));
+    const d3 = dom3.window.document, W3 = dom3.window;
+    const q3 = sel => [...d3.querySelectorAll(sel)];
+    const t3 = sel => (d3.querySelector(sel) || {}).textContent || '';
     say('an elected mission puts the notch on tab d and names its philanthropy',
-        /Philanthropy elected/.test(txt('#pb-results .pb-k__eyebrow')) &&
-        q('#pb-phase .pb-tab')[3].classList.contains('pb-tab--linked'),
-        txt('#pb-results .pb-k__eyebrow').trim() + ' · ' + txt('#pb-results .pb-k__name').trim());
-    W.pbPhase(4);
-    say('budgeting is no longer grayed on its tab', q('#pb-cat .pb-tab--gray').length === 0);
+        /Philanthropy elected/.test(t3('#pb-results .pb-k__eyebrow')) &&
+        q3('#pb-phase .pb-tab')[3].classList.contains('pb-tab--linked'),
+        t3('#pb-results .pb-k__eyebrow').trim() + ' · ' + t3('#pb-results .pb-k__name').trim());
+    W3.pbPhase(4);
+    say('budgeting is no longer grayed on its tab', q3('#pb-cat .pb-tab--gray').length === 0);
     // ── the row that replaces the title. Budgeting only composes once the
     //    initiative is elected, so this is the first page state that has it. ──
-    W.pbCat('budgeting'); W.pbType('supply');
-    const rowFields = q('#pb-compose .pb-row__in').map(e => e.id);
+    W3.pbCat('budgeting'); W3.pbType('supply');
+    const rowFields = q3('#pb-compose .pb-row__in').map(e => e.id);
     say('the s/s/s row takes this kind\'s fields',
         rowFields.join(',') === 'pb-row-item,pb-row-supplier,pb-row-cost', rowFields.join(' | '));
-    const fill = (id, v) => { const el = d.getElementById(id); if (el) el.value = v; };
+    const fill = (id, v) => { const el = d3.getElementById(id); if (el) el.value = v; };
     fill('pb-row-item', 'Handheld methane sensors');
     fill('pb-row-supplier', 'FieldKit');
     fill('pb-row-cost', '1200');
-    W.pbRowAdd();
+    W3.pbRowAdd();
     say('adding a row lists it under the composer, with a total',
-        q('#pb-compose .pb-tbl--draft tbody tr').length === 1,
-        txt('#pb-compose .pb-tbl__total').trim());
-    W.pbType('service');
+        q3('#pb-compose .pb-tbl--draft tbody tr').length === 1,
+        t3('#pb-compose .pb-tbl__total').trim());
+    W3.pbType('service');
     say('switching kind switches the fields, and keeps the supply draft',
-        q('#pb-compose .pb-row__in').map(e => e.id).join(',') ===
+        q3('#pb-compose .pb-row__in').map(e => e.id).join(',') ===
           'pb-row-job,pb-row-hourly_rate,pb-row-days_needed');
-    W.pbType('supply');
-    say('the supply row is still there', q('#pb-compose .pb-tbl--draft tbody tr').length === 1);
-    W.pbRowDel(0);
-    say('and it can be removed again', q('#pb-compose .pb-tbl--draft tbody tr').length === 0);
+    W3.pbType('supply');
+    say('the supply row is still there', q3('#pb-compose .pb-tbl--draft tbody tr').length === 1);
+    W3.pbRowDel(0);
+    say('and it can be removed again', q3('#pb-compose .pb-tbl--draft tbody tr').length === 0);
+    dom3.window.close();
   } else {
     console.log('  --    no mission with an elected philanthropy in this db; stage-4 check skipped');
   }

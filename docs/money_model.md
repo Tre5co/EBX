@@ -48,6 +48,7 @@ whom, and §14 says what was not.
 - [12. What is built, and what is not](#12-what-is-built-and-what-is-not)
   - [Built 2026-09-16](#built-2026-09-16)
   - [Built 2026-09-17](#built-2026-09-17)
+  - [Built 2026-09-18](#built-2026-09-18)
   - [Still true and still built](#still-true-and-still-built)
   - [Not built — the framing and exchange work list](#not-built--the-framing-and-exchange-work-list)
 - [13. The surfaces](#13-the-surfaces)
@@ -533,6 +534,14 @@ Earthbux seeding liquidity with charitable capital needs the same legal review a
 | A re-listed loser's RATING starts empty too: a rating counts only votes cast in the race the initiative is running in | `crud.recompute_tiv_rating` |
 | Adopting an orphan initiative folds into an existing row instead of colliding with `uq_votep1_ben_mission_tiv` | `crud.adopt_orphan_tivs` |
 | `election_check` (41) asserts all of the above | `scripts/` |
+
+### Built 2026-09-18
+
+| Change | Where |
+|---|---|
+| A past initiative election with no money behind it can still be elected — retroactively, on the PEOPLE standing in it (voters, then EBX, then helpfulness, then age), or on the initiative staff names. A live election is unchanged: it counts money | `crud.p1_preferences`, `crud.backfill_tiv_election`, `POST /admin/missions/{id}/backfill-tiv` |
+| Electing an initiative is one code path for both — the effects of `finalize_p1` are `_elect_tiv` | `crud._elect_tiv` |
+| `election_check` (52) asserts the retroactive election, the refusal of one whose day has not come, and that the loser is still re-listed | `scripts/` |
 
 ### Still true and still built
 
