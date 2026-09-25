@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About Earthbux — you donate, we follow</title>
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925" />
+  <style>
+    /* ── about.html — P2 · Home (2026-09-25), D7 ───────────────────────────
+       Home stopped explaining. The explaining lives here, reached from the
+       footer, in the order the P2 copy spine gives:
+         1 what Earthbux is, in one sentence
+         2 the $1/week mechanism (the grant, the dimes, the runway)
+         3 donor control, the organizing idea ("How it Works — donate to the
+           thing that happens, not the people who do it") and the five phases
+         4 what an Earthbuck represents (money_model.md §0: the ladder)
+         5 what research and news are FOR (the three bands that left Home)
+       then the origin couplet. The bands' markup and the runway script moved
+       here verbatim from index.html, with "Organization" read as Vetting. */
+    body {
+      background:
+        radial-gradient(1100px 620px at 50% -10%, rgba(232,168,76,0.10), transparent 62%),
+        radial-gradient(760px 520px at 12% 108%, rgba(78,122,78,0.16), transparent 66%),
+        #0f1a14;
+      color: var(--clr-parchment, #f5f0e8);
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
+    .ld-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 26px; border-bottom: 1px solid rgba(245,240,232,0.08);
+    }
+    .ld-brand {
+      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.3rem;
+      color: var(--clr-parchment, #f5f0e8); text-decoration: none; letter-spacing: -0.01em;
+    }
+    .ld-brand em { color: var(--clr-honey, #e8a84c); font-style: normal; }
+    /* §0d (2026-08-18) — `EBX.initPage` injects a FIXED `.ebx-home-mark` pill
+       at top-left on any page that hasn't got one, and it was landing on top of
+       this page's own brand: "EBX" overprinting "Earthbux News". main.html hides
+       it the same way (main.html §0d) because it, too, carries its own brand. */
+    body > .ebx-home-mark { display: none; }
+    .ld-main { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 60px 26px 64px; box-sizing: border-box; }
+
+    /* ══ a / b — the hero ═══════════════════════════════════════════════════ */
+    .ld-a { text-align: center; }
+    /* §0a (2026-08-06): "Earthbux" was black on black. The shared stylesheet
+       sets `h1..h6 { color: var(--clr-earth) }` (near-black, for the light
+       pages) and that beat the inherited parchment on this dark hero, so only
+       the honey "News" was visible. Every heading here still states its colour. */
+    .ld-wordmark {
+      font-family: var(--font-display, serif); font-weight: 900;
+      font-size: clamp(2.6rem, 7.2vw, 4.6rem); line-height: 1.02;
+      letter-spacing: -0.03em; margin: 0;
+      color: var(--clr-parchment, #f5f0e8);
+    }
+    .ld-wordmark em { font-style: normal; color: var(--clr-honey, #e8a84c); }
+    .ld-sub {
+      font-family: var(--font-mono, monospace); font-size: clamp(0.66rem, 1.5vw, 0.8rem);
+      letter-spacing: 0.34em; text-transform: uppercase;
+      color: rgba(245,240,232,0.5); margin: 14px 0 0;
+    }
+    /* a — one line, above the wordmark, and it is the whole claim. */
+    .ld-claim {
+      font-family: var(--font-display, serif);
+      font-size: clamp(1.05rem, 2.3vw, 1.4rem); line-height: 1.5;
+      color: rgba(245,240,232,0.86); margin: 0 auto 24px; max-width: 46ch;
+    }
+    .ld-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+    .ld-cta__btn {
+      font: inherit; font-size: 0.86rem; font-weight: 700; cursor: pointer;
+      text-decoration: none; border-radius: 10px; padding: 11px 22px;
+      border: 1px solid rgba(245,240,232,0.28); background: transparent;
+      color: var(--clr-parchment, #f5f0e8); transition: all 0.15s;
+    }
+    .ld-cta__btn:hover { border-color: var(--clr-honey, #e8a84c); background: rgba(232,168,76,0.1); }
+    .ld-cta__btn--primary {
+      background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14;
+    }
+    .ld-cta__btn--primary:hover { filter: brightness(1.07); background: var(--clr-honey, #e8a84c); }
+    .ld-rule {
+      width: min(560px, 90%); height: 1px; margin: 34px auto;
+      background: linear-gradient(90deg, transparent, rgba(232,168,76,0.55), transparent);
+    }
+
+    /* ══ i / m — the two forum headings, each over a row of three ═══════════ */
+    .ld-band { margin-top: 56px; }
+    .ld-band__h {
+      font-family: var(--font-display, serif); font-weight: 800;
+      font-size: clamp(1.25rem, 2.9vw, 1.85rem); line-height: 1.3;
+      margin: 0 0 18px; color: var(--clr-parchment, #f5f0e8);
+      letter-spacing: -0.02em; text-align: center;
+    }
+    .ld-band__h a {
+      color: var(--clr-honey, #e8a84c); text-decoration: none;
+      border-bottom: 1px dashed currentColor; padding-bottom: 2px;
+    }
+    .ld-band__h a:hover { border-bottom-style: solid; }
+    .ld-band__h em { font-style: normal; color: var(--clr-honey, #e8a84c); }
+    .ld-trio {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+    }
+    @media (max-width: 720px) { .ld-trio { grid-template-columns: 1fr; gap: 0; } }
+    .ld-trio__cell {
+      padding: 16px 2px 0; border-top: 1px solid rgba(245,240,232,0.14);
+    }
+    .ld-trio__name {
+      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem;
+      color: var(--clr-parchment, #f5f0e8); margin: 0 0 6px;
+    }
+    .ld-trio__what { font-size: 0.86rem; line-height: 1.65; color: rgba(245,240,232,0.64); margin: 0; }
+    .ld-trio__what b { color: rgba(245,240,232,0.92); font-weight: 600; }
+    /* build-seq §1 (2026-09-20) — every cell is a link to the mission page. */
+    .ld-trio__link { display: block; text-decoration: none; color: inherit; }
+    .ld-trio__link:hover .ld-trio__name { color: var(--clr-honey, #e8a84c); }
+    .ld-trio__cell { transition: border-color .15s; }
+    .ld-trio__cell:hover { border-top-color: var(--clr-honey, #e8a84c); }
+    .ld-trio__when {
+      display: block; margin-top: 7px;
+      font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: rgba(245,240,232,0.42);
+    }
+    .ld-band__foot {
+      max-width: 62ch; margin: 20px auto 0; text-align: center;
+      font-size: 0.82rem; line-height: 1.7; color: rgba(245,240,232,0.55);
+    }
+    .ld-band__foot b { color: rgba(245,240,232,0.85); font-weight: 600; }
+    .ld-band__lede {
+      max-width: 58ch; margin: -6px auto 22px; text-align: center;
+      font-size: 0.95rem; line-height: 1.7; color: rgba(245,240,232,0.7);
+    }
+    .ld-band__lede b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+
+    /* ══ q/r/s/t — origin, the grant, the runway ════════════════════════════ */
+    .ld-close { margin-top: 64px; text-align: center; }
+    .ld-verse {
+      font-family: var(--font-display, serif);
+      font-size: clamp(1.02rem, 2.1vw, 1.3rem); line-height: 1.95;
+      color: rgba(245,240,232,0.92); margin: 0 auto; max-width: 60ch;
+    }
+    .ld-verse span { display: block; }
+    .ld-verse span b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    .ld-grant {
+      font-family: var(--font-display, serif);
+      font-size: clamp(1.02rem, 2.1vw, 1.26rem); line-height: 1.7;
+      color: rgba(245,240,232,0.86); margin: 24px auto 0; max-width: 56ch;
+    }
+    .ld-grant b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+
+    /* the dime. Ten of them a week, one dollar, everybody. */
+    .ld-dime { margin-top: 18px; }
+    .ld-dime__row { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; justify-content: center; }
+    .ld-dime__cap {
+      font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.12em;
+      text-transform: uppercase; color: rgba(245,240,232,0.4); margin-top: 9px;
+    }
+
+    /* t — runway chart */
+    .ld-runway {
+      margin: 30px auto 0; max-width: 620px; padding: 16px 18px 14px; text-align: left;
+      border: 1px solid rgba(245,240,232,0.14); border-radius: 12px;
+      background: rgba(245,240,232,0.03);
+    }
+    .ld-runway__label {
+      font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(245,240,232,0.45); margin-bottom: 10px;
+    }
+    .ld-runway__figure { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+    .ld-runway__weeks {
+      font-family: var(--font-display, serif); font-weight: 900;
+      font-size: 2.4rem; line-height: 1; color: var(--clr-honey, #e8a84c);
+    }
+    .ld-runway__unit { font-size: 0.92rem; color: rgba(245,240,232,0.7); }
+    .ld-runway__bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; height: 46px; }
+    .ld-runway__bar { background: rgba(245,240,232,0.1); border-radius: 3px 3px 0 0; height: 100%; }
+    .ld-runway__bar.on { background: var(--clr-honey, #e8a84c); }
+    .ld-runway__note { font-size: 0.76rem; line-height: 1.55; color: rgba(245,240,232,0.42); margin-top: 10px; }
+    .ld-runway__note b { color: rgba(245,240,232,0.7); }
+    .ld-runway__members {
+      display: inline-flex; align-items: baseline; gap: 6px; margin-top: 12px;
+      font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: rgba(245,240,232,0.5);
+    }
+    .ld-runway__members b { font-size: 0.95rem; letter-spacing: 0; color: var(--clr-parchment, #f5f0e8); }
+
+    /* about.html (P2, 2026-09-25) — the copy spine that left Home */
+    .ab-sec { margin-top: 64px; }
+    .ab-kick { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.18em;
+      text-transform: uppercase; color: rgba(245,240,232,0.45); text-align: center; margin: 0 0 12px; }
+    .ab-lede { font-family: var(--font-display, serif); font-size: clamp(1.1rem, 2.4vw, 1.45rem); line-height: 1.6;
+      color: rgba(245,240,232,0.9); text-align: center; max-width: 52ch; margin: 0 auto; }
+    .ab-lede b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    .ab-p { font-size: 0.95rem; line-height: 1.75; color: rgba(245,240,232,0.72); max-width: 62ch; margin: 14px auto 0; text-align: center; }
+    .ab-p b { color: rgba(245,240,232,0.95); font-weight: 600; }
+    .ab-phases { list-style: none; padding: 0; margin: 22px 0 0; display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; counter-reset: ph; }
+    @media (max-width: 820px) { .ab-phases { grid-template-columns: 1fr; } }
+    .ab-phases li { border-top: 1px solid rgba(245,240,232,0.14); padding-top: 12px; }
+    .ab-phases a { text-decoration: none; color: inherit; display: block; }
+    .ab-phases a:hover h3 { color: var(--clr-honey, #e8a84c); }
+    .ab-phases h3 { font-family: var(--font-display, serif); font-weight: 800; font-size: 0.98rem; margin: 0 0 6px; color: var(--clr-parchment, #f5f0e8); }
+    .ab-phases h3::before { counter-increment: ph; content: counter(ph) ' · '; color: var(--clr-honey, #e8a84c); font-family: var(--font-mono, monospace); font-size: 0.7rem; }
+    .ab-phases p { margin: 0; font-size: 0.82rem; line-height: 1.55; color: rgba(245,240,232,0.64); }
+    .ab-ladder { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin: 22px auto 0; max-width: 760px; }
+    @media (max-width: 640px) { .ab-ladder { grid-template-columns: 1fr; } }
+    .ab-ladder div { border: 1px solid rgba(245,240,232,0.14); border-radius: 12px; padding: 12px 14px; }
+    .ab-ladder b { display: block; font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); margin-bottom: 5px; }
+    .ab-ladder span { font-size: 0.84rem; line-height: 1.55; color: rgba(245,240,232,0.72); }
+  </style>
+</head>
+
+<body>
+  <div class="ld-top">
+    <a class="ld-brand" href="index.html">Earthbux <em>News</em></a>
+    <div id="ebx-nav-mount"></div>
+    <div id="ebx-user-badge-mount"></div>
+  </div>
+
+  <div class="ld-main">
+
+    <!-- 1 · what Earthbux is -->
+    <div class="ld-a">
+      <p class="ld-claim">About Earthbux</p>
+      <h1 class="ld-wordmark">Earthbux <em>News</em></h1>
+      <p class="ld-sub">you donate, we follow</p>
+      <p class="ab-lede" style="margin-top:28px;">Earthbux is the social network for charities: a weekly pool
+        that goes where its <b>donors vote</b>, and a newsroom that follows the money.</p>
+    </div>
+
+    <div class="ld-rule"></div>
+
+    <!-- 2 · the $1/week mechanism -->
+    <section class="ab-sec ld-close" style="margin-top:0;">
+      <p class="ab-kick">A dollar a week</p>
+      <p class="ld-grant">So control is what we hand out: every member is granted
+        <b>10 tokens a week</b> — a dollar of real say in where the pool goes.</p>
+
+      <div class="ld-dime" id="ld-dime-viz"></div>
+      <div class="ld-runway" id="ld-runway"></div>
+    </section>
+
+    <!-- 3 · donor control -->
+    <section class="ab-sec">
+      <p class="ab-kick">Donor control</p>
+      <h2 class="ld-band__h">How it Works &mdash; donate to the <em>thing that happens</em>, not the people who do it</h2>
+      <p class="ab-p">You vote first on <b>what</b> the mission is, and only then on <b>who</b> runs it.
+        Five phases, every week, for every cause.</p>
+      <ol class="ab-phases" id="ab-phases"></ol>
+    </section>
+
+    <!-- 4 · what an Earthbuck represents -->
+    <section class="ab-sec">
+      <p class="ab-kick">What an Earthbuck is</p>
+      <p class="ab-lede">One token is <b>10&cent;</b> of say in one mission.</p>
+      <p class="ab-p">You commit your tokens to the initiative you want. They become that mission&rsquo;s
+        Earthbucks, and they finalize in steps. Until budget day, the part that isn&rsquo;t final is still
+        yours to withdraw as cash.</p>
+      <div class="ab-ladder">
+        <div><b>Week 0 &middot; initiative elected</b><span>10% of your stake is final: deductible, and part of the pool.</span></div>
+        <div><b>Week 8 &middot; organization elected</b><span>Another 10% of your organization-election stake is final. Backers of a losing choice can move into another mission.</span></div>
+        <div><b>Week 15 &middot; budget day</b><span>Everything is final. You hold the mission&rsquo;s coin: keep it, or exchange it for a different mission.</span></div>
+      </div>
+    </section>
+
+    <!-- 5 · what research and news are for -->
+    <section class="ab-sec">
+      <p class="ab-kick">What the network is for</p>
+      <p class="ab-p" style="margin-top:0;">Research and news are how a mission gets decided and run, not decoration.</p>
+    </section>
+    <!-- ══ research, then budgeting (build-seq §2 Landing, 2026-09-16) ════════
+         Order swapped, each heading over its own trio: the research posts are
+         what win rewards; the budget posts are what the public forum decides.
+         "public forum" still links to the feed (cause.html). -->
+    <div class="ld-band">
+      <h2 class="ld-band__h">Research the mission to win <em>Rewards</em></h2>
+      <!-- build-seq §1 (2026-09-20) — "Research posts should take us to the
+           mission page": each cell is a link to mission.html now, opened on the
+           post type it describes. The rename is finished here too —
+           Context → Situation → **Background** (docs/the_social_network.md §3). -->
+      <ol class="ld-trio">
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="mission.html?research=background">
+            <h3 class="ld-trio__name">Background</h3>
+            <p class="ld-trio__what">Researches the <b>cause</b> — the state of it and the news
+              around it — and contextualizes the initiatives standing in it.
+              <span class="ld-trio__when">Opens when the cause is confirmed</span></p>
+          </a>
+        </li>
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="mission.html?research=investigation">
+            <h3 class="ld-trio__name">Vetting</h3>
+            <p class="ld-trio__what">Investigates the <b>organization</b> that would run the
+              initiative — leadership, proposal, credibility — and compares it with the others.
+              <span class="ld-trio__when">Opens at week 0</span></p>
+          </a>
+        </li>
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="mission.html?research=analysis">
+            <h3 class="ld-trio__name">Analysis</h3>
+            <p class="ld-trio__what">Researches the <b>initiative and philanthropy together</b>,
+              and weighs the action plan against comparable programmes.
+              <span class="ld-trio__when">Opens at week 8</span></p>
+          </a>
+        </li>
+      </ol>
+      <p class="ld-band__foot">One post each, per person, per mission. The community
+        decides which background a vetting rests on, and which of both an
+        analysis stands on — <b>3/32 of every pool</b> is paid out on those results.</p>
+    </div>
+
+    <!-- ══ THE NEWS (build-seq §1 Landing, 2026-09-20) ═══════════════════════
+         "RESEARCH AND NEWS!!! I need to describe the news aspect on the landing
+         page - we bring you the news!" The research band above is what the
+         COMMUNITY writes; this is what EARTHBUX writes. The two are the
+         platform's stated duality (INSTRUCTIONS BUILD BACKLOG §6: "1. Network,
+         2. News"), so they sit next to each other. Each role is one of the
+         newsroom jobs in docs/roles.md §1b–§1c. -->
+    <div class="ld-band ld-band--news">
+      <h2 class="ld-band__h">And we <a href="cause.html">bring you the news</a></h2>
+      <p class="ld-band__lede">Every mission you fund is covered like a story, for as long as
+        the money is moving. <b>You donate, we follow.</b></p>
+      <ol class="ld-trio">
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="cause.html">
+            <h3 class="ld-trio__name">Journalists</h3>
+            <p class="ld-trio__what">Publish the mission&rsquo;s progress <b>live on its page</b> —
+              what was promised, what arrived, what it cost.
+              <span class="ld-trio__when">They travel</span></p>
+          </a>
+        </li>
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="cause.html">
+            <h3 class="ld-trio__name">Scientists</h3>
+            <p class="ld-trio__what">Verify the initiatives and vet the organizations, and keep
+              the research <b>scientifically honest</b>.
+              <span class="ld-trio__when">They travel</span></p>
+          </a>
+        </li>
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="cause.html">
+            <h3 class="ld-trio__name">Auditors</h3>
+            <p class="ld-trio__what">Track every dollar sent against what the organization said it
+              would spend, and <b>report the difference</b>.
+              <span class="ld-trio__when">Public ledger</span></p>
+          </a>
+        </li>
+      </ol>
+      <p class="ld-band__foot">This is what a slice of every pool buys: not a receipt,
+        <b>a correspondent</b>.</p>
+    </div>
+
+    <div class="ld-band">
+      <h2 class="ld-band__h">A <a href="cause.html">public forum</a> budgets the missions</h2>
+      <!-- build-seq §1 (2026-09-20) — budgeting posts go to the mission page
+           too: a budget line only means anything against the mission it is
+           spent on. -->
+      <ol class="ld-trio">
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="mission.html?budget=service">
+            <h3 class="ld-trio__name">Service</h3>
+            <p class="ld-trio__what"><b>Labor required.</b> Something we can send people to do —
+              a job, an hourly rate, and the days it takes.</p>
+          </a>
+        </li>
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="mission.html?budget=supply">
+            <h3 class="ld-trio__name">Supply</h3>
+            <p class="ld-trio__what"><b>Commodities required.</b> What those people need to do it —
+              an item, and what it costs.</p>
+          </a>
+        </li>
+        <li class="ld-trio__cell">
+          <a class="ld-trio__link" href="mission.html?budget=support">
+            <h3 class="ld-trio__name">Support</h3>
+            <p class="ld-trio__what"><b>Connections required.</b> An approval, professional help,
+              legal help in a conflict. No cost line: a connection is not a purchase.</p>
+          </a>
+        </li>
+      </ol>
+    </div>
+
+
+    <div class="ld-close">
+      <p class="ld-verse">
+        <span>In 2026, the world seemed at risk of total destruction.</span>
+        <span>Earthbux was invented to give us control so we <b>save it</b>.</span>
+      </p>
+
+    </div>
+
+  </div>
+
+  <div id="ebx-footer-mount"></div>
+  <script src="resources/js/ebx_shared.js?v=20260925"></script>
+  <script>
+  // 3 — the five phases, from the one source Home and the mission page read
+  // (ebx_wheel.js PHASE). Written out here so this page needs no wheel.
+  (function () {
+    const P = [
+      ['Cause Election', 'Keep this week&rsquo;s cause, or back a challenger. It takes a majority six weeks in a row to replace one.', 'ce'],
+      ['Initiative Election', 'Donate to this week&rsquo;s cause by funding what you want the mission to be.', 'me'],
+      ['Organization Election', 'After the mission is decided, your tokens can be put towards its philanthropy.', 'oe'],
+      ['Mission Framing', 'Earthbux orients the organization and its benefactors <b>(you)</b>, and the community builds the budget.', 'fr'],
+      ['Exchange', 'Hold on, or exchange for a different mission. Our newsroom keeps you updated.', 'ex'],
+    ];
+    const el = document.getElementById('ab-phases');
+    if (el) el.innerHTML = P.map(p => '<li><a href="mission.html?state=' + p[2] + '"><h3>' + p[0] + '</h3><p>' + p[1] + '</p></a></li>').join('');
+  })();
+
+  // ══ s / t — THE TOKEN AND THE RUNWAY ══════════════════════════════════════
+  //   a week of grants = active members x 10 EBX x 10c   ($1 each, everyone)
+  //   the runway       = committed funds / that
+  //
+  // Both numbers come from ONE endpoint, GET /stats. The page used to derive
+  // its member count client-side by summing `voter_count` over every mission's
+  // phase-1 tally, which counts vote ROWS and double-counts anyone voting in
+  // more than one mission — 19 where the answer is 4. A page that DISPLAYS a
+  // membership figure should not be estimating it.
+  (async function () {
+    const runEl = document.getElementById('ld-runway');
+    const dimeEl = document.getElementById('ld-dime-viz');
+    const WEEKS_SHOWN = 12;
+
+    // ── the dime (visual): ten of them, one week, one dollar ──
+    if (dimeEl) {
+      const coin = () =>
+        '<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">' +
+        '<circle cx="13" cy="13" r="11.5" fill="none" stroke="#e8a84c" stroke-width="1.4" opacity="0.9"/>' +
+        '<circle cx="13" cy="13" r="8.5" fill="rgba(232,168,76,0.14)"/>' +
+        '<text x="13" y="17" text-anchor="middle" style="font-family:var(--font-mono,monospace);' +
+        'font-size:9px;fill:#e8a84c;">10¢</text></svg>';
+      dimeEl.innerHTML =
+        '<div class="ld-dime__row">' + Array.from({ length: 10 }, coin).join('') + '</div>' +
+        '<div class="ld-dime__cap">10 tokens &middot; ten dimes &middot; $1 &middot; every week</div>';
+    }
+
+    let s = null;
+    try {
+      const r = await fetch('/stats');
+      if (r.ok) s = await r.json();
+    } catch (e) {}
+
+    if (runEl) {
+      const active = s ? (s.active_members || 0) : 0;
+      const usd = s ? (s.committed_usd || 0) : 0;
+      const weekly = s ? (s.weekly_cost_usd || 0) : 0;
+      const weeks = s ? (s.runway_weeks || 0) : 0;
+      const bars = Array.from({ length: WEEKS_SHOWN }, (_, k) =>
+        '<div class="ld-runway__bar' + (k < weeks ? ' on' : '') +
+        '" style="height:' + (30 + k * 5) + '%"></div>').join('');
+      runEl.innerHTML =
+        '<div class="ld-runway__label">Funding runway</div>' +
+        '<div class="ld-runway__figure">' +
+          '<span class="ld-runway__weeks">' + weeks + '</span>' +
+          '<span class="ld-runway__unit">week' + (weeks === 1 ? '' : 's') +
+            ' of grants the committed pool can fund at today’s membership</span>' +
+        '</div>' +
+        '<div class="ld-runway__bars">' + bars + '</div>' +
+        '<div class="ld-runway__members" id="ld-active-users">' +
+          '<b>' + active + '</b> active member' + (active === 1 ? '' : 's') +
+        '</div>' +
+        '<div class="ld-runway__note">Everyone is granted <b>10 tokens per week</b> between the ' +
+          'two elections. Committed <b>$' + usd.toFixed(2) + '</b> &divide; <b>$' +
+          weekly.toFixed(2) + '</b> per week = <b>' + weeks + '</b> week' +
+          (weeks === 1 ? '' : 's') + '. ' +
+          (!s
+            ? 'Live figures are unavailable right now.'
+            : weeks === 0
+              ? 'It reads zero because no money has been donated yet.'
+              : 'That pool is <b>simulated pilot money</b> — no money has been donated yet, so ' +
+                'treat this as the shape of the number, not the number.') + '</div>';
+    }
+  })();
+  </script>
+  <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

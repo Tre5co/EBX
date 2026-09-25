@@ -647,6 +647,24 @@ em { font-style: italic; }
   box-shadow: inset 0 0 0 1px rgba(232, 168, 76, 0.28);
 }
 .ebx-nav__tab--on:hover { color: var(--clr-honey); background: rgba(232, 168, 76, 0.18); }
+/* build-seq P1 (2026-09-24): Inbox is drawn but not live until P4. */
+.ebx-nav__tab--soon { opacity: 0.38; cursor: default; }
+.ebx-nav__tab--soon:hover { color: inherit; background: none; }
+
+/* build-seq P2 (2026-09-25) — phones: the five tabs pin to the bottom and
+   slide away while scrolling down (`body.ebx-nav--hide`, ebx_shared.js). */
+@media (max-width: 640px) {
+  .ebx-nav {
+    position: fixed; left: 8px; right: 8px; bottom: 8px; top: auto; z-index: 900;
+    justify-content: space-between; border-radius: 16px; padding: 4px;
+    background: rgba(15, 26, 20, 0.94); box-shadow: 0 -6px 24px rgba(0,0,0,0.35);
+    transition: transform .25s ease;
+  }
+  .ebx-nav__tab { flex: 1 1 0; justify-content: center; padding: 11px 4px; font-size: 0.6rem; letter-spacing: 0.08em; }
+  body .ebx-nav-float { position: static; transform: none; max-width: none; }
+  body.ebx-nav--hide .ebx-nav { transform: translateY(calc(100% + 16px)); }
+  body { padding-bottom: 64px; }
+}
 
 /* Fixed fallback for a page with no top-bar centre cell to mount into
    (mission.html, profile.html): centred between the fixed EBX mark at
@@ -1061,3 +1079,274 @@ em { font-style: italic; }
 .p3-btn { flex: 0 0 auto; }
 .p3-msg { font-family: var(--font-mono); font-size: 0.58rem; opacity: 0.7; margin-top: 5px; min-height: 12px; }
 
+
+
+/* ══ EBX.Wheel — the phase wheel (resources/js/ebx_wheel.js) ═════════════════
+   build-seq P1 (2026-09-24): moved here from index.html's <style> — one
+   component, two variants. The landing page mounts the default; mission.html
+   mounts `.lw--mission` (the wheel alone; the page owns the side columns). */
+.lw { --c: #e8a84c; margin-top: 18px; }
+.lw-loading {
+  font-family: var(--font-mono, monospace); font-size: 0.7rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(245,240,232,0.45); text-align: center; padding: 60px 0;
+}
+/* the five toggles — build-seq §1 (2026-09-20): the c/d half-headings
+   ("Maximizing Donor Control" / "Publicizing Charitable Impact") are gone,
+   per the instruction. The five panels carry the page on their own. */
+.lw-steps {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; max-width: 1040px; margin: 0 auto;
+}
+.lw-step {
+  font: inherit; cursor: pointer; text-align: left; color: rgba(245,240,232,0.72);
+  display: flex; align-items: center; gap: 10px; padding: 13px 14px;
+  background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12);
+  border-radius: 12px; transition: background .15s, border-color .15s, color .15s, box-shadow .15s;
+}
+.lw-step:hover { border-color: rgba(232,168,76,0.6); color: var(--clr-parchment, #f5f0e8); }
+.lw-step:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
+.lw-step__n {
+  flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--font-mono, monospace); font-size: 0.72rem; font-weight: 700;
+  border: 1px solid currentColor; opacity: 0.8;
+}
+.lw-step__l { font-family: var(--font-display, serif); font-weight: 800; font-size: 0.98rem; line-height: 1.2; }
+.lw-step--you .lw-step__n { color: #e8a84c; }
+.lw-step--us .lw-step__n { color: #8fce9d; }
+.lw-step.on {
+  color: #0f1a14; background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c);
+  box-shadow: 0 8px 30px rgba(232,168,76,0.25);
+}
+.lw-step--us.on { background: #8fce9d; border-color: #8fce9d; box-shadow: 0 8px 30px rgba(143,206,157,0.22); }
+.lw-step.on .lw-step__n { color: #0f1a14; opacity: 1; }
+@media (max-width: 860px) { .lw-steps:not(.lw-rows) { grid-template-columns: 1fr 1fr; } }
+/* the top card */
+#lw-topcard { margin: 18px 0 0; position: relative; }
+.lw-top {
+  display: grid; grid-template-columns: 1.35fr 1fr; gap: 0;
+  border: 1px solid rgba(245,240,232,0.14); border-radius: 16px; overflow: hidden;
+  background: linear-gradient(135deg, rgba(245,240,232,0.05), rgba(245,240,232,0.015));
+  box-shadow: inset 0 3px 0 var(--c);
+}
+.lw-top__main { padding: 22px 24px 20px; }
+.lw-top__kicker {
+  font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--c); margin-bottom: 8px;
+}
+.lw-top__title {
+  font-family: var(--font-display, serif); font-weight: 900; font-size: clamp(1.35rem, 2.8vw, 1.9rem);
+  line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 14px; color: var(--clr-parchment, #f5f0e8);
+}
+.lw-top__p { font-size: 0.92rem; line-height: 1.65; color: rgba(245,240,232,0.74); margin: 0 0 10px; }
+.lw-top__p b, .lw-top__p em { color: var(--clr-parchment, #f5f0e8); }
+.lw-top__lab {
+  display: inline-block; min-width: 44px; margin-right: 8px;
+  font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(245,240,232,0.42);
+}
+.lw-top__live {
+  padding: 20px 22px; background: rgba(0,0,0,0.22); border-left: 1px solid rgba(245,240,232,0.1);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.lw-live__cause {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  font-family: var(--font-display, serif); font-weight: 800; font-size: 1.05rem; color: var(--clr-parchment, #f5f0e8);
+}
+.lw-live__cause i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+.lw-live__cause span {
+  margin-left: auto; font-family: var(--font-mono, monospace); font-weight: 400; font-size: 0.58rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.45);
+}
+.lw-live__row { display: flex; gap: 10px; font-size: 0.84rem; line-height: 1.45; }
+.lw-live__row span {
+  flex: 0 0 92px; font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(245,240,232,0.42); padding-top: 3px;
+}
+.lw-live__row b { font-weight: 600; color: rgba(245,240,232,0.92); }
+.lw-top__go {
+  margin-top: auto; align-self: flex-start; text-decoration: none; font-weight: 700; font-size: 0.84rem;
+  color: #0f1a14; background: var(--c); border-radius: 9px; padding: 9px 16px;
+}
+.lw-top__go:hover { filter: brightness(1.08); }
+.lw-check { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 3px; }
+.lw-check__i { display: grid; grid-template-columns: 40px 1fr auto; gap: 8px; font-size: 0.74rem; line-height: 1.35; color: rgba(245,240,232,0.7); }
+.lw-check__w { font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(245,240,232,0.4); padding-top: 2px; }
+.lw-check__d { font-family: var(--font-mono, monospace); font-size: 0.58rem; color: rgba(245,240,232,0.42); white-space: nowrap; padding-top: 2px; }
+.lw-check__i--done .lw-check__t { color: #8fce9d; }
+.lw-check__i--done .lw-check__t::before { content: '✓ '; }
+.lw-check__i--late .lw-check__t, .lw-check__i--late .lw-check__d { color: #f08a6a; }
+.lw-check__i.is-now .lw-check__t { color: var(--clr-parchment, #f5f0e8); font-weight: 700; }
+.lw-fine { font-size: 0.66rem; line-height: 1.45; color: rgba(245,240,232,0.38); }
+@media (max-width: 760px) {
+  .lw-top { grid-template-columns: 1fr; }
+  .lw-top__live { border-left: 0; border-top: 1px solid rgba(245,240,232,0.1); }
+}
+/* the stage: three cards | the wheel | three cards */
+.lw-stage {
+  display: grid; grid-template-columns: minmax(200px, 270px) minmax(0, 1fr) minmax(200px, 270px);
+  gap: 20px; align-items: center; margin-top: 26px;
+}
+.lw-col { display: flex; flex-direction: column; gap: 16px; }
+.lw-wheel { position: relative; max-width: 560px; width: 100%; margin: 0 auto; }
+.lw-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.lw-sector { cursor: pointer; transition: fill-opacity .2s; }
+.lw-sector:hover { fill-opacity: 0.85; }
+/* build-seq §1 (2026-09-20): the sector labels came off the ring — the
+   card a sector points at is its label now. `.lw-sector--on` is the top
+   sector, which is always the focused one. */
+.lw-sector--on { cursor: default; }
+.lw-pie-empty { font-family: var(--font-mono, monospace); font-size: 10px; fill: rgba(245,240,232,0.5); }
+.lw-slice { transition: fill-opacity .15s; }
+.lw-slice:hover { fill-opacity: 1; }
+.lw-pin { filter: drop-shadow(0 0 5px rgba(255,255,255,0.8)); }
+.lw-cap { text-align: center; margin-top: -6px; }
+.lw-cap__cause { font-family: var(--font-display, serif); font-weight: 900; font-size: 1.3rem; letter-spacing: -0.01em; }
+.lw-cap__step { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.45); margin-top: 3px; }
+/* side cards */
+.lw-card {
+  font: inherit; text-align: left; cursor: pointer; width: 100%; color: rgba(245,240,232,0.82);
+  background: rgba(15,26,20,0.78); border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  border-radius: 12px; padding: 10px 12px 11px; min-height: 118px; transition: box-shadow .15s, border-color .15s, transform .15s;
+}
+.lw-card:hover { border-color: var(--c); transform: translateY(-1px); }
+.lw-card:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }
+.lw-card--on { border-color: var(--c); box-shadow: 0 0 18px color-mix(in srgb, var(--c) 55%, transparent); }
+/* build-seq §1 (2026-09-20) — the formatting that was lost in the move
+   from the Elect page: the MISSION TITLE is its own line, the two dates
+   sit under it. */
+.lw-card__name {
+  font-family: var(--font-mono, monospace); font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--clr-parchment, #f5f0e8);
+  line-height: 1.3; margin-bottom: 4px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.lw-card__head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 7px;
+  padding-bottom: 5px; border-bottom: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
+  font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.06em;
+}
+.lw-card__days { color: var(--c); }
+.lw-card__date { color: rgba(245,240,232,0.5); }
+/* my vote — the highlight the election cards carried */
+.lw-rank--mine .lw-rank__v { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
+.lw-rank--mine .lw-rank__n { color: var(--c); }
+.lw-rank__me, .lw-incumbent--mine .lw-rank__me {
+  margin-left: 6px; padding: 1px 5px; border-radius: 4px; vertical-align: 1px;
+  font-family: var(--font-mono, monospace); font-size: 0.52rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #0f1a14; background: var(--c);
+}
+/* the card inside the top card (spec e) — same card, no toggle behaviour */
+.lw-card--active { cursor: default; margin: 2px 0 4px; }
+.lw-card--active:hover { transform: none; }
+.lw-rank { display: flex; gap: 7px; font-size: 0.78rem; line-height: 1.5; }
+.lw-rank__n { font-family: var(--font-mono, monospace); font-size: 0.62rem; color: rgba(245,240,232,0.38); padding-top: 2px; }
+.lw-rank__v { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+.lw-rank__p { font-family: var(--font-mono, monospace); font-size: 0.64rem; color: rgba(245,240,232,0.45); }
+.lw-empty, .lw-note { font-size: 0.74rem; line-height: 1.5; color: rgba(245,240,232,0.52); }
+.lw-note b { color: rgba(245,240,232,0.85); }
+.lw-sub { font-size: 0.74rem; color: rgba(245,240,232,0.7); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lw-incumbent { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; margin-bottom: 4px; }
+.lw-incumbent i { width: 8px; height: 8px; border-radius: 50%; }
+.lw-bars { display: grid; gap: 5px; margin-bottom: 5px; }
+.lw-bar { font-size: 0.7rem; color: rgba(245,240,232,0.7); }
+.lw-bar i { display: block; height: 5px; border-radius: 3px; margin-top: 2px; background: rgba(245,240,232,0.08); position: relative; overflow: hidden; }
+.lw-bar i::after { content: ''; position: absolute; inset: 0 auto 0 0; width: var(--w); background: var(--c); border-radius: 3px; }
+.lw-track { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+.lw-wk {
+  height: 20px; border-radius: 5px; display: grid; place-items: center;
+  font-family: var(--font-mono, monospace); font-size: 0.58rem; color: rgba(245,240,232,0.5);
+  border: 1px solid rgba(245,240,232,0.14);
+}
+.lw-wk--done { background: #8fce9d; color: #0f1a14; border-color: #8fce9d; }
+.lw-wk--late { border-color: #f08a6a; color: #f08a6a; }
+.lw-wk--unrecorded { background: rgba(245,240,232,0.08); border-style: dashed; }
+.lw-wk--now { border-color: var(--c); color: var(--clr-parchment, #f5f0e8); box-shadow: 0 0 8px var(--c); }
+@media (max-width: 980px) {
+  .lw-stage { grid-template-columns: 1fr 1fr; }
+  .lw-wheel { grid-column: 1 / -1; grid-row: 1; max-width: 460px; }
+}
+@media (max-width: 560px) { .lw-stage { grid-template-columns: 1fr; } }
+
+/* ── build-seq P2 (2026-09-25) — Home: two rows of phases over the top card ──
+   Row 1 decides the mission (cause → initiative → organization), row 2 plans
+   and follows it (framing → exchange). The card is the toggle ("What's new"),
+   the link votes. The selected card and the pointer on the top card say which
+   phase the rest of the page is showing. Every block from here to the feed
+   shares one pair of outer edges: the bleed container's. */
+.lw-rows.lw-steps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: none; margin: 0; }
+.lw-row__t {
+  font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: rgba(245,240,232,0.45); margin: 0 0 7px 2px;
+}
+.lw-row--plan .lw-row__t { color: rgba(143,206,157,0.7); }
+.lw-row__cards { display: grid; align-items: stretch; gap: 0; }
+.lw-row__cards--3 { grid-template-columns: minmax(0,1fr) 34px minmax(0,1fr) 34px minmax(0,1fr); }
+.lw-row__cards--2 { grid-template-columns: minmax(0,1fr) 34px minmax(0,1fr); }
+.lw-arrow { display: grid; place-items: center; color: rgba(232,168,76,0.55); }
+.lw-row--plan .lw-arrow { color: rgba(143,206,157,0.6); }
+.lw-phase {
+  --pc: #e8a84c; position: relative; cursor: pointer;
+  display: flex; flex-direction: column; gap: 8px; padding: 13px 15px 12px;
+  background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12);
+  border-radius: 12px; transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.lw-phase--us { --pc: #8fce9d; }
+.lw-phase:hover { border-color: color-mix(in srgb, var(--pc) 60%, transparent); }
+.lw-phase.on {
+  border-color: var(--pc); background: color-mix(in srgb, var(--pc) 10%, rgba(15,26,20,0.9));
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--pc) 22%, transparent), inset 0 3px 0 var(--pc);
+}
+.lw-phase.on::after {
+  content: ''; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
+  border: 7px solid transparent; border-bottom: 0; border-top-color: var(--pc);
+}
+.lw-phase__head { display: flex; align-items: center; gap: 10px; }
+.lw-phase .lw-step__n { color: var(--pc); }
+.lw-phase.on .lw-step__n { background: var(--pc); color: #0f1a14; border-color: var(--pc); opacity: 1; }
+.lw-phase__t {
+  font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem; line-height: 1.2;
+  margin: 0; color: var(--clr-parchment, #f5f0e8);
+}
+.lw-phase__p { margin: 0; font-size: 0.8rem; line-height: 1.5; color: rgba(245,240,232,0.64); flex: 1; }
+.lw-phase__p b { color: rgba(245,240,232,0.9); }
+.lw-phase__acts { display: flex; gap: 8px; align-items: center; }
+.lw-phase .lw-phase__see {
+  font: inherit; font-size: 0.72rem; font-weight: 700; padding: 6px 11px; border-radius: 8px; cursor: pointer;
+  color: rgba(245,240,232,0.8); background: transparent; border: 1px solid rgba(245,240,232,0.2);
+  display: inline-flex; gap: 0; box-shadow: none;
+}
+.lw-phase .lw-phase__see:hover { border-color: var(--pc); color: var(--clr-parchment, #f5f0e8); }
+.lw-phase.on .lw-phase__see { background: transparent; color: var(--pc); border-color: var(--pc); }
+.lw-phase__vote {
+  margin-left: auto; font-size: 0.72rem; font-weight: 700; text-decoration: none;
+  padding: 6px 11px; border-radius: 8px; color: #0f1a14; background: var(--pc);
+}
+.lw-phase__vote:hover { filter: brightness(1.08); }
+/* the top card: live facts | the focused cause's card */
+.lw-pointer {
+  position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 1;
+  border: 9px solid transparent; border-top: 0; border-bottom-color: var(--c, #e8a84c);
+  transition: left .25s ease;
+}
+.lw-top--live { grid-template-columns: minmax(0,1fr) minmax(0, 270px); }
+.lw-top--live .lw-top__main { display: flex; flex-direction: column; gap: 10px; }
+.lw-top--live .lw-top__title { display: flex; align-items: center; gap: 10px; margin: 0; }
+.lw-top__dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 0 12px var(--c); flex: 0 0 auto; }
+.lw-live { display: grid; gap: 4px; }
+.lw-top--live .lw-top__go { margin-top: 4px; }
+.lw-top--live .lw-top__live { justify-content: center; }
+/* the time span under the annulus */
+.lw-span {
+  display: flex; justify-content: center; align-items: baseline; flex-wrap: wrap; gap: 4px 12px;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(245,240,232,0.1);
+  font-family: var(--font-mono, monospace); font-size: 0.64rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(245,240,232,0.45);
+}
+.lw-span__range { color: var(--clr-parchment, #f5f0e8); font-size: 0.74rem; }
+@media (max-width: 760px) {
+  .lw-row__cards--3, .lw-row__cards--2 { grid-template-columns: 1fr; }
+  .lw-arrow { height: 24px; transform: rotate(90deg); }
+  .lw-top--live { grid-template-columns: 1fr; }
+}
+
+.lw--mission { margin-top: 0; }
+.lw--mission .lw-wheel { max-width: 460px; }

@@ -566,7 +566,8 @@ In rough build order. **Framing (P3) first:**
 2. ◑ **Cash withdrawal of the non-final part until T+15.** Endpoint built
    2026-09-16 (build-seq §2): `POST /wallet/withdraw-stake` → `wallet.withdraw_stake`
    (unminted ct first, then minted; final ct never; refused from budget day).
-   No page offers it yet, and `crud.withdraw_p1` is still a named refusal.
+   Offered on main.html's framing ballot (build-seq §6, 2026-09-18); `crud.withdraw_p1`
+   is still a named refusal.
 3. **The organization's 5/16 claim on budget day** — the first deployment, pro
    rata from every position, and the first thing that reduces held EBX.
 4. ~~**ME sliders in whole percentages**~~ — built 2026-09-17.

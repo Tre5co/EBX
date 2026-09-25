@@ -112,6 +112,24 @@ def _adopt_orphan_initiatives() -> None:
 
 
 @app.on_event("startup")
+def _ensure_initiative_slugs() -> None:
+    """D13 (2026-09-24): every initiative has a stored, current slug — the
+    address of its mission page — and a rename keeps the old one forwarding.
+    Idempotent: only initiatives whose title no longer matches get a row."""
+    from .database import SessionLocal
+    from . import crud as _crud
+    db = SessionLocal()
+    try:
+        n = _crud.ensure_slugs(db)
+        if n:
+            print(f"[startup] wrote {n} initiative slug(s)")
+    except Exception as e:   # never block boot on a backfill
+        print(f"[startup] initiative slugs skipped: {e}")
+    finally:
+        db.close()
+
+
+@app.on_event("startup")
 def _backfill_p1_stake_ct() -> None:
     """§0a (2026-08-28): give every phase-1 row written before the finalized
     model the `stake_ct` the migration added but never filled in. Until this
@@ -220,13 +238,29 @@ def root_page() -> FileResponse:
 # index.html = public landing page (served at "/"); main.html = the home/missions app page.
 # Orgs have NO page of their own (restructure 2026-07-10): their public face is
 # the org panel on mission.html (?org=), their admin lives behind admin.html.
-_HTML_PAGES = ("index", "main", "cause", "mission", "profile", "admin")
+_HTML_PAGES = ("index", "about", "main", "cause", "mission", "profile", "admin")   # about: P2 (2026-09-25)
 
 
 def _make_handler(page: str):
     def handler() -> FileResponse:
         return _html(page)
     return handler
+
+
+# build-seq P1 (2026-09-24), D1 — every mission has a stable, readable URL:
+# /m/<initiative-title-slug> once an initiative is on the ballot (won or not),
+# /m/<mission-id> before one is elected, and bare /m for the default mission.
+# The slug is resolved in the page (`EBX.Slug`), so the server only has to hand
+# back the one page; mission.html carries <base href="/"> so its relative asset
+# paths survive the extra path segment.
+@app.get("/m", include_in_schema=False)
+def mission_root() -> FileResponse:
+    return _html("mission")
+
+
+@app.get("/m/{slug}", include_in_schema=False)
+def mission_slug(slug: str) -> FileResponse:
+    return _html("mission")
 
 
 for _page in _HTML_PAGES:

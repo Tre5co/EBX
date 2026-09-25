@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux — Your Profile</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925" />
   <style>
 
     /* ── New profile onboarding flow ── */
@@ -967,14 +967,14 @@
        seven weekly windows, the globe, the feed). It was the last thing a
        benefactor read before their own wallet. -->
   <div class="ebx-navstrip"><div id="ebx-nav-mount"></div></div>
-  <a href="main.html" class="ebx-home-mark">EBX</a>
+  <a href="mission.html" class="ebx-home-mark">EBX</a>
 
   <!-- JS decides whether to show onboarding or profile -->
   <div id="app-root"></div>
 
   <div id="ebx-footer-mount"></div>
 
-  <script src="resources/js/ebx_shared.js"></script>
+  <script src="resources/js/ebx_shared.js?v=20260925"></script>
   <script>
   (async function () {
 
@@ -1688,8 +1688,8 @@
             : '';
         }
         const href = kind === 'oe'
-          ? `main.html?state=oe&cause=${m.cause_id}`
-          : `main.html?state=me&cause=${m.cause_id}`;
+          ? `mission.html?state=oe&cause=${m.cause_id}`
+          : `mission.html?state=me&cause=${m.cause_id}`;
         return `<div class="pf2-half">
           <div class="pf2-half__kind" style="color:${c.color}">
             <i style="background:${c.color}"></i>${label} · ${c.name}
@@ -2065,7 +2065,7 @@
           const other = (window._contributedResearch || []).map(x => _postHTML(x, 'you contributed'));
           return (own.length + other.length)
             ? own.concat(other).join('')
-            : _emptyFeed('No research yet. Context, investigation and analysis posts land here.');
+            : _emptyFeed('No research yet. Background, vetting and analysis posts land here.');
         }
         if (tab === 'comments') {
           const cs = mine.filter(x => x.parent_id);

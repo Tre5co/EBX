@@ -230,6 +230,21 @@ class Initiative(Base):
 
 
 # ===========================================================================
+# InitiativeSlug — every address an initiative has ever had (D13, 2026-09-24).
+# "Old titles of the initiative should also link to the new title." One row
+# per slug; exactly one per initiative is `is_current`. A rename adds a row and
+# demotes the old one, so /m/<old-slug> still resolves and forwards.
+# ===========================================================================
+class InitiativeSlug(Base):
+    __tablename__ = "initiative_slugs"
+
+    slug: Mapped[str] = mapped_column(String, primary_key=True)
+    tiv_id: Mapped[str] = mapped_column(ForeignKey("initiatives.id"), nullable=False, index=True)
+    is_current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# ===========================================================================
 # Organization — a vetted org. Logs in via Memberships (people), not directly.
 # Its causes are derived: org -> candidacies -> missions -> cause.
 # ===========================================================================

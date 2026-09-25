@@ -11,12 +11,14 @@ behind the pages is [`README.md`](../README.md).*
 
 - [1. Site layout](#1-site-layout)
 - [2. Communications](#2-communications)
-- [4. index.html (Landing) — **About Earthbux**](#4-indexhtml-landing--about-earthbux)
+- [4. index.html (Home) — **the week, and the network** *(was Landing — About Earthbux)*](#4-indexhtml-home--the-week-and-the-network-was-landing--about-earthbux)
+  - [✅ P2 · HOME — BUILT 2026-09-25](#p2--home--built-2026-09-25)
 - [5. profile.html — Profiles](#5-profilehtml--profiles)
-- [6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout)](#6-missionhtml--mission-page-rebuilt-2026-08-01--jax-notes-2-layout)
+- [6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout · MERGED 2026-09-24)](#6-missionhtml--mission-page-rebuilt-2026-08-01--jax-notes-2-layout--merged-2026-09-24)
+  - [✅ P1 · THE MERGE — BUILT 2026-09-24](#p1--the-merge--built-2026-09-24)
   - [◑ Box **i** LANDED EARLY, 2026-09-17 — the discussion box moved in.](#box-i-landed-early-2026-09-17--the-discussion-box-moved-in)
   - [▶ NEXT — the redesign (build-seq §3). Build order, box by box.](#next--the-redesign-build-seq-3-build-order-box-by-box)
-- [7. main.html (Election Page) — **the VOTING surface**](#7-mainhtml-election-page--the-voting-surface)
+- [7. main.html (Election Page) — **the VOTING surface** · MERGED INTO §6 2026-09-24](#7-mainhtml-election-page--the-voting-surface--merged-into-6-2026-09-24)
 - [8. cause.html (Discussion → **NEWS**) **the DISCUSSION hub**](#8-causehtml-discussion--news-the-discussion-hub)
   - [◑ THE NEWSFEED — boxes a · b · d · f BUILT 2026-09-17; c · e next.](#the-newsfeed--boxes-a--b--d--f-built-2026-09-17-c--e-next)
   - [▶ NEXT — the newsfeed rebuild (build-seq §3). Build order, box by box.](#next--the-newsfeed-rebuild-build-seq-3-build-order-box-by-box)
@@ -30,10 +32,11 @@ behind the pages is [`README.md`](../README.md).*
 Navigation drawn by `EBX.initNav` in `resources/js/ebx_shared.js`
 | Surface | Page | What it shows | Posting |
 |---|---|---|---|
-| **Landing** | `index.html` | About Earthbux | Connects and explains everything | 
-| **Election** | `main.html` | **voting home** - context for each tiv/phl. The 7 cause tabs live here (2026-08-26) | Can suggest causes/initiatives and nominate philanthropies |
-| **Discussion** | `cause.html` | Full discussion home. | All benefactor posting |
-| **Mission** | `mission.html` | Mission status page - | phl/ebx posts, budget resolutions |
+| **Home** | `index.html` | where the week stands (the phase rows, the wheel) and what the network made this week (the Network row, the feed) — P2, 2026-09-25 | none on the page; every post opens in News |
+| **About** | `about.html` | the explainer that left Home (P2): the copy spine, the grant, the runway, the research/news/budget bands. Footer-linked. | — |
+| **Missions** | `mission.html` · `/m/<slug>` | **one page for a mission's whole life** (P1, 2026-09-24): the elections, the ballots, the table, the allocations, and the mission's own story. `main.html` forwards here. | Can suggest causes/initiatives, nominate organizations, post to the mission |
+| **News** | `cause.html` | Full discussion home — the feed. | All benefactor posting |
+| **Inbox** | — | drawn in the nav, not live until P4 | — |
 | **Profile** | `profile.html` | all activity from the signed-in user | active threads |
 
 ## 2. Communications
@@ -48,12 +51,66 @@ Directly above it sits the page's **DRAWING** — the ASCII layout, moved here f
 exist yet were drawn from the built page). The letters in a PAGE LAYOUT are the
 drawing's letters. `[ ]` in a legend = drawn but not built.
 
-## 4. index.html (Landing) — **About Earthbux**
+## 4. index.html (Home) — **the week, and the network** *(was Landing — About Earthbux)*
+
+### ✅ P2 · HOME — BUILT 2026-09-25
+
+**DRAWING — Home (P2)**
+```
+ ____________________________________________________________________________
+|EBX_____________________________five tabs______________________|_badge_____|
+|                  a claim · b wordmark · strapline · CTAs (unchanged)         |
+|  DECIDING THE MISSION                                                       |
+|  [1 Cause Election ] -> [2 Initiative Election] -> [3 Organization Election]|  <- h1
+|   line · What's new · Vote   line · What's new · Vote   line · …            |
+|  PLANNING, FEEDBACK AND ACCOUNTABILITY                                      |
+|  [4 Mission Framing         ]  ->  [5 Exchange                        ]    |  <- h2
+|  ____________________________^_______________________________________      |
+| | PHASE · now · cause · live facts · [vote →]       |  cause's card   |     |  <- h3
+| |___________________________________________________|_________________|     |
+|  [card]            /  annulus (unchanged)  \               [card]           |  <- h4
+|  [card]           |        globe            |              [card]           |
+|  [card]            \_______________________/               [card]           |
+|        ---- Sep 29 – Nov 10 · 7 weeks of … one cause a week ----           |  <- h5
+|  THE NETWORK ______________________________________________________________ |
+|  [News · funded    ] [Research · wins rewards ] [Budgeting · drives …]     |  <- h6
+|  [search → News ]   | Showing all posts · newest first                    |
+|  Cause chips (8)    | [post] [post] [post] …  (12)                        |  <- h7
+|  Everyone's / Mine  | Open the whole feed in News →                       |
+|  More filters →     |                                                     |
+|________________________________footer______________________________________|
+```
+- **h1 / h2** two rows of phase cards, `EBX.Wheel` landing variant (`PHASE`, `ROWS`). Card = number · title · one line (live earthbux.net copy; cause line new) · **What's new** (toggles the page, `?step=`) · **Vote / Frame / Trade →** `mission.html?state=ce|me|oe|fr|ex&cause=<focus>`. The selected card lights and points down.
+- **h3** the top card: kicker "<Phase> · now", the focused cause, `liveLine` facts, the vote button; right column = that cause's side card. `.lw-pointer` sits under the selected phase. No Process/Reason (they are on the mission page).
+- **h4** the annulus and six side cards — unchanged.
+- **h5** `#lw-span`: the earliest–latest date the seven causes carry for the selected phase.
+- **h6** THE NETWORK: three tiles, each a filter on h7 (press again to clear), with this week's count.
+- **h7** the feed: `GET /posts?roots_only=true&sort=recent`, 12 shown, all by default. Filters: Network tile · cause · mine (D6). Research tagged **B · V · A**. Every post links `cause.html?thread=<id>`; search submits `cause.html?q=`; "More filters" carries `?cat=&cause=`.
+- Mobile (≤640px): the site tabs pin to the bottom and hide on scroll-down; rows stack, arrows turn down.
+- Outer edges: h1–h7 share `.ld-wheel-bleed`; the top card's right column and h7's left column are the side cards' width.
+- Pinned by `scripts/wheel_check.js` (40), `scripts/home_check.js` (24), `scripts/landing_check.js` (21, live API).
+
+**about.html** (new, P2 / D7) — the copy spine in order: one sentence · $1/week (grant, dimes, runway) · "How it Works — donate to the thing that happens, not the people who do it" + five phases · what an Earthbuck is (the ladder) · the research, news and budgeting bands (research reads Background · **Vetting** · Analysis) · the origin couplet.
+
+*Everything below in this section is the page's history up to P2: the explainer
+it describes now stands on about.html.*
+
 *2026-09-16 (build-seq §2): "How it Works" heads the four steps (week 0 · week 8 ·
 week 15 · week 15 on; step 3 → mission.html, step 4 → the feed); Maximizing Donor
 Control / Publicizing Charitable Impact sit below the steps, smaller; the research
 band ("Research the mission to win Rewards") comes before the budget band ("A
 public forum budgets the missions"). `scripts/landing_check.js` pins it.*
+*2026-09-20 (build-seq §1): **the five panels are the whole of "how it works"** —
+the c/d half-headings are gone. The top card is *dates · title · Process ·
+Reason*, its titles are the five descriptions the Elect page used to carry, and
+its right-hand half is the focused cause's **side card**. The annulus lost the
+now marker, the arrow tips and the sector labels and **rotates with the focus**:
+the lit cause sits at 12 o'clock and every sector lines up with its own card,
+with rays running out under them. Side cards put the mission title on its own
+line above the dates and highlight **my vote**. Both trios link to
+`mission.html`, a **NEWS band** (journalists · scientists · auditors) sits
+between them, and the research trio reads **Background** · **Organization** ·
+Analysis (Organization since 2026-09-25; the key stays `investigation`). `scripts/wheel_check.js` pins the wheel without needing a server.*
 *backlog*
 - [ ] **Instructions** Detailed instructions of what to do with screenshots
 - EXAMPLES - "The current active mission is ___" - This week - next week
@@ -102,6 +159,28 @@ Each mission is slated to last a year, but can last longer or end sooner.
 
 *end backlog*
 
+**DRAWING — Landing, the How it Works band (2026-09-18, build-seq §2–§4)** —
+replaces **u · e–h · c/d** in the drawing below; everything else on the page is
+unchanged.
+```
+|  ______c (1–3)________________________   ______d (4–5)_______________      |
+|  [1 Confirm][2 Elect Tiv][3 Elect Phl]   [4 Frame][5 Exchange]      <- u2  |
+|  ______________________________________________________________________   |
+| | kicker · title · WHAT · WHY          | cause · live race · [go →]    |  | <- u3
+| |______________________________________|_______________________________|  |
+|  ___u5___          ______________________________          ___u5___        |
+| |_______|        /  sectors + now marker (u4c)   \        |_______|       |
+|  ___u5___       |     ____ pie (u4b) ______        |        ___u5___       |
+| |_______|       |    |     globe (u4a)     |       |       |_______|       |
+|  ___u5___        \___|______________________|_____/         ___u5___       |
+| |_______|              cause · step · pie label              |_______|     |
+```
+- **u2** five toggles, no dates, no descriptions · `?step=cause|tiv|org|frame|ex`
+- **u3** the top card — what is decided at this step and why · the live race for the focused cause · a link to `main.html?state=ce|me|oe|fr|ex&cause=…`
+- **u4** the annulus MOVED from the Elect page: **a** globe (d3-geo, Natural Earth 110m, vendored) turning to the focused cause's anchor · **b** the pie · **c** seven chevron sectors, white halo on this week, the now marker
+- **u5** six side cards, left +1 +2 +3 and right −1 −2 −3 from the focused cause; clicking one (or a sector) refocuses. Card : pie per step — Cause: incumbent or keep/replace bars : this week's cause votes · Initiative: top 3 : token share · Organization: top 3 : vote share · Framing: 7-week track : the pool in 32nds · Exchange: leading coins : pool share (market metric = backlog)
+- ✅ built 2026-09-18 — `resources/js/ebx_wheel.js` (`EBX.Wheel`), pinned by `scripts/landing_check.js`.
+
 **DRAWING — Landing** *(the 2026-09-15 drawing, re-ordered to the 2026-09-16 build:
 steps first under "How it Works", c/d headings below them, research band before
 the budget band)*
@@ -133,6 +212,7 @@ the budget band)*
 - **a** The Social Network for Charities.
 - **b** Earthbux News · "you donate, we follow" · Log in / Sign up — UNCHANGED
 - **u** "How it Works"
+
 - **e** 01 · Week 0 — *You elect the initiative* · "Initiative election →" `main.html`
 - **f** 02 · Week 8 — *You elect who runs it* · "Organization election →" `main.html?state=oe`
 - **g** 03 · Week 15 — *Receive your Earthbucks* · "Mission page →" `mission.html`
@@ -319,7 +399,68 @@ surface using the new name. The rename is NOT done.
   - [ ] **Credit badge colorization**
   - **Checked by** `scripts/profile_check.js` — 42 assertions.
 
-## 6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout)
+## 6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout · MERGED 2026-09-24)
+
+### ✅ P1 · THE MERGE — BUILT 2026-09-24
+
+*The Elect page moved in; `main.html` is a redirect. Report: INSTRUCTIONS
+`## ARCHIVE`. Pinned by `scripts/mission_layout_check.py`.*
+
+**DRAWING — Missions, AS BUILT 2026-09-25** *(after review 2)*
+```
+ __________________________________________________________________________________________
+|EBX___________________Home · Missions · News · Inbox · Profile___________________|_badge__|
+|  o1–o7  the seven cause toggles — one glow; the selected phase's date on each            |
+|  ______________  ________________________________________________  _______________      |
+| | t <Cause>    ||  h  <Phase>                    e.g. "Organization  || o  Phase      |     |
+| |   missions   ||     ✓ Cause ✓ Initiative · Electing the org — N    ||    Cause      |     |
+| |   ‹ 1/3 ›    ||     running · closes <date>            [copy link] ||    Initiative |     |
+| | [CE window]  ||               ________________                     ||    Org · site |     |
+| | [ME newest]  ||              /  ring · pie    \                    ||    2 pools    |     |
+| | [OE newest]  ||             |    globe         |                   ||    EBX · mem. |     |
+| | [next]       ||              \________________/                    ||_______________|     |
+| | [next]       ||                                                    |                     |
+| | search…      ||____________________________________________________|                     |
+|  ______ ______ ______ ______ ______                                                      |
+| | 1    || 2 on || 3    || 4    || 5    |   the phase toggle = the ballot tabs (D14)      |
+| |______/        \______________________|__________________________________________      |
+| |  how it works — this phase (Home wheel copy: kicker · title · Process · Reason)   |    |
+| |  the ballot (live) — or its recap / "not yet" + where this week's race is         |    |
+| |  u the table (this phase, this cause) · search            (hidden when not live)  |    |
+| |____________________________________________________________________________________|  |
+|  ── the story ──────────────────────────────────────────────────────────────────────── |
+|  progress log                 | budget panel: Service · Supply · Support items + costs  |
+|                               | Suggest: [Service] [Supply] [Support]  → composer        |
+|  ______________________________________________________________________________________ |
+| | r  THE REPORT — mission statement · plan · Background · Organization · Analysis    |  |
+| |    (the leading post of each; click → the thread)                                  |  |
+| |____________________________________________________________________________________|  |
+|  final standings  ·  competing organizations + claim                                    |
+|__________________________________________________________________________________________|
+```
+- **o1–o7** first on the page; the navigator, the phase title and the overview
+  start flush under them. They keep the phase and land on that cause's mission
+  in it this week.
+- **h** the phase title above the annulus; chips for what exists and what is
+  being elected. No page head — the cause is the toggle above (review 2).
+- **t** the navigator, per toggled cause, five per page (D2, D16).
+- **1–5** keep the mission: the panel opens with how that phase works, then its
+  ballot and table when live, a recap (winner + date) when past, "not yet"
+  (date) when future; `?phase=` makes it linkable.
+- **budget panel** budget posts only, "Suggest" at its foot.
+- **r** the report is the page's main display: the statement (winning org's
+  candidacy → leading candidate → initiative description), the plan (org's
+  steps → top four budget items with a total), then the leading Background,
+  Organization and Analysis posts by rating. Clicking opens the **thread**:
+  full screen, the three sections as tabs, every post rated Helpful · Neutral ·
+  Harmful and replied to, "Write yours" → the composer (media arrives with P3).
+- **Left the page:** the page head, the posts toggle and its dialogue (review 2);
+  the allocations panel (→ profile), the post-support ring (→ framing/exchange,
+  backlog), the discussion box (review 1).
+
+*What follows is the pre-merge spec, kept for its box-by-box backlog — the
+TARGET drawing's a · b · c · h landed as t · wheel · o · o1–o7 above; d · e ·
+f · g are still to build inside "the mission's story".*
 
 ### ◑ Box **i** LANDED EARLY, 2026-09-17 — the discussion box moved in.
 
@@ -428,43 +569,8 @@ is built into a second page.
 - [ ] Mission annulus / ring widget (deadlines, 7–12 steps).
 - [ ] Creditcoin front/back + 3D earth (born here).
 
-**DRAWING — Mission, AS BUILT** *(the 2026-08-01 grid, live until the target lands;
-updated 2026-09-18 with what has been added under it)*
-```
- _________________________________________________________________________________________
-|                  |                                                  |                  |
-|       a          |                   g                              |         b        |
-|__________________|                                                  |__________________|
-|                   \                      ____                      /                   |
-|                     \                                            /                     |
-|                       \                                        /                       |
-|                         \ /                                \ /                         |
-|                          |                                  |                          |
-|         c                                  e                                 d         |
-|                          |                                  |                          |
-|                         / \                                / \                         |
-|                       /                                        \                       |
-|                     /                    _____                   \                     |
-|___________________/                                                \___________________|
-|      f                                                                                 |
-|________________________________________________________________________________________|
-|      ps  post-support annulus · legend · per-org thread list                           |
-|________________________________________________________________________________________|
-|      lb  initiative election · leaderboard                                             |
-|________________________________________________________________________________________|
-|      i   discussion box (§8 drawing)                                                   |
-|________________________________________________________________________________________|
-|      co  competing organizations card                                                  |
-|________________________________________________________________________________________|
-```
-- **a** mission toggle ← → + initiative search (every initiative has its own page)
-- **g** name + core info
-- **b** profile badge + membership status (in an active mission every user has one)
-- **c** stream of recent posts for this mission, 3 category tabs at its foot
-- **e** phase circle → ultimately the 3D globe
-- **d** dated progress log — "Elected `{tiv}` with `{EBX}`", "Advanced to P2 with `{amount}` EBX", "Approved `{step}` for `{cost}`"
-- **f** pool — in the pool / committed / withdrawn (two units: EBX and tokens)
-- **ps** annulus layer 1 (post support) · **lb** full leaderboard · **i** discussion box · **co** competing organizations, with the click-through agreement gating register/claim
+*The 2026-08-01 AS-BUILT grid drawing is retired — P1 replaced that page
+(the drawing above is the page now).*
 
 - ◑ **PAGE LAYOUT**
   - ✅ **Topbar**
@@ -507,7 +613,12 @@ Note - need to have a way for bens to contact phls. -> We send out weekly messag
     self-serve password reset.
   - [ ] Ben → phl contact path.
 
-## 7. main.html (Election Page) — **the VOTING surface**
+## 7. main.html (Election Page) — **the VOTING surface** · MERGED INTO §6 2026-09-24
+
+*P1: `main.html` is a redirect to `mission.html` (keeping its query). Everything
+below describes the ballots, the table and the allocations, which live on the
+mission page unchanged — except that the two top cards and the annulus
+leftovers are gone, and the cause toggles now move the page (D4).*
 *Renamed 2026-08-26 (build-seq §1): "The name of this page is no longer the context
 page. It is now the Election Page." Title, top-bar tag and this heading agree.*
 *2026-09-16 (build-seq §3): the cause, initiative and organization election cards
@@ -521,6 +632,47 @@ an organization-election stake is $1 minimum.*
 other, "N% · x tk" per row; the OE ballot shows **My votes** (0 tokens = 1 vote,
 10 = 2, 20 = 3, 40 = 4, 80 = 5), and a race the benefactor has no ME stake in
 shows why it is closed instead of an amount row.*
+*2026-09-18 (build-seq §4–§6): the **annulus, its centre, the pie, the six side
+cards and the ME/OE toggle MOVED to the landing page** (`EBX.Wheel`). The top
+cards are a **2x2** (ME pair over OE pair, both always painted; the row the
+selected step votes in is lit). The steps and the ballot cards sit **above** the
+seven cause toggles and there are **five** of each: 4 Framing and 5 Exchange swap
+the table for `#fx-view` — the framing mission template with its budget items,
+and the cause's missions past budget day with their coins. The framing ballot
+withdraws the non-final part of a stake (`POST /wallet/withdraw-stake`). The
+drawing below is the page BEFORE this pass; the new order is:*
+```
+| topbar                                                                     |
+| a (ME: this week)            | b (ME: just elected → its OE)               |
+| a' (OE: this week)           | b' (OE: just elected → framing/budgeting)   |
+| p  1 cause · 2 initiative · 3 organization · 4 framing · 5 exchange        |
+| q r s + 4 + 5   one expanded ballot card, four collapsed                   |
+| o1–o7 the seven cause tabs                                                 |
+| t action row                                                               |
+| u the table   — or, on 4/5, #fx-view                                       |
+| v table controls · w allocations                                           |
+```
+*2026-09-20 (build-seq §2): **two top cards, and the five step lines are gone.**
+The order above is now:*
+```
+| topbar                                                                     |
+| Mission election (this week)  | Organization election (this week)          |
+| o1–o7 the seven cause tabs   — ME and OE marked on the two they name      |
+| q r s + 4 + 5   one expanded ballot card, four collapsed, each topped by   |
+|                 the election cards' bar: title · days · date              |
+| t action row                                                               |
+| u the table   — or, on 4/5, #fx-view                                       |
+| v table controls · w allocations                                           |
+```
+*Each card has a home cause — ME the upcoming one, OE the active one — and shows
+it until a cause tab is pressed; then both follow the tab and a card off its own
+week loses its glow. The five instruction lines moved to the landing page's top
+card titles, and `.hero__howitgoes` / `.hig__*` / `.hero__topgrid--2x2` were
+deleted with them. `scripts/election_layout_check.py` pins the layout.*
+**⚠ 13 dangling `getElementById` targets** (`ebx-center*`, `ebx-pie-mount`,
+`left-panel`, `right-panel`, `st-me`, `st-oe`, `ce-suggest`,
+`main-toggle-hint`) — writers left behind when the annulus moved on 2026-09-18.
+They fail silently; one removal-register entry.*
 *backlog*
 - [x] **Perfect instructions/help** — DONE 2026-09-08 (build-seq §2). The
   election-experience block sits between the seven cause toggles and the cause
@@ -619,7 +771,7 @@ uncommitted") and the back face with [vote] [orgs] [discuss] — the cards are
 |   | d keep [<incumbent> %]   or replace with [<challenger> %]                 |       |
 |___| e «  <challenger> (x% of this week's vote) · k of N nominated  »          |_______|
 ```
-- **a** one column of 7 lines, coloured as the weeks go by (a challenger must hold 7 in a row)
+- **a** one column of 6 lines, coloured as the weeks go by (a challenger must hold 6 in a row — D5, 2026-09-24)
 - **b** Show / Hide Cause Table
 - **c** title row · **f** Nominate a Cause · **g** make your case (→ cause.html) · **h** Commit · **i** Cancel
 - **d** keep [x] or replace with [y] · **e** click-through of the nominated causes

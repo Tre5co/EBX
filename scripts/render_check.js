@@ -9,23 +9,43 @@ const PAGES = [
   // old selectors (.ld-sys__row, .ld-fine__item, #cause-change, #ld-causes)
   // named blocks §1f moved off the page and into the doc's backlog.
   // 2026-09-16: the landing as rebuilt 2026-09-15 plus build-seq §2.
-  ['index.html', '', ['.ld-claim', '#ld-cta .ld-cta__btn', '.ld-how', '.ld-steps .ld-step',
-                      '.ld-heads__h', '.ld-band', '.ld-trio__cell', '#ld-dime-viz svg',
-                      '.ld-runway__bars', '#ld-active-users b', '.ld-term--org']],
-  // 2026-09-17: the DISCUSSION BOX is on this page now (structure.md §6 box i),
-  // so the selectors that pinned it on cause.html moved here with it.
-  ['mission.html', '?mission=oce1', ['#ps-ring svg', '.ps-leg',
+  // P2 · Home (2026-09-25): Home is the phase rows, the wheel, the Network
+  // and the feed; the explainer (bands, dimes, runway) moved to about.html.
+  ['index.html', '', ['.ld-claim', '#ld-cta .ld-cta__btn', '.lw-row .lw-phase', '#lw-topcard .lw-live__row',
+                      '#lw-ringlayer .lw-sector', '#lw-globe .lw-land', '#lw-span .lw-span__range',
+                      '#hn-row .hn__tile', '#hf-list .hp', '#hf-causes .hf-chip']],
+  ['about.html', '', ['.ld-band', '.ld-trio__cell', '#ld-dime-viz svg', '.ld-runway__bars', '#ld-active-users b', '#ab-phases li']],
+  // build-seq P1 (2026-09-24) — THE MERGE. main.html is a redirect; the mission
+  // page carries the elections. Its default (/m) is the newest initiative
+  // election (D2). Every state: the annulus in its mission variant between the
+  // toggler and the overview, the 5-phase toggle, the 7 cause toggles with
+  // their dates, the five ballots, the table, the allocations, and below them
+  // the mission's own story.
+  ['mission.html', '', ['#mx-wheel .lw--mission, #mx-wheel.lw--mission', '#lw-ringlayer .lw-sector', '#lw-pielayer', '#lw-globe .lw-land',
+                        '#mx-cards .mx-card', '#mx-cards .mx-card--on', '#mx-pager #mx-next',
+                        '#mx-overview .mx-ov__row', '#mx-title', '#mx-copy',
+                        '#mx-stage #mx-phases .mx-phase.on[data-step="tiv"]', '#mx-phases .mx-phase__d', '#mx-sub',
+                        '.hero__causetabs .cause-tab', '.hero__causetabs .cause-tab.selected', '.cause-tab__date',
+                        '#el3-me.on', '#votebar-mount .votebar', '#el3-top-me .el3__top-title',
+                        '#ce-panel-mount .ce-panel', '.ce-weeks .ce-week',
+                        '.ce-panel .ce-row--votes .ce-vote', '.ce-panel__b .rf-btn', '.ce-panel .ce-row--acts .vb-btn',
+                        '#fr-ballot-mount .votebar', '#ex-ballot-mount .votebar', '#fx-view',
+                        '#init-search',
+                        '#votebar-notice-mount .votebar--notice', '#votebar-notice-mount .vb-notice__body',
+                        '#mb #mp-log li', '#mh-candidates', '#mb-budget-add .mb-budget__btn', '#mb-report .mb-report__sec', '#mxt-bg', '#mxc-bg',
+                        '#mx-how .mx-how__title', '#mx-stage #mx-table #init-table-body', '#mx-head #mx-title', '#mx-sub .mx-now']],
+  // An organization election, by its old link. The discussion box (structure.md
+  // §6 box i, 2026-09-17) and the final standings of the initiative election
+  // this mission came out of.
+  ['mission.html', '?mission=oce1', ['#el3-oe.on', '#mx-phases .mx-phase.on[data-step="org"]',
+                                     '#mx-phases .mx-phase--past', '#mx-phases .mx-phase--future',
+                                     '#init-table-body .oet-cap__tiv', '#init-table-body .init-table__row--nom .rf-btn',
+                                     '.init-table__myvote, #init-table-body .init-table__empty',
+                                     '#votebar-notice-mount .votebar--notice',
                                      '#ml-board .ml-row', '.ml-row__bar i', '#ml-note',
-                                     '#pb', '#pb-heading', '#pb-phase .pb-tab', '#pb-cat .pb-tab',
-                                     '#pb-phase .pb-tab--on', '#pb-cat .pb-tab--on',
-                                     '#pb-phase .pb-tab--now', '#pb-phase .pb-tab--linked',
-                                     '#pb-phase .pb-tab__date',
-                                     '#pb-results .pb-k__name', '#pb-joint .pb-k__joint > i.on',
-                                     '#pb-types .dual-type',
-                                     '#pb-explain .pb-ex', '#pb-explain .pb-meta',
-                                     '#pb-compose .pb-c__body', '#pb-compose .pb-rail__btn',
-                                     '#pb-leading .pb-j__bar', '#pb-leading .pb-pager',
-                                     '#ct-startline']],
+                                     '#mb-report .mb-report__sec', '#mx-sub .mx-got']],
+  // review 2026-09-24: a phase that is not the mission's live one is a recap
+  ['mission.html', '?mission=oce1&phase=me', ['#mx-recap .mx-recap__p', '#mx-phases .mx-phase.on[data-step="tiv"]']],
   // 2026-09-17: the feed took the page's spine; the box's selectors went to
   // mission.html above. feed_check.js drives the feed's behaviour — these are
   // only "it painted".
@@ -43,92 +63,21 @@ const PAGES = [
                                     '#cause-annulus-center .cause-center__today',
                                     '#cause-annulus-center .cause-center__title',
                                     '#ebx-pagetag']],
-  // §1–§2 (2026-08-27): the rail beside the ME/OE toggle is gone with the move
-  // below the annulus, the cause election is a PANEL rather than a tall card,
-  // and the two captions became card furniture.
-  ['main.html', '', ['#hero-statetoggle .st-side', '.hero__center .hero__togglerow',
-                     '#hero-topgrid', '#ebx-top-card-mount .tc-half',
-                     '.hero__causetabs .cause-tab',
-                     // §2 (2026-09-08): `.tc-howto` is gone — "Select a cause,
-                     // and vote." came off both top cards. What replaced it is
-                     // the election-experience block under the cause tabs.
-                     '#hero-howitgoes .hig__line',
-                     '#ebx-top-card-mount-b .tc-bar--top',
-                     // §0c (2026-09-08): the BOTTOM bar dates an election that
-                     // has happened. A cause with no elected initiative shows
-                     // the empty slot instead, and that is the card working —
-                     // so the assertion is "one or the other", not "the bar".
-                     '#ebx-top-card-mount-b .tc-bar--bot, #ebx-top-card-mount-b .tc-emptyslot',
-                     '.alloc-section #alloc-mount', '#show-all-inits',
-                     // §1 (2026-08-27) — THE CE PANEL, above the election panel, in
-                     // every page state: seven streak lines, the keep-or-replace ballot,
-                     // its own Commit/Cancel, and the way into the cause table.
-                     '#ce-panel-mount .ce-panel', '.ce-weeks .ce-week',
-                     '.ce-panel .ce-row--votes .ce-vote', '.ce-panel__b .rf-btn',
-                     '.ce-panel .ce-row--acts .vb-btn',
-                     // §2 (2026-08-21): the allocations panel, under the
-                     // annulus, in BOTH page states.
-                     // signed out (jsdom has no session) the panel shows its sign-in
-                     // prompt rather than a bar — the MOUNT is what must exist.
-                     '#alloc-mount .oe-actions', '#alloc-mount .unalloc__signedout',
-                     '.race-face--click', '.rf-line__k',
-                     '#votebar-mount .votebar', '.votebar__chip--lead', '.st-now',
-                     // §2 (2026-08-26) — THE ANNULUS SWAP. The PIE is here now, behind the
-                     // centre panel, and the seven cause tabs came with it into the top
-                     // bar: "the election page toggles itself from these".
-                     '.hero__causetabs .cause-tab.selected',
-                     '#ebx-pie-mount svg', '#ebx-pie-mount .pie-slice',
-                     '#ebx-annulus-mount .ebx-center',
-                     // §2 (2026-09-08) — the second election panel: in this state
-                     // the OE notice, below the ballot.
-                     '#votebar-notice-mount .votebar--notice',
-                     '#votebar-notice-mount .vb-notice__body',
-                     // …and the annulus centre names the cause AND the election
-                     '#ebx-center-phase']],
-  ['main.html', '?state=oe', ['#hero-statetoggle .st-side--oe.on', '#hero-topgrid.hero__topgrid--oe',
-                              '#ebx-top-card-mount .tc-half', '#ebx-top-card-mount-b .tc-half',
-                              '#alloc-mount .oe-actions',
-                              '#votebar-mount .votebar',
-                              // §2 (2026-09-08) — the OE table is ONE RACE's
-                              // organizations now, so its rows depend on whether
-                              // that race has any candidates yet. What is always
-                              // there: the caption naming the contest, and the
-                              // nomination row. The My-vote cell exists per
-                              // candidate, or the empty row explains its absence.
-                              '#init-table-body .oet-cap__tiv',
-                              '#init-table-body .init-table__row--nom .rf-btn',
-                              '.init-table__myvote, #init-table-body .init-table__empty',
-                              // the second election panel — the ME notice, above
-                              // the ballot in this state
-                              '#votebar-notice-mount .votebar--notice',
-                              '#votebar-notice-mount .vb-notice__body',
-                              '.hero__causetabs .cause-tab.selected', '#ebx-pie-mount svg',
-                              // §2 (2026-08-27): the OE side of the row says the same
-                              // thing the ME side does — winner bars on the right card,
-                              // the how-to line on the left one.
-                              '#hero-howitgoes .hig__line',
-                              // §0c (2026-09-08) — **this reported a bug on a
-                              // correct page four weeks out of seven.** The OE
-                              // side's right card is the BUDGETING card, and its
-                              // slot is a cause one step around the wheel from
-                              // the selected one. Only four of the seven causes
-                              // have ever finished an organization election, so
-                              // whether the two winner bars exist depends on
-                              // which week the check is run in. When the slot's
-                              // cause has not finished one the card says so, in
-                              // `.tc-emptyslot`, which is the same card doing
-                              // its job. Assert what the card promises: the
-                              // bars, or the sentence explaining their absence.
-                              '#ebx-top-card-mount-b .tc-bar--top, #ebx-top-card-mount-b .tc-emptyslot',
-                              '#ebx-top-card-mount-b .tc-bar--bot, #ebx-top-card-mount-b .tc-emptyslot',
-                              '#ce-panel-mount .ce-panel']],
-  // …and the ballot is here instead, with the thirteen windows under it.
-  ['main.html', '?state=ce', ['#votebar-mount .votebar', '#ce-panel-mount .ce-panel',
-                              '.ce-case', '.ce-vote__pct', '.ce-row--votes .ce-vote',
+  // …the old Elect links still land, through the redirect, in the right phase.
+  // for0 (Forests) is in framing until Oct 20, 2026; after that this view shows
+  // the empty state, so the mission selectors accept it.
+  ['mission.html', '?state=fr&cause=forests', ['#el3-fr.on', '#mx-phases .mx-phase.on[data-step="frame"]',
+                              '#fr-ballot-mount .votebar', '#fx-view .fx-mission, #fx-view .fx-empty']],
+  ['mission.html', '?state=ex&cause=forests', ['#el3-ex.on', '#mx-phases .mx-phase.on[data-step="ex"]',
+                              '#ex-ballot-mount .votebar', '#fx-view .fx-mission, #fx-view .fx-empty',
+                              '#mb-live, #mb-none']],
+  ['mission.html', '?state=ce', ['#el3-ce.on', '#mx-phases .mx-phase.on[data-step="cause"]',
+                              '#votebar-mount .votebar', '#ce-panel-mount .ce-panel',
+                              '.ce-vote__pct', '.ce-row--votes .ce-vote',
                               '.ce-row--sugg .ce-sugg',
                               '.init-table__row[data-kind="cause-window"]',
                               '.cw-tag--set', '.cw-tag--open',
-                              '#alloc-mount .oe-actions']],
+                              '#mb-none']],
 ];
 
 (async () => {
@@ -165,7 +114,7 @@ const PAGES = [
                        .filter(e => !/fonts\.googleapis|fonts\.gstatic/i.test(e));
     if (real.length) { console.log('  script errors:'); real.slice(0, 6).forEach(e => console.log('    ! ' + e)); bad += real.length; }
     else console.log('  script errors: none');
-    if (page === 'main.html' && d.querySelectorAll('#init-table-body tr.votebar-row').length) {
+    if (page === 'mission.html' && d.querySelectorAll('#init-table-body tr.votebar-row').length) {
       console.log('  FAIL  a votebar-row is still inside the tbody'); bad++;
     }
     for (const s of sels) {

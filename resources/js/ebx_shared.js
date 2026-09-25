@@ -634,7 +634,7 @@
       <div class="container">
         <div class="ebx-footer__grid">
           <div class="ebx-footer__col">
-            <a href="main.html" class="ebx-footer__logo" style="text-decoration:none;color:inherit;">Earthbux</a>
+            <a href="index.html" class="ebx-footer__logo" style="text-decoration:none;color:inherit;">Earthbux</a>
             <div class="ebx-footer__tagline">Collective action, measured in impact.</div>
             <p>A civic news and charity platform. Every earthbuck tells a story.</p>
           </div>
@@ -698,27 +698,56 @@
   // cell to put it in, and otherwise a fixed strip at top-centre, between the
   // fixed `.ebx-home-mark` at top-left and the fixed user badge at top-right,
   // so mission.html and profile.html get it with no layout change at all.
+  // build-seq §1 (2026-09-18): "Replace page toggles with Home - Elect -
+  // Missions - News - Profile." Same five pages, verbs where the page is an act.
+  // build-seq P1 (2026-09-24): "Home · Missions · News · Inbox · Profile".
+  // Elect merged into Missions (main.html is a redirect now); Inbox is a stub
+  // until P4 — drawn, not linked, so nobody lands on a page that is not there.
   var NAV_TABS = [
-    { label: "About", href: "index.html", match: ["index.html", ""] },
-    { label: "Elections", href: "main.html", match: ["main.html"] },
-    { label: "Missions", href: "mission.html", match: ["mission.html"] },
+    { label: "Home", href: "index.html", match: ["index.html", ""] },
+    { label: "Missions", href: "mission.html", match: ["mission.html", "mission.html", "m"] },
     { label: "News", href: "cause.html", match: ["cause.html"] },
+    { label: "Inbox", href: null, match: [], soon: "Your inbox arrives with the event log (P4)." },
     { label: "Profile", href: "profile.html", match: ["profile.html"] }
   ];
   function currentPageFile() {
+    // /m and /m/<slug> are the mission page (D1).
+    if (/^\/m(\/|$)/.test(window.location.pathname)) return "m";
     const parts = window.location.pathname.split("/");
     return (parts[parts.length - 1] || "").toLowerCase();
   }
   function navTabs() {
     const here = currentPageFile();
     return '<nav class="ebx-nav" aria-label="Site">' + NAV_TABS.map((t) => {
+      if (!t.href) {
+        return '<span class="ebx-nav__tab ebx-nav__tab--soon" aria-disabled="true" title="' + t.soon + '">' +
+          t.label + "</span>";
+      }
       const on = t.match.indexOf(here) !== -1;
       return '<a class="ebx-nav__tab' + (on ? " ebx-nav__tab--on" : "") +
         '" href="' + t.href + '"' + (on ? ' aria-current="page"' : "") + ">" +
         t.label + "</a>";
     }).join("") + "</nav>";
   }
+  // build-seq P2 (2026-09-25) — "Mobile: the five tabs pin to the bottom,
+  // hiding on scroll-down." The pinning is CSS (≤640px, `.ebx-nav`); this adds
+  // `ebx-nav--hide` to <body> while the reader is scrolling down and removes
+  // it on any scroll up, or near the top. Also F14: the top bar no longer has
+  // to fit the tabs at phone width.
+  var _navScrollBound = false;
+  function bindNavScroll() {
+    if (_navScrollBound || typeof window === "undefined") return;
+    _navScrollBound = true;
+    var last = window.scrollY || 0;
+    window.addEventListener("scroll", function () {
+      var y = window.scrollY || 0;
+      if (Math.abs(y - last) < 6) return;
+      document.body.classList.toggle("ebx-nav--hide", y > last && y > 80);
+      last = y;
+    }, { passive: true });
+  }
   function initNav() {
+    bindNavScroll();
     const mount = document.getElementById("ebx-nav-mount");
     if (mount) { mount.innerHTML = navTabs(); return; }
     if (document.querySelector(".ebx-nav")) return;
@@ -919,7 +948,7 @@
       org_update: "Org Update",
       headline: "Headline",
       case: "Case",
-      context: "Context",
+      context: "Background",   // review 2026-09-24
       analysis: "Analysis",
       evaluation: "Feedback"
     };
@@ -2172,8 +2201,67 @@
     },
   };
 
+  // ── Slug — every mission's readable URL (build-seq P1, 2026-09-24, D1) ──
+  // "Use the initiative title. This way the mission page will be identifiable
+  // as a link to someone who is not familiar with earthbux."
+  //   /m/<initiative-title-slug>   an initiative's mission page — won or not.
+  //                                Once it wins it IS the mission's address.
+  //   /m/<mission-id>              a mission before any initiative is elected
+  //   /m                           the mission page's default
+  // Uniqueness: initiatives are ordered by (proposed_at, id); the first to
+  // take a slug keeps it, later ones get -2, -3… A slug may never look like a
+  // mission id (three letters + digits).
+  // D13 (2026-09-24): the slugs are STORED (`initiative_slugs`, written by the
+  // server with this same rule) and keep their history — "old titles of the
+  // initiative should also link to the new title". `Slug.load()` reads them;
+  // until it has, or for an initiative the server has not seen, the rule
+  // below derives the same answer.
+  var Slug = /* @__PURE__ */ (() => {
+    let _t = null, _stored = null;
+    async function load() {
+      try {
+        const r = await fetch("/initiatives/slugs");
+        if (r.ok) { _stored = await r.json(); _t = null; }
+      } catch (e) {}
+      return _stored;
+    }
+    function slugify(title) {
+      const s = String(title || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+        .replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80).replace(/-+$/, "");
+      return s || "initiative";
+    }
+    function table() {
+      const list = (config.initiatives || []);
+      if (_t && _t.n === list.length) return _t;
+      const bySlug = {}, byTiv = {};
+      (_stored || []).forEach((r) => { bySlug[r.slug] = r.tiv_id; if (r.current) byTiv[r.tiv_id] = r.slug; });
+      list.slice().sort((a, b) => String(a.proposed_at || "").localeCompare(String(b.proposed_at || "")) ||
+        String(a.id).localeCompare(String(b.id))).forEach((i) => {
+        if (byTiv[i.id]) return;              // stored — the server's answer wins
+        const base = slugify(i.title);
+        let s = base, k = 2;
+        while (bySlug[s] || /^[a-z]{3}\d+$/.test(s)) s = base + "-" + k++;
+        bySlug[s] = i.id; byTiv[i.id] = s;
+      });
+      return _t = { n: list.length, bySlug, byTiv };
+    }
+    function of(tivId) { return table().byTiv[tivId] || null; }
+    function tivFor(slug) { return table().bySlug[String(slug || "").toLowerCase()] || null; }
+    // The href for a mission (object or id), optionally for one of its initiatives.
+    function href(m, tivId) {
+      const mid = m && typeof m === "object" ? m.id : m;
+      const mo = m && typeof m === "object" ? m : (config.missions || []).find((x) => x.id === mid);
+      const t = tivId || (mo && mo.winning_tiv_id) || null;
+      const s = t ? of(t) : null;
+      if (s) return "/m/" + s;
+      return mid ? "/m/" + mid : "/m";
+    }
+    return { slugify, of, tivFor, href, load };
+  })();
+
   var EBX = {
     config,
+    Slug,
     fetchJSON,
     fetchAPI,
     loadCauses,

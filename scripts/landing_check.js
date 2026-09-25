@@ -1,13 +1,15 @@
-// landing_check — drives index.html in jsdom against a live API.
+// landing_check — drives index.html (Home) and about.html in jsdom against a
+// LIVE API.
 //
 //   node scripts/landing_check.js [http://127.0.0.1:8000]
 //
-// Rewritten 2026-09-16 (build-seq §2 Landing) for the page as it now stands:
-// the `jax notes 2.md` Landing drawing (rebuilt 2026-09-15) with the §2 edits —
-// "How it Works" over the four steps, the dates week 0 · week 8 · week 15 ·
-// week 15 on, the two halves below the steps, and the research band ABOVE the
-// budget band, each heading over its own trio. The 2026-08-18 version asserted
-// §1a–§1f blocks the 09-15 rebuild removed, and had been failing since.
+// Rewritten for P2 · Home (2026-09-25) — F3: the 2026-09-16 version asserted
+// the four dated steps and the explainer bands, which have been gone since
+// 2026-09-18 and 2026-09-25. `wheel_check.js` and `home_check.js` pin the same
+// page against fixtures; this one proves it paints from real data: the hero
+// (unchanged, D18 "You donate. We follow."), the two phase rows, the live top
+// card and the span, THE NETWORK and a feed whose size is the API's, and the
+// explainer standing on about.html.
 const { JSDOM, VirtualConsole } = require('jsdom');
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8000';
@@ -16,78 +18,62 @@ function ok(cond, what, detail) {
   n++; if (!cond) bad++;
   console.log('  ' + (cond ? 'ok  ' : 'FAIL') + '  ' + what + (detail ? '  ' + detail : ''));
 }
-
-(async () => {
-  const stats = await fetch(BASE + '/stats').then(r => r.json());
+async function page(file) {
   const errors = [];
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => errors.push(String(e.message || e).slice(0, 200)));
-  const dom = await JSDOM.fromURL(BASE + '/index.html', {
+  const dom = await JSDOM.fromURL(BASE + '/' + file, {
     runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(win) {
       win.fetch = (u, o) => fetch(String(u).startsWith('http') ? u : BASE + u, o);
       win.matchMedia = win.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {} }));
+      win.requestAnimationFrame = () => 0;
+      win.IntersectionObserver = class { observe() {} disconnect() {} };
     },
   });
-  await new Promise(r => setTimeout(r, 3500));
-  const d = dom.window.document;
-  const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
+  await new Promise(r => setTimeout(r, 4000));
+  return { d: dom.window.document, errors: errors.filter(e => !/Not implemented|getContext|SVGElement|fonts\.googleapis|cloudflareinsights/i.test(e)) };
+}
+const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
 
-  console.log('\n=== hero');
-  const real = errors.filter(e => !/Not implemented|getContext|SVGElement|fonts\.googleapis|cloudflareinsights/i.test(e));
-  ok(!real.length, 'no script errors', real.join(' | '));
+(async () => {
+  const roots = await fetch(BASE + '/posts?roots_only=true&limit=120&sort=recent').then(r => r.json());
+  const { d, errors } = await page('index.html');
+
+  console.log('\n=== Home · hero');
+  ok(!errors.length, 'no script errors', errors.join(' | '));
   ok(/Earthbux News/.test(txt(d.querySelector('.ld-wordmark'))), 'wordmark');
-  ok(txt(d.querySelector('.ld-sub')) === 'you donate, we follow', 'tagline');
+  ok(txt(d.querySelector('.ld-sub')) === 'you donate, we follow', 'tagline (D18)');
   ok(d.querySelectorAll('#ld-cta .ld-cta__btn').length === 2, 'two calls to action');
 
-  console.log('\n=== How it Works — the four steps');
-  const how = d.querySelector('.ld-how');
-  ok(txt(how) === 'How it Works', '"How it Works" heads the steps');
-  const steps = [...d.querySelectorAll('.ld-steps .ld-step')];
-  ok(steps.length === 4, 'four steps', 'got ' + steps.length);
-  const want = [
-    ['01 · Week 0', 'You elect the initiative', /funding what you want the mission to be/i, 'main.html'],
-    ['02 · Week 8', 'You elect who runs it', /After the mission is decided, your tokens can be put towards its philanthropy/i, 'main.html?state=oe'],
-    ['03 · Week 15', 'Receive your Earthbucks', /orients the organization and its benefactors \(you\)/i, 'mission.html'],
-    ['04 · Week 15 on', 'Follow along and trade', /Hold on, or exchange for a different mission/i, 'cause.html'],
-  ];
-  want.forEach(([nTxt, title, what, href], i) => {
-    const s = steps[i]; if (!s) return;
-    ok(txt(s.querySelector('.ld-step__n')) === nTxt, 'step ' + (i + 1) + ' is dated ' + nTxt, txt(s.querySelector('.ld-step__n')));
-    ok(txt(s.querySelector('.ld-step__title')) === title, '…titled "' + title + '"');
-    ok(what.test(txt(s.querySelector('.ld-step__what'))), '…with the new wording');
-    ok(s.getAttribute('href') === href, '…and links to ' + href, s.getAttribute('href'));
-  });
+  console.log('\n=== Home · the phases, the top card, the annulus');
+  ok(d.querySelectorAll('.lw-row').length === 2, 'two phase rows');
+  ok(d.querySelectorAll('.lw-phase').length === 5 && d.querySelectorAll('.lw-phase.on').length === 1, 'five phases, one selected');
+  ok(d.querySelectorAll('.lw-phase__vote').length === 5 && d.querySelectorAll('.lw-phase__see').length === 5, 'each has What\'s new + Vote');
+  ok(!/Process|Reason/.test(txt(d.querySelector('#lw-topcard'))), 'no descriptions in the top card');
+  ok(d.querySelectorAll('.lw-live__row').length >= 2, 'the top card carries live facts');
+  ok(d.querySelectorAll('#lw-left .lw-card, #lw-right .lw-card').length === 6, 'six side cards');
+  ok(d.querySelectorAll('.lw-sector').length === 7, 'seven sectors');
+  ok(/\w{3} \d+ – \w{3} \d+/.test(txt(d.getElementById('lw-span'))), 'the time span', txt(d.getElementById('lw-span')));
+  ok(!d.querySelector('.ld-how') && !d.querySelector('.ld-band'), '"How it Works" and the bands are off Home');
 
-  console.log('\n=== the two halves sit BELOW the steps, smaller');
-  const heads = d.querySelector('.ld-heads');
-  const stepsList = d.querySelector('.ld-steps');
-  ok(heads && stepsList && (stepsList.compareDocumentPosition(heads) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING),
-     'Maximizing Donor Control / Publicizing Charitable Impact follow the steps');
-  ok(/Maximizing Donor Control/.test(txt(heads)) && /Publicizing Charitable Impact/.test(txt(heads)), '…both named');
+  console.log('\n=== Home · the Network + the feed');
+  ok(d.querySelectorAll('#hn-row .hn__tile').length === 3, 'the Network row');
+  const shown = d.querySelectorAll('#hf-list .hp').length;
+  ok(shown === Math.min(12, roots.length), 'the feed is every post, newest first', shown + ' of ' + roots.length);
+  ok(d.querySelectorAll('.hf-chip[data-cause]').length === 8, 'All causes + seven');
 
-  console.log('\n=== research band first, budget band second');
-  const bands = [...d.querySelectorAll('.ld-band')];
-  ok(bands.length === 2, 'two bands');
-  ok(/Research the mission to win Rewards/.test(txt(bands[0] && bands[0].querySelector('.ld-band__h'))), 'band 1 heading');
-  ok(txt(bands[0]).includes('Situation') && txt(bands[0]).includes('Investigation') && txt(bands[0]).includes('Analysis'),
-     '…over Situation · Investigation · Analysis');
-  ok(/A public forum budgets the missions/.test(txt(bands[1] && bands[1].querySelector('.ld-band__h'))), 'band 2 heading');
-  ok(txt(bands[1]).includes('Service') && txt(bands[1]).includes('Supply') && txt(bands[1]).includes('Support'),
-     '…over Service · Supply · Support');
-  ok(bands[1] && bands[1].querySelector('a[href="cause.html"]'), '"public forum" still links to the feed');
+  console.log('\n=== about.html');
+  const a = await page('about.html');
+  ok(!a.errors.length, 'no script errors', a.errors.join(' | '));
+  const at = txt(a.d.body);
+  const order = ['social network for charities', 'A dollar a week', 'How it Works', 'What an Earthbuck is',
+                 'Research the mission', 'bring you the news', 'public forum', 'save it'].map(s => at.indexOf(s));
+  ok(order.every(i => i >= 0) && order.every((v, i) => !i || v > order[i - 1]), 'the copy spine, in order', order.join(','));
+  ok(/Vetting/.test(at) && !/>Organization</.test(a.d.body.innerHTML), 'research reads Background · Vetting · Analysis');
+  ok(/\d+\s*weeks? of grants/.test(txt(a.d.getElementById('ld-runway'))), 'the runway paints from /stats');
+  ok(a.d.querySelectorAll('#ab-phases li').length === 5, 'the five phases');
 
-  console.log('\n=== the grant and the runway');
-  ok(d.querySelectorAll('#ld-dime-viz svg').length === 10, 'ten dimes');
-  ok(Number(txt(d.querySelector('.ld-runway__weeks'))) === stats.runway_weeks, 'runway weeks match /stats');
-  ok(Number(txt(d.querySelector('#ld-active-users b'))) === stats.active_members, 'active members match /stats');
-
-  console.log('\n=== analytics (build-seq §1)');
-  const beacon = d.querySelector('script[src*="static.cloudflareinsights.com/beacon.min.js"]');
-  ok(!!beacon, 'the Cloudflare Web Analytics beacon is on the page');
-  ok(beacon && /7e5bc527fed34f5c8b6f10611c680086/.test(beacon.getAttribute('data-cf-beacon') || ''), '…with the site token');
-
-  dom.window.close();
-  console.log('\n' + n + ' assertions · ' + (bad ? 'PROBLEMS: ' + bad : 'LANDING CLEAN'));
+  console.log('\n' + (bad ? 'FAILED ' + bad + '/' + n : 'all ' + n + ' checks passed'));
   process.exit(bad ? 1 : 0);
 })();

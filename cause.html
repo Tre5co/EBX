@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux — Cause</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925" />
   <style>
 
     /* ── Cause color injection ── */
@@ -1290,6 +1290,7 @@
       border-radius: var(--radius-sm); padding: 12px 14px;
     }
     .fd-card--red { border-color: rgba(200,80,70,0.45); }
+    .fd-card--handed { border-color: var(--clr-honey, #e8a84c); box-shadow: 0 0 0 1px var(--clr-honey, #e8a84c); } /* P2: the thread Home opened */
     .fd-card__main { min-width: 0; }
     .fd-card__meta {
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
@@ -1341,7 +1342,7 @@
   </style>
 </head>
 <body>
-  <a href="main.html" class="ebx-home-mark">EBX</a>
+  <a href="mission.html" class="ebx-home-mark">EBX</a>
 
   <!-- ══ TOP BAR — 7 cause tabs span between EBX and profile ══ -->
   <div class="ebx-topbar">
@@ -1383,7 +1384,7 @@
         <div class="cause-hero__col cause-hero__col--left">
           <div class="col-eyebrow col-eyebrow--head">
             <span id="lhs-eyebrow">Leading Initiatives</span>
-            <a class="lhs-vote" id="lhs-vote" href="main.html">Vote</a>
+            <a class="lhs-vote" id="lhs-vote" href="mission.html">Vote</a>
           </div>
           <div id="leading-initiatives-panel">
             <!-- Populated by JS -->
@@ -1475,7 +1476,7 @@
   <!-- §2 (2026-08-05): the Propose and Nominate dialogs come from EBX.Dialogs
        (resources/js/ebx_shared.js) — the same ones the Context page mounts. -->
 
-  <script src="resources/js/ebx_shared.js?v=20260810c"></script>
+  <script src="resources/js/ebx_shared.js?v=20260925"></script>
   <!-- §7b (2026-08-10) — see the identical note on main.html. `missionDates`
        lives in a separately cached file; a stale copy threw
        "EBX.Cycle.missionDates is not a function" and blanked the page. The
@@ -2100,7 +2101,7 @@
       const rows = list.length
         ? list.map(rowFor).join('')
         : `<div style="font-size:0.78rem;opacity:0.55;padding:6px 0;">No ${scope === 'tiv' ? 'initiative' : 'mission'} posts yet.</div>`;
-      const postHref = tivId ? ('main.html?init=' + tivId) : 'main.html';
+      const postHref = tivId ? ('mission.html?init=' + tivId) : 'mission.html';
       return `
         <div class="p1-box" id="p1-post-viewer">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
@@ -2293,7 +2294,7 @@
     (function () {
       const addId = EBX.getParam ? EBX.getParam('add') : null;
       if (!addId) return;
-      location.replace('main.html?init=' + encodeURIComponent(addId));
+      location.replace('mission.html?init=' + encodeURIComponent(addId));
     })();
 
     // ?vote=1|2 deep-link from the home-page cards / annulus-center "Vote"
@@ -2478,7 +2479,7 @@
       guide.innerHTML =
         '<span class="cause-guide__step"><i></i>' + step[0] + '</span>' +
         '<span class="cause-guide__now">' + step[1] + when + '</span>' +
-        '<span class="cause-guide__cta"><a href="main.html?state=' +
+        '<span class="cause-guide__cta"><a href="mission.html?state=' +
           (ph === 1 ? 'me' : 'oe') + '&cause=' + encodeURIComponent(cause.id) + '">' +
           (ph === 1 ? 'Vote on the initiative' : 'Vote on the organization') + ' &rarr;</a></span>';
     }
@@ -2633,8 +2634,8 @@
       // mission is currently electing — pointed at the Context table filtered
       // to this cause, on the right side of the toggle.
       const _hdrElecting = _selectedP2Mission() || (missionRef && missionRef.status === 'active')
-        ? { what: 'a philanthropy', href: `main.html?state=oe&cause=${cause.id}` }
-        : { what: 'an initiative', href: `main.html?cause=${cause.id}` };
+        ? { what: 'a philanthropy', href: `mission.html?state=oe&cause=${cause.id}` }
+        : { what: 'an initiative', href: `mission.html?cause=${cause.id}` };
       el.innerHTML = `
         <div class="mission-header__brief">
           <span class="mission-header__main">${briefMain}</span>
@@ -2691,7 +2692,7 @@
             const ctrl = mine
               ? `<span style="color:var(--cause-color);font-family:var(--font-mono);font-size:0.62rem;">◆ my vote${myVote.votes > 1 ? ' ×' + myVote.votes : ''}</span>`
               : `<a class="election-card__withdraw-btn" style="padding:3px 10px;font-size:0.62rem;text-decoration:none;"
-                   onclick="event.stopPropagation();" href="main.html?state=oe&cause=${cause.id}">vote on Context →</a>`;
+                   onclick="event.stopPropagation();" href="mission.html?state=oe&cause=${cause.id}">vote on Context →</a>`;
             return `
             <div class="init-card" onclick="p2JumpSelect('${tid}')">
               <div class="init-card__rank">#${rank}${rank === 1 ? ' leading' : ''}</div>
@@ -2725,7 +2726,7 @@
       // button lands on the right side of it: OE for a philanthropy race, ME
       // for an initiative election.
       if (vote) {
-        vote.href = p2 ? `main.html?state=oe&cause=${cause.id}` : `main.html?cause=${cause.id}`;
+        vote.href = p2 ? `mission.html?state=oe&cause=${cause.id}` : `mission.html?cause=${cause.id}`;
         vote.title = p2 ? 'Vote in the philanthropy election' : 'Vote in the initiative election';
       }
       if (act) act.innerHTML = p2
@@ -2761,7 +2762,7 @@
               </div>
               <div class="init-card__meta" style="margin-top:4px;">
                 <span>${init.rating > 0 ? '★ ' + init.rating.toFixed(1) : ''}</span>
-                <a href="main.html?init=${init.id}" onclick="event.stopPropagation()"
+                <a href="mission.html?init=${init.id}" onclick="event.stopPropagation()"
                    style="color:rgba(245,240,232,0.55);text-decoration:none;">Home page entry →</a>
               </div>
             </div>`;
@@ -3102,7 +3103,7 @@
 
       document.getElementById('init-selected-actions').innerHTML = `
         <button class="btn btn-forest btn-sm" onclick="commitEbxToInit('${init.id}')">⬆ Commit EBX — cast your vote</button>
-        <a class="btn btn-ghost btn-sm" href="main.html?init=${init.id}" style="text-decoration:none;">
+        <a class="btn btn-ghost btn-sm" href="mission.html?init=${init.id}" style="text-decoration:none;">
           Contribute to discussion →
         </a>
         ${init.status === 'active' || init.status === 'resolved'
@@ -3133,7 +3134,7 @@
       ['editorial', 'Earthbux'],
     ];
     const TYPE_LABEL = {
-      context: 'Context', investigation: 'Investigation', analysis: 'Analysis',
+      context: 'Background', investigation: 'Vetting', analysis: 'Analysis',   // reviews 2026-09-24 · 09-25 · P2 2026-09-25 (Organization → Vetting)
       case: 'Case', evaluation: 'Evaluation',
       service: 'Service', supply: 'Supplies', support: 'Support',
     };
@@ -3198,6 +3199,43 @@
       } catch (e) { /* drawn as the empty state below */ }
       st.posts = Array.isArray(posts) ? posts : [];
       paint();
+      openHandedThread();
+    }
+
+    // ── P2 (2026-09-25) — what Home hands over ─────────────────────────────
+    // Home keeps two simple filters; search, a second filter, a thread and a
+    // reply come here: ?q= (search) · ?cat= (category) · ?cause= (cause id) ·
+    // ?thread=<post id> (opens that post's replies and scrolls to it).
+    function readHandoff() {
+      const P = new URLSearchParams(location.search);
+      if (P.get('q')) st.q = P.get('q');
+      const cat = P.get('cat');
+      if (cat && CATS.some(c => c[0] === cat)) st.cat = cat;
+      if (P.get('cause') && !P.get('id')) st.cause = P.get('cause');
+      st.thread = P.get('thread') || '';
+      const s = $('fd-search');
+      if (s && st.q) s.value = st.q;
+    }
+    async function openHandedThread() {
+      const id = st.thread; if (!id) return;
+      st.thread = '';
+      if (!st.posts.some(p => p.id === id)) {
+        // Older than the first page: fetch it and put it on top.
+        try {
+          const r = await fetch((EBX.config.apiBase || '') + '/posts?limit=500&roots_only=true');
+          const all = r.ok ? await r.json() : [];
+          const p = all.find(x => x.id === id);
+          if (p) st.posts.unshift(p);
+        } catch (e) {}
+      }
+      const i = st.posts.findIndex(p => p.id === id);
+      if (i < 0) return;
+      // Clear anything that would hide it, and page far enough to show it.
+      if (visible().findIndex(p => p.id === id) < 0) { st.q = ''; st.cat = ''; st.cause = ''; }
+      st.limit = Math.max(st.limit, visible().findIndex(p => p.id === id) + 1);
+      await toggleReplies(id);
+      const el = document.querySelector('.fd-card[data-id="' + id.replace(/"/g, '') + '"]');
+      if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('fd-card--handed'); }
     }
 
     function visible() {
@@ -3263,10 +3301,13 @@
         const chips = CATS.map(([v, lab]) =>
           '<button class="fd-chip' + (st.cat === v ? ' fd-chip--on' : '') + '" type="button" data-cat="' +
           v + '">' + lab + '</button>').join('');
-        const cid = st.cause_obj ? st.cause_obj.id : '';
+        // P2 (2026-09-25): Home can hand over a cause (?cause=) on a page that
+        // is not standing on one — the chip names it so it can be cleared.
+        const cobj = st.cause_obj || (st.cause ? (((EBX.config || {}).causes || []).find(c => c.id === st.cause) || { id: st.cause, name: st.cause }) : null);
+        const cid = cobj ? cobj.id : '';
         const causeChip = cid
           ? '<button class="fd-chip' + (st.cause ? ' fd-chip--on' : '') + '" type="button" data-cause="' +
-            esc(cid) + '">Only ' + esc(st.cause_obj.name || cid) + '</button>'
+            esc(cid) + '">Only ' + esc(cobj.name || cid) + '</button>'
           : '';
         f.innerHTML = chips + causeChip;
       }
@@ -3359,7 +3400,7 @@
       state: st,
     };
 
-    function start() { bind(); load(); }
+    function start() { readHandoff(); bind(); load(); }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();
   })();

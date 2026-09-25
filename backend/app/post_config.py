@@ -135,14 +135,14 @@ _BUDGETING_TYPES = (
 # ===========================================================================
 _MISSION_SUPPORT_TYPES = (
     PostType(
-        key="context", label="Context", category="mission_support",
+        key="context", label="Background", category="mission_support",   # review 2026-09-24: "context is now background" (the key stays)
         limit_rule="one", reactions=REACTIONS,
         rewarded=True, reward_note="reward released WITH THE ADVANCES",
         win_requires_membership=True, resolves_when="advances_release",
         notes="Background teaching voters about the initiatives and related news.",
     ),
     PostType(
-        key="investigation", label="Investigation", category="mission_support",
+        key="investigation", label="Vetting", category="mission_support",   # review 2 (2026-09-25) "Organization" → P2 (2026-09-25) "Vetting": research INTO the org, not BY it (the key stays)
         limit_rule="one", reactions=REACTIONS,
         rewarded=True, reward_note="winner decided at the END OF PHASE 3",
         win_requires_membership=True, resolves_when="phase3_end",

@@ -30,6 +30,13 @@ def list_tivs(
     return tivs
 
 
+@router.get("/slugs", response_model=list[dict])
+def list_slugs(db: Session = Depends(get_db)):
+    """D13 (2026-09-24): every address an initiative has had. `current` marks
+    the one its title gives now; the others forward to it (/m/<slug>)."""
+    return crud.list_slugs(db)
+
+
 @router.get("/{tiv_id}", response_model=schemas.InitiativeRead)
 def get_tiv(tiv_id: str, db: Session = Depends(get_db)):
     tiv = crud.get_tiv(db, tiv_id)
@@ -48,6 +55,20 @@ def create_tiv(
     if crud.get_tiv(db, data.id):
         raise HTTPException(status_code=409, detail="Initiative already exists")
     return crud.create_tiv(db, data)
+
+
+@router.put("/{tiv_id}/title", response_model=schemas.InitiativeRead)
+def rename_tiv(
+    tiv_id: str,
+    data: dict,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Staff-only: rename an initiative. Its old /m/<slug> keeps forwarding (D13)."""
+    try:
+        return crud.rename_tiv(db, tiv_id, str(data.get("title") or ""))
+    except ValueError as e:
+        raise HTTPException(status_code=404 if "not found" in str(e).lower() else 400, detail=str(e))
 
 
 @router.post("/{tiv_id}/approve", response_model=schemas.InitiativeRead)

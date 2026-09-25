@@ -64,7 +64,7 @@ const section = t => console.log('\n=== ' + t);
   // carried it is deleted, and with it the seven window toggles that used to
   // run across the top of it — "the cause toggle in the CE is no longer
   // necessary; it is toggled by the main page cause toggle".
-  await page.goto(BASE + '/main.html', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/mission.html', { waitUntil: 'networkidle' });
   // build-seq §3 (2026-09-16): the cause election is one of three toggled cards — open it.
   await page.evaluate(() => window.setElectionCol && window.setElectionCol('ce'));
   await page.waitForSelector('#ce-panel-mount .ce-panel', { timeout: 15000 });
@@ -72,20 +72,20 @@ const section = t => console.log('\n=== ' + t);
   ok(!(await page.$('.cause-election')), 'the cause-election CARD is gone from the hero');
   ok(!(await page.$('.ce-tabs--abbr')), '…and so are its seven window toggles');
   ok(!(await page.$('.ce-panel .cause-tab')), 'the panel carries no cause toggle of its own');
-  // §1 (2026-08-27b): "Cause election box should be below the table." It spent
-  // a day above the election panel; the two elections a benefactor votes in
-  // this week come first, and the one that decides a cause seven weeks out
-  // comes after them.
+  // 2026-09-18 (build-seq §6): the ballot cards — the cause election among
+  // them — sit ABOVE the seven cause toggles, which sit above the table. (The
+  // 2026-08-27b "below the table" assertion had been failing since 09-16, when
+  // the panel moved into the three-card toggle.)
   ok(await page.evaluate(() => {
        const ce = document.querySelector('#ce-panel-mount');
+       const tabs = document.querySelector('#cause-tabs');
        const tbl = document.querySelector('.init-table-wrap');
-       const vb = document.querySelector('#votebar-mount');
-       return !!(ce && tbl && vb) &&
-         (tbl.compareDocumentPosition(ce) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
-         (vb.compareDocumentPosition(ce) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
-     }), 'it sits BELOW the table, after the election panel');
-  ok((await page.$$('.ce-weeks .ce-week')).length === 7,
-     'the streak is ONE column of seven lines');
+       return !!(ce && tabs && tbl) &&
+         (tabs.compareDocumentPosition(ce) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
+         (ce.compareDocumentPosition(tbl) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+     }), 'it sits under the cause toggles and above the table (2026-09-20 order, kept by P1)');
+  ok((await page.$$('.ce-weeks .ce-week')).length === 6,
+     'the streak is ONE column of six lines (D5, 2026-09-24)');
   ok(!(await page.$('.cs-bars .cs-col')), '…and the seven-column staircase is gone');
   ok(await page.$eval('.ce-panel__b .rf-btn', e => /Show Cause Table/i.test(e.textContent)),
      'Show Cause Table is the way to the table');
@@ -96,10 +96,10 @@ const section = t => console.log('\n=== ' + t);
   ok(ceBtns.every(b => b.off), '…and both are dead until something is dialled');
   // It persists across the page states — that is the point of moving it here.
   const slotME = await page.$eval('.ce-panel', e => e.dataset.slot);
-  await page.click('#st-oe');
+  await page.evaluate(() => window.setElectionCol('oe'));   // D14: the ballot tabs are folded into the phase toggle
   await page.waitForTimeout(1400);
   ok(!!(await page.$('#ce-panel-mount .ce-panel')), 'it is still there in the OE state');
-  await page.click('#st-me');
+  await page.evaluate(() => window.setElectionCol('me'));
   await page.waitForTimeout(1200);
 
   section('the page cause toggle chooses the window');
@@ -107,7 +107,7 @@ const section = t => console.log('\n=== ' + t);
   // everybody else's is 8..13 — so the seven tabs and the seven replaceable
   // windows are the same seven things.
   const tabNames = await page.$$eval('.hero__causetabs .cause-tab',
-    els => els.map(e => e.querySelector('.cause-tab__name')?.textContent.trim()));
+    els => els.map(e => (e.querySelector('.cause-tab__name')?.childNodes[0]?.textContent || '').trim()));
   ok(tabNames.length === 7, 'seven cause tabs', tabNames.join(' · '));
   const seen = [];
   for (let i = 0; i < 7; i++) {
@@ -139,33 +139,33 @@ const section = t => console.log('\n=== ' + t);
   // A fresh load of the OE state opens on the ACTIVE cause, whose window is
   // slot 7 — the nearest one still open. (The tab loop above left a selection
   // behind, and a selection deliberately survives the ME/OE switch.)
-  await page.goto(BASE + '/main.html?state=oe', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/mission.html?state=oe', { waitUntil: 'networkidle' });
   // build-seq §3 (2026-09-16): the cause election is one of three toggled cards — open it.
   await page.evaluate(() => window.setElectionCol && window.setElectionCol('ce'));
   await page.waitForTimeout(2200);
   ok(await page.$eval('.ce-panel', e => e.dataset.slot) === '7',
      '…and a fresh OE load opens on slot 7, the nearest open window',
      await page.$eval('.ce-panel', e => e.dataset.slot));
-  await page.goto(BASE + '/main.html', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/mission.html', { waitUntil: 'networkidle' });
   // build-seq §3 (2026-09-16): the cause election is one of three toggled cards — open it.
   await page.evaluate(() => window.setElectionCol && window.setElectionCol('ce'));
   await page.waitForTimeout(2000);
 
   section('"Show Cause Table" toggles the TABLE and leaves the cards alone');
   const cardsBefore = await page.$$eval('.race-face', els => els.length);
-  const meToggleBefore = await page.$eval('#st-me', e => e.classList.contains('on'));
+  const meToggleBefore = await page.evaluate(() => window._electionCol && window._electionCol());
   await page.click('.ce-panel__b .rf-btn');
   await page.waitForTimeout(1400);
   ok(await page.$$eval('.race-face', els => els.length) === cardsBefore,
      'the election cards are untouched', cardsBefore + ' cards');
-  ok(await page.$eval('#st-me', e => e.classList.contains('on')) === meToggleBefore,
-     '…and the ME/OE marker has not moved');
+  ok(await page.evaluate(() => window._electionCol && window._electionCol()) === meToggleBefore,
+     '…and the step toggle has not moved');
   ok(await page.$eval('#init-table-head', h => /Election date/.test(h.textContent)),
      'the table head is the cause table');
-  // §2 (2026-08-21): the allocations panel is under the annulus now and
-  // persists in every state, so it is present here rather than absent.
-  ok(!!(await page.$('.alloc-section #alloc-mount .unalloc')),
-     'the allocations panel is still on screen in this tab — parked at the bottom');
+  // Review 2026-09-24: the allocations panel left the mission page (it goes
+  // to the profile page), so it is absent in every state now.
+  ok(!(await page.$('#alloc-mount')),
+     'no allocations panel on the mission page (it moves to the profile)');
   ok(!!(await page.$('#ce-panel-mount .ce-panel')),
      '…and so is the CE panel, which is the point of it being a panel');
 
@@ -274,7 +274,7 @@ const section = t => console.log('\n=== ' + t);
   ok(nom.ok, 'a cause can be nominated', 'HTTP ' + nom.status);
   const nominated = await nom.json();
 
-  await page.goto(BASE + '/main.html?state=ce', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/mission.html?state=ce', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2200);
   await page.click('tr[data-slot="7"] .init-table__name');
   await page.waitForTimeout(1400);
@@ -360,7 +360,7 @@ const section = t => console.log('\n=== ' + t);
   ok((await post(11, inc11)).ok, 'voting to KEEP the incumbent is still allowed', inc11);
 
   section('?state=ce lands here directly');
-  await page.goto(BASE + '/main.html?state=ce', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/mission.html?state=ce', { waitUntil: 'networkidle' });
   await page.waitForTimeout(2200);
   ok(await page.$$eval('#init-table-body tr.init-table__row', t => t.length) === 13,
      'the deep link opens the cause table', '');
@@ -383,7 +383,7 @@ const section = t => console.log('\n=== ' + t);
   ok(httpErrors.length === 0, 'and every request it made succeeded',
      httpErrors.slice(0, 4).join(' | '));
 
-  await page.goto(BASE + '/main.html?state=ce', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/mission.html?state=ce', { waitUntil: 'networkidle' });
   await page.waitForTimeout(1800);
   await page.screenshot({ path: '/tmp/ebx/ce_table.png', fullPage: true });
   await browser.close();

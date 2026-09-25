@@ -18,7 +18,7 @@
 const { JSDOM, VirtualConsole } = require('jsdom');
 const BASE = process.argv[2] || 'http://127.0.0.1:8000';
 const PAGES = process.argv.slice(3).length ? process.argv.slice(3)
-  : ['index.html', 'main.html', 'main.html?state=oe', 'cause.html?id=atmosphere',
+  : ['index.html', 'mission.html', 'mission.html?state=oe', 'cause.html?id=atmosphere',
      'mission.html', 'profile.html'];
 // Words that mean the money is still a TOKEN. "EBX" beside one of these is the
 // bug: it is naming the unit of a vote, which is what tokens are for.

@@ -53,6 +53,18 @@ def get_pool(mission_id: str, db: Session = Depends(get_db)):
     return crud.recompute_pool(db, mission_id)
 
 
+@router.get("/{mission_id}/overview", response_model=dict)
+def get_overview(mission_id: str, db: Session = Depends(get_db)):
+    """build-seq P1 (2026-09-24), D3 — the mission page's overview: the
+    committed and guaranteed pools (ct), member count, EBX value and spend.
+    Read-only; see `wallet.mission_overview`."""
+    from .. import wallet as _wallet
+    m = crud.get_mission(db, mission_id)
+    if m is None:
+        raise HTTPException(status_code=404, detail="Mission not found")
+    return _wallet.mission_overview(db, m)
+
+
 @router.get("/{mission_id}/budget-range", response_model=dict)
 def get_budget_range(mission_id: str, db: Session = Depends(get_db)):
     """Budgeting-phase helper: org's concrete min and (uncapped) max budget."""

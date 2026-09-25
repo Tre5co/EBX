@@ -269,15 +269,19 @@ def open_p1_mission(db: Session, cause_id: str) -> Optional[models.Mission]:
 # Seven windows rotate; each can be contested. Benefactors propose causes
 # (name + colour) and vote, per week, on which cause should hold a given
 # upcoming window. A challenger TAKES a week by clearing >50% of that week's
-# votes for that window. Take all seven and the challenger replaces the
+# votes for that window. Take all six and the challenger replaces the
 # incumbent.
 #
-# Seven weeks, advertised as six: **week 1 is an aggregation of the six weeks
-# before the contest opened**, so a challenger that has quietly been winning
-# arrives with that head start instead of starting from zero.
+# D5 (2026-09-24): **six weeks in a row**, stated the same everywhere, and
+# D15: six ELECTIONS — six weekly columns, no aggregate head start. Upon
+# winning its sixth, the challenger becomes the newest open initiative
+# election. (2026-08-06 raised this to seven; D5 reverts it.)
 # ===========================================================================
-CAUSE_STREAK_WEEKS = 7          # columns to win
-CAUSE_LOOKBACK_WEEKS = 6        # weeks folded into column 1
+CAUSE_STREAK_WEEKS = 6          # columns to win — D5 (2026-09-24): six weeks in a row
+# The ROTATION is seven — seven causes, one a week — and that is a different
+# number from the streak even though both were 7 until D5. Everything about
+# which window is which reads this one; only the streak reads the one above.
+CAUSE_ROTATION = 7
 CAUSE_MAJORITY = 0.5            # strictly greater than
 
 # §1 (2026-08-21) — **all seven replaceable windows are votable at once.**
@@ -290,8 +294,8 @@ CAUSE_MAJORITY = 0.5            # strictly greater than
 #
 #   slots 1 .. CAUSE_CONFIRMED_SLOTS      confirmed: an election card exists
 #   slots CAUSE_CONFIRMED_SLOTS+1 .. CAUSE_SLOTS   open, one rotation of them
-CAUSE_CONFIRMED_SLOTS = CAUSE_STREAK_WEEKS - 1        # 6
-CAUSE_SLOTS = CAUSE_CONFIRMED_SLOTS + CAUSE_STREAK_WEEKS   # 13
+CAUSE_CONFIRMED_SLOTS = CAUSE_ROTATION - 1            # 6
+CAUSE_SLOTS = CAUSE_CONFIRMED_SLOTS + CAUSE_ROTATION       # 13
 # The first window a new cause could take. Everything from here out is open.
 CAUSE_FIRST_OPEN_SLOT = CAUSE_CONFIRMED_SLOTS + 1     # 7
 
@@ -327,7 +331,7 @@ def _slot_is_open(db: Session, slot: int) -> tuple[bool, Optional[str]]:
     # election card is already made and the cause it names is running.
     if CAUSE_FIRST_OPEN_SLOT <= slot <= CAUSE_SLOTS:
         return True, None
-    idx = (active_cause_index() + slot) % CAUSE_STREAK_WEEKS
+    idx = (active_cause_index() + slot) % CAUSE_ROTATION
     incumbent = db.scalar(select(models.Cause).where(models.Cause.index == idx,
                                                      models.Cause.status == "active"))
     state = cause_ballot_state(db, slot, incumbent.id if incumbent else None)
@@ -402,7 +406,7 @@ def cast_cause_vote(db: Session, ben_id: int, slot: int, cause_id: str) -> model
     # around inside it changes the order and nothing else, and would let a
     # window be "won" by a cause already guaranteed to run six weeks later. The
     # incumbent itself is exempt: voting to KEEP it is not a replacement.
-    idx_ = (active_cause_index() + int(slot)) % CAUSE_STREAK_WEEKS
+    idx_ = (active_cause_index() + int(slot)) % CAUSE_ROTATION
     incumbent_ = db.scalar(select(models.Cause).where(
         models.Cause.index == idx_, models.Cause.status == "active"))
     if cause.status == "active" and (incumbent_ is None or cause.id != incumbent_.id):
@@ -420,7 +424,7 @@ def cast_cause_vote(db: Session, ben_id: int, slot: int, cause_id: str) -> model
     if not open_:
         raise ValueError(
             f"That window is settled — its election card is already made, so the "
-            f"cause is confirmed. The {CAUSE_STREAK_WEEKS} windows from "
+            f"cause is confirmed. The {CAUSE_ROTATION} windows from "
             f"{CAUSE_FIRST_OPEN_SLOT} weeks out are the ones still open."
         )
     wk = _week_start()
@@ -466,13 +470,13 @@ def _week_winner(db: Session, slot: int, start: datetime, end: datetime) -> tupl
 
 
 def cause_ballot_state(db: Session, slot: int, incumbent_id: Optional[str] = None) -> dict:
-    """The seven columns for one contested window.
+    """The six columns for one contested window (D5, 2026-09-24).
 
     Ordered as Jax drew them: **leftmost is the ACTIVE week** (1 line),
-    rightmost is the oldest (7 lines). The oldest column is the one that makes
-    the process "seven weeks advertised as six" — it aggregates the six weeks
-    before the contest opened, so a challenger that was already winning arrives
-    with that behind it rather than starting from nothing.
+    rightmost is the oldest (6 lines). Every column is one week's election
+    (D15, 2026-09-24): a challenger has to WIN six of them in a row. Upon
+    winning its sixth it becomes the newest open initiative election — the
+    swap itself is still to build (README §4).
 
     A column is won by whichever cause cleared >50% of the votes cast in it.
     The **streak** fills from the left: this week, then last week, and so on,
@@ -481,20 +485,16 @@ def cause_ballot_state(db: Session, slot: int, incumbent_id: Optional[str] = Non
     """
     now_week = _week_start()
     columns: list[dict] = []
-    # Columns 1..6 — this week, then one week back each, newest on the left.
-    for k in range(CAUSE_STREAK_WEEKS - 1):
+    # D15 (2026-09-24): "It needs to win 6 elections." Six WEEKLY columns —
+    # this week, then one week back each, newest on the left. The aggregate
+    # head-start column (the six weeks before the contest opened) is gone: an
+    # aggregate is not an election, so it cannot be one of the six.
+    for k in range(CAUSE_STREAK_WEEKS):
         s_ = now_week - timedelta(weeks=k)
         e_ = s_ + timedelta(weeks=1)
         win, total, counts = _week_winner(db, slot, s_, e_)
         columns.append({"index": k + 1, "lines": k + 1, "aggregate": False, "weeks": 1,
                         "start": s_.isoformat(), "winner": win, "votes": total, "counts": counts})
-    # Column 7 — the aggregate of the six weeks before the contest opened.
-    agg_end = now_week - timedelta(weeks=CAUSE_STREAK_WEEKS - 1)
-    agg_start = agg_end - timedelta(weeks=CAUSE_LOOKBACK_WEEKS)
-    win, total, counts = _week_winner(db, slot, agg_start, agg_end)
-    columns.append({"index": CAUSE_STREAK_WEEKS, "lines": CAUSE_STREAK_WEEKS,
-                    "aggregate": True, "weeks": CAUSE_LOOKBACK_WEEKS,
-                    "start": agg_start.isoformat(), "winner": win, "votes": total, "counts": counts})
 
     # The streak: consecutive columns from the LEFT (this week backwards), all
     # won by one challenger that isn't the incumbent.
@@ -534,7 +534,7 @@ def cause_ballot_state(db: Session, slot: int, incumbent_id: Optional[str] = Non
         "challenger_id": challenger,
         "streak": streak,
         "weeks_required": CAUSE_STREAK_WEEKS,
-        "advertised_weeks": CAUSE_STREAK_WEEKS - 1,
+        "advertised_weeks": CAUSE_STREAK_WEEKS,   # D5: what the page says is what it counts
         "columns": columns,
         "standings": standings,
         "this_week_votes": this_total,
@@ -656,7 +656,86 @@ def create_tiv(db: Session, data: schemas.InitiativeCreate) -> models.Initiative
     db.add(tiv)
     db.commit()
     db.refresh(tiv)
+    ensure_slug(db, tiv)
     return tiv
+
+
+# ── D13 (2026-09-24): initiative slugs, with history ───────────────────────
+# The rule is the one `EBX.Slug` states in ebx_shared.js: lower-case ASCII,
+# runs of anything else become one hyphen, 80 characters at most; a slug may
+# never look like a mission id (three letters + digits); a taken slug gets
+# -2, -3… The FIRST initiative (by proposed_at, id) to want a slug keeps it.
+_SLUG_MISSION_ID = re.compile(r"^[a-z]{3}\d+$")
+
+
+def slugify(title: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFKD", str(title or "")).encode("ascii", "ignore").decode()
+    s = s.lower().replace("&", " and ")
+    s = re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:80].rstrip("-")
+    return s or "initiative"
+
+
+def ensure_slug(db: Session, tiv: models.Initiative) -> str:
+    """Make sure `tiv`'s CURRENT slug is the one its title gives.
+
+    Called on create, on rename, and for every initiative at startup. A title
+    that still yields the current slug is a no-op; a new title adds a row and
+    demotes the old one, which keeps forwarding (D13). Returns the current slug.
+    """
+    rows = db.scalars(select(models.InitiativeSlug).where(
+        models.InitiativeSlug.tiv_id == tiv.id)).all()
+    cur = next((r for r in rows if r.is_current), None)
+    base = slugify(tiv.title)
+    # the current slug still fits the title (base, or base-N) → nothing to do
+    if cur is not None and (cur.slug == base or re.fullmatch(re.escape(base) + r"-\d+", cur.slug)):
+        return cur.slug
+    # a slug this initiative had before, now its title again → promote it
+    mine = next((r for r in rows if r.slug == base), None)
+    if mine is None:
+        slug, k = base, 2
+        while _SLUG_MISSION_ID.match(slug) or db.get(models.InitiativeSlug, slug) is not None:
+            slug = f"{base}-{k}"; k += 1
+        mine = models.InitiativeSlug(slug=slug, tiv_id=tiv.id, is_current=True)
+        db.add(mine)
+    for r in rows:
+        r.is_current = False
+    mine.is_current = True
+    db.commit()
+    return mine.slug
+
+
+def ensure_slugs(db: Session) -> int:
+    """Startup: every initiative has a current slug, oldest proposal first."""
+    n = 0
+    tivs = db.scalars(select(models.Initiative)).all()
+    for t in sorted(tivs, key=lambda t: (str(t.proposed_at or ""), t.id)):
+        before = db.scalar(select(models.InitiativeSlug).where(
+            models.InitiativeSlug.tiv_id == t.id, models.InitiativeSlug.is_current.is_(True)))
+        after = ensure_slug(db, t)
+        if before is None or before.slug != after:
+            n += 1
+    return n
+
+
+def rename_tiv(db: Session, tiv_id: str, title: str) -> models.Initiative:
+    """Change an initiative's title; its old address keeps forwarding (D13)."""
+    tiv = db.get(models.Initiative, tiv_id)
+    if tiv is None:
+        raise ValueError("Initiative not found")
+    title = (title or "").strip()
+    if not title:
+        raise ValueError("a title cannot be empty")
+    tiv.title = title
+    db.commit()
+    ensure_slug(db, tiv)
+    db.refresh(tiv)
+    return tiv
+
+
+def list_slugs(db: Session) -> list[dict]:
+    return [{"slug": r.slug, "tiv_id": r.tiv_id, "current": bool(r.is_current)}
+            for r in db.scalars(select(models.InitiativeSlug)).all()]
 
 
 def adopt_orphan_tivs(db: Session) -> list[str]:

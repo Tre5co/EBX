@@ -5,9 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux News — you donate, we follow</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925" />
   <style>
-    /* ── Landing — REBUILT 2026-09-15 to the `jax notes 2.md` ## ASCII MODELS
+    /* ── P2 · HOME (2026-09-25) ─────────────────────────────────────────────
+       Home stops explaining and starts showing. Top to bottom: the hero
+       (kept as it was, D18: "You donate. We follow."), the two phase rows and
+       the top card over the annulus (resources/js/ebx_wheel.js), the time
+       span under it, THE NETWORK (News · Research · Budgeting — one row, and
+       the feed's filters), then the feed: all posts by default, cause and
+       "mine" as the only other filters (D6). Search, a thread, a reply or
+       any further filter go to News (cause.html?q= / ?thread= / ?cat=).
+       The explainer bands and the origin / grant / runway block that used to
+       follow moved to about.html (D7), which the footer links.
+       ────────────────────────────────────────────────────────────────────
+       ── Landing — REBUILT 2026-09-15 to the `jax notes 2.md` ## ASCII MODELS
        **Landing** drawing. That drawing is now the spec; the a–e outline the
        page was built to (2026-08-18) is superseded. Box by box:
 
@@ -34,12 +45,28 @@
          · the Reviews forum category. j–l and n–p are budgeting and research
            only; the drawing lists no third category.
 
-       NAMING: n is "Situation" per the drawing, and per INSTRUCTIONS.md
-       BUILD SEQUENCE §2 "Big rename - context is now going to be called
-       situation." The backend type key is still `context`
-       (backend/app/post_config.py) and every other surface still says
-       Context — this page is the first to use the new name. The rename is
-       NOT done anywhere else.
+       ── BUILD-SEQ §1 LANDING, 2026-09-20 ────────────────────────────────
+       · c/d ("Maximizing Donor Control" / "Publicizing Charitable Impact")
+         REMOVED, per the instruction.
+       · the five panels keep their short labels; the five DESCRIPTIONS that
+         used to be the Elect page's step toggles are the top card's titles
+         now (§2 removed them there). The top card's four fields are the
+         a/b/c/d of the instruction: dates · title · Process · Reason.
+       · the top card's right half is the focused cause's own SIDE CARD
+         (spec e), so `liveLine` in ebx_wheel.js is unpainted — kept, and
+         logged in the removal register.
+       · the annulus: no now marker, no arrow tips, no sector labels; it
+         ROTATES so the focused cause is at 12 o'clock and every sector lines
+         up with its card; rays run out under the cards.
+       · side cards: the mission title is its own line above the dates, and
+         my vote is highlighted again.
+       · both trios link to mission.html, and the NEWS band is new.
+
+       NAMING: the rename is finished on this page — Context → Situation →
+       **Background** (docs/the_social_network.md §3). The backend type key is
+       still `context` (backend/app/post_config.py) and cause.html,
+       mission.html and the composer still say Context, so the rename is NOT
+       done anywhere else.
        ────────────────────────────────────────────────────────────────────── */
     body {
       background:
@@ -106,162 +133,97 @@
       background: linear-gradient(90deg, transparent, rgba(232,168,76,0.55), transparent);
     }
 
-    /* ══ How it Works (2026-09-16) — the heading the two halves used to hold ═ */
-    .ld-how {
-      font-family: var(--font-display, serif); font-weight: 800;
-      font-size: clamp(1.1rem, 2.5vw, 1.55rem); line-height: 1.25; margin: 8px 0 0;
-      color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em;
-      border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px;
+    /* ══ THE PHASE WHEEL (build-seq §2–§4, 2026-09-18) — resources/js/ebx_wheel.js
+       Five step toggles → the top card → (three cards | the wheel | three cards).
+       The retired e–h step boxes and the c/d rule lived here; c/d now label the
+       step row (three elections = donor control, framing + exchange = impact). */
+    .ld-wheel-bleed {
+      width: min(1240px, calc(100vw - 32px));
+      margin-left: 50%; transform: translateX(-50%);
     }
+    /* build-seq P1 (2026-09-24): the wheel's rules (.lw-*) moved to
+       resources/css/ebx_frontend.css — the mission page mounts the same
+       component, so its styles are shared, not copied. */
 
-    /* ══ c / d — the two headings on one rule ═══════════════════════════════
-       Drawn as `______c______ ... ______d____`: a single horizontal line with a
-       label at each end. Left label owns the left half of the step row, right
-       label the right half. */
-    /* 2026-09-16: below the steps now, slightly smaller, the rule on top. */
-    .ld-heads {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
-      border-top: 1px solid rgba(232,168,76,0.25); padding-top: 12px; margin-top: 22px;
-    }
-    .ld-heads__h {
-      font-family: var(--font-display, serif); font-weight: 800;
-      font-size: clamp(0.9rem, 1.9vw, 1.15rem); line-height: 1.25; margin: 0;
-      color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em;
-    }
-    .ld-heads__h + .ld-heads__h { text-align: right; color: rgba(245,240,232,0.62); }
-    .ld-heads__h em { font-style: normal; color: var(--clr-honey, #e8a84c); }
-    @media (max-width: 720px) {
-      .ld-heads { grid-template-columns: 1fr; gap: 4px; }
-      .ld-heads__h + .ld-heads__h { text-align: left; }
-    }
+    /* ══ THE NETWORK (P2, 2026-09-25) — one row: News · Research · Budgeting.
+       Each tile is also a filter on the feed under it. Outer edges are the
+       wheel's (`.ld-wheel-bleed`); the feed's left column is the side cards'
+       width, so the filters sit under the left cards and the feed under the
+       annulus and the right cards. */
+    .hn { margin-top: 54px; }
+    .hn__head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+      border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px; margin-bottom: 14px; }
+    .hn__title { font-family: var(--font-display, serif); font-weight: 800; margin: 0;
+      font-size: clamp(1.2rem, 2.6vw, 1.6rem); color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em; }
+    .hn__sub { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(245,240,232,0.45); }
+    .hn__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .hn__tile { --tc: #e8a84c; font: inherit; text-align: left; cursor: pointer; color: inherit;
+      display: flex; flex-direction: column; gap: 6px; padding: 14px 16px;
+      background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12); border-radius: 12px;
+      transition: border-color .15s, background .15s, box-shadow .15s; }
+    .hn__tile:hover { border-color: color-mix(in srgb, var(--tc) 60%, transparent); }
+    .hn__tile:focus-visible { outline: 2px solid var(--tc); outline-offset: 2px; }
+    .hn__tile[aria-pressed="true"] { border-color: var(--tc); background: color-mix(in srgb, var(--tc) 9%, transparent);
+      box-shadow: inset 0 3px 0 var(--tc); }
+    .hn__tile--news { --tc: #e8a84c; } .hn__tile--research { --tc: #8ec5e8; } .hn__tile--budgeting { --tc: #8fce9d; }
+    .hn__top { display: flex; align-items: baseline; gap: 10px; }
+    .hn__name { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.08rem; color: var(--clr-parchment, #f5f0e8); }
+    .hn__tag { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--tc); }
+    .hn__n { margin-left: auto; font-family: var(--font-mono, monospace); font-size: 0.66rem; color: rgba(245,240,232,0.5); }
+    .hn__what { margin: 0; font-size: 0.8rem; line-height: 1.5; color: rgba(245,240,232,0.64); }
+    .hn__what b { color: rgba(245,240,232,0.9); font-weight: 600; }
+    @media (max-width: 760px) { .hn__row { grid-template-columns: 1fr; } }
 
-    /* ══ e–h — the four steps ═══════════════════════════════════════════════ */
-    .ld-steps {
-      list-style: none; margin: 22px 0 0; padding: 0;
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-    }
-    @media (max-width: 900px) { .ld-steps { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 520px) { .ld-steps { grid-template-columns: 1fr; } }
-    /* the <li> has to stretch too, or `margin-top:auto` on the destination
-       label has no height to push against and the four labels sit at four
-       different baselines. */
-    .ld-steps > li { display: flex; }
-    .ld-step {
-      flex: 1; display: flex; flex-direction: column; text-decoration: none;
-      border-top: 2px solid rgba(245,240,232,0.16); padding: 12px 2px 0;
-      color: inherit; transition: border-color 0.15s;
-    }
-    /* the two halves are colour-coded to their heading: yours (honey) / ours (green) */
-    .ld-step--you { border-top-color: rgba(232,168,76,0.75); }
-    .ld-step--us  { border-top-color: rgba(143,206,157,0.65); }
-    a.ld-step:hover { border-top-color: var(--clr-honey, #e8a84c); }
-    .ld-step__n {
-      font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.18em;
-      text-transform: uppercase; color: rgba(245,240,232,0.42); margin-bottom: 8px;
-    }
-    .ld-step--you .ld-step__n { color: rgba(232,168,76,0.85); }
-    .ld-step--us  .ld-step__n { color: rgba(143,206,157,0.8); }
-    .ld-step__title {
-      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem;
-      line-height: 1.3; color: var(--clr-parchment, #f5f0e8); margin: 0 0 7px;
-    }
-    a.ld-step:hover .ld-step__title { color: var(--clr-honey, #e8a84c); }
-    .ld-step__what {
-      font-size: 0.86rem; line-height: 1.6; color: rgba(245,240,232,0.64); margin: 0;
-    }
-    .ld-step__what b { color: rgba(245,240,232,0.92); font-weight: 600; }
-    .ld-step__dest {
-      margin-top: auto; padding-top: 10px;
-      font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: rgba(245,240,232,0.38);
-    }
-    a.ld-step:hover .ld-step__dest { color: var(--clr-honey, #e8a84c); }
-
-    /* the two nouns that carry the model, colour-coded wherever they appear */
-    .ld-term { font-weight: 600; white-space: nowrap; }
-    .ld-term--org { color: var(--clr-honey, #e8a84c); }
-    .ld-term--tiv { color: #8fce9d; }
-
-    /* ══ i / m — the two forum headings, each over a row of three ═══════════ */
-    .ld-band { margin-top: 56px; }
-    .ld-band__h {
-      font-family: var(--font-display, serif); font-weight: 800;
-      font-size: clamp(1.25rem, 2.9vw, 1.85rem); line-height: 1.3;
-      margin: 0 0 18px; color: var(--clr-parchment, #f5f0e8);
-      letter-spacing: -0.02em; text-align: center;
-    }
-    .ld-band__h a {
-      color: var(--clr-honey, #e8a84c); text-decoration: none;
-      border-bottom: 1px dashed currentColor; padding-bottom: 2px;
-    }
-    .ld-band__h a:hover { border-bottom-style: solid; }
-    .ld-band__h em { font-style: normal; color: var(--clr-honey, #e8a84c); }
-    .ld-trio {
-      list-style: none; margin: 0; padding: 0;
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
-    }
-    @media (max-width: 720px) { .ld-trio { grid-template-columns: 1fr; gap: 0; } }
-    .ld-trio__cell {
-      padding: 16px 2px 0; border-top: 1px solid rgba(245,240,232,0.14);
-    }
-    .ld-trio__name {
-      font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem;
-      color: var(--clr-parchment, #f5f0e8); margin: 0 0 6px;
-    }
-    .ld-trio__what { font-size: 0.86rem; line-height: 1.65; color: rgba(245,240,232,0.64); margin: 0; }
-    .ld-trio__what b { color: rgba(245,240,232,0.92); font-weight: 600; }
-
-    /* ══ q/r/s/t — origin, the grant, the runway ════════════════════════════ */
-    .ld-close { margin-top: 64px; text-align: center; }
-    .ld-verse {
-      font-family: var(--font-display, serif);
-      font-size: clamp(1.02rem, 2.1vw, 1.3rem); line-height: 1.95;
-      color: rgba(245,240,232,0.92); margin: 0 auto; max-width: 60ch;
-    }
-    .ld-verse span { display: block; }
-    .ld-verse span b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
-    .ld-grant {
-      font-family: var(--font-display, serif);
-      font-size: clamp(1.02rem, 2.1vw, 1.26rem); line-height: 1.7;
-      color: rgba(245,240,232,0.86); margin: 24px auto 0; max-width: 56ch;
-    }
-    .ld-grant b { color: var(--clr-honey, #e8a84c); font-weight: 700; }
-
-    /* the dime. Ten of them a week, one dollar, everybody. */
-    .ld-dime { margin-top: 18px; }
-    .ld-dime__row { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; justify-content: center; }
-    .ld-dime__cap {
-      font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.12em;
-      text-transform: uppercase; color: rgba(245,240,232,0.4); margin-top: 9px;
-    }
-
-    /* t — runway chart */
-    .ld-runway {
-      margin: 30px auto 0; max-width: 620px; padding: 16px 18px 14px; text-align: left;
-      border: 1px solid rgba(245,240,232,0.14); border-radius: 12px;
-      background: rgba(245,240,232,0.03);
-    }
-    .ld-runway__label {
-      font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.16em;
-      text-transform: uppercase; color: rgba(245,240,232,0.45); margin-bottom: 10px;
-    }
-    .ld-runway__figure { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
-    .ld-runway__weeks {
-      font-family: var(--font-display, serif); font-weight: 900;
-      font-size: 2.4rem; line-height: 1; color: var(--clr-honey, #e8a84c);
-    }
-    .ld-runway__unit { font-size: 0.92rem; color: rgba(245,240,232,0.7); }
-    .ld-runway__bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; align-items: end; height: 46px; }
-    .ld-runway__bar { background: rgba(245,240,232,0.1); border-radius: 3px 3px 0 0; height: 100%; }
-    .ld-runway__bar.on { background: var(--clr-honey, #e8a84c); }
-    .ld-runway__note { font-size: 0.76rem; line-height: 1.55; color: rgba(245,240,232,0.42); margin-top: 10px; }
-    .ld-runway__note b { color: rgba(245,240,232,0.7); }
-    .ld-runway__members {
-      display: inline-flex; align-items: baseline; gap: 6px; margin-top: 12px;
-      font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: rgba(245,240,232,0.5);
-    }
-    .ld-runway__members b { font-size: 0.95rem; letter-spacing: 0; color: var(--clr-parchment, #f5f0e8); }
+    /* the feed */
+    .hf { display: grid; grid-template-columns: minmax(200px, 270px) minmax(0, 1fr); gap: 20px; margin-top: 20px; align-items: start; }
+    @media (max-width: 760px) { .hf { grid-template-columns: 1fr; } }
+    .hf__side { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 16px; }
+    @media (max-width: 760px) { .hf__side { position: static; } }
+    .hf__search input { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.84rem;
+      padding: 9px 12px; border-radius: 9px; color: var(--clr-parchment, #f5f0e8);
+      background: rgba(245,240,232,0.05); border: 1px solid rgba(245,240,232,0.16); }
+    .hf__search input:focus { outline: none; border-color: var(--clr-honey, #e8a84c); }
+    .hf__lab { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(245,240,232,0.42); margin-top: 8px; }
+    .hf__causes { display: flex; flex-wrap: wrap; gap: 6px; }
+    .hf-chip { font: inherit; font-size: 0.76rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 10px; border-radius: 999px; color: rgba(245,240,232,0.75);
+      background: transparent; border: 1px solid rgba(245,240,232,0.16); }
+    .hf-chip i { width: 8px; height: 8px; border-radius: 50%; }
+    .hf-chip:hover { border-color: rgba(245,240,232,0.4); color: var(--clr-parchment, #f5f0e8); }
+    .hf-chip[aria-pressed="true"] { color: #0f1a14; background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); }
+    .hf-chip[disabled] { opacity: 0.4; cursor: default; }
+    .hf__more, .hf__all { font-size: 0.8rem; color: var(--clr-honey, #e8a84c); text-decoration: none; margin-top: 10px; }
+    .hf__more:hover, .hf__all:hover { text-decoration: underline; }
+    .hf__all { display: inline-block; margin-top: 16px; }
+    .hf__state { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: rgba(245,240,232,0.45); margin-bottom: 10px; }
+    .hf__state b { color: var(--clr-parchment, #f5f0e8); font-weight: 400; }
+    .hf__list { display: grid; gap: 10px; }
+    .hf__empty { padding: 28px 16px; text-align: center; font-size: 0.86rem; color: rgba(245,240,232,0.5);
+      border: 1px dashed rgba(245,240,232,0.16); border-radius: 12px; }
+    .hp { --tc: rgba(245,240,232,0.4); display: block; text-decoration: none; color: inherit;
+      padding: 13px 16px 12px; border-radius: 12px; border: 1px solid rgba(245,240,232,0.1);
+      border-left: 3px solid var(--tc); background: rgba(245,240,232,0.025); transition: border-color .15s, background .15s; }
+    .hp:hover { background: rgba(245,240,232,0.05); border-color: rgba(245,240,232,0.22); border-left-color: var(--tc); }
+    .hp--news { --tc: #e8a84c; } .hp--research { --tc: #8ec5e8; } .hp--budgeting { --tc: #8fce9d; } .hp--review { --tc: #c9a6d8; }
+    .hp__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+      font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.06em; color: rgba(245,240,232,0.5); }
+    .hp__kind { text-transform: uppercase; letter-spacing: 0.12em; color: var(--tc); font-weight: 700; }
+    .hp__bia { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 4px;
+      font-weight: 800; font-size: 0.62rem; color: #0f1a14; background: var(--tc); letter-spacing: 0; }
+    .hp__cause { display: inline-flex; align-items: center; gap: 5px; }
+    .hp__cause i { width: 7px; height: 7px; border-radius: 50%; }
+    .hp__title { font-family: var(--font-display, serif); font-weight: 800; font-size: 1rem; line-height: 1.3;
+      margin: 7px 0 3px; color: var(--clr-parchment, #f5f0e8); }
+    .hp__body { margin: 4px 0 0; font-size: 0.84rem; line-height: 1.55; color: rgba(245,240,232,0.7);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .hp__foot { display: flex; gap: 14px; margin-top: 9px; font-family: var(--font-mono, monospace);
+      font-size: 0.62rem; color: rgba(245,240,232,0.45); }
+    .hp__foot span:last-child { margin-left: auto; color: var(--clr-honey, #e8a84c); }
+    .hp__src { color: #8ec5e8; }
   </style>
 </head>
 
@@ -290,128 +252,53 @@
 
     <div class="ld-rule"></div>
 
-    <!-- ══ How it Works (build-seq §2 Landing, 2026-09-16) ═══════════════════
-         "How it Works" takes the place of the two headings, which move below
-         the steps, slightly smaller. Dates per the same step: week 0 · week 8 ·
-         week 15 · week 15 on (T, the organization election at T+8, budget day
-         at T+15, then the exchange). -->
-    <h2 class="ld-how">How it Works</h2>
+    <!-- ══ THE WEEK — two phase rows, the top card, the annulus, the span ═══
+         Painted by `EBX.Wheel` (resources/js/ebx_wheel.js), landing variant. -->
+    <div class="ld-wheel-bleed"><div id="ebx-wheel"></div></div>
 
-    <ol class="ld-steps">
-      <li>
-        <a class="ld-step ld-step--you" href="main.html">
-          <span class="ld-step__n">01 · Week 0</span>
-          <span class="ld-step__title">You elect the initiative</span>
-          <span class="ld-step__what">Donate to this week&rsquo;s cause by funding what you want the
-            <span class="ld-term ld-term--tiv">mission</span> to be.</span>
-          <span class="ld-step__dest">Initiative election &rarr;</span>
-        </a>
-      </li>
-      <li>
-        <a class="ld-step ld-step--you" href="main.html?state=oe">
-          <span class="ld-step__n">02 · Week 8</span>
-          <span class="ld-step__title">You elect who runs it</span>
-          <span class="ld-step__what">After the mission is decided, your tokens can be put towards its
-            <span class="ld-term ld-term--org">philanthropy</span>.</span>
-          <span class="ld-step__dest">Organization election &rarr;</span>
-        </a>
-      </li>
-      <li>
-        <a class="ld-step ld-step--us" href="mission.html">
-          <span class="ld-step__n">03 · Week 15</span>
-          <span class="ld-step__title">Receive your Earthbucks</span>
-          <span class="ld-step__what">Earthbux orients the organization and its benefactors
-            <b>(you)</b>.</span>
-          <span class="ld-step__dest">Mission page &rarr;</span>
-        </a>
-      </li>
-      <li>
-        <a class="ld-step ld-step--us" href="cause.html">
-          <span class="ld-step__n">04 · Week 15 on</span>
-          <span class="ld-step__title">Follow along and trade</span>
-          <span class="ld-step__what">Hold on, or exchange for a different mission.</span>
-          <span class="ld-step__dest">Feed &rarr;</span>
-        </a>
-      </li>
-    </ol>
+    <!-- ══ THE NETWORK + THE FEED (P2, 2026-09-25) ══════════════════════════
+         One row, three things the network makes; each is also the feed's
+         filter. The feed is every post by default. -->
+    <div class="ld-wheel-bleed">
+      <section class="hn" aria-labelledby="hn-title">
+        <div class="hn__head">
+          <h2 class="hn__title" id="hn-title">The Network</h2>
+          <span class="hn__sub">what the network made this week</span>
+        </div>
+        <div class="hn__row" id="hn-row" role="group" aria-label="Filter the feed by what it is"></div>
 
-    <!-- ══ c / d — the two halves, now under the steps and slightly smaller ══ -->
-    <div class="ld-heads">
-      <h2 class="ld-heads__h">Maximizing <em>Donor Control</em></h2>
-      <h2 class="ld-heads__h">Publicizing Charitable Impact</h2>
-    </div>
-
-    <!-- ══ research, then budgeting (build-seq §2 Landing, 2026-09-16) ════════
-         Order swapped, each heading over its own trio: the research posts are
-         what win rewards; the budget posts are what the public forum decides.
-         "public forum" still links to the feed (cause.html). -->
-    <div class="ld-band">
-      <h2 class="ld-band__h">Research the mission to win <em>Rewards</em></h2>
-      <ol class="ld-trio">
-        <li class="ld-trio__cell">
-          <h3 class="ld-trio__name">Situation</h3>
-          <p class="ld-trio__what">Researches the <b>cause</b> — the state of it and the news
-            around it — and contextualizes the initiatives standing in it.</p>
-        </li>
-        <li class="ld-trio__cell">
-          <h3 class="ld-trio__name">Investigation</h3>
-          <p class="ld-trio__what">Researches the <b>initiative</b>, and compares the
-            philanthropies that would run it — leadership, proposal, credibility.</p>
-        </li>
-        <li class="ld-trio__cell">
-          <h3 class="ld-trio__name">Analysis</h3>
-          <p class="ld-trio__what">Researches the <b>initiative and philanthropy together</b>,
-            and weighs the action plan against comparable programmes.</p>
-        </li>
-      </ol>
-    </div>
-
-    <div class="ld-band">
-      <h2 class="ld-band__h">A <a href="cause.html">public forum</a> budgets the missions</h2>
-      <ol class="ld-trio">
-        <li class="ld-trio__cell">
-          <h3 class="ld-trio__name">Service</h3>
-          <p class="ld-trio__what"><b>Labor required.</b> Something we can send people to do —
-            a job, an hourly rate, and the days it takes.</p>
-        </li>
-        <li class="ld-trio__cell">
-          <h3 class="ld-trio__name">Supply</h3>
-          <p class="ld-trio__what"><b>Commodities required.</b> What those people need to do it —
-            an item, and what it costs.</p>
-        </li>
-        <li class="ld-trio__cell">
-          <h3 class="ld-trio__name">Support</h3>
-          <p class="ld-trio__what"><b>Connections required.</b> An approval, professional help,
-            legal help in a conflict. No cost line: a connection is not a purchase.</p>
-        </li>
-      </ol>
-    </div>
-
-    <!-- ══ q / r / s / t ═════════════════════════════════════════════════════
-         q and r are unchanged. s was flagged — "the wording needs work". It
-         had been "That's why we grant 10 tokens per week to anyone using our
-         platform", which states a policy where the two lines above it are
-         making an argument. Rewritten so it is the CONSEQUENCE of r: control
-         is the thing being handed out, and a token is what control is made of.
-         t is the runway, and it is the proof that the grant is finite. -->
-    <div class="ld-close">
-      <p class="ld-verse">
-        <span>In 2026, the world seemed at risk of total destruction.</span>
-        <span>Earthbux was invented to give us control so we <b>save it</b>.</span>
-      </p>
-
-      <p class="ld-grant">So control is what we hand out: every member is granted
-        <b>10 tokens a week</b> — a dollar of real say in where the pool goes.</p>
-
-      <div class="ld-dime" id="ld-dime-viz"></div>
-      <div class="ld-runway" id="ld-runway"></div>
+        <div class="hf">
+          <aside class="hf__side" aria-label="Feed filters">
+            <form class="hf__search" id="hf-search" action="cause.html" method="get" role="search">
+              <input type="search" name="q" placeholder="Search in News&hellip;" aria-label="Search posts in News" />
+            </form>
+            <div class="hf__lab">Cause</div>
+            <div class="hf__causes" id="hf-causes"></div>
+            <div class="hf__lab">Posts</div>
+            <div id="hf-mine"></div>
+            <a class="hf__more" id="hf-more-news" href="cause.html">More filters in News &rarr;</a>
+          </aside>
+          <div class="hf__main">
+            <div class="hf__state" id="hf-state" aria-live="polite"></div>
+            <div class="hf__list" id="hf-list"><div class="hf__empty">Loading the feed&hellip;</div></div>
+            <a class="hf__all" id="hf-all" href="cause.html">Open the whole feed in News &rarr;</a>
+          </div>
+        </div>
+      </section>
     </div>
 
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js"></script>
+  <script src="resources/js/ebx_shared.js?v=20260925"></script>
+  <!-- the globe: d3-geo + Natural Earth land, vendored (no CDN, no build) -->
+  <script src="resources/js/vendor/d3-array.min.js"></script>
+  <script src="resources/js/vendor/d3-geo.min.js"></script>
+  <script src="resources/js/vendor/ebx_land110m.js"></script>
+  <script src="resources/js/ebx_wheel.js?v=20260925"></script>
   <script>
+  if (window.EBX && EBX.Wheel) EBX.Wheel.mount('#ebx-wheel');
+
   // b — the two calls to action under the title. There are only two things a
   // visitor can do from here: get an account, or go vote. Signed in, the first
   // has nothing to offer, so it becomes the profile link and Vote now carries
@@ -421,10 +308,10 @@
     if (!mount) return;
     const authed = !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
     mount.innerHTML = authed
-      ? '<a class="ld-cta__btn ld-cta__btn--primary" href="main.html">Vote now &rarr;</a>' +
+      ? '<a class="ld-cta__btn ld-cta__btn--primary" href="mission.html">Vote now &rarr;</a>' +
         '<a class="ld-cta__btn" href="profile.html">My profile</a>'
       : '<button type="button" class="ld-cta__btn" id="ld-cta-login">Log in / Sign up</button>' +
-        '<a class="ld-cta__btn ld-cta__btn--primary" href="main.html">Vote now &rarr;</a>';
+        '<a class="ld-cta__btn ld-cta__btn--primary" href="mission.html">Vote now &rarr;</a>';
     const btn = document.getElementById('ld-cta-login');
     if (btn) btn.onclick = () => {
       if (window.EBX && EBX.Auth && EBX.Auth.openModal) EBX.Auth.openModal('login');
@@ -432,69 +319,161 @@
     };
   })();
 
-  // ══ s / t — THE TOKEN AND THE RUNWAY ══════════════════════════════════════
-  //   a week of grants = active members x 10 EBX x 10c   ($1 each, everyone)
-  //   the runway       = committed funds / that
-  //
-  // Both numbers come from ONE endpoint, GET /stats. The page used to derive
-  // its member count client-side by summing `voter_count` over every mission's
-  // phase-1 tally, which counts vote ROWS and double-counts anyone voting in
-  // more than one mission — 19 where the answer is 4. A page that DISPLAYS a
-  // membership figure should not be estimating it.
-  (async function () {
-    const runEl = document.getElementById('ld-runway');
-    const dimeEl = document.getElementById('ld-dime-viz');
-    const WEEKS_SHOWN = 12;
+  // ══ THE NETWORK + THE FEED (P2, 2026-09-25) ══════════════════════════════
+  // One read of GET /posts (roots, newest first). Three groups make the
+  // Network row and are its filters; the feed is every root post by default.
+  // Home's only other filters are a cause and "my posts" (D6). Everything
+  // past that — search, a thread, replying, a second filter axis — is News:
+  // cause.html?q= · ?thread=<post> · ?cat=<category> (&cause=<id>).
+  (function () {
+    const GROUPS = [
+      { key: 'news', name: 'News', tag: 'funded', cats: ['editorial', 'headline', 'mission_update'], newsCat: 'editorial',
+        what: 'Our <b>journalists, scientists and auditors</b> on the missions your donation pays for.' },
+      { key: 'research', name: 'Research', tag: 'wins rewards', cats: ['mission_support'], newsCat: 'mission_support',
+        what: '<b>Background · Vetting · Analysis</b> &mdash; one of each per person per mission. The best share 3/32 of the pool.' },
+      { key: 'budgeting', name: 'Budgeting', tag: 'drives the mission', cats: ['budgeting'], newsCat: 'budgeting',
+        what: '<b>Service · Supply · Support</b> &mdash; costed suggestions the community approves into the budget.' },
+    ];
+    // Research tags. "Vetting" is the post that investigates the organization
+    // running the mission (stored key `investigation`, P2 rename).
+    const RESEARCH = { context: ['B', 'Background'], investigation: ['V', 'Vetting'], analysis: ['A', 'Analysis'] };
+    const BUDGET = { service: 'Service', supply: 'Supply', support: 'Support' };
+    const WEEK = 7 * 864e5;
+    const st = { posts: [], group: '', cause: '', mine: false, me: null };
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const cfg = () => (window.EBX && EBX.config) || {};
+    const causeOf = id => (cfg().causes || []).find(c => c.id === id) || null;
+    const groupOf = p => (GROUPS.find(g => g.cats.includes(p.category)) || {}).key || (p.category === 'review' || p.category === 'case' ? 'review' : 'other');
+    const authed = () => !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
 
-    // ── the dime (visual): ten of them, one week, one dollar ──
-    if (dimeEl) {
-      const coin = () =>
-        '<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">' +
-        '<circle cx="13" cy="13" r="11.5" fill="none" stroke="#e8a84c" stroke-width="1.4" opacity="0.9"/>' +
-        '<circle cx="13" cy="13" r="8.5" fill="rgba(232,168,76,0.14)"/>' +
-        '<text x="13" y="17" text-anchor="middle" style="font-family:var(--font-mono,monospace);' +
-        'font-size:9px;fill:#e8a84c;">10¢</text></svg>';
-      dimeEl.innerHTML =
-        '<div class="ld-dime__row">' + Array.from({ length: 10 }, coin).join('') + '</div>' +
-        '<div class="ld-dime__cap">10 tokens &middot; ten dimes &middot; $1 &middot; every week</div>';
+    function missionName(id) {
+      if (!id) return null;
+      const m = (cfg().missions || []).find(x => x.id === id);
+      if (!m) return null;
+      const t = (cfg().initiatives || []).find(x => x.id === m.winning_tiv_id);
+      return t ? t.title : null;
+    }
+    function ago(iso) {
+      const t = new Date(iso).getTime(); if (!t) return '';
+      const s = Math.max(0, (Date.now() - t) / 1000);
+      if (s < 3600) return Math.max(1, Math.round(s / 60)) + 'm';
+      if (s < 86400) return Math.round(s / 3600) + 'h';
+      if (s < 2592000) return Math.round(s / 86400) + 'd';
+      return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    function who(p) {
+      if (p.author_type === 'earthbux') return 'Earthbux News';
+      if (p.author_type === 'org') return p.org_author_id || 'Organization';
+      return 'Benefactor #' + (p.ben_author_id || '—');
+    }
+    function kind(p) {
+      const g = groupOf(p);
+      if (g === 'research') { const r = RESEARCH[p.type]; return r ? '<span class="hp__bia" title="' + r[1] + '">' + r[0] + '</span><span class="hp__kind">' + r[1] + '</span>' : '<span class="hp__kind">Research</span>'; }
+      if (g === 'budgeting') return '<span class="hp__kind">' + (BUDGET[p.type] || 'Budget') + '</span>' +
+        (p.est_cost_usd ? '<span>$' + Math.round(p.est_cost_usd).toLocaleString('en-US') + '</span>' : '');
+      if (g === 'news') return '<span class="hp__kind">News</span>';
+      if (g === 'review') return '<span class="hp__kind">' + (p.type === 'evaluation' ? 'Evaluation' : 'Case') + '</span>';
+      return '<span class="hp__kind">' + esc((p.category || 'post').replace(/_/g, ' ')) + '</span>';
+    }
+    // A research post may be a pulled-in news link: the first URL in it is
+    // shown as its source (the link itself opens from the thread in News).
+    function source(p) {
+      const m = /https?:\/\/([^\s/]+)[^\s]*/.exec(p.body || '');
+      return m ? '<span class="hp__src">&#8599; ' + esc(m[1].replace(/^www\./, '')) + '</span>' : '';
     }
 
-    let s = null;
-    try {
-      const r = await fetch('/stats');
-      if (r.ok) s = await r.json();
-    } catch (e) {}
-
-    if (runEl) {
-      const active = s ? (s.active_members || 0) : 0;
-      const usd = s ? (s.committed_usd || 0) : 0;
-      const weekly = s ? (s.weekly_cost_usd || 0) : 0;
-      const weeks = s ? (s.runway_weeks || 0) : 0;
-      const bars = Array.from({ length: WEEKS_SHOWN }, (_, k) =>
-        '<div class="ld-runway__bar' + (k < weeks ? ' on' : '') +
-        '" style="height:' + (30 + k * 5) + '%"></div>').join('');
-      runEl.innerHTML =
-        '<div class="ld-runway__label">Funding runway</div>' +
-        '<div class="ld-runway__figure">' +
-          '<span class="ld-runway__weeks">' + weeks + '</span>' +
-          '<span class="ld-runway__unit">week' + (weeks === 1 ? '' : 's') +
-            ' of grants the committed pool can fund at today’s membership</span>' +
-        '</div>' +
-        '<div class="ld-runway__bars">' + bars + '</div>' +
-        '<div class="ld-runway__members" id="ld-active-users">' +
-          '<b>' + active + '</b> active member' + (active === 1 ? '' : 's') +
-        '</div>' +
-        '<div class="ld-runway__note">Everyone is granted <b>10 tokens per week</b> between the ' +
-          'two elections. Committed <b>$' + usd.toFixed(2) + '</b> &divide; <b>$' +
-          weekly.toFixed(2) + '</b> per week = <b>' + weeks + '</b> week' +
-          (weeks === 1 ? '' : 's') + '. ' +
-          (!s
-            ? 'Live figures are unavailable right now.'
-            : weeks === 0
-              ? 'It reads zero because no money has been donated yet.'
-              : 'That pool is <b>simulated pilot money</b> — no money has been donated yet, so ' +
-                'treat this as the shape of the number, not the number.') + '</div>';
+    function visible() {
+      return st.posts.filter(p =>
+        (!st.group || groupOf(p) === st.group) &&
+        (!st.cause || p.cause_id === st.cause) &&
+        (!st.mine || (st.me != null && p.ben_author_id === st.me)));
     }
+
+    function newsHref(extra) {
+      const q = new URLSearchParams();
+      const g = GROUPS.find(x => x.key === st.group);
+      if (g) q.set('cat', g.newsCat);
+      if (st.cause) q.set('cause', st.cause);
+      Object.keys(extra || {}).forEach(k => q.set(k, extra[k]));
+      const s = q.toString();
+      return 'cause.html' + (s ? '?' + s : '');
+    }
+
+    function row() {
+      const recent = p => Date.now() - new Date(p.created_at).getTime() < WEEK;
+      $('hn-row').innerHTML = GROUPS.map(g => {
+        const all = st.posts.filter(p => groupOf(p) === g.key);
+        const wk = all.filter(recent).length;
+        return '<button type="button" class="hn__tile hn__tile--' + g.key + '" data-group="' + g.key + '" aria-pressed="' + (st.group === g.key) + '">' +
+          '<span class="hn__top"><span class="hn__name">' + g.name + '</span><span class="hn__tag">' + g.tag + '</span>' +
+          '<span class="hn__n">' + (wk ? wk + ' this week' : all.length + ' post' + (all.length === 1 ? '' : 's')) + '</span></span>' +
+          '<p class="hn__what">' + g.what + '</p></button>';
+      }).join('');
+    }
+
+    function side() {
+      const cs = (cfg().causes || []).slice().sort((a, b) => a.index - b.index);
+      $('hf-causes').innerHTML =
+        '<button type="button" class="hf-chip" data-cause="" aria-pressed="' + (!st.cause) + '">All causes</button>' +
+        cs.map(c => '<button type="button" class="hf-chip" data-cause="' + esc(c.id) + '" aria-pressed="' + (st.cause === c.id) + '">' +
+          '<i style="background:' + esc(c.color) + '"></i>' + esc(c.name) + '</button>').join('');
+      $('hf-mine').innerHTML =
+        '<button type="button" class="hf-chip" data-mine="0" aria-pressed="' + (!st.mine) + '">Everyone&rsquo;s</button> ' +
+        '<button type="button" class="hf-chip" data-mine="1" aria-pressed="' + st.mine + '"' +
+          (authed() ? '' : ' disabled title="Sign in to see your own posts"') + '>Mine</button>';
+      $('hf-more-news').href = newsHref();
+    }
+
+    function card(p) {
+      const g = groupOf(p), c = causeOf(p.cause_id), mn = missionName(p.mission_id);
+      const votes = (p.helpful_count || 0) - (p.harmful_count || 0);
+      return '<a class="hp hp--' + g + '" href="' + newsHref({ thread: p.id }) + '" data-post="' + esc(p.id) + '">' +
+        '<div class="hp__meta">' + kind(p) + '<span>' + esc(who(p)) + '</span><span>&middot; ' + ago(p.created_at) + '</span>' +
+          (c ? '<span class="hp__cause"><i style="background:' + esc(c.color) + '"></i>' + esc(c.name) + '</span>' : '') +
+          (mn ? '<span>&middot; ' + esc(mn) + '</span>' : '') + source(p) + '</div>' +
+        (p.title ? '<h3 class="hp__title">' + esc(p.title) + '</h3>' : '') +
+        '<p class="hp__body">' + esc((p.body || '').slice(0, 400)) + '</p>' +
+        '<div class="hp__foot"><span>&#9650; ' + votes + '</span><span>Read &amp; reply in News &rarr;</span></div></a>';
+    }
+
+    function paint() {
+      row(); side();
+      const rows = visible();
+      const g = GROUPS.find(x => x.key === st.group), c = causeOf(st.cause);
+      $('hf-state').innerHTML = 'Showing <b>' + (g ? g.name : 'all posts') + '</b>' +
+        (c ? ' in <b>' + esc(c.name) + '</b>' : '') + (st.mine ? ' &middot; <b>mine</b>' : '') +
+        ' &middot; newest first';
+      $('hf-list').innerHTML = rows.length
+        ? rows.slice(0, 12).map(card).join('')
+        : '<div class="hf__empty">' + (st.posts.length ? 'Nothing here yet with those filters.' : 'No posts yet.') + '</div>';
+      $('hf-all').href = newsHref();
+    }
+
+    document.addEventListener('click', e => {
+      const t = e.target.closest && e.target.closest('[data-group],[data-cause],[data-mine]');
+      if (!t || !t.closest('.hn')) return;
+      if (t.dataset.group !== undefined) st.group = st.group === t.dataset.group ? '' : t.dataset.group;
+      else if (t.dataset.cause !== undefined) st.cause = t.dataset.cause;
+      else if (t.dataset.mine !== undefined) st.mine = t.dataset.mine === '1' && authed();
+      paint();
+    });
+
+    async function load() {
+      try { if (window.EBX && EBX.loadCauses && !(cfg().causes || []).length) await EBX.loadCauses(); } catch (e) {}
+      try {
+        const r = await fetch((cfg().apiBase || '') + '/posts?roots_only=true&limit=120&sort=recent');
+        st.posts = r.ok ? await r.json() : [];
+      } catch (e) { st.posts = []; }
+      if (authed()) {
+        try { const r = await EBX.Auth.fetchAuthed('/auth/me'); if (r && r.ok) st.me = (await r.json()).id; } catch (e) {}
+      }
+      paint();
+    }
+    // scripts/home_check.js drives the feed through this.
+    window.HomeFeed = { state: st, reload: load, GROUPS };
+    load();
   })();
   </script>
   <!-- Cloudflare Web Analytics (build-seq §1, 2026-09-16) — cookie-less page-view counts; dashboard at dash.cloudflare.com → Analytics & Logs → Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7e5bc527fed34f5c8b6f10611c680086"}'></script><!-- End Cloudflare Web Analytics -->

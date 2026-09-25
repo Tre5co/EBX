@@ -889,3 +889,67 @@ def _record(v: models.VoteP2, event: tm.ProvenanceEvent) -> None:
     chain = list(v.provenance or [])
     chain.append(event.as_dict())
     v.provenance = chain
+
+
+# ===========================================================================
+# The mission overview — build-seq P1 (2026-09-24), D3.
+# ===========================================================================
+def mission_overview(db: Session, m: models.Mission,
+                     now: Optional[datetime] = None) -> dict:
+    """The money and membership facts the mission page's overview prints.
+
+    READ-ONLY. Two pools, both in ct, both from the rows the ladder already
+    reads, so the numbers here are the ones `read_wallet` would add up:
+
+      committed_ct   every ct standing behind this mission. Before the
+                     initiative election closes that is the phase-1 slates in
+                     it (`p1_stake_ct_of`); after, it is the stakes in its
+                     organization election (`stake_ct_of`), which is where the
+                     close moves them.
+      guaranteed_ct  the FINAL part of `committed_ct` — deductible, no longer
+                     withdrawable (money_model §0 rulings 1–4, `final_ct_of`).
+                     0 before T; the skims after T and T+8; all of it at T+15.
+
+    `members` counts distinct benefactors with a stake here (either election).
+    """
+    from . import crud            # local: crud imports wallet back
+    now = now or datetime.utcnow()
+    p1 = db.scalars(select(models.VoteP1).where(models.VoteP1.mission_id == m.id)).all()
+    members = {r.ben_id for r in p1 if p1_stake_ct_of(r) > 0 or r.committed}
+    if m.winning_tiv_id:
+        # The race pool's own reading (`crud.p2_stake_by_ben`): the stake column
+        # where it is written, the phase-1 carry where it is not — so this
+        # number and the ballot's "Race pool" can never disagree.
+        stakes = crud.p2_stake_by_ben(db, m.id)
+        carried = crud.p2_ebx_by_ben(db, m.id)
+        reached = now >= budget_day(m)
+        rows = {v.ben_id: v for v in db.scalars(select(models.VoteP2).where(
+            models.VoteP2.mission_id == m.id)).all()}
+        committed = guaranteed = 0
+        for ben, tokens in stakes.items():
+            ct = tm.ct_from_tokens(max(0.0, float(tokens or 0)))
+            if ct <= 0:
+                continue
+            members.add(ben)
+            committed += ct
+            v = rows.get(ben)
+            if v is not None:
+                guaranteed += tm.final_ct(stake_ct_of(v, carried.get(ben, 0.0)),
+                                          int(v.donated_ct or 0), reached)
+            else:
+                # carried in from the initiative election, never re-voted: the
+                # ME skim is final (ruling 2), all of it on budget day.
+                guaranteed += ct if reached else tm.settle_me(ct).donated_ct
+    else:
+        committed = sum(p1_stake_ct_of(r) for r in p1)
+        guaranteed = 0
+    return {
+        "mission_id": m.id,
+        "committed_ct": int(committed),
+        "guaranteed_ct": int(min(guaranteed, committed)),
+        "members": len(members),
+        "budget_day": budget_day(m).isoformat(),
+        "budget_day_reached": now >= budget_day(m),
+        "credit_value": float(m.credit_value or 1.0),
+        "spent": m.spent or 0,
+    }

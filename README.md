@@ -324,7 +324,8 @@ post-mission performance phases (4–5); evaluation = pre-vote.
   cash** — `POST /wallet/withdraw-stake` (built 2026-09-16, build-seq §2), open
   once the mission's initiative election has closed. The finality ladder decides
   how much is final: 10% of an ME stake at T, another 10% of an OE stake at T+8,
-  everything at T+15. No page offers it yet.
+  everything at T+15. Offered on the Elect page's framing ballot (step 4) since
+  2026-09-18; mission.html does not offer it yet.
 - **From budget day on there is no cash exit.** A benefactor who no longer
   believes in a mission sells its EBX for another mission's EBX on the DEX.
 - **Losers are not refunded; they move.** Backers of a losing initiative or a
@@ -396,8 +397,9 @@ The seven causes are not fixed forever. Any cause window can be contested:
 
 - Benefactors vote for a **challenger** cause to hold an upcoming window, or
   suggest a new one for the catalogue.
-- **A challenger only wins if the SAME challenger takes the week 7 weeks in a
-  row** (raised from 6 on 2026-08-06 — one week per column of the streak bars).
+- **A challenger only wins if the SAME challenger takes the week 6 weeks in a
+  row** (D5, 2026-09-24 — one week per column of the streak bars; the
+  2026-08-06 raise to 7 is reverted).
   A run that breaks — or that moves to a different challenger part-way — resets
   to the incumbent and pushes the swap date out by a full challenge period. This
   is deliberate: a cause has to be resistant to a single bad week, or the
@@ -422,15 +424,16 @@ an active cause's colour), `POST /causes/vote`, `GET /causes/ballot/{slot}`,
 `GET /causes/vote/mine`. Migration `b7d4e9a1c206`, applied automatically at
 startup.
 
-**Seven columns, advertised as six.** The ballot's leftmost column is the
-current week; the rightmost aggregates the six weeks *before* the contest
-opened, so a challenger that was already winning arrives with that behind it
-instead of starting from nothing. A column is won by whoever clears >50% of the
+**Six columns, six elections** (D15, 2026-09-24). The ballot's leftmost
+column is the current week and each column is one week's election — the
+aggregate head-start column is gone, because an aggregate is not an election.
+Upon winning its sixth, the challenger becomes the newest open initiative
+election. A column is won by whoever clears >50% of the
 votes cast in it, and the streak fills from the left — lose a week and it
 resets.
 
 **Still to build:** the swap itself. Nothing yet retires the incumbent and hands
-its window to a challenger that has taken all seven columns; that belongs in
+its window to a challenger that has taken all six columns; that belongs in
 `scheduler.run_due()`, before `bootstrap.ensure_due()` creates the window's
 mission.
 
@@ -555,7 +558,7 @@ type gets its own vote code.
 | Category | Type (subcategory) | Limit per ben / mission | Reactions shown | Rewarded? |
 |---|---|---|---|---|
 | **Budgeting** | Service · Supply · Support | **one per type** (up to 3), rolling — a new slot opens only when the current item is **paid out** | **Helpful only** (upvote); neutral & harmful hidden, counts stay 0 | no — a budget line, not a prize |
-| **Research** | Context · Investigation · Analysis | **one each** | **Helpful / Neutral / Harmful** (full) | **yes — the 3 rewarded types**, one 1/32 each |
+| **Research** | Background · Organization · Analysis *(stored keys `context` · `investigation` · `analysis`; labels renamed 2026-09-24 and 2026-09-25)* | **one each** | **Helpful / Neutral / Harmful** (full) | **yes — the 3 rewarded types**, one 1/32 each |
 | **Review** | Case · Evaluation | **one each** | **Fair / Unfair** (= helpful / harmful); no neutral (count stays 0) — **both** counts displayed | perk (comm line), not cash |
 
 Research must be tied to a mission.
@@ -974,9 +977,9 @@ state. Pages render honest empty vote states.
 | Page | What it is | State |
 |---|---|---|
 | `index.html` | About Earthbux — §1a–§1e, the runway off `GET /stats` | built |
-| `main.html` | **The Election Page** — the voting surface | ◑ |
+| `main.html` | a redirect to `mission.html` since P1 (2026-09-24), keeping its query | built |
 | `cause.html` | **NEWS** — the feed (`sort=hot`), its control panel, the wheel, the cause bar | ◑ |
-| `mission.html` | Mission page — grid a–g, post-support annulus layer 1, **the discussion box** | ◑ |
+| `mission.html` · `/m/<slug>` | **Missions** — one page for a mission's whole life: toggler · annulus · overview, the five ballots, the table, the allocations, then the mission's story (log, posts, post-support ring, discussion, organizations) | ◑ |
 | `profile.html` | **The benefactor's own side of the election page** | ◑ |
 | `admin.html` | Read-only back office over the live DB | ◑ |
 
@@ -1116,6 +1119,12 @@ resources/js/
                      then bump the `?v=` on the pages' script tags.
   ebx_page.js        page helpers: the html escaper, date/number formatters,
                      the watchlist (2026-09-08)
+  ebx_wheel.js       EBX.Wheel — the landing page's phase wheel (five step
+                     toggles, top card, globe → pie → sectors, six cards) and
+                     the phase helpers main.html's framing/exchange views use
+                     (2026-09-18)
+  vendor/            d3-array + d3-geo (ISC) and Natural Earth 110m land
+                     (public domain) for the globe — vendored, no CDN
   css/ebx_frontend.css   shared styles, incl. the five-tab site nav
 scripts/             the check suite — see §14
   bots/ebx_bots.py   the voting bots (§10)
@@ -1221,7 +1230,7 @@ PW_CHROME=/path/to/chrome node scripts/oe_check.js
 | Check | Browser | What it guards |
 |---|---|---|
 | `render_check` | jsdom | Every page mounts, every expected element is present exactly once, no script errors. The smoke test — run it first. |
-| `landing_check` | jsdom | `index.html` as rebuilt 2026-09-15 plus build-seq §2 (2026-09-16): How it Works, the four dated steps and their links, the halves below the steps, research band above budget band, runway vs `/stats`, the analytics beacon. 35 assertions. |
+| `landing_check` | jsdom | `index.html`: **2026-09-18** the phase wheel — five undated step toggles, the halves over them, a top card per step, six side cards, seven sectors, the now marker, the globe with land, a card click refocusing — then research band above budget band, runway vs `/stats`, the analytics beacon. 41 assertions. |
 | **`posts_box_check`** | jsdom | The discussion box: the phase tabs, the category tabs, what is open when. **2026-09-17: the box moved to `mission.html` and the check followed it — same assertions, same ids, a different page and a second mission for stage 4.** Its second half still drives `cause.html`'s hero. 82 assertions. |
 | `carryover_check` | jsdom | The signed-OUT path still renders — the failure mode where a page only works logged in. |
 | `date_audit` | jsdom | Every mission's five dates, from `EBX.Cycle.missionDates`, against the 7-week rotation. Two of them are FIXED POINTS you gave directly (atm0 → Aug 11, atm1 → Sep 29): if a change breaks either, the change is wrong. |

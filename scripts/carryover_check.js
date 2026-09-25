@@ -1,4 +1,4 @@
-// Drives the OE **vote rollover** on main.html in a headless DOM
+// Drives the OE **vote rollover** on mission.html (main.html until P1, 2026-09-24) in a headless DOM
 // (build-seq §1, 2026-08-14). The previous pass would not touch the selection
 // path "without a test that drives a real vote" — this is that test.
 //
@@ -31,7 +31,7 @@ const MISSION = process.argv[4] || 'lan0';
   });
   vc.on('error', (...a) => errs.push('console.error: ' + a.join(' ').slice(0, 200)));
 
-  const dom = await JSDOM.fromURL(BASE + '/main.html?state=oe', {
+  const dom = await JSDOM.fromURL(BASE + '/mission.html?state=oe', {
     runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       w.fetch = (u, o) => fetch(String(u).startsWith('http') ? u : BASE + u, o);

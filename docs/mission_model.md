@@ -131,8 +131,9 @@ election is conceptual, so an organization cannot win it by being popular.
   causes, staggered.
 - ✅ **Seed the field.** The cause's catalogue initiatives are attached as
   phase-1 candidates so the race is never empty on day one.
-- ✅ **Run the parallel cause election.** A challenger must take seven consecutive
-  weeks; otherwise the interface confirms the incumbent by name.
+- ✅ **Run the parallel cause election.** A challenger must win six consecutive
+  weekly elections (D5, D15 — 2026-09-24; no aggregate head start), and on its
+  sixth it becomes the newest open initiative election; otherwise the interface confirms the incumbent by name.
 - ◑ **Rate every post on the way in.** `classify_flag` is a stub returning green.
   Until it is real, Phase 1 is unmoderated in fact while claiming to be moderated
   in shape.
