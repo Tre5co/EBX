@@ -34,6 +34,7 @@ Navigation drawn by `EBX.initNav` in `resources/js/ebx_shared.js`
 |---|---|---|---|
 | **Home** | `index.html` | where the week stands (the phase rows, the wheel) and what the network made this week (the Network row, the feed) — P2, 2026-09-25 | none on the page; every post opens in News |
 | **About** | `about.html` | the explainer that left Home (P2): the copy spine, the grant, the runway, the research/news/budget bands. Footer-linked. | — |
+| **Footer** | every page (`EBX.initFooter`) | 2026-09-25: brand + **Contact us** · About (#why #what #how #earthbuck) · Take part · Causes · Help & legal; pages that do not exist yet read "soon". Contact us is a dialog → `POST /contact` → `contact_messages`, emailed to jax@earthbux.net when SMTP is set; staff read them in admin.html. | the contact dialog |
 | **Missions** | `mission.html` · `/m/<slug>` | **one page for a mission's whole life** (P1, 2026-09-24): the elections, the ballots, the table, the allocations, and the mission's own story. `main.html` forwards here. | Can suggest causes/initiatives, nominate organizations, post to the mission |
 | **News** | `cause.html` | Full discussion home — the feed. | All benefactor posting |
 | **Inbox** | — | drawn in the nav, not live until P4 | — |

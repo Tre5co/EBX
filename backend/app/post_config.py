@@ -224,6 +224,19 @@ REWARDED_TYPES = tuple(k for k, t in TYPES.items() if t.rewarded)
 BENEFACTOR_CATEGORIES = ("budgeting", "mission_support", "review")
 POST_REQUIRES_MEMBERSHIP = frozenset(BENEFACTOR_CATEGORIES)
 
+# 2026-09-25 (P3's "all posting gates removed", landed early for RESEARCH only,
+# Jax's call): anyone signed in may write Background · Vetting · Analysis in any
+# mission — no stake needed. The category keeps its other rules (valid type,
+# a mission, one of each per person per mission), and WINNING a research
+# reward still requires membership (`win_requires_membership`). Budgeting and
+# review stay gated until P3 lifts them.
+OPEN_POSTING_CATEGORIES = frozenset({"mission_support"})
+
+# Vetting (key `investigation`) is research INTO an organization, so a new
+# vetting post must name the organization it vets (Home feedback 1, 2026-09-25:
+# "Vetting posts must target an organization"). Replies are exempt.
+TYPES_REQUIRING_ORG = frozenset({"investigation"})
+
 
 # ---------------------------------------------------------------------------
 # §2a — budgeting estimates. A service/supply/support post is a costed

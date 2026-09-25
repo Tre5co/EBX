@@ -3695,7 +3695,8 @@ def create_post(
             )
         if mission_id is None:
             raise ValueError(f"{data.category} posts must target a mission or initiative")
-        if not staff and not can_post_mission(db, author.id, mission_id):
+        if (not staff and data.category not in pcfg.OPEN_POSTING_CATEGORIES
+                and not can_post_mission(db, author.id, mission_id)):
             raise PermissionError(
                 "you must be a mission member — or agree to become one by committing "
                 "a phase-1 stake — before posting here"
@@ -3726,6 +3727,12 @@ def create_post(
             bad = pcfg.invalid_line_items(data.type, getattr(data, "line_items", None))
             if bad:
                 raise ValueError("this budget row is incomplete: " + bad)
+
+        if data.type in pcfg.TYPES_REQUIRING_ORG and not is_reply:
+            if not data.org_id:
+                raise ValueError("a vetting post must name the organization it vets (org_id)")
+            if db.get(models.Organization, data.org_id) is None:
+                raise ValueError(f"organization '{data.org_id}' not found")
 
         if not is_reply:
             dup = db.scalar(

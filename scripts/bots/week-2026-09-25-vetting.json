@@ -1,0 +1,29 @@
+{
+  "Jax3000": {
+    "research": {
+      "posts": [{
+        "mission_id": "hpr0", "type": "investigation", "org_id": "save-the-children",
+        "title": "Big name, no solar plan on the record",
+        "body": "Vetting Save the Children for the Global Education Access Grid, and I'm not sold. This mission is solar-powered mesh-network learning hubs. Their own education page names Literacy Boost, Numeracy Boost, early childhood, school health and Education in Emergencies. Not one solar or digital-hub programme (https://www.savethechildren.org/us/what-we-do/education/global-education). So who on their staff has built off-grid networks before? Money: CharityWatch grades them A-, but it costs $20 to raise $100 and the CEO took $629,195 in FY2023 (https://www.charitywatch.org/charities/save-the-children). Governance: in 2020 the UK Charity Commission found Save the Children UK's handling of harassment complaints against two senior executives \"so poor… it amounted to mismanagement\" (https://fundraising.co.uk/2020/03/05/inquiry-finds-save-the-children-uk-mismanaged-workplace-harassment-complaints/). Before budget day I want a named hub lead, a partner who has actually installed solar mesh networks, and a per-hub cost. No plan, no money."
+      }]
+    }
+  },
+  "JJ420": {
+    "research": {
+      "posts": [{
+        "mission_id": "hpr0", "type": "investigation", "org_id": "save-the-children",
+        "title": "They can measure learning. Can they wire a village?",
+        "body": "Good news first. Save the Children tests what it runs. In Rwanda it put Literacy Boost through a randomized trial from 2013 to 2015. Teacher training plus community reading activities beat teacher training alone, and both beat the control group. Promotion into P.3 rose about 44% (https://image.savethechildren.org/rwanda-2-year-impact-evaluation.pdf-ch11041958.pdf/6872544757ncv52q1h1uo8m48uhq3bde.pdf). The same report is honest that 31% of tracked children still missed the basic literacy threshold. That's the habit I want in this mission: baseline, control, endline. The gap is hardware. None of their named education programmes is about solar or connectivity (https://www.savethechildren.org/us/what-we-do/education/global-education). My suggestion: they run the learning side (teachers, community reading, measurement) and bring in a specialist for the solar mesh, with hub uptime reported next to reading scores. Learning is an ecosystem too. The hub only works if the community around it does."
+      }]
+    }
+  },
+  "BotJoe9": {
+    "research": {
+      "posts": [{
+        "mission_id": "hpr0", "type": "investigation", "org_id": "save-the-children",
+        "title": "Credible and accountable, if the children have a say",
+        "body": "Save the Children is one of the most established child-rights organizations there is, and the ratings back that up. CharityWatch grades it A- with 84% of spending on programmes (https://www.charitywatch.org/charities/save-the-children). The charity reports 80% of FY2025 expenditures went to programme services, with audited statements published (https://www.savethechildren.org/us/about-us/financial-information). It says it helped 7.5 million children access education in 2024 (https://www.savethechildren.org/us/what-we-do/education/global-education). Accountability matters to me, and so does the record. The UK Charity Commission's 2020 inquiry found mismanagement of harassment complaints, and the charity accepted the findings publicly (https://www.savethechildren.org.uk/news/media-centre/press-releases/save-the-children-response-to-charity-commission-report). For this mission, I want to know who the hubs serve first. Will girls and children with disabilities get equal access? Do local communities and teachers co-design the curriculum, or is it delivered to them? Those answers should be in the plan before budget day."
+      }]
+    }
+  }
+}

@@ -48,6 +48,15 @@ class Settings(BaseSettings):
     # `X-EBX-Bot-Key` header is created with `is_test = true`. Empty disables it.
     # Set EBX_BOT_KEY on Railway; give the same value to the bot script.
     ebx_bot_key: str = ""
+    # -- Contact us (2026-09-25) ------------------------------------------------
+    # Every message is stored (contact_messages). When SMTP_HOST is set it is
+    # also emailed to CONTACT_TO. Empty SMTP_HOST = store only.
+    contact_to: str = "jax@earthbux.net"
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""          # defaults to smtp_user
 
     @property
     def cors_origins_list(self) -> list[str]:

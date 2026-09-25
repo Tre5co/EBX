@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About Earthbux — you donate, we follow</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
   <style>
+    [id] { scroll-margin-top: 24px; }
     /* ── about.html — P2 · Home (2026-09-25), D7 ───────────────────────────
        Home stopped explaining. The explaining lives here, reached from the
        footer, in the order the P2 copy spine gives:
@@ -218,8 +219,8 @@
 
   <div class="ld-main">
 
-    <!-- 1 · what Earthbux is -->
-    <div class="ld-a">
+    <!-- 1 · what Earthbux is — the footer's "Why Earthbux" lands here (#why) -->
+    <div class="ld-a" id="why">
       <p class="ld-claim">About Earthbux</p>
       <h1 class="ld-wordmark">Earthbux <em>News</em></h1>
       <p class="ld-sub">you donate, we follow</p>
@@ -230,7 +231,7 @@
     <div class="ld-rule"></div>
 
     <!-- 2 · the $1/week mechanism -->
-    <section class="ab-sec ld-close" style="margin-top:0;">
+    <section class="ab-sec ld-close" id="grant" style="margin-top:0;">
       <p class="ab-kick">A dollar a week</p>
       <p class="ld-grant">So control is what we hand out: every member is granted
         <b>10 tokens a week</b> — a dollar of real say in where the pool goes.</p>
@@ -239,8 +240,8 @@
       <div class="ld-runway" id="ld-runway"></div>
     </section>
 
-    <!-- 3 · donor control -->
-    <section class="ab-sec">
+    <!-- 3 · donor control (#how) -->
+    <section class="ab-sec" id="how">
       <p class="ab-kick">Donor control</p>
       <h2 class="ld-band__h">How it Works &mdash; donate to the <em>thing that happens</em>, not the people who do it</h2>
       <p class="ab-p">You vote first on <b>what</b> the mission is, and only then on <b>who</b> runs it.
@@ -248,8 +249,8 @@
       <ol class="ab-phases" id="ab-phases"></ol>
     </section>
 
-    <!-- 4 · what an Earthbuck represents -->
-    <section class="ab-sec">
+    <!-- 4 · what an Earthbuck represents (#earthbuck) -->
+    <section class="ab-sec" id="earthbuck">
       <p class="ab-kick">What an Earthbuck is</p>
       <p class="ab-lede">One token is <b>10&cent;</b> of say in one mission.</p>
       <p class="ab-p">You commit your tokens to the initiative you want. They become that mission&rsquo;s
@@ -262,8 +263,8 @@
       </div>
     </section>
 
-    <!-- 5 · what research and news are for -->
-    <section class="ab-sec">
+    <!-- 5 · what research and news are for (#what — "What we do") -->
+    <section class="ab-sec" id="what">
       <p class="ab-kick">What the network is for</p>
       <p class="ab-p" style="margin-top:0;">Research and news are how a mission gets decided and run, not decoration.</p>
     </section>
@@ -391,7 +392,7 @@
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20260925"></script>
+  <script src="resources/js/ebx_shared.js?v=20260925b"></script>
   <script>
   // 3 — the five phases, from the one source Home and the mission page read
   // (ebx_wheel.js PHASE). Written out here so this page needs no wheel.

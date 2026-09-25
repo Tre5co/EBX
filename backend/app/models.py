@@ -245,6 +245,27 @@ class InitiativeSlug(Base):
 
 
 # ===========================================================================
+# ContactMessage — the footer's "Contact us" (2026-09-25). Every message is
+# stored; if mail is configured (SMTP_HOST …) it is also emailed to
+# CONTACT_TO (jax@earthbux.net). `emailed` records whether that happened, so
+# nothing is lost while there is no mail transport.
+# ===========================================================================
+class ContactMessage(Base):
+    __tablename__ = "contact_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False)
+    topic: Mapped[str] = mapped_column(String, nullable=False, default="general")
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    page: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    ben_id: Mapped[Optional[int]] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="new")   # new | read | answered
+    emailed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# ===========================================================================
 # Organization — a vetted org. Logs in via Memberships (people), not directly.
 # Its causes are derived: org -> candidacies -> missions -> cause.
 # ===========================================================================

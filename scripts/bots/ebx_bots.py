@@ -547,24 +547,31 @@ def task_budget(api, bot, week, mine, c, rng):
 
 
 def task_research(api, bot, week, mine, c, rng):
-    staked = {s["mission_id"] for s in mine["stakes"]}
-    if week["initiative_election"]:
-        staked.add(week["initiative_election"]["mission_id"])   # a committed ME stake counts too
+    # 2026-09-25: research is open to everyone signed in — no stake needed
+    # (post_config.OPEN_POSTING_CATEGORIES), so the bot no longer skips missions
+    # it holds nothing in; the server decides. A vetting post (`investigation`)
+    # must name the organization it vets: `org_id` in the content file.
     existing = {(p["mission_id"], p["type"]): p["id"] for p in mine["my_posts"] if not p["parent_id"]}
     for rp in c.get("posts", []):
         mid, typ = rp.get("mission_id"), rp.get("type")
         if typ not in ("context", "investigation", "analysis"):
             continue
+        if typ == "investigation" and not rp.get("org_id"):
+            say(bot["handle"], f"skipped vetting in {mid} (no org_id — a vetting post must name the organization)")
+            continue
         pid = existing.get((mid, typ))
         if pid:
             _try(bot, f"updated {typ} in {mid}", lambda: api.put(f"/posts/{pid}",
                                                                 {"title": rp.get("title"), "body": rp["body"]}))
-        elif mid in staked:
-            _try(bot, f"wrote {typ} in {mid}", lambda: api.post("/posts", {
-                "id": "p-" + secrets.token_hex(6), "author_type": "ben", "category": "mission_support",
-                "type": typ, "mission_id": mid, "title": rp.get("title"), "body": rp["body"]}))
         else:
-            say(bot["handle"], f"skipped {typ} in {mid} (no stake there)")
+            body = {"id": "p-" + secrets.token_hex(6), "author_type": "ben", "category": "mission_support",
+                    "type": typ, "mission_id": mid, "title": rp.get("title"), "body": rp["body"]}
+            if rp.get("org_id"):
+                body["org_id"] = rp["org_id"]
+            if rp.get("stance"):
+                body["stance"] = rp["stance"]
+            _try(bot, f"wrote {typ} in {mid}" + (f" on {rp['org_id']}" if rp.get("org_id") else ""),
+                 lambda: api.post("/posts", body))
 
 
 def task_exchange(api, bot, week, mine, c, rng):

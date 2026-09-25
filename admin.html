@@ -83,6 +83,7 @@
       <div class="item special" data-view="mission">Search by mission</div>
       <div class="item special" data-view="gantt">Gantt · mission plan</div>
       <div class="item special" data-view="accounts">Accounts · remove</div>
+      <div class="item special" data-view="contact">Contact us · messages</div>
     </div>
     <div id="org-nav" class="hidden">
       <div class="group">Your organizations</div>
@@ -623,6 +624,46 @@ async function removeAccount(r) {
   } catch (e) { alert("Could not remove the account.\n\n" + e.message); }
 }
 document.querySelector('[data-view="accounts"]').onclick = selectAccountsView;
+
+// ---------- Contact us (2026-09-25) — the footer's messages ----------
+// Every message the footer dialog sends lands here (POST /contact); "emailed"
+// says whether it also reached jax@earthbux.net (only once SMTP is set).
+async function selectContactView() {
+  current = { kind: "contact" };
+  setActive((i) => i.dataset.view === "contact");
+  $("#main").innerHTML = `
+    <div class="toolbar">
+      <span class="title mono">contact messages</span>
+      <select id="ct-status"><option value="">all</option><option value="new" selected>new</option><option value="read">read</option><option value="answered">answered</option></select>
+      <span class="count" id="rowcount"></span>
+    </div>
+    <div id="grid"><div class="msg">Loading…</div></div>`;
+  $("#ct-status").onchange = runContact;
+  await runContact();
+}
+async function runContact() {
+  const st = $("#ct-status").value;
+  let rows;
+  try { rows = await api("/admin/contact" + (st ? "?status=" + st : "")); }
+  catch (e) { $("#grid").innerHTML = `<div class="msg warn">${e.message}</div>`; return; }
+  $("#rowcount").textContent = rows.length + " messages";
+  if (!rows.length) { $("#grid").innerHTML = '<div class="msg">No messages.</div>'; return; }
+  const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  $("#grid").innerHTML = '<table><thead><tr><th>#</th><th>when</th><th>from</th><th>about</th><th>message</th><th>page</th><th>emailed</th><th>status</th></tr></thead><tbody>' +
+    rows.map((r) => `<tr><td>${r.id}</td><td class="mono">${esc(String(r.created_at || "").slice(0, 16).replace("T", " "))}</td>` +
+      `<td>${esc(r.name)}<br><a href="mailto:${esc(r.email)}">${esc(r.email)}</a>${r.ben_id ? `<br><span class="pill">ben ${r.ben_id}</span>` : ""}</td>` +
+      `<td>${esc(r.topic)}</td><td style="white-space:pre-wrap;max-width:520px;">${esc(r.body)}</td><td class="mono">${esc(r.page || "")}</td>` +
+      `<td>${r.emailed ? "yes" : "no"}</td>` +
+      `<td><select data-ct="${r.id}">${["new", "read", "answered"].map((s) => `<option${s === r.status ? " selected" : ""}>${s}</option>`).join("")}</select></td></tr>`).join("") +
+    "</tbody></table>";
+  document.querySelectorAll("[data-ct]").forEach((sel) => {
+    sel.onchange = async () => {
+      try { await api("/admin/contact/" + sel.dataset.ct, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: sel.value }) }); }
+      catch (e) { alert(e.message); }
+    };
+  });
+}
+document.querySelector('[data-view="contact"]').onclick = selectContactView;
 
 // ==========================================================================
 // ORG SIDE (org-experience restructure, 2026-07-10)

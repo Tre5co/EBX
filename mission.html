@@ -8,7 +8,7 @@
   <base href="/" />
   <title>Earthbux — Missions</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
   <style>
     /* ── Top bar (3-up: tagline · top-card-header · user badge) ── */
     .ebx-topbar {
@@ -2984,7 +2984,7 @@
        the date/number formatters, and the watchlist. See its header for why it
        is not part of ebx_shared.js. -->
   <script src="resources/js/ebx_page.js?v=20260908"></script>
-  <script src="resources/js/ebx_shared.js?v=20260925"></script>
+  <script src="resources/js/ebx_shared.js?v=20260925b"></script>
   <!-- build-seq P1: the globe inside the annulus -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -8487,8 +8487,27 @@
               (p.title || (p.body || '').slice(0, 60))) + '</option>').join('') + '</select>';
       } else { rep.hidden = true; rep.innerHTML = ''; }
       document.getElementById('mxc-in-title').hidden = C.cat === 'review';
-      document.getElementById('mxc-fields').innerHTML = C.cat === 'budgeting' ? fieldsHTML(C.type) : '';
+      document.getElementById('mxc-fields').innerHTML = C.cat === 'budgeting' ? fieldsHTML(C.type)
+        : (C.cat === 'mission_support' && C.type === 'investigation' && !C.parent) ? vetOrgHTML() : '';
       document.getElementById('mxc-msg').textContent = '';
+    }
+    // 2026-09-25 — "Vetting posts must target an organization." The composer
+    // asks which one: this mission's elected organization first, then the
+    // organizations standing in its race, then every other organization.
+    // The server refuses a vetting post without one.
+    function vetOrgHTML() {
+      const orgs = (EBX.config.organizations || []);
+      const name = id => { const o = orgs.find(x => x.id === id); return o ? o.name : id; };
+      const won = mission && mission.winning_org_id ? [mission.winning_org_id] : [];
+      let cands = [];
+      try { cands = ((EBX.Wheel && EBX.Wheel.candidacies(MID)) || []).map(c => c.org_id); } catch (e) {}
+      cands = cands.filter(id => won.indexOf(id) < 0);
+      const rest = orgs.map(o => o.id).filter(id => won.indexOf(id) < 0 && cands.indexOf(id) < 0);
+      const opt = id => '<option value="' + esc(id) + '">' + esc(name(id)) + '</option>';
+      const grp = (lab, ids) => ids.length ? '<optgroup label="' + lab + '">' + ids.map(opt).join('') + '</optgroup>' : '';
+      return '<div class="mxc__row" style="grid-template-columns:auto 1fr;align-items:center;"><label class="mxc__lab" for="mxc-org" style="font-size:0.8rem;opacity:0.75;">Organization you are vetting</label>' +
+        '<select class="mxc__in" id="mxc-org">' + (won.length ? '' : '<option value="">— pick the organization —</option>') +
+        grp('Elected', won) + grp('In this race', cands) + grp('Other organizations', rest) + '</select></div>';
     }
     let _allPosts = [];
     async function openComposer(cat, type, parent) {
@@ -8536,6 +8555,10 @@
         Object.assign(data, { parent_id: parent.id, category: parent.category, type: parent.type });
       } else {
         Object.assign(data, { category: C.cat, type: C.type, title: val('mxc-in-title') || null });
+        if (C.type === 'investigation') {
+          data.org_id = val('mxc-org');
+          if (!data.org_id) return say('Pick the organization you are vetting.');
+        }
         if (C.cat === 'budgeting') {
           if (C.type === 'service') data.line_items = [{ job: val('mxc-job'), hourly_rate: num('mxc-rate'), days_needed: num('mxc-days') }];
           if (C.type === 'supply') data.line_items = [{ item: val('mxc-item'), supplier: val('mxc-supplier') || null, cost: num('mxc-cost') }];

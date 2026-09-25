@@ -18,6 +18,7 @@ from .routers import (
     benefactors,
     candidacies,
     causes,
+    contact,
     initiatives,
     missions,
     organizations,
@@ -218,6 +219,7 @@ app.include_router(stats.router)
 app.include_router(wallet.router)
 app.include_router(transactions.router)
 app.include_router(admin.router)
+app.include_router(contact.router)   # Contact us (2026-09-25)
 
 
 # Static hosting from the project root.

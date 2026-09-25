@@ -28,6 +28,7 @@ never carries a second copy of a spec.*
 - [3. BUILD SEQUENCE](#3-build-sequence)
   - [P1. Mission](#p1-mission)
   - [P2 · Home](#p2--home)
+  - [NOW. Footer.](#now-footer)
   - [P3 · Posting](#p3--posting)
   - [P4 · Event log + Inbox](#p4--event-log--inbox)
   - [P5 · Money made visible](#p5--money-made-visible)
@@ -48,6 +49,7 @@ never carries a second copy of a spec.*
   - [Added 2026-09-24 (P1 — the merge)](#added-2026-09-24-p1--the-merge)
   - [Added 2026-09-25b (P2 · Home)](#added-2026-09-25b-p2--home)
 - [ARCHIVE](#archive)
+  - [2026-09-25c — Footer, Contact us, the bots](#2026-09-25c--footer-contact-us-the-bots)
   - [2026-09-25b — P2 · Home](#2026-09-25b--p2--home)
   - [2026-09-25 — P1 review 2 (the report is the main display)](#2026-09-25--p1-review-2-the-report-is-the-main-display)
   - [2026-09-24b — P1 review pass (Jax's review of the merged page)](#2026-09-24b--p1-review-pass-jaxs-review-of-the-merged-page)
@@ -138,7 +140,7 @@ gantt
     P1 review 2 (report is the main display)  :done, p1r2, 2026-09-25, 1d
     P1 follow-ups (dead top-card + box code)  :p1b, after p1r2, 2d
     P2 Home (annulus + The Network + feed)    :done, p2, 2026-09-25, 1d
-    Footer pass (categories below, F9)        :foot, after p2, 1d
+    Footer + Contact us (F9)                  :done, foot, 2026-09-25, 1d
     P3 Posting (post.html, gates off)         :p3, after p2, 4d
     P4 Event log + Inbox                      :p4, after p3, 5d
     Animated process diagram                  :s4, after p4, 7d
@@ -210,7 +212,30 @@ register below).*
 footer was saved for later and sits in `## BACKLOG` › Footer with a proposed
 categorization.*
 
----
+### NOW. Footer.
+
+*Built 2026-09-25 — see `## ARCHIVE` › 2026-09-25c. The table below is what it was built from; "later" items are drawn as "soon" in the footer, not linked.*
+
+**Footer** *(saved for later by the P2 spec; about.html now exists — F9)*
+
+Jax's list, sorted into four columns and a bottom line. **Keep** = worth a link
+at launch; **later** = needs a page or a thing that does not exist yet;
+**drop** = a duplicate, or not a footer item.
+
+| Column | Keep | Later | Drop / merge |
+|---|---|---|---|
+| **Earthbux** | About (about.html) · White paper (→ `money_model.md` rendered) · Rules | Docs · GitHub (once the repo is public) | earthbuxinc.com (the company site — one link at the bottom line, not a column item) |
+| **Take part** | Join a mission (→ Missions) · Register a philanthropy / Organizations (one link, P6's claim page) | Beneficiaries (P6: beneficiary surface) · Get the app | Join Us (= Join the team) |
+| **Support** | Help Center (earthbux.net/help) · Contact us · Safety | Accessibility (a statement page) | the second Contact Us · Links |
+| **Legal** | Privacy · Terms / user agreement | — | Ads (there are none; say so in Terms instead) |
+| **Bottom line** | © 2026 Earthbux · earthbux.net · earthbuxinc.com | Send love / Pay us (a donate-to-Earthbux link — needs D11/D12) | Copyright (already the ©) |
+
+- One important thing - 'Contact us' should open a dialogue for them to send a message, which messages jax@earthbux.net
+
+Also kept from the spec: "collective action, measured in impact" as the
+footer's tagline, and the seven Causes column (it is the only footer list that
+links real pages today). "Join the team" belongs under Earthbux once there is a
+careers page.
 
 ### P3 · Posting
 
@@ -335,7 +360,7 @@ a record of commit history.
 | **F6** | The bots only voted on Human Progress — the latest possible election. They should spread across open elections, weighted to the upcoming one. | 2026-09-20 | P7 (or bots2) |
 | **F7** | Profile choice cards are in reverse order: each tiv/org should swap, running week+1 top-left counterclockwise to week+6 top-right. | — | P5 |
 | ~~**F8**~~ | ~~`render_check.js` (13 MISS) and `ce_check.js` (timed out on `.hig__toggle`) asserted the pre-2026-09-20 Elect page.~~ Both rewritten against the merged page; clean. | 2026-09-24 | **P1, 2026-09-24** |
-| **F9** | The shared footer links `en.html`, `initiative.html` (neither exists) and four `href="#"` items. `about.html` exists since P2. | 2026-09-24 | Footer pass (BACKLOG › Footer) |
+| ~~**F9**~~ | ~~The shared footer linked `en.html`, `initiative.html` and four `href="#"` items.~~ The footer (2026-09-25) links only pages that exist; the rest read "soon". | 2026-09-24 | **Footer, 2026-09-25** |
 | ~~**F10**~~ | ~~The mission page's discussion box got `p2Active: ph >= 2` where `ph` was an object — always false.~~ Reads the mission now. | 2026-09-24 | **P1, 2026-09-24** |
 | **F11** | wil0 and hpr0 are organization elections **past their close** (Sep 8, Sep 22) with no winner — their only candidates are `pending`. They sort first, so wil0 is "this week's race, open to everyone" and two live races (hpr1, atm2) fall outside `/wallet/rows`' eight. Needs D17. | 2026-09-24 | P5 / P7 |
 | **F12** | ~~"Show all races" threw~~ — its `onclick` called `_oeScope()`, which in markup is the page's `let` string, not the accessor. **Fixed P1.** | 2026-09-24 | **P1, 2026-09-24** |
@@ -348,6 +373,22 @@ a record of commit history.
 ## 5. BACKLOG
 
 *Named, not queued. Reorganize freely during a pass; do not build.*
+
+**Home feedback 1**
+- The time span below the annulus is wrong - it should be true to the cause that is selected (from top card phase start to last card phase end)
+- The ray-out display doesn't look great here. I'd rather have a line connecting the center of the sector with the center of the side of the election card.
+- The top card needs to be titled something other than a giant <cause>.
+- We can remove the cause title with the phase description that is below the annulus.
+- Vetting posts must target an organization.
+- The 3 'the network' things aren't meant to be toggles- they are meant to describe to the user how the system works as a whole... It might be best to put these in between the 5 phases and the top card.
+- Each post should be connected to a mission as well - should have a link - "Go to mission"
+
+**Other**
+- Okay, the bots posted some cases, which are ties to future initiative elections... I need these posts to also be available on the mission page. 
+- The footer needs an about - justification and also an about - what we do and also an about - how it works and a lot of differetn but related stuff. 
+
+- The org nomination and Initiative nomination should not require you to make a case, it should be optional.
+- Replace money model in white paper with my document.
 
 **Mission**
 - The post-support ring (annulus layer 1) returns inside the **framing** and **exchange** phase panels — review 2026-09-24. `GET /missions/{id}/post-support` is unchanged.
@@ -408,28 +449,59 @@ If the same cause wins 6 weeks in a row, it replaces the old initiative for all 
 **Side cards**
 - Per-phase card locations (2 of 5 done) — when cause voting starts, when budget day is, which framing week matters.
 
-**Footer** *(saved for later by the P2 spec; about.html now exists — F9)*
 
-Jax's list, sorted into four columns and a bottom line. **Keep** = worth a link
-at launch; **later** = needs a page or a thing that does not exist yet;
-**drop** = a duplicate, or not a footer item.
 
-| Column | Keep | Later | Drop / merge |
-|---|---|---|---|
-| **Earthbux** | About (about.html) · White paper (→ `money_model.md` rendered) · Rules | Docs · GitHub (once the repo is public) | earthbuxinc.com (the company site — one link at the bottom line, not a column item) |
-| **Take part** | Join a mission (→ Missions) · Register a philanthropy / Organizations (one link, P6's claim page) | Beneficiaries (P6: beneficiary surface) · Get the app | Join Us (= Join the team) |
-| **Support** | Help Center (earthbux.net/help) · Contact us · Safety | Accessibility (a statement page) | the second Contact Us · Links |
-| **Legal** | Privacy · Terms / user agreement | — | Ads (there are none; say so in Terms instead) |
-| **Bottom line** | © 2026 Earthbux · earthbux.net · earthbuxinc.com | Send love / Pay us (a donate-to-Earthbux link — needs D11/D12) | Copyright (already the ©) |
+**Bots** *(2026-09-25 — gathered here from where the notes had scattered: the
+build clock (`bots`, `bots2`), P7's "bot task split", F6, the two lines that were
+under Unrelated items, "Other" in Home feedback 1, README §10,
+`scripts/bots/personas.json` and `scripts/bots/ebx_bots.py`. Nothing older was
+found in `docs/_to_delete/` — those files predate the bots. If a note is still
+missing, it was never in the repo.)*
 
-Also kept from the spec: "collective action, measured in impact" as the
-footer's tagline, and the seven Causes column (it is the only footer list that
-links real pages today). "Join the team" belongs under Earthbux once there is a
-careers page.
+*The bots* — three AI benefactors on the live site, one persona file, passwords
+in `scripts/bots/bots.local.json` (git-ignored, never printed).
+
+| Bot | Live id | Voice | Leans toward (cause affinity 1–5) | Cash appetite |
+|---|---|---|---|---|
+| **Jax3000** | 9 | Aggressive forest-and-wildlife defender: blunt, suspicious of corporate and greenwashing groups, backs direct action and small grassroots groups | forests 5 · wildlife 5 · land 3 | withdraws 5% |
+| **JJ420** | 11 | Easygoing ecosystem expert: explains how species, soil, water and climate connect, finds the constructive middle, wants measurable outcomes | oceans 4 · land 4 · the rest 2–3 | withdraws 15% |
+| **BotJoe9** | 10 | Establishment-leaning, big on social justice: trusts large charities, asks who benefits and whether communities have a voice | human rights 5 · human progress 5 · atmosphere 3 | withdraws 25% |
+| *GameMaster* | staff | not a bot: the staff login `sync` and `backfill` use (`--staff-handle`, password from `EBX_STAFF_PASSWORD`) | — | — |
+
+Proposed, not built — bots the actions below would need:
+- **An organization-side bot** — a rep account for one real, consenting organization, or a clearly fictional test org, to exercise claim, org updates and the M1–M3 messages (P6).
+- **A newsroom bot** — an Earthbux staff-role account that writes `editorial` / `mission_update` posts, so Home's News tile and the feed have news to show.
+- **A newcomer bot** — signs up fresh each run, to test the new-account vote-buying gate (P7/t1) and the first-visit path.
+- **A contrarian or auditor bot** — rates, replies and flags, to exercise the post-support layer (orange/red) and moderation (P7/t3).
+
+*Bot actions* — what `ebx_bots.py` does today, one task per run, every bot at once:
+
+| Task | Actions | Needs |
+|---|---|---|
+| `plan` | read-only: the week (active cause, initiative elections, organization races, framing missions, posts by mission) and each bot's tokens, stakes and posts | — |
+| `initiatives` | vote in **every** open initiative election (tokens in the upcoming one, 0-token preferences elsewhere) · propose an initiative · write a case for/against · reply · rate fair/unfair | content file, or `--ai` |
+| `organizations` | commit in this week's race and races it backed · pick an organization · nominate one (`/organizations/register`) · case · reply · rate | real organizations only |
+| `budget` | costed service / supply / support items · upvote others' items | a stake in the mission |
+| `research` | write or **update** Background · Vetting · Analysis. **No stake needed since 2026-09-25**, and vetting must name an `org_id` | content file |
+| `exchange` | move stake between open organization races · withdraw the non-final part as cash (before budget day) | a stake |
+| `sync` *(staff)* | copy the local database's non-pilot initiatives and organizations to the site | `--from-db`, staff login |
+| `backfill` *(staff)* | elect an organization / initiative in past races that never got one | staff login |
+
+Flags: `--content week.json` · `--ai` (Claude with web search, in character) ·
+`--dry-run` · `--only <handle>` · `--bot-key` (marks new accounts `is_test`).
+Content files so far: `week-2026-09-17.json`, `week-2026-09-25-vetting.json`.
+
+Planned, not built:
+- **Task split** (P7): voting · researching · proposing · exchanging · budgeting as separately schedulable jobs, rather than one task per manual run.
+- **Vote spread** (F6): spread tokens across open elections, weighted to the upcoming one, not all on the latest.
+- **A regularized schedule** for bot runs, e.g. a weekly scheduled task after each Monday close, plus network-wide deploy (P7).
+- **Bots on the local copy** — a documented way to run them against `localhost:8000` (the script already takes `--base`; missing is a local seed of bot accounts and a local `EBX_BOT_KEY`).
+- **Retroactive posts for recent elections** (clock: `posts`, after P3).
+- **Bot cases on the mission page** (Home feedback 1 › Other): the cases the bots posted on future initiative elections (hpr2) must also show on that mission's page.
+- **Replies to each other** across bots, so threads have more than one voice, and **framing-week exchanges** into another mission once the framing exchange exists (money_model §12).
+- **Clean-up before real money**: remove or mark all bot accounts (`POST /admin/accounts/{id}/test`) before the first real donation.
 
 **Unrelated items**
-- Create method for bots to participate on this local copy.
-- Regularized schedule for bot runs
 - Footer
 - I'm thinking that a phase 6 may include the rewards and travel opportunities.
 
@@ -656,6 +728,19 @@ guards on a mount that no longer exists, so it paints nothing.
 ## ARCHIVE
 
 *Finished pass reports. Nothing here is executed.*
+
+### 2026-09-25c — Footer, Contact us, the bots
+
+- ✅ **The footer on every page** (`ebx_shared.js` `initFooter`; a page with no mount gets one). Brand column with **Contact us**; **About** (Why Earthbux · What we do · How it works · What an Earthbuck is → `about.html#why/#what/#how/#earthbuck` — the three "abouts" Jax asked for; White paper · Rules *soon*); **Take part** (Join a mission · Read the news · Nominate an organization · Register a philanthropy *soon* · Join the team → Contact); **Causes** (seven); **Help & legal** (Contact us · Help Center · Safety · Privacy · Terms *soon*); bottom line © · earthbux.net · earthbuxinc.com. `admin.html` (staff console, no shared script) has no footer until P7 absorbs it.
+- ✅ **Contact us** — a dialog (`EBX.Dialogs.contact`; also any `[data-ebx-contact]` and a `#contact` hash) that POSTs `/contact`: name, email, topic, message, a hidden honeypot, 5 per address per 10 min. Every message is **stored** (`contact_messages`, migration `d2f8b6c1a9e4` — applied on deploy by the startup upgrade) and **emailed to jax@earthbux.net** when `SMTP_HOST`/`SMTP_USER`/`SMTP_PASSWORD` (+ optional `SMTP_PORT`, `SMTP_FROM`, `CONTACT_TO`) are set on Railway (`app/mailer.py`); until then `emailed` stays false and staff read them in **admin.html › Contact us · messages** (`GET/PUT /admin/contact`).
+- ✅ **Research is open to everyone** (Jax's call, P3's rule landed early for research only): `post_config.OPEN_POSTING_CATEGORIES`. Budgeting and review stay gated. Winning a research reward still needs membership.
+- ✅ **Vetting posts must target an organization** (Home feedback 1): the server refuses a new vetting post without an existing `org_id`; the mission page's composer asks which (elected first, then the race, then all).
+- ✅ **Bots section** in `## BACKLOG` — the bot list and the action list, gathered from where the notes had scattered.
+- ◑ **Vetting run** — three posts on **Save the Children** (hpr0, elected Sep 22), in `scripts/bots/week-2026-09-25-vetting.json`, approved by Jax; the dry run against earthbux.net is clean. It runs once this deploy is live (the live server still has the stake gate).
+
+**Checks.** New `contact_check.py` 14 · new `research_gate_check.py` 7 · `wheel_check` 40 · `home_check` 24 · `landing_check` 21 · `mission_layout_check` 105 · `render_check` clean · `composer_check` 18 · `ce_check` 80 · `oe_check` 23 · `profile_check` 42 · `feed_check`.
+
+**Not in this pass.** Home feedback 1 (except "vetting must target an organization") and the rest of "Other" — they are queued where Jax wrote them.
 
 ### 2026-09-25b — P2 · Home
 

@@ -460,6 +460,24 @@ em { font-style: italic; }
   margin-bottom: var(--sp-lg);
 }
 
+/* 2026-09-25 — the footer on every page: brand + four columns. */
+.ebx-footer__grid--5 { grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr; }
+.ebx-footer__logo { display: inline-block; text-decoration: none; }
+.ebx-footer a.ebx-footer__logo { color: var(--clr-parchment); }
+.ebx-footer__brand p { margin: 0 0 var(--sp-md); line-height: 1.6; }
+.ebx-footer__contact {
+  font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  padding: 8px 16px; border-radius: 8px; color: #0f1a14;
+  background: var(--clr-honey); border: 1px solid var(--clr-honey);
+}
+.ebx-footer__contact:hover { filter: brightness(1.07); }
+.ebx-footer__soon { color: rgba(245,240,232,0.32); cursor: default; }
+.ebx-footer__soon::after {
+  content: 'soon'; margin-left: 6px; font-family: var(--font-mono); font-size: 0.55rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: rgba(245,240,232,0.28);
+}
+.ebx-footer__bottom a { color: rgba(245,240,232,0.45); }
+@media (max-width: 900px) { .ebx-footer__grid--5 { grid-template-columns: 1fr 1fr 1fr; } .ebx-footer__brand { grid-column: 1 / -1; } }
 @media (max-width: 768px) {
   .ebx-footer__grid {
     grid-template-columns: 1fr 1fr;

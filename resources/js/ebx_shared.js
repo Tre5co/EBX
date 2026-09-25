@@ -626,57 +626,95 @@
       "Z"
     ].join(" ");
   }
+  // ── THE FOOTER — on every page (2026-09-25) ──────────────────────────────
+  // Jax: "Build the footer on every page. It will be changed, but the 'contact
+  // us' part is important to do now." Columns follow INSTRUCTIONS › Footer
+  // (keep / later / drop): About (the justification, what we do, how it works
+  // — about.html's sections), Take part, Causes, Help & legal. Anything whose
+  // page does not exist yet is drawn as "soon", not linked (F9). A page with
+  // no `#ebx-footer-mount` gets one appended, so every page carries it.
+  //
+  // CONTACT US opens a dialog (EBX.Dialogs.contact) that POSTs /contact: the
+  // message is stored, and emailed to jax@earthbux.net once SMTP is set.
+  // Any element with `data-ebx-contact` (optionally ="topic") opens it, and so
+  // does a `#contact` hash on any page.
   function initFooter() {
-    const mount = document.getElementById("ebx-footer-mount");
-    if (!mount) return;
+    let mount = document.getElementById("ebx-footer-mount");
+    if (!mount) {
+      if (document.querySelector("footer.ebx-footer")) return;
+      mount = document.createElement("div");
+      mount.id = "ebx-footer-mount";
+      document.body.appendChild(mount);
+    }
+    const soon = (label) => '<li><span class="ebx-footer__soon" title="Coming soon">' + label + "</span></li>";
+    const link = (href, label, ext) => '<li><a href="' + href + '"' + (ext ? ' rel="noopener" target="_blank"' : "") + ">" + label + "</a></li>";
+    const causes = [["atmosphere", "Atmosphere"], ["oceans", "Oceans"], ["land", "Land"], ["forests", "Forests"],
+      ["wildlife", "Wildlife"], ["human-rights", "Human Rights"], ["human-progress", "Human Progress"]];
     mount.innerHTML = `
     <footer class="ebx-footer">
       <div class="container">
-        <div class="ebx-footer__grid">
-          <div class="ebx-footer__col">
-            <a href="index.html" class="ebx-footer__logo" style="text-decoration:none;color:inherit;">Earthbux</a>
+        <div class="ebx-footer__grid ebx-footer__grid--5">
+          <div class="ebx-footer__col ebx-footer__brand">
+            <a href="index.html" class="ebx-footer__logo">Earthbux</a>
             <div class="ebx-footer__tagline">Collective action, measured in impact.</div>
-            <p>A civic news and charity platform. Every earthbuck tells a story.</p>
+            <p>The social network for charities. You donate, we follow.</p>
+            <button type="button" class="ebx-footer__contact" data-ebx-contact>Contact us</button>
+          </div>
+          <div class="ebx-footer__col">
+            <h4>About</h4>
+            <ul>
+              ${link("about.html#why", "Why Earthbux")}
+              ${link("about.html#what", "What we do")}
+              ${link("about.html#how", "How it works")}
+              ${link("about.html#earthbuck", "What an Earthbuck is")}
+              ${soon("White paper")}
+              ${soon("Rules")}
+            </ul>
+          </div>
+          <div class="ebx-footer__col">
+            <h4>Take part</h4>
+            <ul>
+              ${link("mission.html", "Join a mission")}
+              ${link("cause.html", "Read the news")}
+              ${link("mission.html?state=oe", "Nominate an organization")}
+              ${soon("Register a philanthropy")}
+              <li><a href="#contact" data-ebx-contact="join">Join the team</a></li>
+            </ul>
           </div>
           <div class="ebx-footer__col">
             <h4>Causes</h4>
-            <ul>
-              <li><a href="cause.html?id=atmosphere">Atmosphere</a></li>
-              <li><a href="cause.html?id=oceans">Oceans</a></li>
-              <li><a href="cause.html?id=forests">Forests</a></li>
-              <li><a href="cause.html?id=wildlife">Wildlife</a></li>
-              <li><a href="cause.html?id=land">Land</a></li>
-              <li><a href="cause.html?id=human-rights">Human Rights</a></li>
-              <li><a href="cause.html?id=human-progress">Human Progress</a></li>
-            </ul>
+            <ul>${causes.map(([id, n]) => link("cause.html?id=" + id, n)).join("")}</ul>
           </div>
           <div class="ebx-footer__col">
-            <h4>Platform</h4>
+            <h4>Help &amp; legal</h4>
             <ul>
-              <li><a href="en.html">EN</a></li>
-              <li><a href="mission.html">Missions</a></li>
-              <li><a href="initiative.html">Initiatives</a></li>
-              <li><a href="about.html">About</a></li>
-              <li><a href="profile.html">My Profile</a></li>
-            </ul>
-          </div>
-          <div class="ebx-footer__col">
-            <h4>Community</h4>
-            <ul>
-              <li><a href="#">Organizations</a></li>
-              <li><a href="#">Propose an Initiative</a></li>
-              <li><a href="#">Governance</a></li>
-              <li><a href="#">Open Data</a></li>
+              <li><a href="#contact" data-ebx-contact>Contact us</a></li>
+              ${soon("Help Center")}
+              ${soon("Safety")}
+              ${soon("Privacy")}
+              ${soon("Terms")}
             </ul>
           </div>
         </div>
         <div class="ebx-footer__bottom">
-          <span>\xA9 ${(/* @__PURE__ */ new Date()).getFullYear()} Earthbux. Open source, open impact.</span>
+          <span>\xA9 ${(/* @__PURE__ */ new Date()).getFullYear()} Earthbux &middot; <a href="https://earthbux.net">earthbux.net</a> &middot; <a href="https://earthbuxinc.com" rel="noopener" target="_blank">earthbuxinc.com</a></span>
           <span class="mono">v${config.version}</span>
         </div>
       </div>
     </footer>
   `;
+    if (!document.documentElement.dataset.ebxContactBound) {
+      document.documentElement.dataset.ebxContactBound = "1";
+      document.addEventListener("click", (e) => {
+        const t = e.target.closest && e.target.closest("[data-ebx-contact]");
+        if (!t) return;
+        e.preventDefault();
+        Dialogs.contact({ topic: t.getAttribute("data-ebx-contact") || "general" });
+      });
+      const hash = () => { if (location.hash === "#contact") Dialogs.contact({}); };
+      window.addEventListener("hashchange", hash);
+      hash();
+    }
   }
   // ── SITE NAV — the five tabs, on every page. ─────────────────────────────
   // Build-seq Misc (2026-09-08): "Add 5 navigation tabs across the top on every
@@ -1881,7 +1919,7 @@
       .ebx-dlg__title { font-family: var(--font-display, serif); font-size: 1.25rem; font-weight: 800; margin-bottom: 14px; }
       .ebx-dlg label { display: block; font-family: var(--font-mono, monospace); font-size: 0.6rem;
         letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.5); margin: 12px 0 5px; }
-      .ebx-dlg input[type=text], .ebx-dlg textarea, .ebx-dlg select {
+      .ebx-dlg input[type=text], .ebx-dlg input[type=email], .ebx-dlg textarea, .ebx-dlg select {
         width: 100%; box-sizing: border-box; font: inherit; font-size: 0.88rem; padding: 8px 10px;
         color: var(--clr-parchment, #f5f0e8); background: rgba(255,255,255,0.05);
         border: 1px solid rgba(245,240,232,0.18); border-radius: 6px; outline: none; }
@@ -1902,6 +1940,8 @@
         font-size: 0.82rem; letter-spacing: 0; text-transform: none; color: rgba(245,240,232,0.9);
         margin: 0; padding: 3px 0; cursor: pointer; }
       .ebx-dlg__kinds { display: flex; gap: 6px; margin-bottom: 6px; }
+      .ebx-dlg__lede { font-size: 0.88rem; line-height: 1.6; color: rgba(245,240,232,0.75); margin: -4px 0 4px; }
+      .ebx-dlg__hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
     `;
     document.head.appendChild(st);
   }
@@ -1923,6 +1963,67 @@
     close(id) {
       const bg = document.getElementById(id);
       if (bg) bg.classList.remove("open");
+    },
+    /** Contact us (2026-09-25). opts: { topic } — POST /contact. */
+    contact(opts) {
+      opts = opts || {};
+      const topics = [["general", "General"], ["organization", "Organizations & philanthropies"],
+        ["press", "Press & news"], ["problem", "Report a problem"], ["join", "Join the team"]];
+      const want = topics.some((t) => t[0] === opts.topic) ? opts.topic : "general";
+      const bg = _dlgShell("ebx-dlg-contact", "Contact us",
+        '<p class="ebx-dlg__lede">Send a message to the Earthbux team. We reply by email.</p>' +
+        '<form id="ebx-contact-form" novalidate>' +
+        '<label for="ebx-contact-name">Your name *</label><input type="text" id="ebx-contact-name" maxlength="120" autocomplete="name" required />' +
+        '<label for="ebx-contact-email">Your email *</label><input type="email" id="ebx-contact-email" maxlength="200" autocomplete="email" required />' +
+        '<label for="ebx-contact-topic">About</label><select id="ebx-contact-topic">' +
+          topics.map((t) => '<option value="' + t[0] + '"' + (t[0] === want ? " selected" : "") + ">" + t[1] + "</option>").join("") + "</select>" +
+        '<label for="ebx-contact-body">Message *</label><textarea id="ebx-contact-body" maxlength="5000" required></textarea>' +
+        '<div class="ebx-dlg__hp" aria-hidden="true"><label for="ebx-contact-website">Website</label><input type="text" id="ebx-contact-website" tabindex="-1" autocomplete="off" /></div>' +
+        '<div class="ebx-dlg__actions"><button type="button" class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
+        '<button type="submit" class="ebx-dlg__btn" data-act="send">Send message</button></div>' +
+        '<p class="ebx-dlg__msg" id="ebx-contact-msg" role="status" aria-live="polite"></p></form>');
+      const $ = (id) => bg.querySelector("#" + id);
+      const msg = $("ebx-contact-msg");
+      const say = (t, good) => { msg.textContent = t; msg.style.color = good ? "#8fce9d" : "#f08a6a"; };
+      bg.querySelector("[data-act=cancel]").onclick = () => Dialogs.close("ebx-dlg-contact");
+      $("ebx-contact-form").addEventListener("input", () => { if (msg.style.color !== "rgb(143, 206, 157)") msg.textContent = ""; });
+      setTimeout(() => { const n = $("ebx-contact-name"); if (n) n.focus(); }, 60);
+      $("ebx-contact-form").onsubmit = async (e) => {
+        e.preventDefault();
+        const name = $("ebx-contact-name").value.trim(), email = $("ebx-contact-email").value.trim();
+        const body = $("ebx-contact-body").value.trim();
+        if (!name) return say("Please add your name.");
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return say("Please add an email address we can reply to.");
+        if (body.length < 5) return say("Please write a message.");
+        const btn = bg.querySelector("[data-act=send]");
+        btn.disabled = true; say("Sending…", true);
+        try {
+          const headers = { "Content-Type": "application/json" };
+          const tok = Auth.getToken && Auth.getToken();
+          if (tok) headers.Authorization = "Bearer " + tok;
+          const r = await fetch((config.apiBase || "") + "/contact", {
+            method: "POST", headers,
+            body: JSON.stringify({ name, email, topic: $("ebx-contact-topic").value, body,
+              page: location.pathname + location.search, website: $("ebx-contact-website").value }),
+          });
+          if (!r.ok) {
+            const d = await r.json().catch(() => ({}));
+            const detail = Array.isArray(d.detail) ? "Please check your email address." : (d.detail || "HTTP " + r.status);
+            btn.disabled = false;
+            return say("That didn't send: " + detail);
+          }
+          bg.querySelector(".ebx-dlg").innerHTML = '<div class="ebx-dlg__title">Thank you</div>' +
+            '<p class="ebx-dlg__lede">Your message reached the Earthbux team. We&rsquo;ll reply to <b>' +
+            email.replace(/[<>&"]/g, "") + "</b>.</p>" +
+            '<div class="ebx-dlg__actions"><button type="button" class="ebx-dlg__btn" data-act="done">Close</button></div>';
+          bg.querySelector("[data-act=done]").onclick = () => Dialogs.close("ebx-dlg-contact");
+          if (location.hash === "#contact") try { history.replaceState(null, "", location.pathname + location.search); } catch (x) {}
+        } catch (err) {
+          btn.disabled = false;
+          say("Couldn't reach the server. Please try again.");
+        }
+      };
+      return bg;
     },
     /** Propose an initiative. opts: { causeId, onCreated } */
     propose(opts) {
