@@ -57,6 +57,12 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_from: str = ""          # defaults to smtp_user
+    # 2026-09-26 — Railway blocks outbound SMTP below the Pro plan, so the
+    # default route is Resend's HTTPS API (Railway's recommendation). With
+    # RESEND_API_KEY set it is used first; SMTP stays as a fallback for a Pro
+    # plan or another host. MAIL_FROM must be on a domain verified in Resend.
+    resend_api_key: str = ""
+    mail_from: str = "Earthbux <contact@send.earthbux.net>"
 
     @property
     def cors_origins_list(self) -> list[str]:
