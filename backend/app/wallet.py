@@ -361,7 +361,8 @@ def oe_rows(db: Session, ben_id: Optional[int],
             "backed_winner": backed_winner,
             "my_weight": tm.weight_tokens(my_ct),
             "my_votes": tm.oe_votes(my_ct),            # 2026-09-17: the doubling ladder
-            "can_take_part": bool(ben_id) and (m.id == active_id or _carried_from_me(v)),
+            "can_take_part": bool(ben_id) and (m.id == active_id or _carried_from_me(v)
+                                               or _voted_in_me(db, ben_id, m.id)),
             "my_final_ct": final_ct_of(db, v, now) if v else 0,
             "born_week": (v.born_week if v else None),
             "origin_mission_id": ((v.origin_mission_id if v and v.origin_mission_id
@@ -460,6 +461,24 @@ def _carried_from_me(v: Optional[models.VoteP2]) -> bool:
                                       for e in (v.provenance or [])))
 
 
+def _voted_in_me(db: Session, ben_id: Optional[int], mission_id: str) -> bool:
+    """2026-09-28 (P1 mission edits, Jax's org-vote bug): True if the benefactor
+    VOTED in this mission's own initiative election, with or without tokens.
+
+    A vote in an initiative election outside the week's cause carries no granted
+    tokens (a granted token only enters its own week's elections), so it lands
+    as a preference with `stake_ct = 0` and `_open_oe_stakes` has nothing to
+    carry — no `settle_me` element, and the organization race then locked the
+    benefactor out. Ruling 16 says whoever backed the initiative election may vote
+    in its organization election in any week; a preference is backing it."""
+    if not ben_id:
+        return False
+    return db.scalars(select(models.VoteP1.id).where(
+        models.VoteP1.ben_id == ben_id, models.VoteP1.mission_id == mission_id,
+        (models.VoteP1.share > 0) | (models.VoteP1.ebx_committed > 0)
+        | (models.VoteP1.stake_ct > 0))).first() is not None
+
+
 def _in_an_initiative_election(db: Session, ben_id: int) -> bool:
     """True if the benefactor has money standing in an initiative election."""
     return db.scalars(select(models.VoteP1.id).where(
@@ -482,14 +501,14 @@ def _check_oe_minimum(v: Optional[models.VoteP2], target_ct: int,
 
 
 def _check_takes_part(is_active: bool, v: Optional[models.VoteP2], have_ct: int,
-                      adding: bool) -> None:
+                      adding: bool, voted_me: bool = False) -> None:
     """2026-09-17 (INSTRUCTIONS build-seq §1): without a stake carried in from
     this mission's own initiative election, a benefactor takes part only in THIS
     WEEK'S organization election. Everyone may vote there (0 tokens = 1 vote);
     the other open races belong to the people who funded their initiative
     election. Lowering or clearing an existing position is always allowed, and
     so is naming an organization for tokens already moved into the race."""
-    if not adding or is_active or _carried_from_me(v) or int(have_ct or 0) > 0:
+    if not adding or is_active or voted_me or _carried_from_me(v) or int(have_ct or 0) > 0:
         return
     raise ValueError(
         "This organization election is not this week's. You can vote in it only "
@@ -544,7 +563,8 @@ def set_stake(db: Session, ben_id: int, mission_id: str, target_ct: int,
     v = _vote_row(db, ben_id, mission_id)
     derived = crud.p2_ebx_by_ben(db, mission_id).get(ben_id, 0.0)
     have = stake_ct_of(v, derived) if (v or derived) else 0
-    _check_takes_part(is_active, v, have, int(target_ct or 0) > have or org_id is not None)
+    _check_takes_part(is_active, v, have, int(target_ct or 0) > have or org_id is not None,
+                      _voted_in_me(db, ben_id, mission_id))
     minted = minted_ct_of(v)
     unminted = max(0, have - minted)
     if unminted > 0 and not is_movable(v, week):
@@ -749,7 +769,7 @@ def set_org(db: Session, ben_id: int, mission_id: str, org_id: Optional[str],
     open_missions = _open_p2_missions(db)
     is_active = bool(open_missions) and open_missions[0].id == mission_id
     _check_takes_part(is_active, v, stake_ct_of(v) if v is not None else 0,
-                      org_id is not None)
+                      org_id is not None, _voted_in_me(db, ben_id, mission_id))
     if v is None:
         v = models.VoteP2(ben_id=ben_id, mission_id=mission_id, votes=1, ebx_spent=0,
                           valence="helpful", committed=False, stake_ct=0,

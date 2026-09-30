@@ -207,6 +207,19 @@
     .ab-ladder div { border: 1px solid rgba(245,240,232,0.14); border-radius: 12px; padding: 12px 14px; }
     .ab-ladder b { display: block; font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); margin-bottom: 5px; }
     .ab-ladder span { font-size: 0.84rem; line-height: 1.55; color: rgba(245,240,232,0.72); }
+    /* How to post (P3) */
+    .ab-model { max-width: 760px; margin: 0 auto; }
+    .ab-model__steps { margin: 10px 0; padding-left: 20px; font-size: 0.86rem; line-height: 1.6; color: rgba(245,240,232,0.75); }
+    .ab-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; margin: 20px auto 0; max-width: 1000px; }
+    .ab-card { border: 1px solid rgba(245,240,232,0.14); border-radius: 12px; padding: 14px 16px; }
+    .ab-card__cat { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); }
+    .ab-card h3 { font-family: var(--font-display, serif); font-size: 1.05rem; margin: 4px 0 6px; }
+    .ab-card dl { margin: 0; font-size: 0.8rem; line-height: 1.5; }
+    .ab-card dt { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.45); margin-top: 7px; }
+    .ab-card dd { margin: 1px 0 0; color: rgba(245,240,232,0.78); }
+    .ab-card ol { margin: 2px 0 0; padding-left: 16px; }
+    .ab-card a { color: var(--clr-honey, #e8a84c); font-size: 0.8rem; font-weight: 700; }
+    .ab-postbtn { display: inline-block; padding: 9px 20px; border-radius: 999px; background: var(--clr-honey, #e8a84c); color: #0f1a14 !important; font-weight: 700; text-decoration: none; }
   </style>
 </head>
 
@@ -280,7 +293,7 @@
            Context → Situation → **Background** (docs/the_social_network.md §3). -->
       <ol class="ld-trio">
         <li class="ld-trio__cell">
-          <a class="ld-trio__link" href="mission.html?research=background">
+          <a class="ld-trio__link" href="post.html?type=background&amp;back=about.html">
             <h3 class="ld-trio__name">Background</h3>
             <p class="ld-trio__what">Researches the <b>cause</b> — the state of it and the news
               around it — and contextualizes the initiatives standing in it.
@@ -288,15 +301,15 @@
           </a>
         </li>
         <li class="ld-trio__cell">
-          <a class="ld-trio__link" href="mission.html?research=investigation">
-            <h3 class="ld-trio__name">Vetting</h3>
+          <a class="ld-trio__link" href="post.html?type=investigation&amp;back=about.html">
+            <h3 class="ld-trio__name">Investigation</h3>
             <p class="ld-trio__what">Investigates the <b>organization</b> that would run the
               initiative — leadership, proposal, credibility — and compares it with the others.
               <span class="ld-trio__when">Opens at week 0</span></p>
           </a>
         </li>
         <li class="ld-trio__cell">
-          <a class="ld-trio__link" href="mission.html?research=analysis">
+          <a class="ld-trio__link" href="post.html?type=analysis&amp;back=about.html">
             <h3 class="ld-trio__name">Analysis</h3>
             <p class="ld-trio__what">Researches the <b>initiative and philanthropy together</b>,
               and weighs the action plan against comparable programmes.
@@ -304,9 +317,10 @@
           </a>
         </li>
       </ol>
-      <p class="ld-band__foot">One post each, per person, per mission. The community
-        decides which background a vetting rests on, and which of both an
-        analysis stands on — <b>3/32 of every pool</b> is paid out on those results.</p>
+      <p class="ld-band__foot">One Background per person per cause, one Investigation per
+        organization, one Analysis per mission. The most-voted Background and Investigation
+        lead each mission's Analyses — <b>3/32 of every pool</b> is paid out on those results.
+        <a href="#posting" style="color:inherit;">How to post &rarr;</a></p>
     </div>
 
     <!-- ══ THE NEWS (build-seq §1 Landing, 2026-09-20) ═══════════════════════
@@ -357,21 +371,21 @@
            spent on. -->
       <ol class="ld-trio">
         <li class="ld-trio__cell">
-          <a class="ld-trio__link" href="mission.html?budget=service">
+          <a class="ld-trio__link" href="post.html?type=service&amp;back=about.html">
             <h3 class="ld-trio__name">Service</h3>
             <p class="ld-trio__what"><b>Labor required.</b> Something we can send people to do —
               a job, an hourly rate, and the days it takes.</p>
           </a>
         </li>
         <li class="ld-trio__cell">
-          <a class="ld-trio__link" href="mission.html?budget=supply">
+          <a class="ld-trio__link" href="post.html?type=supply&amp;back=about.html">
             <h3 class="ld-trio__name">Supply</h3>
             <p class="ld-trio__what"><b>Commodities required.</b> What those people need to do it —
               an item, and what it costs.</p>
           </a>
         </li>
         <li class="ld-trio__cell">
-          <a class="ld-trio__link" href="mission.html?budget=support">
+          <a class="ld-trio__link" href="post.html?type=support&amp;back=about.html">
             <h3 class="ld-trio__name">Support</h3>
             <p class="ld-trio__what"><b>Connections required.</b> An approval, professional help,
               legal help in a conflict. No cost line: a connection is not a purchase.</p>
@@ -380,6 +394,34 @@
       </ol>
     </div>
 
+
+    <!-- ══ HOW TO POST (P3 · Posting, 2026-09-29) ══════════════════════════
+         "A How to post section opens with the model, redrawn in plain words,
+         then one card per type." Every card is painted from GET /posts/guide —
+         post_config.py — the same table the composer and each mission's outline
+         read, so the guide cannot drift from the rules. P8 makes this a tab. -->
+    <section class="ab-sec" id="posting">
+      <p class="ab-kick">How to post</p>
+      <h2 class="ld-band__h">Three kinds of post, <em>one way to make them</em></h2>
+      <div class="ab-model">
+        <p class="ab-p">Every post is <b>about</b> something. A <b>Background</b> is about a
+          <b>cause</b>; an <b>Investigation</b> is about an <b>organization</b>; a
+          <b>budget item</b> is for an <b>initiative</b>; an <b>Analysis</b> is about a
+          <b>mission</b> — and it is built from the others. A <b>general post</b> can be about
+          any of them, or about nothing at all.</p>
+        <ol class="ab-model__steps">
+          <li><b>T</b> — the initiative is elected. The most-voted Background is fixed as the mission's leading Background.</li>
+          <li><b>T+8</b> — the organization is elected. The most-voted Investigation of any organization in the race is fixed as its leading Investigation. Analyses open.</li>
+          <li><b>T+15</b> — budget day. The winning Analysis is elected, and the research prize is paid to it and to the research it cites.</li>
+          <li><b>After</b> — budget items and research carry on, and any Background or Investigation can be cited again by a later mission.</li>
+        </ol>
+        <p class="ab-p">Every edit is a new version. The version an election used stays exactly as it was.
+          You can bring an old post into a new mission; its votes start again there.</p>
+        <p class="ab-p" id="ab-votes"></p>
+      </div>
+      <div class="ab-cards" id="ab-post-cards"><p class="ab-p">Loading the post types&hellip;</p></div>
+      <p class="ab-p" style="text-align:center;margin-top:18px;"><a class="ab-postbtn" href="post.html?back=about.html">Make a post &rarr;</a></p>
+    </section>
 
     <div class="ld-close">
       <p class="ld-verse">
@@ -392,8 +434,31 @@
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20260925b"></script>
+  <script src="resources/js/ebx_shared.js?v=20260929"></script>
   <script>
+  // How to post — one card per type, from GET /posts/guide (post_config.py).
+  (async function () {
+    const box = document.getElementById('ab-post-cards'); if (!box) return;
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let g = null;
+    try { const r = await fetch('/posts/guide'); if (r.ok) g = await r.json(); } catch (e) {}
+    if (!g) { box.innerHTML = '<p class="ab-p">The post types could not be loaded right now.</p>'; return; }
+    const word = { general: 'general', context: 'background', investigation: 'investigation', analysis: 'analysis', service: 'service', supply: 'supply', support: 'support' };
+    box.innerHTML = g.types.map(t => '<div class="ab-card" data-type="' + esc(t.key) + '">' +
+      '<div class="ab-card__cat">' + esc(t.category_label) + '</div><h3>' + esc(t.label === 'Post' ? 'General post' : t.label) + '</h3><dl>' +
+      '<dt>For</dt><dd>' + esc(t.guide.purpose) + '</dd>' +
+      '<dt>Points at</dt><dd>' + esc(t.guide.points_at) + '</dd>' +
+      '<dt>Limit</dt><dd>' + esc(t.guide.limit) + '</dd>' +
+      '<dt>Earns</dt><dd>' + esc(t.guide.earns) + '</dd>' +
+      '<dt>Votes on it</dt><dd>' + esc(t.vote_name) + '</dd>' +
+      '<dt>Steps</dt><dd><ol>' + t.guide.steps.map(x => '<li>' + esc(x) + '</li>').join('') + '</ol></dd></dl>' +
+      '<a href="post.html?type=' + word[t.key] + '&amp;back=about.html%23posting">Write one &rarr;</a></div>').join('') +
+      '<div class="ab-card"><div class="ab-card__cat">General</div><h3>Tags</h3><dl>' +
+      g.general_tags.map(x => '<dt>' + esc(x.label) + '</dt><dd>' + esc(x.hint) + '</dd>').join('') + '</dl></div>';
+    const v = document.getElementById('ab-votes');
+    if (v) v.innerHTML = g.votes.map(x => '<b>' + esc(x.name) + '</b> — ' + esc(x.meaning)).join('<br/>');
+  })();
+
   // 3 — the five phases, from the one source Home and the mission page read
   // (ebx_wheel.js PHASE). Written out here so this page needs no wheel.
   (function () {

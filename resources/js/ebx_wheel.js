@@ -1,5 +1,6 @@
 "use strict";
-/* ebx_wheel.js — THE PHASE WHEEL. The landing page's centrepiece.
+/* ebx_wheel.js — THE PHASE WHEEL. The mission page's annulus, and the data layer
+ * Home's mission hub reads (2026-09-30: no longer drawn on Home).
  *
  * build-seq §2–§4 (2026-09-18):
  *   §2  "Replace how it works section with: 1. Confirm Cause 2. Elect
@@ -54,6 +55,12 @@
     { key: 'ex', n: 5, label: 'Exchange Resources', half: 'us', elect: 'ex' },
   ];
 
+  // 2026-09-30 (P2 · Home mods): Home no longer mounts this component — its
+  // phase rows became the five steps (ebx_steps.js) and the mission hub. Each
+  // PHASE blurb below is now the line under its ballot's header on the mission
+  // page (mission.html `renderBallotHeads`, #el3-blurb-*). The landing variant
+  // (`shell`, the top card, the side cards, the span) is mounted by nothing but
+  // scripts/wheel_check.js — REMOVAL REGISTER › Added 2026-09-30.
   // build-seq P2 (2026-09-25) — HOME'S TWO ROWS. The landing variant no longer
   // prints the five toggles and a Process/Reason card: those two paragraphs
   // moved to the mission page's phase panels (review 2). Home draws the five

@@ -1149,7 +1149,13 @@
         }
         try {
           const body = await res.json();
-          Auth.lastSignupError = body.detail ?? `Server error (HTTP ${res.status})`;
+          // F18 (2026-09-28): a validation error's `detail` is a LIST of
+          // objects ({loc, msg, type}); printing it whole read "[object Object]".
+          // Say each rule that was broken, in its own words.
+          const d = body.detail;
+          Auth.lastSignupError = Array.isArray(d)
+            ? d.map(e => (e && e.msg ? String(e.msg).replace(/^Value error, /, '') : String(e))).join(' · ')
+            : (typeof d === 'string' ? d : (d ? JSON.stringify(d) : `Server error (HTTP ${res.status})`));
         } catch {
           Auth.lastSignupError = `Server error (HTTP ${res.status})`;
         }
@@ -2025,6 +2031,26 @@
       };
       return bg;
     },
+    /** P3 (2026-09-29) — a nomination may carry a post, defaulting to a
+     *  Justification. It is a general post on what was nominated, so it is
+     *  voted, replied to and edited like any other post. */
+    async _justify(targetKind, targetId, text, tags) {
+      text = (text || "").trim();
+      if (!text || !targetId) return null;
+      try {
+        const r = await Auth.fetchAuthed("/posts", { method: "POST", body: JSON.stringify({
+          id: "pj-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          author_type: "ben", category: "general", type: "general", body: text,
+          tags: ["justification"].concat(tags || []), target_kind: targetKind, target_id: targetId }) });
+        return r.ok ? await r.json() : null;
+      } catch (e) { return null; }
+    },
+    _justifyField(id, what) {
+      return '<label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="' + id + '-on" checked /> ' +
+        "Post a Justification with it <span style=\"opacity:0.55;font-weight:400;\">(optional — recommended)</span></label>" +
+        '<textarea id="' + id + '" placeholder="Why ' + what + ' should win — what should happen, why it matters, how you would know it worked. ' +
+        'It is posted as a Justification you can edit, and people can vote on it and reply."></textarea>';
+    },
     /** Propose an initiative. opts: { causeId, onCreated } */
     propose(opts) {
       opts = opts || {};
@@ -2042,8 +2068,10 @@
         // description is a case" — a short name goes in the title, the argument
         // goes below it, and the two are displayed apart everywhere.
         "<label>Title * <span style=\"opacity:0.5;font-weight:400;\">(a short name — 90 characters)</span></label><input type=\"text\" id=\"ebx-dlg-title\" maxlength=\"90\" placeholder=\"e.g. Restore kelp forests in the Pacific\" />" +
-        "<label>Make the case *</label><textarea id=\"ebx-dlg-desc\" placeholder=\"What should happen, why it matters, and how you'd measure success. This is your case: it is shown under the title, and it is what persuades people to fund it.\"></textarea>" +
-        "<label>Your handle</label><input type=\"text\" id=\"ebx-dlg-handle\" placeholder=\"@yourhandle\" />" +
+        // P3 (2026-09-29): "The automatic description on nomination goes.
+        // Nominating … lets you optionally post, defaulting to a
+        // justification." The case is a post now, not the initiative's text.
+        Dialogs._justifyField("ebx-dlg-desc", "this initiative") +
         '<div class="ebx-dlg__actions">' +
           '<button class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
           '<button class="ebx-dlg__btn" data-act="submit">Submit proposal</button>' +
@@ -2053,9 +2081,9 @@
       bg.querySelector('[data-act=submit]').onclick = async (ev) => {
         const causeId = (bg.querySelector("#ebx-dlg-cause").value || "").trim();
         const title = (bg.querySelector("#ebx-dlg-title").value || "").trim();
-        const desc = (bg.querySelector("#ebx-dlg-desc").value || "").trim();
+        const desc = bg.querySelector("#ebx-dlg-desc-on").checked ? (bg.querySelector("#ebx-dlg-desc").value || "").trim() : "";
         if (!causeId) { msg.style.color = "#e8a84c"; msg.textContent = "Please select a cause."; return; }
-        if (!title || !desc) { msg.style.color = "#e8a84c"; msg.textContent = "A title and a case are both required."; return; }
+        if (!title) { msg.style.color = "#e8a84c"; msg.textContent = "An initiative needs a title."; return; }
         if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) {
           msg.style.color = "#e8a84c";
           msg.textContent = "Please log in to propose an initiative.";
@@ -2070,7 +2098,7 @@
           const res = await Auth.fetchAuthed("/initiatives", {
             method: "POST",
             body: JSON.stringify({
-              id: _slugFor(title), title, description: desc,
+              id: _slugFor(title), title, description: null,
               cause_id: causeId, proposed_by: "benefactor", status: "suggested",
             }),
           });
@@ -2082,12 +2110,14 @@
             return;
           }
           const created = await res.json();
+          const post = await Dialogs._justify("initiative", created.id, desc);
           msg.style.color = "#5abd6c";
-          msg.textContent = 'Proposal submitted! "' + title + '" is now in the election.';
+          msg.innerHTML = 'Proposal submitted! "' + title.replace(/[<>&"]/g, "") + '" is now in the election.' +
+            (post ? " Your Justification is posted." : Post.suggest("initiative", created.id, "it"));
           bg.querySelector("#ebx-dlg-title").value = "";
           bg.querySelector("#ebx-dlg-desc").value = "";
           if (typeof opts.onCreated === "function") { try { opts.onCreated(created); } catch (e) {} }
-          setTimeout(() => Dialogs.close("ebx-dlg-propose"), 1500);
+          if (post) setTimeout(() => Dialogs.close("ebx-dlg-propose"), 1500);
         } catch (e) {
           msg.style.color = "#e07b6b";
           msg.textContent = "Cannot reach the server. Is the API running?";
@@ -2120,6 +2150,7 @@
         '<label>Name *</label><input type="text" id="ebx-dlg-cname" placeholder="e.g. Fresh Water" />' +
         '<label>What it covers *</label><textarea id="ebx-dlg-cdesc" ' +
           'placeholder="What falls under this cause, and what a mission for it would look like…"></textarea>' +
+        Dialogs._justifyField("ebx-dlg-cjust", "this cause") +
         '<label>Colour</label><input type="color" id="ebx-dlg-ccolor" value="#39c0c8" ' +
           'style="width:64px;height:34px;padding:2px;cursor:pointer;" />' +
         '<div class="ebx-dlg__actions">' +
@@ -2157,10 +2188,14 @@
                                           : "Couldn't submit (HTTP " + res.status + ").";
             return;
           }
+          const cid = data && (data.id || (data.cause && data.cause.id));
+          const just = bg.querySelector("#ebx-dlg-cjust-on").checked ? bg.querySelector("#ebx-dlg-cjust").value : "";
+          const post = cid ? await Dialogs._justify("cause", cid, just) : null;
           msg.style.color = "#5abd6c";
-          msg.textContent = '"' + name + '" is on the ballot.';
+          msg.innerHTML = '"' + name.replace(/[<>&"]/g, "") + '" is on the ballot.' +
+            (post ? " Your Justification is posted." : (cid ? Post.suggest("cause", cid, "it") : ""));
           if (typeof opts.onCreated === "function") { try { opts.onCreated(data); } catch (e) {} }
-          setTimeout(() => Dialogs.close("ebx-dlg-cause"), 1400);
+          if (post || !cid) setTimeout(() => Dialogs.close("ebx-dlg-cause"), 1400);
         } catch (e) {
           msg.style.color = "#e07b6b";
           msg.textContent = "Cannot reach the server. Is the API running?";
@@ -2170,30 +2205,26 @@
       };
       return bg;
     },
-    /** Nominate or register an organization. opts: { causeId, onDone } */
+    /** Nominate or register an organization.
+     *  opts: { causeId, tivId, missionId, onDone }
+     *
+     *  P3 (2026-09-29): "The organization nomination dialog loses its
+     *  initiative checkboxes. The mission comes from where the dialog was
+     *  opened (an initiative row's + org, the mission page), or is chosen on
+     *  the organization's page." Opened with no mission, it registers the
+     *  organization on its own — so one whose initiative has not been
+     *  elected yet can still be put on the platform (BACKLOG). The
+     *  justification is a post now, and optional. */
     orgRegister(opts) {
       opts = opts || {};
       const causeId = opts.causeId || null;
-      // §2 (2026-09-08) — `tivId`: nominate an organization FOR ONE INITIATIVE.
-      // main.html's mission ballot puts a "+ org" button beside every slider row
-      // ("add a button beside each slider row to nominate an organization for
-      // that initiative"), and the point of pressing it on a particular row is
-      // that the row names the initiative. Without this the dialog opened on the
-      // cause's shortlist — elected initiatives first, then anything with money
-      // behind it — which may not contain the one that was clicked at all, since
-      // a benefactor nominates for an initiative BEFORE it wins. So the named
-      // initiative is guaranteed onto the list and pre-checked.
       const tivId = opts.tivId || null;
       const all = config.initiatives || [];
-      const mine = causeId ? all.filter((i) => i.cause_id === causeId) : all;
-      // Elected tivs first; else anything with committed EBX; else everything.
-      let picks = mine.filter((i) => ["active", "org_vote"].includes(i.status));
-      if (!picks.length) picks = mine.filter((i) => (i.committed_ebx || i.ebx_committed || 0) > 0);
-      if (!picks.length) picks = mine;
-      if (tivId && !picks.some((i) => i.id === tivId)) {
-        const named = all.find((i) => i.id === tivId);
-        if (named) picks = [named].concat(picks);
-      }
+      const tiv = tivId ? all.find((i) => i.id === tivId) : null;
+      const missionId = opts.missionId || (tiv && tiv.mission_id) || null;
+      const m = missionId ? (config.missions || []).find((x) => x.id === missionId) : null;
+      const mtiv = m && m.winning_tiv_id ? all.find((i) => i.id === m.winning_tiv_id) : null;
+      const forWhat = tiv ? tiv.title : (mtiv ? mtiv.title : null);
       const cname = causeId ? ((config.causes || []).find((c) => c.id === causeId) || {}).name : null;
       const bg = _dlgShell("ebx-dlg-orgreg",
         "Organization — Nominate or Register" + (cname ? ' <span style="opacity:0.5;font-size:0.8rem;">· ' + cname + "</span>" : ""),
@@ -2201,17 +2232,14 @@
           '<button class="ebx-dlg__btn ebx-dlg__btn--sm" data-kind="nomination">Nominate</button>' +
           '<button class="ebx-dlg__btn ebx-dlg__btn--sm ebx-dlg__btn--ghost" data-kind="registration">Register (I\'m a member) →</button>' +
         "</div>" +
+        '<p id="ebx-dlg-org-for" style="font-size:0.82rem;line-height:1.5;margin:4px 0 0;color:rgba(245,240,232,0.75);">' +
+          (missionId
+            ? "It enters the organization race for <b>" + String(forWhat || missionId).replace(/[<>&"]/g, "") + "</b>."
+            : "It is registered on Earthbux. Put it forward for a mission from that mission&rsquo;s page, or from an initiative&rsquo;s <b>+ org</b>.") +
+        "</p>" +
         "<label>Organization name *</label><input type=\"text\" id=\"ebx-dlg-org-name\" placeholder=\"e.g. River Cleanup Collective\" />" +
         "<label>Website *</label><input type=\"text\" id=\"ebx-dlg-org-site\" placeholder=\"https://…\" />" +
-        "<label>Brief justification *</label><textarea id=\"ebx-dlg-org-just\" placeholder=\"Why is this organization fit for the work?\"></textarea>" +
-        '<label>Initiatives this org is fit to accomplish * <span style="opacity:.6;">(pick at least 1)</span></label>' +
-        '<div class="ebx-dlg__picker" id="ebx-dlg-org-picks">' +
-          (picks.length
-            ? picks.map((i) => '<label><input type="checkbox" class="ebx-dlg-org-cb" value="' + i.id + '"' +
-                (i.id === tivId ? " checked" : "") + " /> " +
-                (i.emoji ? i.emoji + " " : "") + i.title + "</label>").join("")
-            : '<div style="font-size:0.78rem;opacity:0.6;">No initiatives found for this cause yet.</div>') +
-        "</div>" +
+        Dialogs._justifyField("ebx-dlg-org-just", "this organization") +
         '<div class="ebx-dlg__actions">' +
           '<button class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
           '<button class="ebx-dlg__btn" data-act="submit">Submit</button>' +
@@ -2223,30 +2251,20 @@
       // (org-experience restructure 2026-07-10); nomination is a community act
       // and happens right here.
       bg.querySelector('[data-kind=registration]').onclick = () => {
-        const m = openP1Mission(causeId);
-        location.href = "admin.html?register=1" + (m && m.id ? "&mission=" + m.id : "");
+        location.href = "admin.html?register=1" + (missionId ? "&mission=" + missionId : "");
       };
       bg.querySelector('[data-kind=nomination]').onclick = () => {};
       const submit = async () => {
         const name = (bg.querySelector("#ebx-dlg-org-name").value || "").trim();
         const site = (bg.querySelector("#ebx-dlg-org-site").value || "").trim();
-        const just = (bg.querySelector("#ebx-dlg-org-just").value || "").trim();
-        const initIds = Array.from(bg.querySelectorAll(".ebx-dlg-org-cb:checked")).map((cb) => cb.value);
-        if (!name || !site || !just) { msg.style.color = "#e07b6b"; msg.textContent = "Name, website, and justification are required."; return; }
-        if (!initIds.length) { msg.style.color = "#e07b6b"; msg.textContent = "Select at least 1 initiative the organization is fit to accomplish."; return; }
-        // Each selected initiative bids on ITS mission.
-        const missionIds = [];
-        initIds.forEach((id) => {
-          const ini = all.find((i) => i.id === id);
-          const m = ini && ini.mission_id ? ini.mission_id : (openP1Mission(causeId) || {}).id;
-          if (m && missionIds.indexOf(m) < 0) missionIds.push(m);
-        });
+        const just = bg.querySelector("#ebx-dlg-org-just-on").checked ? (bg.querySelector("#ebx-dlg-org-just").value || "").trim() : "";
+        if (!name || !site) { msg.style.color = "#e07b6b"; msg.textContent = "A name and a website are required."; return; }
         msg.style.color = ""; msg.textContent = "Submitting…";
         if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) {
           try {
             const stash = JSON.parse(localStorage.getItem("ebx_org_regs") || "[]");
             stash.push({ kind: "nomination", org_name: name, website: site, justification: just,
-                         initiative_ids: initIds, cause_id: causeId, at: Date.now() });
+                         mission_id: missionId, cause_id: causeId, at: Date.now() });
             localStorage.setItem("ebx_org_regs", JSON.stringify(stash));
             msg.style.color = "#5abd6c";
             msg.textContent = "✓ Saved locally — sign in to submit it for real.";
@@ -2259,7 +2277,7 @@
             method: "POST",
             body: JSON.stringify({
               name, website_link: site, kind: "nomination",
-              mission_id: missionIds[0] || null, mission_statement: just,
+              mission_id: missionId, mission_statement: null,
               member_name: null, member_position: null,
               org_id: pickedId || null, force,
             }),
@@ -2282,17 +2300,13 @@
             return;
           }
           const orgId = data.org ? data.org.id : pickedId;
-          for (let i = 1; i < missionIds.length; i++) {
-            try {
-              await Auth.fetchAuthed("/candidacies", { method: "POST",
-                body: JSON.stringify({ mission_id: missionIds[i], org_id: orgId, mission_statement: just }) });
-            } catch (e) {}
-          }
           pickedId = null; force = false;
+          const post = await Dialogs._justify("organization", orgId, just, tivId ? ["tiv:" + tivId] : []);
           msg.style.color = "#5abd6c";
-          msg.textContent = "✓ Nominated. The org now shows in this election (capped until approved).";
+          msg.innerHTML = (missionId ? "✓ Nominated. It shows in this election (capped until approved)." : "✓ Registered on Earthbux.") +
+            (post ? " Your Justification is posted." : Post.suggest("organization", orgId, "it"));
           if (typeof opts.onDone === "function") { try { opts.onDone(data); } catch (e) {} }
-          setTimeout(() => Dialogs.close("ebx-dlg-orgreg"), 1700);
+          if (post) setTimeout(() => Dialogs.close("ebx-dlg-orgreg"), 1700);
         } catch (e) {
           msg.style.color = "#e07b6b"; msg.textContent = "Could not submit — try again.";
         }
@@ -2360,6 +2374,295 @@
     return { slugify, of, tivFor, href, load };
   })();
 
+  // ══ P3 · POSTING (2026-09-29) — EBX.Post ════════════════════════════════
+  // "One way to make a post, reachable from everywhere … every post
+  // displayable by every page on the platform." (INSTRUCTIONS › P3.)
+  //
+  //   EBX.Post.guide()                 the taxonomy + each type's guide (GET /posts/guide)
+  //   EBX.Post.composeUrl(opts)        post.html with the target and type preselected
+  //   EBX.Post.collapsed(p, opts)      the collapsed view — who · when · kind, excerpt, ↑ n ↩ n
+  //   EBX.Post.full(detail, replies)   the full view — contents, References, votes, replies
+  //   EBX.Post.open(id, opts)          the full view in a dialog, with vote + reply
+  //   EBX.Post.preview(el, query)      a short preview of a discussion (an initiative's or
+  //                                    an organization's row), best justification first
+  //   EBX.Post.suggest(kind, id, lab)  "Make a post about it" — after a nomination
+  //
+  // Both views say what the post targets (P3 › Display). The CSS is injected
+  // once, so every page that loads this file can show a post.
+  const Post = (() => {
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const TYPE = { general: "Post", context: "Background", investigation: "Investigation", analysis: "Analysis",
+      service: "Service", supply: "Supply", support: "Support" };
+    const CAT_WORD = { editorial: "News", headline: "News", mission_update: "Mission update",
+      org_update: "Organization update", testimonial: "Testimonial", resolution: "Resolved" };
+    const TARGET_WORD = { cause: "cause", initiative: "initiative", organization: "organization",
+      mission: "mission", post: "post", budget: "budget item" };
+    let _guide = null;
+
+    function css() {
+      if (document.getElementById("ebx-post-css")) return;
+      const s = document.createElement("style");
+      s.id = "ebx-post-css";
+      s.textContent = `
+      .ep { display:block; text-decoration:none; color:var(--clr-parchment,#f5f0e8); border:1px solid rgba(245,240,232,0.12);
+        border-radius:12px; padding:12px 14px; background:rgba(245,240,232,0.03); }
+      a.ep:hover, .ep--click:hover { border-color:rgba(232,168,76,0.55); cursor:pointer; }
+      .ep__meta { display:flex; flex-wrap:wrap; gap:6px; align-items:baseline; font-size:0.74rem; color:rgba(245,240,232,0.6); }
+      .ep__who { color:var(--clr-parchment,#f5f0e8); font-weight:600; }
+      .ep__kind { font-family:var(--font-mono,monospace); font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase;
+        color:var(--clr-honey,#e8a84c); }
+      .ep__tag { font-size:0.66rem; padding:1px 7px; border-radius:999px; border:1px solid rgba(245,240,232,0.18); color:rgba(245,240,232,0.7); }
+      .ep__target { font-size:0.74rem; color:rgba(245,240,232,0.72); margin-top:4px; }
+      .ep__target a { color:var(--clr-honey,#e8a84c); text-decoration:none; }
+      .ep__title { font-family:var(--font-display,serif); font-weight:800; font-size:1rem; margin:6px 0 2px; }
+      .ep__body { font-size:0.86rem; line-height:1.55; color:rgba(245,240,232,0.82); margin:4px 0 0; white-space:pre-wrap; }
+      .ep__img { max-width:100%; border-radius:10px; margin-top:8px; display:block; }
+      .ep__foot { display:flex; gap:14px; justify-content:flex-end; font-size:0.78rem; color:rgba(245,240,232,0.7); margin-top:8px; }
+      .ep__ver { font-size:0.68rem; color:rgba(245,240,232,0.5); }
+      .ep-full__refs { margin-top:14px; border-top:1px solid rgba(245,240,232,0.12); padding-top:10px; }
+      .ep-full__h { font-family:var(--font-mono,monospace); font-size:0.62rem; letter-spacing:0.14em; text-transform:uppercase;
+        color:rgba(245,240,232,0.55); margin:0 0 6px; }
+      .ep-full__refs ul { margin:0; padding-left:18px; font-size:0.84rem; line-height:1.6; }
+      .ep-full__refs a { color:var(--clr-honey,#e8a84c); }
+      .ep-full__votes { display:flex; gap:8px; align-items:center; margin-top:14px; border-top:1px solid rgba(245,240,232,0.12); padding-top:10px; flex-wrap:wrap; }
+      .ep-vote { font:inherit; font-size:0.8rem; cursor:pointer; padding:5px 12px; border-radius:999px; background:none;
+        color:rgba(245,240,232,0.85); border:1px solid rgba(245,240,232,0.22); }
+      .ep-vote:hover { border-color:var(--clr-honey,#e8a84c); }
+      .ep-full__replies { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+      .ep-reply { border-left:2px solid rgba(245,240,232,0.14); padding:4px 0 4px 10px; font-size:0.84rem; }
+      .ep-reply b { font-size:0.76rem; }
+      .ep-dlg { position:fixed; inset:0; z-index:95; background:rgba(5,10,8,0.74); display:flex; align-items:center; justify-content:center; padding:3vh 3vw; }
+      .ep-dlg__card { width:min(760px,100%); max-height:100%; overflow-y:auto; background:#13211a; color:var(--clr-parchment,#f5f0e8);
+        border:1px solid rgba(245,240,232,0.16); border-radius:16px; padding:18px 22px; box-shadow:0 30px 80px rgba(0,0,0,0.55); }
+      .ep-dlg__x { float:right; font:inherit; font-size:1.5rem; line-height:1; background:none; border:0; color:rgba(245,240,232,0.6); cursor:pointer; }
+      .ep-dlg__reply { display:flex; gap:8px; margin-top:10px; }
+      .ep-dlg__reply textarea { flex:1; font:inherit; color:inherit; background:rgba(0,0,0,0.25); border:1px solid rgba(245,240,232,0.16); border-radius:10px; padding:8px 10px; min-height:54px; }
+      .ep-btn { font:inherit; font-weight:700; font-size:0.82rem; cursor:pointer; padding:8px 16px; border-radius:999px; background:var(--clr-honey,#e8a84c); color:#0f1a14; border:0; text-decoration:none; display:inline-block; }
+      .ep-btn--ghost { background:none; color:rgba(245,240,232,0.8); border:1px solid rgba(245,240,232,0.22); }
+      .ep-msg { font-size:0.8rem; margin-top:6px; }
+      .ep-prev { font-size:0.8rem; line-height:1.5; color:rgba(245,240,232,0.78); border-left:2px solid var(--clr-honey,#e8a84c); padding:4px 0 4px 10px; margin:6px 0; }
+      .ep-prev a { color:var(--clr-honey,#e8a84c); text-decoration:none; }
+      .ep-suggest { margin-top:8px; font-size:0.82rem; }
+      .ep-suggest a { color:var(--clr-honey,#e8a84c); font-weight:700; }
+      `;
+      document.head.appendChild(s);
+    }
+
+    async function guide() {
+      if (_guide) return _guide;
+      try {
+        const r = await fetch((config.apiBase || "") + "/posts/guide");
+        if (r.ok) _guide = await r.json();
+      } catch (e) {}
+      return _guide || { types: [], categories: [], general_tags: [], votes: [] };
+    }
+
+    // post.html?type=…&cause=…&initiative=…&org=…&mission=…&post=…&budget=…&tag=…&back=…
+    function composeUrl(opts) {
+      opts = opts || {};
+      const q = new URLSearchParams();
+      ["type", "cause", "initiative", "org", "mission", "post", "budget", "tag", "edit"].forEach((k) => {
+        if (opts[k]) q.set(k, opts[k]);
+      });
+      const back = opts.back === undefined ? (location.pathname + location.search) : opts.back;
+      if (back) q.set("back", back);
+      const s = q.toString();
+      return "post.html" + (s ? "?" + s : "");
+    }
+
+    function kind(p) {
+      if (p.type && TYPE[p.type] && p.type !== "general") return TYPE[p.type];
+      const tag = (p.tags || []).find((t) => t.indexOf(":") < 0);
+      if (tag) return tag.charAt(0).toUpperCase() + tag.slice(1);
+      return CAT_WORD[p.category] || "Post";
+    }
+    function when(iso) {
+      const d = new Date(iso);
+      return isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+    function missionHref(id) {
+      try { if (Slug && Slug.href) return Slug.href(id); } catch (e) {}
+      return "/m/" + encodeURIComponent(id);
+    }
+    function threadHref(id) { return "cause.html?thread=" + encodeURIComponent(id); }
+    function targetHref(p) {
+      const k = p.target_kind, id = p.target_id;
+      if (!id) return null;
+      if (k === "mission") return missionHref(id);
+      if (k === "initiative") return p.mission_id ? missionHref(p.mission_id) : null;
+      if (k === "organization") return "mission.html?org=" + encodeURIComponent(id);
+      if (k === "cause") return "cause.html?cause=" + encodeURIComponent(id);
+      if (k === "post" || k === "budget") return threadHref(id);
+      return null;
+    }
+    // "Both views must clearly display what mission, org, or initiative the
+    // post targets (if any)."
+    function targetLine(p) {
+      if (!p.target_kind || p.target_kind === "none" || !p.target_id) return "";
+      const lab = p.target_label || p.target_id;
+      const href = targetHref(p);
+      const inResp = (p.tags || []).indexOf("response") >= 0 && p.target_kind === "post";
+      const word = p.parent_id ? "Reply to" : inResp ? "In response to" : "On the " + TARGET_WORD[p.target_kind] || "On";
+      return '<div class="ep__target">' + word + " " +
+        (href ? '<a href="' + esc(href) + '">' + esc(lab) + "</a>" : "<b>" + esc(lab) + "</b>") +
+        (p.mission_id && p.target_kind !== "mission" && p.mission_label && p.target_kind !== "initiative"
+          ? ' &middot; <a href="' + esc(missionHref(p.mission_id)) + '">' + esc(p.mission_label) + "</a>" : "") +
+        "</div>";
+    }
+    function tagsHTML(p) {
+      const words = (p.tags || []).filter((t) => t.indexOf(":") < 0);
+      const first = words[0];
+      return words.filter((t) => !(p.type === "general" && t === first))
+        .map((t) => '<span class="ep__tag">' + esc(t) + "</span>").join("");
+    }
+    function votes(p) { return (p.helpful_count || 0) - (p.harmful_count || 0); }
+
+    // Collapsed: "Jax · Sep 29 · Opinion", the excerpt, "↑ 37  ↩ 12".
+    function collapsed(p, opts) {
+      css();
+      opts = opts || {};
+      const body = String(p.body || "");
+      const cut = opts.chars || 280;
+      const tagName = opts.href === false ? "div" : "a";
+      const href = opts.href === false ? "" : ' href="' + esc(opts.href || threadHref(p.id)) + '"';
+      return "<" + tagName + ' class="ep' + (opts.click ? " ep--click" : "") + '"' + href + ' data-post="' + esc(p.id) + '">' +
+        '<div class="ep__meta"><span class="ep__who">' + esc(p.author_name || "Benefactor") + "</span>" +
+          "<span>&middot; " + when(p.created_at) + '</span><span>&middot;</span><span class="ep__kind">' + esc(kind(p)) + "</span>" +
+          tagsHTML(p) + (p.version > 1 ? '<span class="ep__ver">v' + (p.version_shown || p.version) + "</span>" : "") + "</div>" +
+        targetLine(p) +
+        (p.title ? '<div class="ep__title">' + esc(p.title) + "</div>" : "") +
+        '<p class="ep__body">' + esc(body.length > cut ? body.slice(0, cut).trim() + "…" : body) + "</p>" +
+        '<div class="ep__foot"><span title="' + esc(p.vote_name || "Votes") + '">&uarr; ' + votes(p) + "</span>" +
+          "<span title=\"Replies\">&#8617; " + (p.reply_count || 0) + "</span></div>" +
+        "</" + tagName + ">";
+    }
+
+    function refItem(r) {
+      if (r.kind === "link") return '<li><a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.label || r.url) + "</a></li>";
+      if (r.kind === "mission") return '<li>Mission <a href="' + esc(missionHref(r.mission_id)) + '">' + esc(r.mission_id) + "</a></li>";
+      const name = TYPE[r.type] || "Post";
+      return '<li>' + esc(name) + ' &middot; <a href="' + esc(threadHref(r.post_id)) + '">' + esc(r.title || r.post_id) + "</a>" +
+        (r.auto ? ' <span class="ep__tag" title="Attached to every Analysis of this mission">leading</span>' : "") +
+        (r.changed ? ' <span class="ep__ver">cited v' + r.cited_version + ' &middot; now v' + r.latest_version + "</span>" : "") + "</li>";
+    }
+
+    // Full: the contents, References, the votes, then the replies.
+    function full(d, replies, opts) {
+      css();
+      opts = opts || {};
+      const refs = d.references || [];
+      const voteBtns = (opts.reactions || [["helpful", "Upvote"]]).map(([v, lab]) =>
+        '<button type="button" class="ep-vote" data-vote="' + v + '">' + esc(lab) + "</button>").join("");
+      const mission = d.mission_id
+        ? '<a class="ep-btn ep-btn--ghost" href="' + esc(missionHref(d.mission_id)) + '">Go to ' + esc(d.mission_label || "the mission") + " &rarr;</a>" : "";
+      const edit = opts.mine ? '<a class="ep-btn ep-btn--ghost" href="' + esc(composeUrl({ edit: d.id })) + '">Edit (new version)</a>' : "";
+      return '<div class="ep-full" data-post="' + esc(d.id) + '">' +
+        '<div class="ep__meta"><span class="ep__who">' + esc(d.author_name || "Benefactor") + "</span>" +
+          "<span>&middot; " + when(d.created_at) + '</span><span>&middot;</span><span class="ep__kind">' + esc(kind(d)) + "</span>" +
+          tagsHTML(d) + (d.latest_version > 1 ? '<span class="ep__ver">version ' + (d.version_shown || d.version) + " of " + d.latest_version + "</span>" : "") + "</div>" +
+        targetLine(d) +
+        (d.title ? '<h2 class="ep__title" style="font-size:1.3rem;">' + esc(d.title) + "</h2>" : "") +
+        (d.image_url ? '<img class="ep__img" src="' + esc(d.image_url) + '" alt="" />' : "") +
+        '<p class="ep__body">' + esc(d.body || "") + "</p>" +
+        (refs.length ? '<div class="ep-full__refs"><p class="ep-full__h">References</p><ul>' + refs.map(refItem).join("") + "</ul></div>" : "") +
+        '<div class="ep-full__votes"><b title="' + esc(d.vote_name || "") + '">&uarr; ' + votes(d) + " " + esc(d.vote_name || "votes") + (Math.abs(votes(d)) === 1 ? "" : "s") + "</b>" +
+          voteBtns + '<span style="flex:1"></span>' + edit + mission + "</div>" +
+        '<p class="ep-full__h" style="margin-top:14px;">' + (replies || []).length + " repl" + ((replies || []).length === 1 ? "y" : "ies") + "</p>" +
+        '<div class="ep-full__replies">' + (replies || []).map((r) =>
+          '<div class="ep-reply"><b>' + esc(r.author_name || "Benefactor") + "</b> <span class=\"ep__ver\">&middot; " + when(r.created_at) + "</span>" +
+          '<div class="ep__body">' + esc(r.body || "") + "</div></div>").join("") + "</div>" +
+        "</div>";
+    }
+
+    async function open(id, opts) {
+      css();
+      opts = opts || {};
+      const ctx = opts.mission ? "?mission_id=" + encodeURIComponent(opts.mission) : "";
+      const [dr, rr, g] = await Promise.all([
+        fetch((config.apiBase || "") + "/posts/" + encodeURIComponent(id) + ctx),
+        fetch((config.apiBase || "") + "/posts/" + encodeURIComponent(id) + "/comments"),
+        guide(),
+      ]);
+      if (!dr.ok) return null;
+      const d = await dr.json();
+      const replies = rr.ok ? await rr.json() : [];
+      const t = (g.types || []).find((x) => x.key === d.type);
+      const reactions = t ? t.reactions.map((r) => [r.value, r.label]) : [["helpful", "Upvote"]];
+      let me = null;
+      try { me = Auth.isLoggedIn() ? await Auth.fetchMe() : null; } catch (e) {}
+      document.getElementById("ep-dlg")?.remove();
+      const bg = document.createElement("div");
+      bg.className = "ep-dlg"; bg.id = "ep-dlg";
+      bg.innerHTML = '<div class="ep-dlg__card" role="dialog" aria-modal="true"><button type="button" class="ep-dlg__x" aria-label="Close">&times;</button>' +
+        full(d, replies, { reactions, mine: me && me.id === d.ben_author_id }) +
+        '<div class="ep-dlg__reply"><textarea id="ep-reply-in" placeholder="Write a reply…"></textarea>' +
+        '<button type="button" class="ep-btn" id="ep-reply-send">Reply</button></div><div class="ep-msg" id="ep-msg"></div></div>';
+      document.body.appendChild(bg);
+      const close = () => bg.remove();
+      bg.querySelector(".ep-dlg__x").onclick = close;
+      bg.addEventListener("click", (e) => { if (e.target === bg) close(); });
+      const msg = bg.querySelector("#ep-msg");
+      const say = (s, good) => { msg.textContent = s; msg.style.color = good ? "#8fce9d" : "#f08a6a"; };
+      bg.querySelectorAll("[data-vote]").forEach((b) => b.onclick = async () => {
+        if (!Auth.isLoggedIn()) return Auth.openModal("login");
+        const r = await Auth.fetchAuthed("/posts/" + encodeURIComponent(id) + "/react", { method: "POST",
+          body: JSON.stringify({ value: b.dataset.vote, mission_id: opts.mission || null }) });
+        const out = await r.json().catch(() => ({}));
+        if (!r.ok) return say(out.detail || "Refused.");
+        say("Counted.", true);
+        if (opts.onChange) try { opts.onChange(out); } catch (e) {}
+        setTimeout(() => open(id, opts), 300);
+      });
+      bg.querySelector("#ep-reply-send").onclick = async () => {
+        if (!Auth.isLoggedIn()) return Auth.openModal("login");
+        const body = bg.querySelector("#ep-reply-in").value.trim();
+        if (!body) return say("Write something first.");
+        const r = await Auth.fetchAuthed("/posts", { method: "POST", body: JSON.stringify({
+          id: "rp-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          body, author_type: "ben", parent_id: id, category: d.category, type: d.type }) });
+        const out = await r.json().catch(() => ({}));
+        if (!r.ok) return say(out.detail || "Refused.");
+        if (opts.onChange) try { opts.onChange(out); } catch (e) {}
+        open(id, opts);
+      };
+      return bg;
+    }
+
+    // A short preview of a discussion — for an initiative's or an
+    // organization's row. "A highly rated justification if available, or
+    // anything relevant. It should not show too much text."
+    async function preview(el, q) {
+      css();
+      if (!el) return;
+      const params = new URLSearchParams(Object.assign({ roots_only: "true", sort: "hot", limit: "20" }, q || {}));
+      let rows = [];
+      try { const r = await fetch((config.apiBase || "") + "/posts?" + params); rows = r.ok ? await r.json() : []; } catch (e) {}
+      const score = (p) => ((p.tags || []).indexOf("justification") >= 0 || (p.tags || []).indexOf("case") >= 0 ? 1000 : 0) + votes(p);
+      const best = rows.slice().sort((a, b) => score(b) - score(a))[0];
+      const target = q.tiv_id ? { initiative: q.tiv_id } : q.org_id ? { org: q.org_id } : {};
+      const write = '<a href="' + esc(composeUrl(Object.assign({ tag: "justification" }, target))) + '">Post about it</a>';
+      el.innerHTML = best
+        ? '<div class="ep-prev">' + '<span class="ep__kind">' + esc(kind(best)) + "</span> " +
+            esc((best.title ? best.title + " — " : "") + String(best.body || "").slice(0, 160)) + (String(best.body || "").length > 160 ? "…" : "") +
+            ' <span class="ep__ver">&uarr; ' + votes(best) + "</span>" +
+            '<br/><a href="#" data-ep-open="' + esc(best.id) + '">Read</a> &middot; ' + rows.length + " post" + (rows.length === 1 ? "" : "s") + " &middot; " + write + "</div>"
+        : '<div class="ep-prev">No discussion yet &middot; ' + write + "</div>";
+      el.querySelectorAll("[data-ep-open]").forEach((a) => a.onclick = (e) => { e.preventDefault(); e.stopPropagation(); open(a.dataset.epOpen); });
+    }
+
+    // "New budget items, new initiatives and new organizations strongly
+    // suggest posting."
+    function suggest(targetKind, id, label) {
+      css();
+      const key = { initiative: "initiative", organization: "org", cause: "cause", budget: "budget", mission: "mission" }[targetKind] || targetKind;
+      return '<div class="ep-suggest">Now make the case: <a href="' +
+        esc(composeUrl({ [key]: id, tag: "justification" })) + '">post a Justification for ' + esc(label || "it") + " &rarr;</a></div>";
+    }
+
+    return { guide, composeUrl, kind, collapsed, full, open, preview, suggest, targetLine, css, threadHref, missionHref };
+  })();
+
   var EBX = {
     config,
     Slug,
@@ -2421,6 +2724,7 @@
     sortBy,
     Dialogs,
     openP1Mission,
+    Post,
     Auth
   };
   window.EBX = EBX;

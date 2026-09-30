@@ -84,15 +84,21 @@ const section = t => console.log('\n=== ' + t);
          (tabs.compareDocumentPosition(ce) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
          (ce.compareDocumentPosition(tbl) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
      }), 'it sits under the cause toggles and above the table (2026-09-20 order, kept by P1)');
-  ok((await page.$$('.ce-weeks .ce-week')).length === 6,
-     'the streak is ONE column of six lines (D5, 2026-09-24)');
+  // Unified elections (2026-09-29): "progress bars for each cause" — a row of
+  // six per cause on the ballot, and this week's vote as one stacked bar.
+  const barRows = await page.$$eval('.ce-bars .ce-bars__row', els => els.map(e => e.querySelectorAll('.ce-bars__segs i').length));
+  ok(barRows.length >= 1 && barRows.every(n => n === 6),
+     'every cause on the ballot has a bar of six weeks (D5)', barRows.join(','));
+  ok(!!(await page.$('.ce-panel .ce-dist__bar')), '…and this week\'s vote is one distribution bar');
   ok(!(await page.$('.cs-bars .cs-col')), '…and the seven-column staircase is gone');
-  ok(await page.$eval('.ce-panel__b .rf-btn', e => /Show Cause Table/i.test(e.textContent)),
-     'Show Cause Table is the way to the table');
-  const ceBtns = await page.$$eval('.ce-panel .ce-row--acts .vb-btn',
+  ok(!(await page.$('.ce-panel__b')), 'no Show / Hide Cause Table: the cause election\'s table IS the cause table');
+  const ceBtns = await page.$$eval('.ce-panel .bb .bb__pair .vb-btn',
     els => els.map(e => ({ t: e.textContent.replace(/\s+/g, ' ').trim(), off: e.disabled })));
   ok(ceBtns.length === 2 && /Commit/.test(ceBtns[0].t) && /Cancel/.test(ceBtns[1].t),
-     'Commit and Cancel are both on it', ceBtns.map(b => b.t).join(' | '));
+     'Commit and Cancel lead its action bar', ceBtns.map(b => b.t).join(' | '));
+  const bar = await page.$eval('.ce-panel .bb', e => e.textContent.replace(/\s+/g, ' '));
+  ok(/Nominate/.test(bar) && /Discuss/.test(bar) && /Post a Background/.test(bar),
+     '…then Nominate · Discuss · Post a background', bar);
   ok(ceBtns.every(b => b.off), '…and both are dead until something is dialled');
   // It persists across the page states — that is the point of moving it here.
   const slotME = await page.$eval('.ce-panel', e => e.dataset.slot);
@@ -113,14 +119,19 @@ const section = t => console.log('\n=== ' + t);
   for (let i = 0; i < 7; i++) {
     await page.click('.hero__causetabs .cause-tab:nth-child(' + (i + 1) + ')');
     await page.waitForTimeout(700);
-    const p = await page.$eval('.ce-panel', e => ({
-      slot: Number(e.dataset.slot),
-      cause: e.dataset.cause,
-      sub: e.querySelector('.ce-panel__sub')?.textContent.replace(/\s+/g, ' ').trim() || '',
-    }));
+    // Unified elections (2026-09-29): the header line names the window
+    // ("Cause for the window that runs <date> is finalized on …") and its
+    // chip names the cause holding it.
+    const p = await page.evaluate(() => {
+      const e = document.querySelector('.ce-panel');
+      const top = document.getElementById('el3-top-ce');
+      return { slot: Number(e.dataset.slot), cause: e.dataset.cause,
+        chip: (top.querySelector('.el3__top-chip') || {}).textContent || '',
+        sub: 'runs ' + ((top.querySelector('.el3__runs') || {}).textContent || '') };
+    });
     seen.push(p);
-    ok(p.sub.indexOf(tabNames[i]) >= 0,
-       'tab ' + tabNames[i] + ' points the panel at its own window', p.sub.slice(0, 80));
+    ok(p.chip.toLowerCase() === tabNames[i].toLowerCase(),
+       'tab ' + tabNames[i] + ' points the panel at its own window', p.chip + ' · ' + p.sub);
   }
   const slots = seen.map(x => x.slot).sort((a, b) => a - b);
   ok(JSON.stringify(slots) === JSON.stringify([7, 8, 9, 10, 11, 12, 13]),
@@ -151,15 +162,9 @@ const section = t => console.log('\n=== ' + t);
   await page.evaluate(() => window.setElectionCol && window.setElectionCol('ce'));
   await page.waitForTimeout(2000);
 
-  section('"Show Cause Table" toggles the TABLE and leaves the cards alone');
-  const cardsBefore = await page.$$eval('.race-face', els => els.length);
-  const meToggleBefore = await page.evaluate(() => window._electionCol && window._electionCol());
-  await page.click('.ce-panel__b .rf-btn');
-  await page.waitForTimeout(1400);
-  ok(await page.$$eval('.race-face', els => els.length) === cardsBefore,
-     'the election cards are untouched', cardsBefore + ' cards');
-  ok(await page.evaluate(() => window._electionCol && window._electionCol()) === meToggleBefore,
-     '…and the step toggle has not moved');
+  // Unified elections (2026-09-29): the cause election's table IS the cause
+  // table — there is no Show / Hide button any more.
+  section('the cause election shows the cause table');
   ok(await page.$eval('#init-table-head', h => /Election date/.test(h.textContent)),
      'the table head is the cause table');
   // Review 2026-09-24: the allocations panel left the mission page (it goes
@@ -180,7 +185,7 @@ const section = t => console.log('\n=== ' + t);
       cells: tr.children.length,
     })));
   ok(rows.length === 13, 'THIRTEEN rows', rows.length + ' rows');
-  ok(rows.every(r => r.cells === 5), 'five columns, like the OE table');
+  ok(rows.every(r => r.cells === 6), 'six columns — the OE table\'s five, plus weeks won (2026-09-29)');
   ok(rows.filter(r => r.tag === 'confirmed').length === 6,
      'six are confirmed — the six initiative elections that have cards',
      rows.filter(r => r.tag === 'confirmed').map(r => r.name).join(', '));
@@ -247,16 +252,16 @@ const section = t => console.log('\n=== ' + t);
   // §1 (2026-08-21): a click-through pager, not a flat list.
   ok(!(await page.$('.ce-choices')), 'the all-at-once list of alternatives is gone');
   ok(!!(await page.$('.ce-panel .ce-row--sugg .ce-sugg')), '…replaced by a click-through pager');
-  ok(!!(await page.$('.ce-panel .ce-row--acts .rf-btn')), 'the proposal row is here');
+  const NOM = '.ce-panel .bb .bb__nom';
+  ok(!!(await page.$(NOM)), 'Nominate is in the action bar');
   ok(!(await page.$('#ce-suggest')),
      '…and it is no longer a name box wedged into a row');
-  ok(await page.$eval('.ce-panel .ce-row--acts .rf-btn',
-                      e => /Nominate a Cause/i.test(e.textContent)),
+  ok(await page.$eval(NOM, e => /Nominate/i.test(e.textContent)),
      '…it opens a dialog, like proposing an initiative',
-     await page.$eval('.ce-panel .ce-row--acts .rf-btn', e => e.textContent.trim()));
+     await page.$eval(NOM, e => e.textContent.trim()));
   // §0 (2026-08-21): `--rf` is declared on `.race-face`, so an `.rf-btn` in this
   // dialog painted #0f1a14 text on no background. Same fault as the OE Commit.
-  const ink = await page.$eval('.ce-panel .ce-row--acts .rf-btn', el => {
+  const ink = await page.$eval(NOM, el => {
     const s = getComputedStyle(el); return { c: s.color, b: s.backgroundColor };
   });
   const lum = c => { const m = (c.match(/[\d.]+/g) || [0, 0, 0]).map(Number);
@@ -293,9 +298,11 @@ const section = t => console.log('\n=== ' + t);
   // §1 (2026-08-27) — **the vote is DIALLED, then committed.** Clicking a
   // choice used to POST it; the panel has a Commit and a Cancel now, so a
   // click marks a draft and nothing reaches the server until Commit.
+  // Unified elections (2026-09-29): the count is in the week's distribution bar.
+  const LAB = '.ce-panel .ce-dist__lab';
   const votesOf = async () => Number(
-    ((await page.$eval('.ce-panel .ce-row--head', e => e.textContent)).match(/This week\s*(\d+)/) || [])[1] || 0);
-  const before7 = await page.$eval('.ce-panel .ce-row--head', e => e.textContent);
+    ((await page.$eval(LAB, e => e.textContent)).match(/vote\s*·\s*(\d+)/) || [])[1] || 0);
+  const before7 = await page.$eval(LAB, e => e.textContent);
   const votesBefore = await votesOf();
   const mineBefore = await (await fetch(BASE + '/causes/vote/mine', {
     headers: { Authorization: 'Bearer ' + token } })).json();
@@ -309,7 +316,7 @@ const section = t => console.log('\n=== ' + t);
     headers: { Authorization: 'Bearer ' + token } })).json();
   ok(JSON.stringify(midway) === JSON.stringify(mineBefore),
      '…and nothing has reached the server yet', JSON.stringify(midway));
-  const ceCommit = (await page.$$('.ce-panel .ce-row--acts .vb-btn'))[0];
+  const ceCommit = (await page.$$('.ce-panel .bb .bb__pair .vb-btn'))[0];
   ok(!(await ceCommit.isDisabled()), 'Commit wakes up once something is dialled');
   await ceCommit.click();
   await page.waitForTimeout(2400);
@@ -321,10 +328,11 @@ const section = t => console.log('\n=== ' + t);
   const myRow = await page.$eval('tr[data-slot="7"] .init-table__stake',
     e => e.textContent.replace(/\s+/g, ' ').trim());
   ok(/voted/.test(myRow), 'the table row reports it in My vote', myRow);
-  const head7 = await page.$eval('.ce-panel .ce-row--head', e => e.textContent.replace(/\s+/g, ' ').trim());
+  const head7 = await page.$eval(LAB, e => e.textContent.replace(/\s+/g, ' ').trim());
+  ok(!!(await page.$('.ce-panel .ce-dist__bar i')), 'the distribution bar draws the vote');
   ok((await votesOf()) === votesBefore + 1, 'and the panel counts one more than before',
      votesBefore + ' \u2192 ' + (await votesOf()));
-  ok(/This week ?\d+ votes?/.test(head7), '…in words that agree with the number', head7.slice(-70));
+  ok(/\d+ votes?/.test(head7), '…in words that agree with the number', head7.slice(-70));
   ok(before7 !== head7, '…which is a change from before the click');
 
   section('what the SERVER refuses, and what it now accepts');
@@ -368,15 +376,13 @@ const section = t => console.log('\n=== ' + t);
      '…with the cause head on it');
 
   section('and back out again');
-  // §1 (2026-08-27): the way back is the panel's own button, which flips to
-  // "Hide Cause Table" while the table is showing — the toolbar under the cause
-  // table is hidden, so nothing else returns you to the elections.
-  ok(await page.$eval('.ce-panel__b .rf-btn', e => /Hide Cause Table/i.test(e.textContent)),
-     'the button flips while the cause table is showing');
-  await page.click('.ce-panel__b .rf-btn');
+  // Unified elections (2026-09-29): the way back is the progress log — step 2
+  // returns the table to the initiative election.
+  await page.evaluate(() => window.setElectionCol('me'));
   await page.waitForTimeout(1400);
   ok(await page.$eval('#init-table-head', h => /Total tokens/.test(h.textContent)),
-     'the back button returns the table to the initiative elections');
+     'the initiative election returns the table to the initiatives');
+  ok(await page.$eval('#init-table-head', h => !/Weeks won/.test(h.textContent)), '…without the weeks-won column');
 
   section('no script errors');
   ok(errors.length === 0, 'the page ran clean', errors.slice(0, 3).join(' | '));

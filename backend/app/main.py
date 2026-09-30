@@ -221,6 +221,12 @@ app.include_router(transactions.router)
 app.include_router(admin.router)
 app.include_router(contact.router)   # Contact us (2026-09-25)
 
+try:  # 2026-09-26: say at boot which mail route the server sees
+    from . import mailer as _mailer
+    print(f"[mailer] route: {_mailer.route()}")
+except Exception as _e:  # never block startup on this
+    print(f"[mailer] route check failed: {_e}")
+
 
 # Static hosting from the project root.
 app.mount("/resources", StaticFiles(directory=ROOT / "resources"), name="resources")
@@ -240,7 +246,7 @@ def root_page() -> FileResponse:
 # index.html = public landing page (served at "/"); main.html = the home/missions app page.
 # Orgs have NO page of their own (restructure 2026-07-10): their public face is
 # the org panel on mission.html (?org=), their admin lives behind admin.html.
-_HTML_PAGES = ("index", "about", "main", "cause", "mission", "profile", "admin")   # about: P2 (2026-09-25)
+_HTML_PAGES = ("index", "about", "main", "cause", "mission", "profile", "admin", "post")   # about: P2 (2026-09-25) · post: P3 (2026-09-29)
 
 
 def _make_handler(page: str):

@@ -103,6 +103,7 @@ what went there and why is `INSTRUCTIONS.md` `## REMOVAL REGISTER`.
   - [Votes by phase](#votes-by-phase)
   - [The discussion model — a post type for every phase](#the-discussion-model--a-post-type-for-every-phase)
   - [Post rewards (refined) — which post wins, decided by which vote, paid when](#post-rewards-refined--which-post-wins-decided-by-which-vote-paid-when)
+  - [The posting model — decided 2026-09-28 (builds in P3; the rewards in P5)](#the-posting-model--decided-2026-09-28-builds-in-p3-the-rewards-in-p5)
   - [EBX, the coin, and deductibility](#ebx-the-coin-and-deductibility)
   - [What the code does](#what-the-code-does)
   - [S/S/S → resolutions: the budgeting procedure](#sss--resolutions-the-budgeting-procedure)
@@ -639,6 +640,39 @@ sizes are unchanged. Enforcement reads the rewarded set from `post_config.py`
   advance and up to 8/32 of the flexible, like any other line.
 - Every slice is written to the `transactions` ledger; `pools` is a derived cache.
 
+### The posting model — decided 2026-09-28 (builds in P3; the rewards in P5)
+
+*Not built yet: the code above still ties every research post to a mission.
+The spec is `docs/INSTRUCTIONS.md` › P3 · Posting (with the diagram); the
+incentives are `docs/mission_model.md` §4. What changes:*
+
+- **Posts point at the thing they are about.** Background → a cause (tagged with
+  any of its initiatives, or none) · Vetting / Investigation → an organization ·
+  budget items → an initiative, at any time, before its election and after budget
+  day · the Analysis → a mission. A post never gets "tied" to a mission and
+  severed again; a mission looks up what points at its cause, its candidates and
+  itself.
+- **One of each per person, living:** one Background per cause, one
+  Investigation per organization, one Analysis per mission. Every edit is a new
+  version; the version an election or an Analysis used is locked for good.
+  A Background posted now is electable in this week's initiative election; edits
+  after election day go to the cause's next mission. An author can pull an old
+  post into a new mission, and its votes there start from zero — **votes count
+  per mission**.
+- **The Analysis** opens when the organization election closes (T+8) and is
+  elected on budget day (T+15). It cites up to 12 Backgrounds and 12
+  Investigations of any age; the **leading** Background (fixed at T) and the
+  leading Investigation on any candidate organization (fixed at T+8) are
+  attached automatically. Budget items are referenced, never paid.
+- **The research pot is paid once, on budget day:** 1/3 to the winning
+  Analysis's author, 1/3 across the Backgrounds it cites and 1/3 across the
+  Investigations it cites, each third split by votes. ⚠ Whether it is paid in
+  minted EBX rather than cash — and with it the 5–15/16 organization ·
+  1–5/16 Earthbux cash split — is **D22**, not yet a ruling.
+- **The all-purpose post:** a plain post attached to anything or nothing, with
+  optional tags; **Case** and **Evaluation** become tags. The Review lane is gone;
+  replies stay.
+
 ### EBX, the coin, and deductibility
 
 - **EBX is a position.** It exists from the moment a stake mints (the winning
@@ -976,7 +1010,7 @@ state. Pages render honest empty vote states.
 
 | Page | What it is | State |
 |---|---|---|
-| `index.html` | About Earthbux — §1a–§1e, the runway off `GET /stats` | built |
+| `index.html` | **Home** — the hero with the five animated steps to its right, the mission hub (every mission by cause), the Network and the feed (2026-09-30) | built |
 | `main.html` | a redirect to `mission.html` since P1 (2026-09-24), keeping its query | built |
 | `cause.html` | **NEWS** — the feed (`sort=hot`), its control panel, the wheel, the cause bar | ◑ |
 | `mission.html` · `/m/<slug>` | **Missions** — one page for a mission's whole life: toggler · annulus · overview, the five ballots, the table, the allocations, then the mission's story (log, posts, post-support ring, discussion, organizations) | ◑ |
@@ -1119,10 +1153,13 @@ resources/js/
                      then bump the `?v=` on the pages' script tags.
   ebx_page.js        page helpers: the html escaper, date/number formatters,
                      the watchlist (2026-09-08)
-  ebx_wheel.js       EBX.Wheel — the landing page's phase wheel (five step
-                     toggles, top card, globe → pie → sectors, six cards) and
-                     the phase helpers main.html's framing/exchange views use
-                     (2026-09-18)
+  ebx_wheel.js       EBX.Wheel — the mission page's annulus (globe → pie →
+                     sectors) and the phase/data helpers the mission page and
+                     Home's mission hub read. Its landing variant is mounted by
+                     nothing since 2026-09-30 (REMOVAL REGISTER)
+  ebx_steps.js       EBX.Steps — Home's five steps: five animated SVG pages
+                     (cause · initiative · organization · network · reporting),
+                     a vista per cause, 10 s each (2026-09-30)
   vendor/            d3-array + d3-geo (ISC) and Natural Earth 110m land
                      (public domain) for the globe — vendored, no CDN
   css/ebx_frontend.css   shared styles, incl. the five-tab site nav

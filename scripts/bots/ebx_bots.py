@@ -292,6 +292,7 @@ def read_me(api: Api, me: dict) -> dict:
             # week's, plus any whose initiative election it backed.
             "open_races": [r["mission_id"] for r in w.get("rows", []) if r.get("can_take_part")],
             "my_posts": [{"id": p["id"], "mission_id": p.get("mission_id"), "type": p.get("type"),
+                          "cause_id": p.get("cause_id"), "org_id": p.get("org_id"),
                           "title": p.get("title"), "parent_id": p.get("parent_id")} for p in mine]}
 
 
@@ -551,15 +552,35 @@ def task_research(api, bot, week, mine, c, rng):
     # (post_config.OPEN_POSTING_CATEGORIES), so the bot no longer skips missions
     # it holds nothing in; the server decides. A vetting post (`investigation`)
     # must name the organization it vets: `org_id` in the content file.
-    existing = {(p["mission_id"], p["type"]): p["id"] for p in mine["my_posts"] if not p["parent_id"]}
+    # P3 (2026-09-29): one Background per person per CAUSE, one Investigation
+    # per ORGANIZATION, one Analysis per MISSION — so "do I already have one"
+    # is asked of that scope, and an existing one is edited (a new version).
+    causes_of = {}
+
+    def cause_of(mid):
+        if mid not in causes_of:
+            try:
+                causes_of[mid] = (api.get(f"/missions/{mid}") or {}).get("cause_id")
+            except Exception:
+                causes_of[mid] = None
+        return causes_of[mid]
+
+    def scope(p, mid=None):
+        t = p["type"]
+        if t == "context":
+            return (t, p.get("cause_id") or cause_of(mid or p.get("mission_id")))
+        if t == "investigation":
+            return (t, p.get("org_id"))
+        return (t, mid or p.get("mission_id"))
+    existing = {scope(p): p["id"] for p in mine["my_posts"] if not p["parent_id"]}
     for rp in c.get("posts", []):
         mid, typ = rp.get("mission_id"), rp.get("type")
         if typ not in ("context", "investigation", "analysis"):
             continue
         if typ == "investigation" and not rp.get("org_id"):
-            say(bot["handle"], f"skipped vetting in {mid} (no org_id — a vetting post must name the organization)")
+            say(bot["handle"], f"skipped investigation in {mid} (no org_id — an Investigation must name the organization)")
             continue
-        pid = existing.get((mid, typ))
+        pid = existing.get(scope({"type": typ, "org_id": rp.get("org_id"), "mission_id": mid}, mid))
         if pid:
             _try(bot, f"updated {typ} in {mid}", lambda: api.put(f"/posts/{pid}",
                                                                 {"title": rp.get("title"), "body": rp["body"]}))

@@ -7,8 +7,8 @@
 // the four dated steps and the explainer bands, which have been gone since
 // 2026-09-18 and 2026-09-25. `wheel_check.js` and `home_check.js` pin the same
 // page against fixtures; this one proves it paints from real data: the hero
-// (unchanged, D18 "You donate. We follow."), the two phase rows, the live top
-// card and the span, THE NETWORK and a feed whose size is the API's, and the
+// (unchanged, D18 "You donate. We follow."), the five steps and the mission
+// hub (2026-09-30), THE NETWORK and a feed whose size is the API's, and the
 // explainer standing on about.html.
 const { JSDOM, VirtualConsole } = require('jsdom');
 
@@ -46,22 +46,25 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   ok(txt(d.querySelector('.ld-sub')) === 'you donate, we follow', 'tagline (D18)');
   ok(d.querySelectorAll('#ld-cta .ld-cta__btn').length === 2, 'two calls to action');
 
-  console.log('\n=== Home · the phases, the top card, the annulus');
-  ok(d.querySelectorAll('.lw-row').length === 2, 'two phase rows');
-  ok(d.querySelectorAll('.lw-phase').length === 5 && d.querySelectorAll('.lw-phase.on').length === 1, 'five phases, one selected');
-  ok(d.querySelectorAll('.lw-phase__vote').length === 5 && d.querySelectorAll('.lw-phase__see').length === 5, 'each has What\'s new + Vote');
-  ok(!/Process|Reason/.test(txt(d.querySelector('#lw-topcard'))), 'no descriptions in the top card');
-  ok(d.querySelectorAll('.lw-live__row').length >= 2, 'the top card carries live facts');
-  ok(d.querySelectorAll('#lw-left .lw-card, #lw-right .lw-card').length === 6, 'six side cards');
-  ok(d.querySelectorAll('.lw-sector').length === 7, 'seven sectors');
-  ok(/\w{3} \d+ – \w{3} \d+/.test(txt(d.getElementById('lw-span'))), 'the time span', txt(d.getElementById('lw-span')));
-  ok(!d.querySelector('.ld-how') && !d.querySelector('.ld-band'), '"How it Works" and the bands are off Home');
+  console.log('\n=== Home · the five steps (2026-09-30)');
+  ok(d.querySelector('.hx .ld-a') && d.querySelector('.hx #ebx-steps'), 'the hero, with the steps to its right');
+  ok(d.querySelectorAll('#ebx-steps .sx__scene').length === 5, 'five pages');
+  ok(txt(d.querySelector('#ebx-steps .sx__msg')) === 'A fresh focus each week', 'page 1 is Cause');
+  ok(!d.getElementById('ebx-wheel') && !d.querySelector('.lw-phase, .lw-card'), 'the wheel block is off Home');
+
+  console.log('\n=== Home · the mission hub');
+  const missions = await fetch(BASE + '/missions').then(r => r.json());
+  ok(d.querySelectorAll('#mh .mh__rowhead').length === 7, 'seven rows');
+  const hub = d.defaultView.HomeHub;
+  const cells = hub ? hub.state.rows.reduce((a, r) => a + r.cells.length, 0) : 0;
+  ok(cells === missions.length + 7, 'every mission, plus a cause election a row', cells + ' = ' + missions.length + ' + 7');
+  ok(d.querySelectorAll('#mh .mc--ce').length === 7, 'a cause election on every row');
 
   console.log('\n=== Home · the Network + the feed');
-  ok(d.querySelectorAll('#hn-row .hn__tile').length === 3, 'the Network row');
+  ok(d.querySelectorAll('#hn-row a.hn__tile').length === 3, 'the Network row, as links into News');
   const shown = d.querySelectorAll('#hf-list .hp').length;
   ok(shown === Math.min(12, roots.length), 'the feed is every post, newest first', shown + ' of ' + roots.length);
-  ok(d.querySelectorAll('.hf-chip[data-cause]').length === 8, 'All causes + seven');
+  ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]'), 'no toggles on Home');
 
   console.log('\n=== about.html');
   const a = await page('about.html');
@@ -70,7 +73,7 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   const order = ['social network for charities', 'A dollar a week', 'How it Works', 'What an Earthbuck is',
                  'Research the mission', 'bring you the news', 'public forum', 'save it'].map(s => at.indexOf(s));
   ok(order.every(i => i >= 0) && order.every((v, i) => !i || v > order[i - 1]), 'the copy spine, in order', order.join(','));
-  ok(/Vetting/.test(at) && !/>Organization</.test(a.d.body.innerHTML), 'research reads Background · Vetting · Analysis');
+  ok(/Investigation/.test(at) && !/>Organization</.test(a.d.body.innerHTML), 'research reads Background · Investigation · Analysis (P3)');
   ok(/\d+\s*weeks? of grants/.test(txt(a.d.getElementById('ld-runway'))), 'the runway paints from /stats');
   ok(a.d.querySelectorAll('#ab-phases li').length === 5, 'the five phases');
 

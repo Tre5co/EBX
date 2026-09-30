@@ -462,12 +462,22 @@ class PostBase(BaseModel):
     # service {job, hourly_rate, days_needed} · supply {item, supplier, cost} ·
     # support {item}. The estimates above are derived from it when omitted.
     line_items: Optional[list[dict]] = None
+    # P3 (2026-09-29): what the post is about, stated once — cause · initiative
+    # · organization · mission · post · budget · none — and its tags (a general
+    # post's subtype, entity tags like "tiv:<id>"). post_config.py has the rules.
+    target_kind: Optional[str] = None
+    target_id: Optional[str] = None
+    tags: Optional[list[str]] = None
 
 
 class PostCreate(PostBase):
     id: str
     ben_author_id: Optional[int] = None
     org_author_id: Optional[str] = None
+    # What the post cites: {kind: post, post_id, version?} · {kind: mission,
+    # mission_id} · {kind: link, url, label?}. An Analysis's Backgrounds and
+    # Investigations go here (12 + 12, the two leading ones attached for you).
+    references: Optional[list[dict]] = None
 
 
 class PostRead(PostBase):
@@ -483,17 +493,46 @@ class PostRead(PostBase):
     # investigation, evaluation) are meaningfully rated — see post_config.
     flag: str = "green"
     flag_reason: Optional[str] = None
+    # P3 — how every page displays a post (`posting.serialize`).
+    version: int = 1
+    latest_version: int = 1
+    version_shown: int = 1
+    updated_at: Optional[datetime] = None
+    target_label: Optional[str] = None
+    mission_label: Optional[str] = None
+    reply_count: int = 0
+    vote_name: Optional[str] = None
+    author_name: Optional[str] = None
+    # Read inside a mission: {mission_id, via, pinned_version} — the counts
+    # above are that mission's, and the body is the version it keeps.
+    in_mission: Optional[dict] = None
+
+
+class PostDetail(PostRead):
+    """The full view: references (and whether each changed since it was cited),
+    who cites it, every version, every mission it belongs to."""
+    references: list[dict] = []
+    cited_by: int = 0
+    versions: list[dict] = []
+    missions: list[dict] = []
 
 
 class PostUpdate(BaseModel):
-    """An author's edit to their own benefactor post (build-seq §2). Only the
-    fields given are changed; category, type, mission and parent never move."""
+    """An author's edit to their own post. Every edit is a new version (D21);
+    category, type, target and parent never move."""
     title: Optional[str] = None
     body: Optional[str] = None
     stance: Optional[str] = None
     line_items: Optional[list[dict]] = None
     est_setup_days: Optional[float] = None
     est_cost_usd: Optional[float] = None
+    tags: Optional[list[str]] = None
+    references: Optional[list[dict]] = None
+
+
+class PostPull(BaseModel):
+    """D21: bring your post from an earlier mission into this one."""
+    mission_id: str
 
 
 class PostFlagUpdate(BaseModel):
@@ -504,6 +543,9 @@ class PostFlagUpdate(BaseModel):
 
 class PostVoteCreate(BaseModel):
     value: Valence
+    # The mission the vote is cast in (D21: votes count per mission). Omitted,
+    # it is the post's current mission.
+    mission_id: Optional[str] = None
 
 
 class PostVoteRead(BaseModel):

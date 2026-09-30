@@ -642,7 +642,10 @@ final ⊆ committed + EBX held                     (an overlay, never added)
    election, and does the current "move to any open OE race" stay?
 3. **When the research rewards and the Earthbux advance are paid.** The retired
    table said the Earthbux advance went "with the case post reward", and rewards
-   at 1/3, 2/3 and all spent.
+   at 1/3, 2/3 and all spent. *2026-09-28: the research pot is paid once, on
+   budget day — 1/3 the winning Analysis's author, 1/3 its cited Backgrounds, 1/3
+   its cited Investigations (INSTRUCTIONS › P3). The Earthbux advance is still
+   open.*
 4. **Over/under spending moves which number** — coin value (what the mission has
    achieved) or DEX price (what people expect)? §13 warns against merging them.
 5. **Initial DEX inventory** per mission pool: Earthbux's share, a genesis mint,
@@ -653,3 +656,8 @@ final ⊆ committed + EBX held                     (an overlay, never added)
    whether a DEX swap is receiving value, whether Earthbux can seed liquidity with
    charitable capital, and how PRI-funded grants are receipted (the grant is
    Earthbux's money given in the benefactor's name).
+9. **Research paid in minted EBX, not cash** (INSTRUCTIONS D22, 2026-09-28) —
+   would replace the 3/32 research slice in §0.6 and §8 with a mint that dilutes
+   every donor, leaving the cash split organization 5–15/16 · Earthbux 1–5/16.
+   Not a ruling until D22 is answered.
+10. **Move budget day back** (INSTRUCTIONS D25) — every "T+15" in §0 would move.

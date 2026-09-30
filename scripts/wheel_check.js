@@ -1,4 +1,4 @@
-// wheel_check — the landing page and `EBX.Wheel`, in jsdom, against FIXTURES.
+// wheel_check — `EBX.Wheel` (landing variant, on a bare mount), in jsdom, against FIXTURES.
 //
 //   node scripts/wheel_check.js            # from the repo root; no server
 //
@@ -51,7 +51,11 @@ function route(u) {
   const vc = new VirtualConsole();
   vc.on('jsdomError', e => errors.push(String(e.message || e).slice(0, 300)));
   vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ').slice(0, 300)));
-  const html = fs.readFileSync(R('index.html'), 'utf8');
+  // 2026-09-30 (P2 · Home mods): no page mounts the landing variant any more —
+  // Home's wheel became the five steps (ebx_steps.js) and the mission hub. This
+  // check keeps the variant honest on a bare mount until it is deleted
+  // (INSTRUCTIONS › REMOVAL REGISTER › Added 2026-09-30 §B).
+  const html = '<!DOCTYPE html><html><head></head><body><div id="ebx-wheel"></div></body></html>';
   const dom = new JSDOM(html, {
     runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
     url: 'http://localhost/index.html',

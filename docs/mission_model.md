@@ -464,14 +464,39 @@ from the contract draft and the build sequence):
 *Jax: "Discussion incentives (C, I, A + B)." C/I/A are the three rewarded
 research types; B is budgeting. Review sits alongside, paid in access.*
 
-| Category | Type | Opens | Judged by | Wins | Paid |
+**[x] Posting built 2026-09-29 (P3) · [ ] payout P5** — the table below
+replaces the staggered three 1/32 prizes. Spec and diagram: `INSTRUCTIONS.md`
+› P3 · Posting; the rules are `backend/app/posting.py`, the taxonomy and every
+type's guide `backend/app/post_config.py`.
+
+| Post | Points at | Per person | Opens | Earns | Paid |
 |---|---|---|---|---|---|
-| **Research** | **Context** | P1 | most helpful | **1/32** | with the advances |
-| | **Investigation** | P3a | most helpful | **1/32** | end of Phase 3 |
-| | **Analysis** | P2 | most helpful | **1/32** | later (post-P3) |
-| **Review** | **Case** (initiative) | P1 | most **fair** | direct line to Earthbux + the org | at the ME close |
-| | **Evaluation** (org) | P2 | most **fair** | direct line to Earthbux + the org | at the OE close |
-| **Budgeting** | **Service · Supply · Support** | suggest any time · vote at 3b | **upvote only** | becomes a budget line | when the item is paid |
+| **Background** | a cause (+ any of its initiatives as tags) | one per cause, living | any time — electable in this week's initiative election | the leading one at T is attached to every Analysis; any cited one shares **1/3** by votes | budget day |
+| **Investigation** | an organization | one per organization, living | any time | the leading one on any candidate at T+8 is attached; any cited one shares **1/3** by votes | budget day |
+| **Analysis** | the mission | one per mission | T+8 | the winning one's author: **1/3** | budget day (T+15) |
+| **Budget item** · Service · Supply · Support | an initiative | one per type, rolling | any time — before the election and after budget day | referenced, never paid; becomes a budget line | when the item is paid |
+| **All-purpose post** | anything, or nothing | — | any time | nothing; **Case** and **Evaluation** are tags on it | — |
+
+- [x] **Versions.** Every edit is a new version; the version an election or an
+  Analysis used is locked for good. A Background's edits after election day go
+  to the cause's next mission. An author can pull an old post into a new mission;
+  its **votes count per mission**, so they restart there (D21).
+- [x] **The Analysis** cites up to 12 Backgrounds and 12 Investigations of any
+  age; the two leading ones are fixed at their elections' close (D20), so a
+  critical Investigation of an organization that lost can lead.
+- ⚠ **PROPOSED — paid in minted EBX, not cash** (D22): the pot is minted by
+  diluting every donor, so all cash splits organization 5–15/16 · Earthbux
+  1–5/16. Open: the pot's size, whose votes split it, its place in the
+  deployment order, and that EBX can never buy anything personal.
+- ⚠ **PROPOSED — budget-item checks** (D23) and **what budget day hands over**
+  (D24).
+- The Review lane (Case · Evaluation, fair/unfair, the comm-line perk) is retired
+  as a category; the two survive as tags. The perk has no home yet.
+
+*Until P5 builds the payout, nothing is paid for research: the leads are fixed
+(`mission_leads`) and the citations recorded (`post_refs`) so the split can be
+computed from them. The three staggered 1/32 prizes and the Review lane's
+fair/unfair votes are gone with P3.*
 
 - ✅ **Membership gates winning, not posting.** Anyone in scope may post; only a
   mission member can take a reward or a comm line. A winner is a member by
@@ -748,6 +773,11 @@ can photograph. Constraints already in the model:
    something else is named.
 7. **When does the coin issue** — the model says at budget, the code says at
    `finalize_p2`. Framing is where the difference becomes visible.
+8. **Move budget day back** (INSTRUCTIONS D25) — framing 8 or 10 weeks. The
+   same-cause overlap it is meant to remove comes from the 7-week rotation, not
+   from framing's length.
+9. **The name of phase 4** (INSTRUCTIONS D27) — Framing, Planning, Orientation or
+   Analysis.
 
 ---
 

@@ -11,9 +11,11 @@ const PAGES = [
   // 2026-09-16: the landing as rebuilt 2026-09-15 plus build-seq §2.
   // P2 · Home (2026-09-25): Home is the phase rows, the wheel, the Network
   // and the feed; the explainer (bands, dimes, runway) moved to about.html.
-  ['index.html', '', ['.ld-claim', '#ld-cta .ld-cta__btn', '.lw-row .lw-phase', '#lw-topcard .lw-live__row',
-                      '#lw-ringlayer .lw-sector', '#lw-globe .lw-land', '#lw-span .lw-span__range',
-                      '#hn-row .hn__tile', '#hf-list .hp', '#hf-causes .hf-chip']],
+  // P2 · Home mods (2026-09-30): the hero with the five steps to its right,
+  // the mission hub, the Network (links, not toggles) and the feed.
+  ['index.html', '', ['.ld-claim', '#ld-cta .ld-cta__btn', '.hx #ebx-steps .sx__scene.on', '#ebx-steps .sx__msg',
+                      '#mh .mh__rowhead', '#mh .mc--ce', '#mh .mc[data-mission]',
+                      '#hn-row a.hn__tile', '#hf-list .hp']],
   ['about.html', '', ['.ld-band', '.ld-trio__cell', '#ld-dime-viz svg', '.ld-runway__bars', '#ld-active-users b', '#ab-phases li']],
   // build-seq P1 (2026-09-24) — THE MERGE. main.html is a redirect; the mission
   // page carries the elections. Its default (/m) is the newest initiative
@@ -22,18 +24,18 @@ const PAGES = [
   // their dates, the five ballots, the table, the allocations, and below them
   // the mission's own story.
   ['mission.html', '', ['#mx-wheel .lw--mission, #mx-wheel.lw--mission', '#lw-ringlayer .lw-sector', '#lw-pielayer', '#lw-globe .lw-land',
-                        '#mx-cards .mx-card', '#mx-cards .mx-card--on', '#mx-pager #mx-next',
+                        '#mx-cards .mx-card', '#mx-cards .mx-card--on', '#mx-toggler #mx-search',
                         '#mx-overview .mx-ov__row', '#mx-title', '#mx-copy',
                         '#mx-stage #mx-phases .mx-phase.on[data-step="tiv"]', '#mx-phases .mx-phase__d', '#mx-sub',
                         '.hero__causetabs .cause-tab', '.hero__causetabs .cause-tab.selected', '.cause-tab__date',
-                        '#el3-me.on', '#votebar-mount .votebar', '#el3-top-me .el3__top-title',
-                        '#ce-panel-mount .ce-panel', '.ce-weeks .ce-week',
-                        '.ce-panel .ce-row--votes .ce-vote', '.ce-panel__b .rf-btn', '.ce-panel .ce-row--acts .vb-btn',
+                        '#el3-me.on', '#votebar-mount .votebar', '#el3-top-me .el3__top-title', '#el3-blurb-me',
+                        '#ce-panel-mount .ce-panel', '.ce-bars .ce-bars__row',
+                        '.ce-panel .ce-row--votes .ce-vote', '.ce-panel .ce-dist__bar', '.ce-panel .bb .vb-btn',
                         '#fr-ballot-mount .votebar', '#ex-ballot-mount .votebar', '#fx-view',
                         '#init-search',
                         '#votebar-notice-mount .votebar--notice', '#votebar-notice-mount .vb-notice__body',
-                        '#mb #mp-log li', '#mh-candidates', '#mb-budget-add .mb-budget__btn', '#mb-report .mb-report__sec', '#mxt-bg', '#mxc-bg',
-                        '#mx-how .mx-how__title', '#mx-stage #mx-table #init-table-body', '#mx-head #mx-title', '#mx-sub .mx-now']],
+                        '#mx-phases .mx-phase__ev', '#mh-candidates', '.el3__col.on .bb .bb__post', '#mb-report .mb-report__sec', '#mxt-bg', '#mxc-bg',
+                        '#mx-stage .mx-logcol__how', '#mx-stage #mx-table #init-table-body', '#mx-head #mx-title', '#mx-sub .mx-now']],
   // An organization election, by its old link. The discussion box (structure.md
   // §6 box i, 2026-09-17) and the final standings of the initiative election
   // this mission came out of.

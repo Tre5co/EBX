@@ -7,66 +7,18 @@
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
   <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
   <style>
-    /* ── P2 · HOME (2026-09-25) ─────────────────────────────────────────────
-       Home stops explaining and starts showing. Top to bottom: the hero
-       (kept as it was, D18: "You donate. We follow."), the two phase rows and
-       the top card over the annulus (resources/js/ebx_wheel.js), the time
-       span under it, THE NETWORK (News · Research · Budgeting — one row, and
-       the feed's filters), then the feed: all posts by default, cause and
-       "mine" as the only other filters (D6). Search, a thread, a reply or
-       any further filter go to News (cause.html?q= / ?thread= / ?cat=).
-       The explainer bands and the origin / grant / runway block that used to
-       follow moved to about.html (D7), which the footer links.
-       ────────────────────────────────────────────────────────────────────
-       ── Landing — REBUILT 2026-09-15 to the `jax notes 2.md` ## ASCII MODELS
-       **Landing** drawing. That drawing is now the spec; the a–e outline the
-       page was built to (2026-08-18) is superseded. Box by box:
-
-         a — "The Social Network for Charities" — the claim, above the title.
-         b — wordmark · "you donate, we follow" · log in / sign up · vote now.
-             UNCHANGED, as the drawing says.
-         How it Works — the heading over the four steps (2026-09-16).
-         c/d — MAXIMIZING DONOR CONTROL (left, steps 1–2) and PUBLICIZING
-             CHARITABLE IMPACT (right, steps 3–4), now BELOW the steps and
-             slightly smaller (2026-09-16).
-         e–h — the four steps, as four boxes under that rule. Wording is mine;
-             the drawing asked for better phrasing than its own placeholders
-             (see the note above each step).
-         m + n/o/p — "Research the mission to win Rewards" over Situation ·
-             Investigation · Analysis (first since 2026-09-16).
-         i + j/k/l — "A public forum budgets the missions" over Service ·
-             Supply · Support. "public forum" links to cause.html.
-         q/r/s/t — origin couplet, the weekly grant, the funding runway.
-
-       WHAT CAME OFF (the drawing does not carry them; both are logged in
-       docs/structure.md §4 backlog, not deleted):
-         · §1e the transparency scale, Dormant 1/16 → Arbitrating 5/16. Its
-           argument now lives in heading d and step 3.
-         · the Reviews forum category. j–l and n–p are budgeting and research
-           only; the drawing lists no third category.
-
-       ── BUILD-SEQ §1 LANDING, 2026-09-20 ────────────────────────────────
-       · c/d ("Maximizing Donor Control" / "Publicizing Charitable Impact")
-         REMOVED, per the instruction.
-       · the five panels keep their short labels; the five DESCRIPTIONS that
-         used to be the Elect page's step toggles are the top card's titles
-         now (§2 removed them there). The top card's four fields are the
-         a/b/c/d of the instruction: dates · title · Process · Reason.
-       · the top card's right half is the focused cause's own SIDE CARD
-         (spec e), so `liveLine` in ebx_wheel.js is unpainted — kept, and
-         logged in the removal register.
-       · the annulus: no now marker, no arrow tips, no sector labels; it
-         ROTATES so the focused cause is at 12 o'clock and every sector lines
-         up with its card; rays run out under the cards.
-       · side cards: the mission title is its own line above the dates, and
-         my vote is highlighted again.
-       · both trios link to mission.html, and the NEWS band is new.
-
-       NAMING: the rename is finished on this page — Context → Situation →
-       **Background** (docs/the_social_network.md §3). The backend type key is
-       still `context` (backend/app/post_config.py) and cause.html,
-       mission.html and the composer still say Context, so the rename is NOT
-       done anywhere else.
+    /* ── HOME (P2 · Home mods, 2026-09-30) ─────────────────────────────────
+       Top to bottom: THE HERO, left-aligned, with THE FIVE STEPS to its right
+       (resources/js/ebx_steps.js — five animated pages, 10 s each, the only
+       text a message per page); THE MISSION HUB (every mission, one row per
+       cause, the cause elections on the left; post-ME missions carry "Week x";
+       anything decided this week glows; a card opens its mission page); then
+       THE NETWORK and THE FEED, which have no toggles on Home — every filter,
+       search and thread is in News (cause.html).
+       The phase rows, the top card, the annulus and its six side cards came
+       off Home this pass; the annulus stays on the mission page (EBX.Wheel,
+       mission variant). History: INSTRUCTIONS.md › ARCHIVE › 2026-09-30 and
+       2026-09-25b; docs/structure.md §4.
        ────────────────────────────────────────────────────────────────────── */
     body {
       background:
@@ -90,33 +42,34 @@
        this page's own brand: "EBX" overprinting "Earthbux News". main.html hides
        it the same way (main.html §0d) because it, too, carries its own brand. */
     body > .ebx-home-mark { display: none; }
-    .ld-main { flex: 1; width: 100%; max-width: 1040px; margin: 0 auto; padding: 60px 26px 64px; box-sizing: border-box; }
+    .ld-main { flex: 1; width: 100%; max-width: 1240px; margin: 0 auto; padding: 46px 26px 64px; box-sizing: border-box; }
 
-    /* ══ a / b — the hero ═══════════════════════════════════════════════════ */
-    .ld-a { text-align: center; }
-    /* §0a (2026-08-06): "Earthbux" was black on black. The shared stylesheet
-       sets `h1..h6 { color: var(--clr-earth) }` (near-black, for the light
-       pages) and that beat the inherited parchment on this dark hero, so only
-       the honey "News" was visible. Every heading here still states its colour. */
+    /* ══ THE HERO + THE FIVE STEPS (2026-09-30) ═════════════════════════════
+       The hero is left-aligned; the five steps (ebx_steps.js) sit to its right.
+       Below 900px they stack, hero first. */
+    .hx { display: grid; grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr); gap: clamp(28px, 4vw, 56px); align-items: center; }
+    @media (max-width: 900px) { .hx { grid-template-columns: 1fr; } }
+    .ld-a { text-align: left; }
+    /* §0a (2026-08-06): every heading here states its colour — the shared
+       stylesheet's `h1..h6 { color: var(--clr-earth) }` is near-black. */
     .ld-wordmark {
       font-family: var(--font-display, serif); font-weight: 900;
-      font-size: clamp(2.6rem, 7.2vw, 4.6rem); line-height: 1.02;
+      font-size: clamp(2.7rem, 5.6vw, 4.5rem); line-height: 1.0;
       letter-spacing: -0.03em; margin: 0;
       color: var(--clr-parchment, #f5f0e8);
     }
     .ld-wordmark em { font-style: normal; color: var(--clr-honey, #e8a84c); }
     .ld-sub {
-      font-family: var(--font-mono, monospace); font-size: clamp(0.66rem, 1.5vw, 0.8rem);
+      font-family: var(--font-mono, monospace); font-size: clamp(0.66rem, 1.3vw, 0.78rem);
       letter-spacing: 0.34em; text-transform: uppercase;
-      color: rgba(245,240,232,0.5); margin: 14px 0 0;
+      color: rgba(245,240,232,0.5); margin: 16px 0 0;
     }
-    /* a — one line, above the wordmark, and it is the whole claim. */
     .ld-claim {
       font-family: var(--font-display, serif);
-      font-size: clamp(1.05rem, 2.3vw, 1.4rem); line-height: 1.5;
-      color: rgba(245,240,232,0.86); margin: 0 auto 24px; max-width: 46ch;
+      font-size: clamp(1.05rem, 1.9vw, 1.35rem); line-height: 1.5;
+      color: rgba(245,240,232,0.86); margin: 0 0 18px; max-width: 30ch;
     }
-    .ld-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+    .ld-cta { display: flex; gap: 12px; justify-content: flex-start; flex-wrap: wrap; margin-top: 30px; }
     .ld-cta__btn {
       font: inherit; font-size: 0.86rem; font-weight: 700; cursor: pointer;
       text-decoration: none; border-radius: 10px; padding: 11px 22px;
@@ -128,28 +81,70 @@
       background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14;
     }
     .ld-cta__btn--primary:hover { filter: brightness(1.07); background: var(--clr-honey, #e8a84c); }
-    .ld-rule {
-      width: min(560px, 90%); height: 1px; margin: 34px auto;
-      background: linear-gradient(90deg, transparent, rgba(232,168,76,0.55), transparent);
-    }
+    .ld-steps { min-width: 0; }
 
-    /* ══ THE PHASE WHEEL (build-seq §2–§4, 2026-09-18) — resources/js/ebx_wheel.js
-       Five step toggles → the top card → (three cards | the wheel | three cards).
-       The retired e–h step boxes and the c/d rule lived here; c/d now label the
-       step row (three elections = donor control, framing + exchange = impact). */
-    .ld-wheel-bleed {
-      width: min(1240px, calc(100vw - 32px));
-      margin-left: 50%; transform: translateX(-50%);
-    }
-    /* build-seq P1 (2026-09-24): the wheel's rules (.lw-*) moved to
-       resources/css/ebx_frontend.css — the mission page mounts the same
-       component, so its styles are shared, not copied. */
+    /* ══ THE MISSION HUB (2026-09-30) ════════════════════════════════════════
+       Seven rows, one per cause. Column 0 is the cause's election; then its
+       missions, newest first. ‹ › move one column, « » one page. */
+    .mh { margin-top: 58px; }
+    .mh__head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px; }
+    .mh__title { font-family: var(--font-display, serif); font-weight: 800; margin: 0;
+      font-size: clamp(1.2rem, 2.6vw, 1.6rem); color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em; }
+    .mh__sub { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: rgba(245,240,232,0.45); }
+    .mh__sub b { color: var(--clr-honey, #e8a84c); font-weight: 400; }
+    .mh__nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+    .mh__btn { font: inherit; font-size: 0.8rem; line-height: 1; cursor: pointer; min-width: 30px; height: 30px; padding: 0 9px;
+      border-radius: 8px; color: var(--clr-parchment, #f5f0e8); background: rgba(245,240,232,0.04);
+      border: 1px solid rgba(245,240,232,0.16); }
+    .mh__btn:hover:not([disabled]) { border-color: var(--clr-honey, #e8a84c); }
+    .mh__btn[disabled] { opacity: 0.3; cursor: default; }
+    .mh__btn:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
+    .mh__toggle { margin-left: 8px; font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
+    .mh__body { margin-top: 14px; }
+    .mh__body[hidden] { display: none; }
+    .mh__grid { display: grid; gap: 8px 10px; align-items: stretch; }
+    .mh__colhead { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: rgba(245,240,232,0.4); padding: 0 2px 2px; align-self: end; }
+    .mh__rowhead { display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0;
+      font-weight: 700; font-size: 0.84rem; color: var(--clr-parchment, #f5f0e8); }
+    .mh__rowhead i { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); }
+    .mh__rowhead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mh__rowhead:hover span { text-decoration: underline; }
+    .mc { --c: #e8a84c; position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; min-height: 92px;
+      text-decoration: none; color: inherit; padding: 10px 12px 9px; border-radius: 11px;
+      background: rgba(245,240,232,0.028); border: 1px solid rgba(245,240,232,0.1); border-top: 3px solid var(--c);
+      transition: border-color .15s, background .15s, transform .15s; }
+    .mc:hover { background: rgba(245,240,232,0.055); border-color: rgba(245,240,232,0.28); border-top-color: var(--c); transform: translateY(-1px); }
+    .mc:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
+    .mc__k { font-family: var(--font-mono, monospace); font-size: 0.54rem; letter-spacing: 0.13em; text-transform: uppercase;
+      color: color-mix(in srgb, var(--c) 75%, #f5f0e8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mc__t { font-family: var(--font-display, serif); font-weight: 800; font-size: 0.9rem; line-height: 1.22; color: var(--clr-parchment, #f5f0e8);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .mc__l { font-size: 0.72rem; color: rgba(245,240,232,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mc__f { margin-top: auto; padding-top: 4px; display: flex; gap: 8px; align-items: baseline;
+      font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(245,240,232,0.48); }
+    .mc__wk { flex: 0 0 auto; white-space: nowrap; font-weight: 700; color: #0f1a14; background: color-mix(in srgb, var(--c) 80%, #f5f0e8); padding: 1px 6px; border-radius: 999px; }
+    .mc__f span:last-child { margin-left: auto; text-align: right; }
+    .mc--ce { background: rgba(245,240,232,0.015); border-style: dashed; border-top-style: solid; }
+    .mc--stalled { opacity: 0.62; }
+    /* decided this week — the glow */
+    .mc--now { border-color: color-mix(in srgb, var(--c) 70%, transparent);
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), 0 0 22px -2px color-mix(in srgb, var(--c) 55%, transparent);
+      animation: mcGlow 2.6s ease-in-out infinite alternate; }
+    .mc--now .mc__f span:last-child { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    @keyframes mcGlow { from { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent), 0 0 12px -4px color-mix(in srgb, var(--c) 45%, transparent); }
+                        to { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 26px 0 color-mix(in srgb, var(--c) 60%, transparent); } }
+    @media (prefers-reduced-motion: reduce) { .mc--now { animation: none; } }
+    .mc--empty { border: 1px dashed rgba(245,240,232,0.07); background: none; min-height: 92px; border-radius: 11px; }
+    .mh__loading { padding: 26px; text-align: center; font-size: 0.84rem; color: rgba(245,240,232,0.5); }
+    @media (max-width: 560px) { .mh__rowhead span { display: none; } .mh__nav .mh__btn--page { display: none; } }
 
-    /* ══ THE NETWORK (P2, 2026-09-25) — one row: News · Research · Budgeting.
-       Each tile is also a filter on the feed under it. Outer edges are the
-       wheel's (`.ld-wheel-bleed`); the feed's left column is the side cards'
-       width, so the filters sit under the left cards and the feed under the
-       annulus and the right cards. */
+    /* ══ THE NETWORK + THE FEED — no toggles on Home (2026-09-30) ═══════════
+       The three tiles say what the network makes and link into News, filtered;
+       the feed is every post, newest first. Filters, search and threads are
+       News's. */
     .hn { margin-top: 54px; }
     .hn__head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
       border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px; margin-bottom: 14px; }
@@ -157,15 +152,17 @@
       font-size: clamp(1.2rem, 2.6vw, 1.6rem); color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em; }
     .hn__sub { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
       text-transform: uppercase; color: rgba(245,240,232,0.45); }
+    /* P3 (2026-09-29): Home's + — the composer, from the front door */
+    .hn__post { margin-left: auto; align-self: center; font-weight: 700; font-size: 0.86rem; text-decoration: none;
+      padding: 7px 16px; border-radius: 999px; background: var(--clr-honey, #e8a84c); color: #0f1a14; }
+    .hn__post:hover { filter: brightness(1.08); }
     .hn__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    .hn__tile { --tc: #e8a84c; font: inherit; text-align: left; cursor: pointer; color: inherit;
+    .hn__tile { --tc: #e8a84c; text-decoration: none; color: inherit;
       display: flex; flex-direction: column; gap: 6px; padding: 14px 16px;
-      background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12); border-radius: 12px;
-      transition: border-color .15s, background .15s, box-shadow .15s; }
-    .hn__tile:hover { border-color: color-mix(in srgb, var(--tc) 60%, transparent); }
+      background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12); border-top: 3px solid var(--tc); border-radius: 12px;
+      transition: border-color .15s, background .15s; }
+    .hn__tile:hover { border-color: color-mix(in srgb, var(--tc) 60%, transparent); border-top-color: var(--tc); background: rgba(245,240,232,0.05); }
     .hn__tile:focus-visible { outline: 2px solid var(--tc); outline-offset: 2px; }
-    .hn__tile[aria-pressed="true"] { border-color: var(--tc); background: color-mix(in srgb, var(--tc) 9%, transparent);
-      box-shadow: inset 0 3px 0 var(--tc); }
     .hn__tile--news { --tc: #e8a84c; } .hn__tile--research { --tc: #8ec5e8; } .hn__tile--budgeting { --tc: #8fce9d; }
     .hn__top { display: flex; align-items: baseline; gap: 10px; }
     .hn__name { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.08rem; color: var(--clr-parchment, #f5f0e8); }
@@ -177,32 +174,14 @@
     @media (max-width: 760px) { .hn__row { grid-template-columns: 1fr; } }
 
     /* the feed */
-    .hf { display: grid; grid-template-columns: minmax(200px, 270px) minmax(0, 1fr); gap: 20px; margin-top: 20px; align-items: start; }
-    @media (max-width: 760px) { .hf { grid-template-columns: 1fr; } }
-    .hf__side { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 16px; }
-    @media (max-width: 760px) { .hf__side { position: static; } }
-    .hf__search input { width: 100%; box-sizing: border-box; font: inherit; font-size: 0.84rem;
-      padding: 9px 12px; border-radius: 9px; color: var(--clr-parchment, #f5f0e8);
-      background: rgba(245,240,232,0.05); border: 1px solid rgba(245,240,232,0.16); }
-    .hf__search input:focus { outline: none; border-color: var(--clr-honey, #e8a84c); }
-    .hf__lab { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.16em;
-      text-transform: uppercase; color: rgba(245,240,232,0.42); margin-top: 8px; }
-    .hf__causes { display: flex; flex-wrap: wrap; gap: 6px; }
-    .hf-chip { font: inherit; font-size: 0.76rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 10px; border-radius: 999px; color: rgba(245,240,232,0.75);
-      background: transparent; border: 1px solid rgba(245,240,232,0.16); }
-    .hf-chip i { width: 8px; height: 8px; border-radius: 50%; }
-    .hf-chip:hover { border-color: rgba(245,240,232,0.4); color: var(--clr-parchment, #f5f0e8); }
-    .hf-chip[aria-pressed="true"] { color: #0f1a14; background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); }
-    .hf-chip[disabled] { opacity: 0.4; cursor: default; }
-    .hf__more, .hf__all { font-size: 0.8rem; color: var(--clr-honey, #e8a84c); text-decoration: none; margin-top: 10px; }
-    .hf__more:hover, .hf__all:hover { text-decoration: underline; }
-    .hf__all { display: inline-block; margin-top: 16px; }
+    .hf { margin-top: 20px; }
+    .hf__all { font-size: 0.8rem; color: var(--clr-honey, #e8a84c); text-decoration: none; display: inline-block; margin-top: 16px; }
+    .hf__all:hover { text-decoration: underline; }
     .hf__state { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em;
       text-transform: uppercase; color: rgba(245,240,232,0.45); margin-bottom: 10px; }
     .hf__state b { color: var(--clr-parchment, #f5f0e8); font-weight: 400; }
-    .hf__list { display: grid; gap: 10px; }
-    .hf__empty { padding: 28px 16px; text-align: center; font-size: 0.86rem; color: rgba(245,240,232,0.5);
+    .hf__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 10px; align-items: start; }
+    .hf__empty { grid-column: 1 / -1; padding: 28px 16px; text-align: center; font-size: 0.86rem; color: rgba(245,240,232,0.5);
       border: 1px dashed rgba(245,240,232,0.16); border-radius: 12px; }
     .hp { --tc: rgba(245,240,232,0.4); display: block; text-decoration: none; color: inherit;
       padding: 13px 16px 12px; border-radius: 12px; border: 1px solid rgba(245,240,232,0.1);
@@ -238,71 +217,68 @@
 
   <div class="ld-main">
 
-    <!-- ══ a / b — the hero ═══════════════════════════════════════════════════
-         a is one line and it is the claim. b is untouched: wordmark, strapline,
-         and the only two things a visitor can do from here. -->
-    <div class="ld-a">
-      <p class="ld-claim">The Social Network for Charities.</p>
+    <!-- ══ THE HERO, left · THE FIVE STEPS, right (2026-09-30) ═══════════════
+         The hero's words are unchanged: the claim, the wordmark, the strapline
+         and the two things a visitor can do from here. -->
+    <section class="hx">
+      <div class="ld-a">
+        <p class="ld-claim">The Social Network for Charities.</p>
+        <h1 class="ld-wordmark">Earthbux <em>News</em></h1>
+        <p class="ld-sub">you donate, we follow</p>
+        <div class="ld-cta" id="ld-cta"></div>
+      </div>
+      <!-- Painted by `EBX.Steps` (resources/js/ebx_steps.js). -->
+      <div class="ld-steps" id="ebx-steps"></div>
+    </section>
 
-      <h1 class="ld-wordmark">Earthbux <em>News</em></h1>
-      <p class="ld-sub">you donate, we follow</p>
-
-      <div class="ld-cta" id="ld-cta"></div>
-    </div>
-
-    <div class="ld-rule"></div>
-
-    <!-- ══ THE WEEK — two phase rows, the top card, the annulus, the span ═══
-         Painted by `EBX.Wheel` (resources/js/ebx_wheel.js), landing variant. -->
-    <div class="ld-wheel-bleed"><div id="ebx-wheel"></div></div>
-
-    <!-- ══ THE NETWORK + THE FEED (P2, 2026-09-25) ══════════════════════════
-         One row, three things the network makes; each is also the feed's
-         filter. The feed is every post by default. -->
-    <div class="ld-wheel-bleed">
-      <section class="hn" aria-labelledby="hn-title">
-        <div class="hn__head">
-          <h2 class="hn__title" id="hn-title">The Network</h2>
-          <span class="hn__sub">what the network made this week</span>
+    <!-- ══ THE MISSION HUB (2026-09-30) ═════════════════════════════════════ -->
+    <section class="mh" id="mh" aria-labelledby="mh-title">
+      <div class="mh__head">
+        <h2 class="mh__title" id="mh-title">Missions</h2>
+        <span class="mh__sub" id="mh-sub">every mission, by cause</span>
+        <div class="mh__nav" id="mh-nav">
+          <button type="button" class="mh__btn mh__btn--page" data-mh="-page" aria-label="Back one page">&laquo;</button>
+          <button type="button" class="mh__btn" data-mh="-1" aria-label="Back one column">&lsaquo;</button>
+          <button type="button" class="mh__btn" data-mh="1" aria-label="On one column">&rsaquo;</button>
+          <button type="button" class="mh__btn mh__btn--page" data-mh="page" aria-label="On one page">&raquo;</button>
+          <button type="button" class="mh__btn mh__toggle" id="mh-toggle" aria-expanded="true" aria-controls="mh-body">Collapse</button>
         </div>
-        <div class="hn__row" id="hn-row" role="group" aria-label="Filter the feed by what it is"></div>
+      </div>
+      <div class="mh__body" id="mh-body"><div class="mh__loading">Loading the missions&hellip;</div></div>
+    </section>
 
-        <div class="hf">
-          <aside class="hf__side" aria-label="Feed filters">
-            <form class="hf__search" id="hf-search" action="cause.html" method="get" role="search">
-              <input type="search" name="q" placeholder="Search in News&hellip;" aria-label="Search posts in News" />
-            </form>
-            <div class="hf__lab">Cause</div>
-            <div class="hf__causes" id="hf-causes"></div>
-            <div class="hf__lab">Posts</div>
-            <div id="hf-mine"></div>
-            <a class="hf__more" id="hf-more-news" href="cause.html">More filters in News &rarr;</a>
-          </aside>
-          <div class="hf__main">
-            <div class="hf__state" id="hf-state" aria-live="polite"></div>
-            <div class="hf__list" id="hf-list"><div class="hf__empty">Loading the feed&hellip;</div></div>
-            <a class="hf__all" id="hf-all" href="cause.html">Open the whole feed in News &rarr;</a>
-          </div>
-        </div>
-      </section>
-    </div>
+    <!-- ══ THE NETWORK + THE FEED ════════════════════════════════════════════
+         Nothing on Home toggles: the tiles open News filtered, a post opens its
+         thread in News. -->
+    <section class="hn" aria-labelledby="hn-title">
+      <div class="hn__head">
+        <h2 class="hn__title" id="hn-title">The Network</h2>
+        <span class="hn__sub">what the network made this week</span>
+        <a class="hn__post" id="hn-post" href="post.html?back=%2F" title="Make a post — general, research or a budget item">+ Post</a>
+      </div>
+      <div class="hn__row" id="hn-row"></div>
+      <div class="hf">
+        <div class="hf__state" id="hf-state" aria-live="polite"></div>
+        <div class="hf__list" id="hf-list"><div class="hf__empty">Loading the feed&hellip;</div></div>
+        <a class="hf__all" id="hf-all" href="cause.html">Search, filter and reply in News &rarr;</a>
+      </div>
+    </section>
 
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20260925b"></script>
-  <!-- the globe: d3-geo + Natural Earth land, vendored (no CDN, no build) -->
+  <script src="resources/js/ebx_shared.js?v=20260929"></script>
+  <!-- the globe in the first step: d3-geo + Natural Earth land, vendored -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
   <script src="resources/js/vendor/ebx_land110m.js"></script>
-  <script src="resources/js/ebx_wheel.js?v=20260925"></script>
+  <!-- EBX.Wheel is not drawn on Home any more; the hub reads its data layer
+       (missions, initiatives, organizations, the slate, the OE tallies). -->
+  <script src="resources/js/ebx_wheel.js?v=20260930"></script>
+  <script src="resources/js/ebx_steps.js?v=20260930"></script>
   <script>
-  if (window.EBX && EBX.Wheel) EBX.Wheel.mount('#ebx-wheel');
-
-  // b — the two calls to action under the title. There are only two things a
-  // visitor can do from here: get an account, or go vote. Signed in, the first
-  // has nothing to offer, so it becomes the profile link and Vote now carries
-  // the row.
+  // b — the two calls to action under the title. Signed in, the first becomes
+  // the profile link and Vote now carries the row.
   (function () {
     const mount = document.getElementById('ld-cta');
     if (!mount) return;
@@ -319,34 +295,211 @@
     };
   })();
 
-  // ══ THE NETWORK + THE FEED (P2, 2026-09-25) ══════════════════════════════
-  // One read of GET /posts (roots, newest first). Three groups make the
-  // Network row and are its filters; the feed is every root post by default.
-  // Home's only other filters are a cause and "my posts" (D6). Everything
-  // past that — search, a thread, replying, a second filter axis — is News:
-  // cause.html?q= · ?thread=<post> · ?cat=<category> (&cause=<id>).
+  // ══ THE FIVE STEPS ════════════════════════════════════════════════════════
+  // Mounted once the causes are in, so step 1 shows this week's cause.
+  (async function () {
+    if (!window.EBX || !EBX.Steps) return;
+    try { if (EBX.loadCauses && !(EBX.config.causes || []).length) await EBX.loadCauses(); } catch (e) {}
+    EBX.Steps.mount('#ebx-steps');
+  })();
+
+  // ══ THE MISSION HUB (P2 · Home mods, 2026-09-30) ══════════════════════════
+  // Rows: the seven causes, in wheel order. Column 0: the cause's open cause
+  // election (its first votable window on the slate). Then its missions,
+  // newest first. A mission's stage is read from its dates (T = mission
+  // started, T+8 organization elected, T+15 budget day) and its winners:
+  //   before T                 → initiative election
+  //   T … T+8, initiative won  → organization election   (Week x from here on)
+  //   T+8 … T+15, org elected  → framing
+  //   after T+15               → exchange
+  //   a date passed with no winner → "no initiative / organization elected"
+  // A card glows when its decision falls in this week (the week that ends at
+  // the next weekly boundary): an election closing, a budget day, or the cause
+  // election that confirms its window this week.
+  (function () {
+    const WK = 7 * 864e5;
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const cfg = () => (window.EBX && EBX.config) || {};
+    const Wh = () => (window.EBX && EBX.Wheel) || null;
+    const fmt = d => d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+    const st = { off: 0, open: true, slate: null, rows: [], cols: 1, vis: 1 };
+    try { st.open = localStorage.getItem('ebx_hub_open') !== '0'; } catch (e) {}
+
+    function weekEnd() {
+      try {
+        const n = EBX.Cycle.now();
+        return new Date(EBX.config.cycleStart.getTime() + (n.weekNum + 1) * WK);
+      } catch (e) { return new Date(Date.now() + WK); }
+    }
+    const thisWeek = d => { if (!d) return false; const e = weekEnd().getTime(), t = d.getTime(); return t > e - WK + 36e5 && t <= e + 36e5; };
+    const tivTitle = id => { const t = (cfg().initiatives || []).find(i => i.id === id); return t ? t.title : (id || ''); };
+    const orgName = id => { const o = (cfg().organizations || []).find(x => x.id === id); return o ? o.name : (id || ''); };
+    function hrefOf(m) {
+      try { if (EBX.Slug && EBX.Slug.href) return EBX.Slug.href(m); } catch (e) {}
+      return 'mission.html?mission=' + encodeURIComponent(m.id);
+    }
+
+    function stageOf(m) {
+      const d = EBX.Cycle.missionDates(m), T = d.missionStarted;
+      const o8 = new Date(T.getTime() + 8 * WK), b15 = new Date(T.getTime() + 15 * WK);
+      const now = Date.now(), wk = Math.max(0, Math.floor((now - T.getTime()) / WK));
+      if (now < T.getTime()) return { key: m.winning_tiv_id ? 'oe' : 'me', T, o8, b15, wk: null, when: m.winning_tiv_id ? o8 : T };
+      if (!m.winning_tiv_id) return { key: 'no-tiv', T, o8, b15, wk };
+      if (now < o8.getTime()) return { key: 'oe', T, o8, b15, wk, when: o8 };
+      if (!m.winning_org_id) return { key: 'no-org', T, o8, b15, wk };
+      if (now < b15.getTime()) return { key: 'fr', T, o8, b15, wk, when: b15 };
+      return { key: 'ex', T, o8, b15, wk };
+    }
+
+    function missionCard(m, c) {
+      const s = stageOf(m), n = c.name + ' ' + ((m.cycle_num || 0) + 1);
+      const K = { me: 'Initiative election', oe: 'Organization election', fr: 'Framing', ex: 'Exchange',
+                  'no-tiv': 'Initiative election · closed', 'no-org': 'Organization election · closed' }[s.key];
+      let title, line, foot;
+      if (s.key === 'me') {
+        const ins = (cfg().initiatives || []).filter(i => i.mission_id === m.id)
+          .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
+        const pool = ins.reduce((a, i) => a + (i.committed_ebx || 0), 0);
+        const lead = ins[0];
+        title = lead ? lead.title : 'Open for proposals';
+        line = ins.length ? ins.length + ' initiative' + (ins.length === 1 ? '' : 's') +
+          (lead && pool ? ' · leading ' + Math.round((lead.committed_ebx || 0) / pool * 100) + '%' : '') : 'no initiatives yet';
+        foot = 'closes ' + fmt(s.T);
+      } else if (s.key === 'no-tiv') {
+        title = n; line = 'No initiative was elected'; foot = 'closed ' + fmt(s.T);
+      } else {
+        title = tivTitle(m.winning_tiv_id);
+        if (s.key === 'oe') {
+          const t = Wh() && Wh().p2Tally ? Wh().p2Tally(m.id) : null;
+          const es = ((t && t.entries) || []).slice().sort((a, b) => (b.net_votes || 0) - (a.net_votes || 0));
+          const cands = Wh() && Wh().candidacies ? Wh().candidacies(m.id).length : 0;
+          line = es.length ? 'leading: ' + orgName(es[0].org_id) : (cands ? cands + ' nominated' : 'no organizations yet');
+          foot = 'closes ' + fmt(s.o8);
+        } else if (s.key === 'no-org') {
+          line = 'No organization was elected'; foot = 'closed ' + fmt(s.o8);
+        } else if (s.key === 'fr') {
+          line = orgName(m.winning_org_id); foot = 'budget day ' + fmt(s.b15);
+        } else {
+          line = orgName(m.winning_org_id); foot = 'coin ' + (Number(m.credit_value) || 1).toFixed(2);
+        }
+      }
+      const now = !!(s.when && thisWeek(s.when));
+      if (now) foot = (s.key === 'fr' ? 'budget day ' : 'decides ') + fmt(s.when);
+      return { now, html: '<a class="mc mc--' + s.key + (now ? ' mc--now' : '') + (/^no-/.test(s.key) ? ' mc--stalled' : '') +
+        '" style="--c:' + esc(c.color) + '" href="' + esc(hrefOf(m)) + '" data-mission="' + esc(m.id) + '" title="' + esc(n + (now ? ' — decided this week' : '')) + '">' +
+        '<span class="mc__k">' + esc(K) + '</span>' +
+        '<span class="mc__t">' + esc(title) + '</span>' +
+        '<span class="mc__l">' + esc(line) + '</span>' +
+        '<span class="mc__f">' + (s.wk != null ? '<span class="mc__wk">Week ' + s.wk + '</span>' : '') + '<span>' + esc(foot) + '</span></span></a>' };
+    }
+
+    function ceCard(c) {
+      const sl = st.slate, slot = sl ? (sl.slots || []).find(s => s.votable && s.incumbent_id === c.id) : null;
+      const byId = id => (cfg().causes || []).find(x => x.id === id);
+      if (!slot) return { now: false, html: '<a class="mc mc--ce" style="--c:' + esc(c.color) + '" href="mission.html?state=ce&amp;cause=' + encodeURIComponent(c.id) + '">' +
+        '<span class="mc__k">Cause election</span><span class="mc__t">' + esc(c.name) + '</span><span class="mc__l">no window open</span><span class="mc__f"><span></span></span></a>' };
+      const ch = slot.challenger_id ? byId(slot.challenger_id) : null;
+      const wait = slot.weeks_out - (sl.first_open_slot || slot.weeks_out);
+      const now = wait === 0;
+      return { now, html: '<a class="mc mc--ce' + (now ? ' mc--now' : '') + '" style="--c:' + esc(c.color) + '" href="mission.html?slot=' + slot.slot + '" data-slot="' + slot.slot + '"' +
+        (now ? ' title="Decided this week"' : '') + '>' +
+        '<span class="mc__k">Cause election · ' + slot.weeks_out + ' wks out</span>' +
+        '<span class="mc__t">' + esc(c.name) + ' holds</span>' +
+        '<span class="mc__l">' + (ch ? esc(ch.name) + ' challenging · ' + (slot.streak || 0) + '/' + (slot.weeks_required || 6) : 'no challenger') + '</span>' +
+        '<span class="mc__f"><span>' + (now ? 'confirmed this week' : 'confirms in ' + wait + ' wk' + (wait === 1 ? '' : 's')) + '</span></span></a>' };
+    }
+
+    function build() {
+      const cs = (cfg().causes || []).slice().sort((a, b) => a.index - b.index);
+      st.rows = cs.map(c => {
+        const ms = (cfg().missions || []).filter(m => m.cause_id === c.id)
+          .sort((a, b) => new Date(b.started_at) - new Date(a.started_at) || (b.cycle_num || 0) - (a.cycle_num || 0));
+        return { c, cells: [ceCard(c)].concat(ms.map(m => missionCard(m, c))) };
+      });
+      st.cols = Math.max(1, ...st.rows.map(r => r.cells.length));
+    }
+
+    function paint() {
+      const body = $('mh-body');
+      body.hidden = !st.open;
+      $('mh-toggle').textContent = st.open ? 'Collapse' : 'Expand';
+      $('mh-toggle').setAttribute('aria-expanded', String(st.open));
+      const n = st.rows.reduce((a, r) => a + r.cells.filter(x => x.now).length, 0);
+      $('mh-sub').innerHTML = 'every mission, by cause' + (n ? ' &middot; <b>' + n + ' decided this week</b>' : '');
+      const w = body.clientWidth || $('mh').clientWidth || 1000;
+      const lab = w < 560 ? 22 : 128;
+      st.vis = Math.max(1, Math.min(st.cols, Math.floor((w - lab + 10) / 206)));
+      st.off = Math.max(0, Math.min(st.off, st.cols - st.vis));
+      document.querySelectorAll('#mh-nav [data-mh]').forEach(b => {
+        const d = b.dataset.mh, back = d.charAt(0) === '-';
+        b.disabled = !st.open || (back ? st.off <= 0 : st.off >= st.cols - st.vis);
+      });
+      if (!st.open) return;
+      const cols = Array.from({ length: st.vis }, (_, k) => st.off + k);
+      const head = k => k === 0 ? 'Cause election' : k === 1 ? 'Newest mission' : (k - 1) + ' earlier';
+      let html = '<div class="mh__grid" style="grid-template-columns:' + lab + 'px repeat(' + st.vis + ', minmax(0, 1fr))">' +
+        '<span></span>' + cols.map(k => '<span class="mh__colhead">' + head(k) + '</span>').join('');
+      st.rows.forEach(r => {
+        html += '<a class="mh__rowhead" style="--c:' + esc(r.c.color) + '" href="mission.html?cause=' + encodeURIComponent(r.c.id) + '" title="' + esc(r.c.name) + '"><i></i><span>' + esc(r.c.name) + '</span></a>' +
+          cols.map(k => r.cells[k] ? r.cells[k].html : '<span class="mc--empty" aria-hidden="true"></span>').join('');
+      });
+      body.innerHTML = html + '</div>';
+    }
+
+    document.getElementById('mh-nav').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b || b.disabled) return;
+      if (b.id === 'mh-toggle') {
+        st.open = !st.open;
+        try { localStorage.setItem('ebx_hub_open', st.open ? '1' : '0'); } catch (e2) {}
+      } else {
+        const d = b.dataset.mh, sgn = d.charAt(0) === '-' ? -1 : 1;
+        st.off += sgn * (/page/.test(d) ? st.vis : 1);
+      }
+      paint();
+    });
+    let rt = 0;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (st.rows.length) paint(); }, 120); });
+
+    async function load() {
+      if (!window.EBX || !EBX.Wheel) { $('mh-body').innerHTML = '<div class="mh__loading">The missions are unavailable right now.</div>'; return; }
+      await EBX.Wheel.data();
+      st.slate = (EBX.Wheel._state && EBX.Wheel._state.slate) || null;
+      try { if (EBX.Slug && EBX.Slug.load) await EBX.Slug.load(); } catch (e) {}
+      if (!(cfg().causes || []).length) { $('mh-body').innerHTML = '<div class="mh__loading">The missions are unavailable right now.</div>'; return; }
+      build(); paint();
+    }
+    // scripts/home_check.js drives the hub through this.
+    window.HomeHub = { state: st, reload: load, stageOf, thisWeek };
+    load();
+  })();
+
+  // ══ THE NETWORK + THE FEED ════════════════════════════════════════════════
+  // One read of GET /posts (roots, newest first). The three tiles count what
+  // each part of the network made and link into News with that filter; the
+  // feed is every root post, 12 of them. Nothing here toggles (2026-09-30):
+  // a filter, a search, a thread or a reply is News —
+  // cause.html?cat=<category> · ?thread=<post> · ?q=.
   (function () {
     const GROUPS = [
       { key: 'news', name: 'News', tag: 'funded', cats: ['editorial', 'headline', 'mission_update'], newsCat: 'editorial',
         what: 'Our <b>journalists, scientists and auditors</b> on the missions your donation pays for.' },
       { key: 'research', name: 'Research', tag: 'wins rewards', cats: ['mission_support'], newsCat: 'mission_support',
-        what: '<b>Background · Vetting · Analysis</b> &mdash; one of each per person per mission. The best share 3/32 of the pool.' },
+        what: '<b>Background · Investigation · Analysis</b> &mdash; one Background per cause, one Investigation per organization, one Analysis per mission. The best share 3/32 of the pool.' },
       { key: 'budgeting', name: 'Budgeting', tag: 'drives the mission', cats: ['budgeting'], newsCat: 'budgeting',
         what: '<b>Service · Supply · Support</b> &mdash; costed suggestions the community approves into the budget.' },
     ];
-    // Research tags. "Vetting" is the post that investigates the organization
-    // running the mission (stored key `investigation`, P2 rename).
-    const RESEARCH = { context: ['B', 'Background'], investigation: ['V', 'Vetting'], analysis: ['A', 'Analysis'] };
+    const RESEARCH = { context: ['B', 'Background'], investigation: ['I', 'Investigation'], analysis: ['A', 'Analysis'] };
     const BUDGET = { service: 'Service', supply: 'Supply', support: 'Support' };
     const WEEK = 7 * 864e5;
-    const st = { posts: [], group: '', cause: '', mine: false, me: null };
+    const st = { posts: [] };
     const $ = id => document.getElementById(id);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
       c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const cfg = () => (window.EBX && EBX.config) || {};
     const causeOf = id => (cfg().causes || []).find(c => c.id === id) || null;
     const groupOf = p => (GROUPS.find(g => g.cats.includes(p.category)) || {}).key || (p.category === 'review' || p.category === 'case' ? 'review' : 'other');
-    const authed = () => !!(window.EBX && EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
 
     function missionName(id) {
       if (!id) return null;
@@ -364,6 +517,7 @@
       return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
     function who(p) {
+      if (p.author_name) return p.author_name;
       if (p.author_type === 'earthbux') return 'Earthbux News';
       if (p.author_type === 'org') return p.org_author_id || 'Organization';
       return 'Benefactor #' + (p.ben_author_id || '—');
@@ -375,30 +529,13 @@
         (p.est_cost_usd ? '<span>$' + Math.round(p.est_cost_usd).toLocaleString('en-US') + '</span>' : '');
       if (g === 'news') return '<span class="hp__kind">News</span>';
       if (g === 'review') return '<span class="hp__kind">' + (p.type === 'evaluation' ? 'Evaluation' : 'Case') + '</span>';
+      if (window.EBX && EBX.Post) return '<span class="hp__kind">' + esc(EBX.Post.kind(p)) + '</span>';
       return '<span class="hp__kind">' + esc((p.category || 'post').replace(/_/g, ' ')) + '</span>';
     }
-    // A research post may be a pulled-in news link: the first URL in it is
-    // shown as its source (the link itself opens from the thread in News).
+    // A post may be a pulled-in news link: the first URL in it is its source.
     function source(p) {
       const m = /https?:\/\/([^\s/]+)[^\s]*/.exec(p.body || '');
       return m ? '<span class="hp__src">&#8599; ' + esc(m[1].replace(/^www\./, '')) + '</span>' : '';
-    }
-
-    function visible() {
-      return st.posts.filter(p =>
-        (!st.group || groupOf(p) === st.group) &&
-        (!st.cause || p.cause_id === st.cause) &&
-        (!st.mine || (st.me != null && p.ben_author_id === st.me)));
-    }
-
-    function newsHref(extra) {
-      const q = new URLSearchParams();
-      const g = GROUPS.find(x => x.key === st.group);
-      if (g) q.set('cat', g.newsCat);
-      if (st.cause) q.set('cause', st.cause);
-      Object.keys(extra || {}).forEach(k => q.set(k, extra[k]));
-      const s = q.toString();
-      return 'cause.html' + (s ? '?' + s : '');
     }
 
     function row() {
@@ -406,30 +543,17 @@
       $('hn-row').innerHTML = GROUPS.map(g => {
         const all = st.posts.filter(p => groupOf(p) === g.key);
         const wk = all.filter(recent).length;
-        return '<button type="button" class="hn__tile hn__tile--' + g.key + '" data-group="' + g.key + '" aria-pressed="' + (st.group === g.key) + '">' +
+        return '<a class="hn__tile hn__tile--' + g.key + '" data-group="' + g.key + '" href="cause.html?cat=' + g.newsCat + '" title="' + g.name + ', in News">' +
           '<span class="hn__top"><span class="hn__name">' + g.name + '</span><span class="hn__tag">' + g.tag + '</span>' +
           '<span class="hn__n">' + (wk ? wk + ' this week' : all.length + ' post' + (all.length === 1 ? '' : 's')) + '</span></span>' +
-          '<p class="hn__what">' + g.what + '</p></button>';
+          '<p class="hn__what">' + g.what + '</p></a>';
       }).join('');
-    }
-
-    function side() {
-      const cs = (cfg().causes || []).slice().sort((a, b) => a.index - b.index);
-      $('hf-causes').innerHTML =
-        '<button type="button" class="hf-chip" data-cause="" aria-pressed="' + (!st.cause) + '">All causes</button>' +
-        cs.map(c => '<button type="button" class="hf-chip" data-cause="' + esc(c.id) + '" aria-pressed="' + (st.cause === c.id) + '">' +
-          '<i style="background:' + esc(c.color) + '"></i>' + esc(c.name) + '</button>').join('');
-      $('hf-mine').innerHTML =
-        '<button type="button" class="hf-chip" data-mine="0" aria-pressed="' + (!st.mine) + '">Everyone&rsquo;s</button> ' +
-        '<button type="button" class="hf-chip" data-mine="1" aria-pressed="' + st.mine + '"' +
-          (authed() ? '' : ' disabled title="Sign in to see your own posts"') + '>Mine</button>';
-      $('hf-more-news').href = newsHref();
     }
 
     function card(p) {
       const g = groupOf(p), c = causeOf(p.cause_id), mn = missionName(p.mission_id);
       const votes = (p.helpful_count || 0) - (p.harmful_count || 0);
-      return '<a class="hp hp--' + g + '" href="' + newsHref({ thread: p.id }) + '" data-post="' + esc(p.id) + '">' +
+      return '<a class="hp hp--' + g + '" href="cause.html?thread=' + encodeURIComponent(p.id) + '" data-post="' + esc(p.id) + '">' +
         '<div class="hp__meta">' + kind(p) + '<span>' + esc(who(p)) + '</span><span>&middot; ' + ago(p.created_at) + '</span>' +
           (c ? '<span class="hp__cause"><i style="background:' + esc(c.color) + '"></i>' + esc(c.name) + '</span>' : '') +
           (mn ? '<span>&middot; ' + esc(mn) + '</span>' : '') + source(p) + '</div>' +
@@ -439,26 +563,12 @@
     }
 
     function paint() {
-      row(); side();
-      const rows = visible();
-      const g = GROUPS.find(x => x.key === st.group), c = causeOf(st.cause);
-      $('hf-state').innerHTML = 'Showing <b>' + (g ? g.name : 'all posts') + '</b>' +
-        (c ? ' in <b>' + esc(c.name) + '</b>' : '') + (st.mine ? ' &middot; <b>mine</b>' : '') +
-        ' &middot; newest first';
-      $('hf-list').innerHTML = rows.length
-        ? rows.slice(0, 12).map(card).join('')
-        : '<div class="hf__empty">' + (st.posts.length ? 'Nothing here yet with those filters.' : 'No posts yet.') + '</div>';
-      $('hf-all').href = newsHref();
+      row();
+      $('hf-state').innerHTML = 'Showing <b>all posts</b> &middot; newest first';
+      $('hf-list').innerHTML = st.posts.length
+        ? st.posts.slice(0, 12).map(card).join('')
+        : '<div class="hf__empty">No posts yet.</div>';
     }
-
-    document.addEventListener('click', e => {
-      const t = e.target.closest && e.target.closest('[data-group],[data-cause],[data-mine]');
-      if (!t || !t.closest('.hn')) return;
-      if (t.dataset.group !== undefined) st.group = st.group === t.dataset.group ? '' : t.dataset.group;
-      else if (t.dataset.cause !== undefined) st.cause = t.dataset.cause;
-      else if (t.dataset.mine !== undefined) st.mine = t.dataset.mine === '1' && authed();
-      paint();
-    });
 
     async function load() {
       try { if (window.EBX && EBX.loadCauses && !(cfg().causes || []).length) await EBX.loadCauses(); } catch (e) {}
@@ -466,9 +576,6 @@
         const r = await fetch((cfg().apiBase || '') + '/posts?roots_only=true&limit=120&sort=recent');
         st.posts = r.ok ? await r.json() : [];
       } catch (e) { st.posts = []; }
-      if (authed()) {
-        try { const r = await EBX.Auth.fetchAuthed('/auth/me'); if (r && r.ok) st.me = (await r.json()).id; } catch (e) {}
-      }
       paint();
     }
     // scripts/home_check.js drives the feed through this.

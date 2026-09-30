@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 from typing import Optional, Sequence
 
-from sqlalchemy import func as sqlfunc, select
+from sqlalchemy import String, func as sqlfunc, or_, select
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -3488,36 +3488,68 @@ def list_posts(
     type: Optional[str] = None,
     limit: int = 50,
     sort: str = "recent",
+    org_id: Optional[str] = None,
+    tag: Optional[str] = None,
+    target_kind: Optional[str] = None,
+    target_id: Optional[str] = None,
 ) -> Sequence[models.Post]:
+    """The post list every page reads.
+
+    P3 (2026-09-29): a post BELONGS to a mission through `post_missions` as
+    well as its own `mission_id` — a Background rolled on from an earlier
+    election, a post pulled or cited in — so `mission_id=` lists all of them.
+    `tiv_id=` also finds posts that TAG the initiative (a Background covers
+    its initiatives by tag, D19). `sort=` is any `feed_rank` strategy.
+    """
+    from . import feed_rank, posting
+
+    # Backgrounds and Investigations roll on when their election closes (D19);
+    # do it before reading so the list is never a week stale.
+    if mission_id:
+        m = db.get(models.Mission, mission_id)
+        if m is not None:
+            posting.roll_cause(db, cause_id=m.cause_id)
+    elif cause_id:
+        posting.roll_cause(db, cause_id=cause_id)
+    if org_id:
+        posting.roll_cause(db, org_id=org_id)
+    db.commit()
+
     stmt = select(models.Post)
-    # §1 (2026-08-28) — the profile FEED asks for one benefactor's activity, and
-    # there was no way to ask. profile.html filtered the global 50-post feed on
-    # `post.author === handle`, but `author` is `author_type` ("ben" / "org"),
-    # so the comparison was never true and "Your posts" was permanently empty
-    # however much the account had written. `type` comes along because the feed
-    # in member mode is the RESEARCH types only.
     if ben_author_id is not None:
         stmt = stmt.where(models.Post.ben_author_id == ben_author_id)
     if type:
         stmt = stmt.where(models.Post.type.in_([t for t in str(type).split(",") if t]))
     if mission_id:
-        stmt = stmt.where(models.Post.mission_id == mission_id)
+        linked = select(models.PostMission.post_id).where(models.PostMission.mission_id == mission_id)
+        stmt = stmt.where(or_(models.Post.mission_id == mission_id, models.Post.id.in_(linked)))
     if tiv_id:
-        stmt = stmt.where(models.Post.tiv_id == tiv_id)
+        stmt = stmt.where(or_(models.Post.tiv_id == tiv_id,
+                              models.Post.tags.cast(String).like(f'%"tiv:{tiv_id}"%')))
     if cause_id:
         stmt = stmt.where(models.Post.cause_id == cause_id)
+    if org_id:
+        stmt = stmt.where(or_(models.Post.org_id == org_id,
+                              models.Post.tags.cast(String).like(f'%"org:{org_id}"%')))
     if category:
-        stmt = stmt.where(models.Post.category == category)
+        stmt = stmt.where(models.Post.category.in_([c for c in str(category).split(",") if c]))
+    if tag:
+        for tg in [t for t in str(tag).split(",") if t]:
+            stmt = stmt.where(models.Post.tags.cast(String).like(f'%"{tg}"%'))
+    if target_kind:
+        stmt = stmt.where(models.Post.target_kind == target_kind)
+    if target_id:
+        stmt = stmt.where(models.Post.target_id == target_id)
     # parent_id set → that post's comments (oldest first, thread order).
     if parent_id:
         stmt = stmt.where(models.Post.parent_id == parent_id)
-        return db.scalars(stmt.order_by(models.Post.created_at.asc()).limit(limit)).all()
-    # roots_only → exclude comments from a feed so threads don't double-list.
+        return db.scalars(stmt.order_by(models.Post.created_at.asc(), models.Post.id).limit(limit)).all()
     if roots_only:
         stmt = stmt.where(models.Post.parent_id.is_(None))
-    if sort == "hot":
-        return _rank_hot(db.scalars(stmt.limit(max(limit * 4, 200))).all(), limit)
-    return db.scalars(stmt.order_by(models.Post.created_at.desc()).limit(limit)).all()
+    strategy = feed_rank.resolve(sort)
+    if strategy.key == "latest":
+        return db.scalars(stmt.order_by(models.Post.created_at.desc(), models.Post.id.desc()).limit(limit)).all()
+    return feed_rank.rank(db, db.scalars(stmt.limit(max(limit * 4, 200))).all(), strategy.key, limit)
 
 
 # ---------------------------------------------------------------------------
@@ -3654,29 +3686,33 @@ def create_post(
     data: schemas.PostCreate,
     author: Optional[models.BenefactorAccount] = None,
 ) -> models.Post:
-    """Post creation rules (settled 2026-07-19; taxonomy in `post_config`).
+    """Post creation — P3 · Posting (2026-09-29; rules in `app/posting.py`,
+    taxonomy and guides in `post_config.py`).
 
-    Benefactor categories (budgeting · mission_support · review):
-      * `type` must belong to `category`.
-      * author must be able to post the mission — a MEMBER, or agreed-to-become
-        one via a committed phase-1 stake (`can_post_mission`).
-      * one post per (ben, type, mission); replies (`parent_id`) are exempt.
-        Budgeting slots are rolling — a new one should open only once the prior
-        item is paid out; payout isn't built yet, so the one-open limit stands
-        (tracked in INSTRUCTIONS "Post model v2").
+    Benefactor posts (general · research · budget, and any reply):
+      * **No gate.** Everyone signed in can post, everyone can reply.
+      * Each type's target and limit: Background → a cause, one per person per
+        cause; Investigation → an organization, one per person per
+        organization; Analysis → a mission, one per person per mission, open
+        T+8 → T+15; budget item → an initiative, one OPEN per type per person
+        per initiative; general → anything or nothing, unlimited.
+      * A request in the retired Review lane (case · evaluation) becomes a
+        general post carrying the tag (D8).
+      * Version 1 is recorded; every edit after it is a new version (D21).
 
     Org/staff lanes are unchanged: org_update = authoring-org member ·
     editorial/headline = staff.
     """
-    mission_id = _post_mission_id(db, data)
-    staff = author is not None and getattr(author, "is_staff", False)
-    is_reply = bool(data.parent_id)
+    from . import posting
 
-    if data.category in _STAFF_ONLY_CATEGORIES:
+    staff = author is not None and getattr(author, "is_staff", False)
+
+    if data.parent_id:
+        pass    # a reply: anyone signed in, whatever it replies to
+    elif data.category in _STAFF_ONLY_CATEGORIES:
         if author is None:
             raise PermissionError("editorial/headline posts require an employee account")
         require_staff(author)
-
     elif data.category == "org_update":
         org_id = data.org_author_id or data.org_id
         if author is None or org_id is None:
@@ -3684,85 +3720,54 @@ def create_post(
         if not staff and get_membership(db, author.id, org_id) is None:
             raise PermissionError("org updates require membership in the authoring organization")
 
-    elif data.category in pcfg.POST_REQUIRES_MEMBERSHIP:
-        if author is None:
-            raise PermissionError(f"{data.category} posts require a signed-in account")
-        t = pcfg.TYPES.get(data.type or "")
-        if t is None or t.category != data.category:
-            raise ValueError(
-                f"'{data.type}' is not a valid type for category '{data.category}' "
-                f"(expected one of {pcfg.CATEGORIES[data.category].type_keys})"
-            )
-        if mission_id is None:
-            raise ValueError(f"{data.category} posts must target a mission or initiative")
-        if (not staff and data.category not in pcfg.OPEN_POSTING_CATEGORIES
-                and not can_post_mission(db, author.id, mission_id)):
-            raise PermissionError(
-                "you must be a mission member — or agree to become one by committing "
-                "a phase-1 stake — before posting here"
-            )
-        # §2a (2026-08-08): a BUDGETING post is a costed suggestion. Without a
-        # setup-time estimate and a cost estimate the budget builder has nothing
-        # to rank it by, so both are required at creation. Replies are exempt —
-        # a reply argues about an estimate, it doesn't restate one.
-        # §1 (2026-08-12): the suggestion is now a COSTED LIST — service rows
-        # carry an hourly rate and a day count, supply rows a cost — so the two
-        # estimates may be DERIVED from `line_items` rather than typed. A post
-        # still cannot be uncosted: it must arrive with either the estimates or
-        # a list the estimates can be computed from.
-        if pcfg.requires_estimates(data.category) and not is_reply:
-            derived = pcfg.estimates_from_line_items(data.type, getattr(data, "line_items", None))
+    if not (data.body or "").strip():
+        raise ValueError("a post needs a body")
+
+    fields = data.model_dump(exclude={"references", "target_kind", "target_id", "tags"})
+    post = models.Post(**fields)
+    refs: list[dict] = []
+    # Everything that is not an org or staff lane is a benefactor post; a
+    # reply is always one (it takes its parent's lane).
+    benefactor = bool(data.parent_id) or data.category not in pcfg.STAFF_OR_ORG_CATEGORIES
+    if benefactor:
+        refs = posting.prepare_new(db, post, target_kind=data.target_kind, target_id=data.target_id,
+                                   tags=data.tags, references=data.references, author=author)
+        # §2a / §1: a budget item is a costed suggestion — the estimates may
+        # be derived from its costed list, but it cannot arrive uncosted.
+        if post.category == "budgeting" and not post.parent_id:
+            derived = pcfg.estimates_from_line_items(post.type, post.line_items)
             for field, value in derived.items():
-                if getattr(data, field, None) is None:
-                    setattr(data, field, value)
-            missing = [f for f in pcfg.ESTIMATE_FIELDS if getattr(data, f, None) is None]
+                if getattr(post, field, None) is None:
+                    setattr(post, field, value)
+            if post.type == "support":
+                post.est_cost_usd = post.est_cost_usd if post.est_cost_usd is not None else 0.0
+                post.est_setup_days = post.est_setup_days if post.est_setup_days is not None else 0.0
+            missing = [f for f in pcfg.ESTIMATE_FIELDS if getattr(post, f, None) is None]
             if missing:
                 raise ValueError(
-                    "a budgeting suggestion needs a costed line item — or one estimate "
-                    "for the setup time and one for the cost (missing: "
-                    + ", ".join(missing) + ")"
-                )
-            if any((getattr(data, f) or 0) < 0 for f in pcfg.ESTIMATE_FIELDS):
+                    "a budget item needs a costed line — or one estimate for the setup time "
+                    "and one for the cost (missing: " + ", ".join(missing) + ")")
+            if any((getattr(post, f) or 0) < 0 for f in pcfg.ESTIMATE_FIELDS):
                 raise ValueError("estimates cannot be negative")
-            bad = pcfg.invalid_line_items(data.type, getattr(data, "line_items", None))
+            bad = pcfg.invalid_line_items(post.type, post.line_items)
             if bad:
                 raise ValueError("this budget row is incomplete: " + bad)
+        elif post.category != "budgeting":
+            post.line_items = None
+            post.est_setup_days = post.est_cost_usd = None
+    else:
+        post.tags = pcfg.clean_tags(data.tags) or None
+        kind = data.target_kind or ("mission" if post.mission_id else "cause" if post.cause_id else "none")
+        tid = data.target_id or (post.mission_id if kind == "mission" else post.cause_id if kind == "cause" else None)
+        posting._fill_target(db, post, kind, tid)
 
-        if data.type in pcfg.TYPES_REQUIRING_ORG and not is_reply:
-            if not data.org_id:
-                raise ValueError("a vetting post must name the organization it vets (org_id)")
-            if db.get(models.Organization, data.org_id) is None:
-                raise ValueError(f"organization '{data.org_id}' not found")
-
-        if not is_reply:
-            dup = db.scalar(
-                select(models.Post).where(
-                    models.Post.ben_author_id == author.id,
-                    models.Post.mission_id == mission_id,
-                    models.Post.type == data.type,
-                    models.Post.parent_id.is_(None),
-                )
-            )
-            if dup is not None:
-                raise ValueError(
-                    f"you already have a {data.type} post for this mission — edit it, "
-                    f"or reply to add more (one {data.type} per mission)"
-                )
-
-    post = models.Post(**data.model_dump())
-    # Post-support layer: every post is rated on the way in so the mission
-    # annulus never has to deal with an unrated row. The classifier is a stub
-    # and rates everything green; only org-tagged types are read off it.
-    post.flag = pcfg.classify_flag(data.type, data.body, data.title)
-    # Normalise the derived mission onto benefactor posts so the per-type limit
-    # and the "my posts" history are reliable even when the post targets a tiv.
-    if data.category in pcfg.POST_REQUIRES_MEMBERSHIP and post.mission_id is None:
-        post.mission_id = mission_id
-    # Attribute ben-authored posts to the signed-in account so the profile
-    # "my posts" history + helpful-post rewards can find them.
+    # Post-support layer: rated on the way in (the classifier is a stub).
+    post.flag = pcfg.classify_flag(post.type, post.body, post.title)
     if author is not None and post.author_type == "ben" and post.ben_author_id is None:
         post.ben_author_id = author.id
     db.add(post)
+    db.flush()
+    posting.after_create(db, post, refs)
     db.commit()
     db.refresh(post)
     return post
@@ -3770,13 +3775,15 @@ def create_post(
 
 def update_post(db: Session, post_id: str, data: schemas.PostUpdate,
                 author: models.BenefactorAccount) -> models.Post:
-    """An author edits their own benefactor post (build-seq §2).
+    """An author edits their own post — as a NEW VERSION (D21).
 
-    Title, body, stance, and — for budgeting — the costed list and estimates.
-    Category, type, mission and parent are fixed at creation. Staff may edit any
-    post. Not yet versioned: `post_config.edit_policy` promises history, which
-    needs a table (BACKLOG).
+    Title, body, stance, tags, references and — for budget items — the costed
+    list and estimates. Category, type, target and parent are fixed at
+    creation. The version an election or an Analysis used stays exactly as it
+    was; the author edits forward, never back. Staff may edit any post.
     """
+    from . import posting
+
     post = db.get(models.Post, post_id)
     if post is None:
         raise ValueError("Post not found")
@@ -3784,6 +3791,7 @@ def update_post(db: Session, post_id: str, data: schemas.PostUpdate,
     if not staff and post.ben_author_id != author.id:
         raise PermissionError("you can only edit your own posts")
     fields = data.model_dump(exclude_unset=True)
+    refs_in = fields.pop("references", None)
     if post.category != "budgeting":
         for f in ("line_items", "est_setup_days", "est_cost_usd"):
             fields.pop(f, None)
@@ -3796,21 +3804,33 @@ def update_post(db: Session, post_id: str, data: schemas.PostUpdate,
             fields.setdefault(f, v)
     if "body" in fields and not (fields["body"] or "").strip():
         raise ValueError("a post needs a body")
-    for f, v in fields.items():
-        setattr(post, f, v)
+    if "tags" in fields:
+        fields["tags"] = posting._valid_entity_tags(db, pcfg.clean_tags(fields["tags"])) or None
+    refs = None
+    if refs_in is not None:
+        refs = posting._check_refs(db, post, refs_in, datetime.utcnow())
+    posting.new_version(db, post, fields)
+    if refs is not None:
+        posting.attach_refs(db, post, refs)
     post.flag = pcfg.classify_flag(post.type, post.body, post.title)
     db.commit()
     db.refresh(post)
     return post
 
 
-def react_to_post(db: Session, post_id: str, ben_id: int, value: str) -> models.Post:
+def react_to_post(db: Session, post_id: str, ben_id: int, value: str,
+                  mission_id: Optional[str] = None) -> models.Post:
     """Upsert a ben's reaction and keep the denormalised counts in sync.
 
     Reactions are one backend enum (helpful/neutral/harmful); a post type only
-    exposes a SUBSET (post_config). Budgeting = helpful only; review = helpful/
-    harmful (Fair/Unfair). Reject anything the type doesn't allow so hidden
-    reactions can't be forced through the API."""
+    exposes a SUBSET (post_config). Reject anything the type doesn't allow so
+    hidden reactions can't be forced through the API.
+
+    P3 (D21): a vote counts in ONE mission — `mission_id` if the post belongs
+    to it (origin, roll, pull or cite), else the post's current mission. The
+    post's own counts are its current mission's."""
+    from . import posting
+
     _valence_ok(value)
     post = db.get(models.Post, post_id)
     if post is None:
@@ -3818,20 +3838,27 @@ def react_to_post(db: Session, post_id: str, ben_id: int, value: str) -> models.
     if post.type and pcfg.is_benefactor_type(post.type) and not pcfg.is_reaction_allowed(post.type, value):
         allowed = ", ".join(pcfg.reaction_label(post.type, r) for r in pcfg.allowed_reactions(post.type))
         raise ValueError(f"'{value}' isn't a valid reaction for a {post.type} post (allowed: {allowed})")
+    scope = posting.scope_of(post)
+    if mission_id and mission_id != scope:
+        linked = db.scalar(select(models.PostMission).where(
+            models.PostMission.post_id == post_id, models.PostMission.mission_id == mission_id))
+        if linked is not None:
+            scope = mission_id
     existing = db.scalar(
         select(models.PostVote).where(
             models.PostVote.post_id == post_id,
             models.PostVote.ben_id == ben_id,
+            models.PostVote.mission_scope == scope,
         )
     )
     if existing:
         if existing.value == value:
             return post
-        _bump_post_count(post, existing.value, -1)
         existing.value = value
     else:
-        db.add(models.PostVote(post_id=post_id, ben_id=ben_id, value=value))
-    _bump_post_count(post, value, +1)
+        db.add(models.PostVote(post_id=post_id, ben_id=ben_id, value=value, mission_scope=scope))
+    db.flush()
+    posting.recount(db, post)
     db.commit()
     db.refresh(post)
     return post
@@ -3867,10 +3894,12 @@ def post_support_layer(db: Session, mission_id: str) -> dict:
     this shape, which is why the counts are grouped by org and every thread
     carries its own flag rather than an average.
     """
+    # P3: case / evaluation are general posts now (D8); a post is org-tagged
+    # when it is an Investigation or when it names an organization.
     rows = db.scalars(
         select(models.Post).where(
             models.Post.mission_id == mission_id,
-            models.Post.type.in_(pcfg.ORG_TAGGED_TYPES),
+            or_(models.Post.type.in_(pcfg.ORG_TAGGED_TYPES), models.Post.org_id.is_not(None)),
             models.Post.parent_id.is_(None),
         ).order_by(models.Post.created_at.desc())
     ).all()

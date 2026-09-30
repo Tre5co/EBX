@@ -636,9 +636,19 @@ async function selectContactView() {
       <span class="title mono">contact messages</span>
       <select id="ct-status"><option value="">all</option><option value="new" selected>new</option><option value="read">read</option><option value="answered">answered</option></select>
       <span class="count" id="rowcount"></span>
+      <button id="ct-mailtest">Send a test email</button>
+      <span class="mono" id="ct-route" style="opacity:.7"></span>
     </div>
     <div id="grid"><div class="msg">Loading…</div></div>`;
   $("#ct-status").onchange = runContact;
+  api("/admin/mail/status").then((m) => { $("#ct-route").textContent = "mail: " + m.route; }).catch(() => {});
+  $("#ct-mailtest").onclick = async () => {
+    $("#ct-route").textContent = "sending…";
+    try {
+      const r = await api("/admin/mail/test", { method: "POST" });
+      $("#ct-route").textContent = r.sent ? "test sent to " + r.to + " via " + r.route : "NOT sent — " + r.route + (r.hint ? " · " + r.hint : "");
+    } catch (e) { $("#ct-route").textContent = e.message; }
+  };
   await runContact();
 }
 async function runContact() {

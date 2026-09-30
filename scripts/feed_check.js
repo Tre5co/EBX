@@ -46,8 +46,8 @@ const CAUSE = process.argv[3] || 'atmosphere';
   say('…an order select, hot first',
       (d.getElementById('fd-sort') || {}).value === 'hot',
       [...q('#fd-sort option')].map(o => o.value).join(' | '));
-  say('…and a way to post, which points at a mission',
-      /mission\.html/.test((d.getElementById('fd-compose') || {}).href || ''),
+  say('…and a way to post, which opens the composer (P3: post.html, from anywhere)',
+      /post\.html/.test((d.getElementById('fd-compose') || {}).href || ''),
       (d.getElementById('fd-compose') || {}).textContent || '');
   const chips = q('#fd-filters .fd-chip').map(e => e.textContent.trim());
   say('the phase/category tabs are FILTERS here, not a frame',
@@ -173,18 +173,38 @@ const CAUSE = process.argv[3] || 'atmosphere';
   if (budget) {
     const bcard = [...doc2.querySelectorAll('.fd-card')].find(c => c.dataset.id === budget.id);
     if (bcard) {
-      say('a budgeting suggestion offers only Approve',
+      say('a budgeting suggestion offers only an Upvote',
           bcard.querySelectorAll('.fd-react').length === 1,
           [...bcard.querySelectorAll('.fd-react')].map(e => e.title).join(' | '));
     } else { say('(the budgeting post is below the first page)', true); }
   } else { say('(no budgeting posts in this database)', true); }
-  const caseCard = [...doc2.querySelectorAll('.fd-card')]
-    .find(c => { const p = (api || []).find(x => x.id === c.dataset.id); return p && ['case', 'evaluation'].includes(p.type); });
-  if (caseCard) {
-    say('a case offers fair / unfair and nothing in between',
-        caseCard.querySelectorAll('.fd-react').length === 2,
-        [...caseCard.querySelectorAll('.fd-react')].map(e => e.title).join(' | '));
-  } else { say('(no case posts on the first page)', true); }
+  // P3 (2026-09-29): the Review lane is gone — a case is a general post
+  // tagged `case`, upvote-only like every general post.
+  const genCard = [...doc2.querySelectorAll('.fd-card')]
+    .find(c => { const p = (api || []).find(x => x.id === c.dataset.id); return p && p.type === 'general'; });
+  if (genCard) {
+    const gp = (api || []).find(x => x.id === genCard.dataset.id);
+    say('a general post offers one Upvote',
+        genCard.querySelectorAll('.fd-react').length === 1 && /Upvote/.test(genCard.querySelector('.fd-react').title),
+        [...genCard.querySelectorAll('.fd-react')].map(e => e.title).join(' | '));
+    const tag = (gp.tags || []).find(t => t.indexOf(':') < 0);
+    if (tag) say('…and reads as its tag, not as "general"', new RegExp(tag, 'i').test(genCard.querySelector('.fd-kind').textContent),
+        genCard.querySelector('.fd-kind').textContent);
+    if (gp.target_kind && gp.target_kind !== 'none') say('…and says what it is about', !!genCard.querySelector('.ep__target'),
+        gp.target_kind);
+  } else { say('(no general posts on the first page)', true); }
+  say('every card has a Full view and a Respond-in-a-post link',
+      [...doc2.querySelectorAll('.fd-card')].every(c => c.querySelector('[data-full]') && c.querySelector('a[href*="tag=response"]')));
+  say('the order select offers the feed framework\'s strategies',
+      ['hot', 'recent', 'trending', 'research', 'missions'].every(v => !!doc2.querySelector('#fd-sort option[value="' + v + '"]')));
+  const eCard = [...doc2.querySelectorAll('.fd-card')]
+    .find(c => { const p = (api || []).find(x => x.id === c.dataset.id); return p && p.category === 'editorial'; });
+  if (eCard) {
+    eCard.querySelector('[data-toggle]').dispatchEvent(new d2.Event('click', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 900));
+    say("an Earthbux post takes replies too (P3: everyone can reply)",
+        !!doc2.querySelector('[data-repliesfor="' + eCard.dataset.id + '"] textarea'));
+  }
   dom2.window.close();
 
   // ── the move ──

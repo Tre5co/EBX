@@ -69,6 +69,7 @@ class ContactRead(BaseModel):
 
 def _email_it(msg_id: int) -> None:
     """Background: email one stored message and record whether it went."""
+    print(f"[mailer] contact #{msg_id}: sending via {mailer.route()}")
     db = SessionLocal()
     try:
         m = db.get(models.ContactMessage, msg_id)
@@ -80,6 +81,9 @@ def _email_it(msg_id: int) -> None:
                        body, reply_to=m.email):
             m.emailed = True
             db.commit()
+            print(f"[mailer] contact #{msg_id}: sent to {get_settings().contact_to}")
+        else:
+            print(f"[mailer] contact #{msg_id}: NOT sent (see the line above)")
     finally:
         db.close()
 
@@ -106,7 +110,30 @@ def contact(data: ContactIn, request: Request, tasks: BackgroundTasks, db: Sessi
     db.refresh(m)
     if mailer.configured():
         tasks.add_task(_email_it, m.id)
+    else:
+        print(f"[mailer] contact #{m.id}: stored only — mail route is {mailer.route()}")
     return ContactOut(ok=True, id=m.id, emailed=False)
+
+
+# 2026-09-26 — "no mail and no activity on the key": say which route the
+# server actually sees, and send one test email synchronously so the reason for
+# a failure comes back in the response instead of only in the deploy logs.
+@router.get("/admin/mail/status")
+def mail_status(staff=Depends(get_current_staff)):
+    s = get_settings()
+    return {"route": mailer.route(), "contact_to": s.contact_to,
+            "resend_key_set": bool(s.resend_api_key), "smtp_host_set": bool(s.smtp_host)}
+
+
+@router.post("/admin/mail/test")
+def mail_test(staff=Depends(get_current_staff)):
+    s = get_settings()
+    if not mailer.configured():
+        return {"sent": False, "route": mailer.route()}
+    ok = mailer.send(s.contact_to, "[Earthbux] mail test",
+                     f"This is a test from the Earthbux server via {mailer.route()}.")
+    return {"sent": ok, "route": mailer.route(), "to": s.contact_to,
+            "hint": None if ok else "Check the deploy logs for the [mailer] line with Resend's reason."}
 
 
 @router.get("/admin/contact", response_model=list[ContactRead])

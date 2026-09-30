@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New post — Earthbux</title>
+  <meta name="description" content="Post to Earthbux: a general post, research (Background · Investigation · Analysis) or a budget item." />
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
+  <style>
+    /* ── post.html — P3 · Posting (2026-09-29) ─────────────────────────────
+       "One way to make a post, reachable from everywhere, easily customizable
+       for any posting purpose." New posts, and edits (every edit is a new
+       version, D21). The link that opened it decides what is preselected: the
+       target (cause · initiative · organization · mission · budget item ·
+       post) and the type. The chosen type's guide sits beside the composer —
+       read from GET /posts/guide, which is post_config.py, so the words are
+       the rules. */
+    body { background: #0f1a14; color: var(--clr-parchment, #f5f0e8); min-height: 100vh; display: flex; flex-direction: column; }
+    .pc-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 26px; border-bottom: 1px solid rgba(245,240,232,0.08); }
+    .pc-brand { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.3rem; color: var(--clr-parchment, #f5f0e8); text-decoration: none; }
+    .pc-brand em { color: var(--clr-honey, #e8a84c); font-style: normal; }
+    .ebx-home-mark { display: none !important; }
+    .pc { flex: 1; width: min(1180px, 100%); margin: 0 auto; padding: 22px 16px 60px; box-sizing: border-box;
+      display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 22px; align-items: start; }
+    @media (max-width: 900px) { .pc { grid-template-columns: 1fr; } }
+    .pc-card { border: 1px solid rgba(245,240,232,0.14); border-radius: 16px; background: #13211a; padding: 18px 20px; min-width: 0; }
+    .pc-kicker { font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); }
+    .pc-h1 { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.5rem; margin: 4px 0 12px; color: var(--clr-parchment, #f5f0e8); }
+    .pc-tabs, .pc-pills, .pc-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+    .pc-tab, .pc-pill, .pc-tag { font: inherit; cursor: pointer; border-radius: 999px; background: none;
+      color: rgba(245,240,232,0.78); border: 1px solid rgba(245,240,232,0.22); }
+    .pc-tab { font-size: 0.9rem; font-weight: 700; padding: 7px 16px; }
+    .pc-pill { font-size: 0.82rem; padding: 6px 13px; }
+    .pc-tag { font-size: 0.74rem; padding: 4px 10px; }
+    .pc-tab[aria-pressed="true"], .pc-pill[aria-pressed="true"], .pc-tag[aria-pressed="true"] {
+      background: var(--clr-honey, #e8a84c); border-color: var(--clr-honey, #e8a84c); color: #0f1a14; font-weight: 700; }
+    .pc-tab:disabled, .pc-pill:disabled { opacity: 0.4; cursor: not-allowed; }
+    .pc-lab { display: block; font-size: 0.74rem; color: rgba(245,240,232,0.6); margin: 12px 0 5px; }
+    .pc-in, .pc-sel, .pc-text { font: inherit; color: inherit; background: rgba(0,0,0,0.25); border: 1px solid rgba(245,240,232,0.16);
+      border-radius: 10px; padding: 9px 12px; width: 100%; box-sizing: border-box; }
+    .pc-sel option, .pc-sel optgroup { background: #0f1a14; }
+    .pc-in--title { font-family: var(--font-display, serif); font-size: 1.1rem; font-weight: 700; }
+    .pc-text { min-height: 220px; resize: vertical; line-height: 1.6; }
+    .pc-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+    .pc-row2 { display: grid; grid-template-columns: 180px 1fr; gap: 8px; }
+    @media (max-width: 640px) { .pc-row, .pc-row2 { grid-template-columns: 1fr; } }
+    .pc-fixed { font-size: 0.86rem; padding: 9px 12px; border-radius: 10px; background: rgba(232,168,76,0.08); border: 1px solid rgba(232,168,76,0.3); }
+    .pc-fixed button { font: inherit; background: none; border: 0; color: rgba(245,240,232,0.6); cursor: pointer; float: right; }
+    .pc-checks { display: flex; flex-direction: column; gap: 4px; max-height: 190px; overflow-y: auto; font-size: 0.84rem;
+      border: 1px solid rgba(245,240,232,0.12); border-radius: 10px; padding: 8px 10px; }
+    .pc-checks label { display: flex; gap: 8px; align-items: baseline; cursor: pointer; }
+    .pc-checks .pc-lock { opacity: 0.85; }
+    .pc-checks small { color: rgba(245,240,232,0.5); }
+    .pc-count { font-size: 0.72rem; color: rgba(245,240,232,0.55); margin-left: 6px; }
+    .pc-refs { display: flex; flex-direction: column; gap: 6px; }
+    .pc-media { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(245,240,232,0.08); font-size: 0.8rem; }
+    .pc-media img { max-height: 90px; border-radius: 8px; }
+    .pc-mbtn { font: inherit; font-size: 0.8rem; padding: 6px 12px; border-radius: 8px; background: none; color: rgba(245,240,232,0.75); border: 1px dashed rgba(245,240,232,0.3); cursor: pointer; }
+    .pc-mbtn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .pc-foot { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(245,240,232,0.08); }
+    .pc-msg { flex: 1; font-size: 0.84rem; }
+    .pc-btn { font: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer; padding: 10px 22px; border-radius: 999px;
+      background: var(--clr-honey, #e8a84c); color: #0f1a14; border: 0; text-decoration: none; }
+    .pc-btn--ghost { background: none; color: rgba(245,240,232,0.8); border: 1px solid rgba(245,240,232,0.22); }
+    .pc-btn:disabled { opacity: 0.5; }
+    .pc-guide h3 { font-family: var(--font-display, serif); font-size: 1.15rem; margin: 6px 0 8px; color: var(--clr-parchment, #f5f0e8); }
+    .pc-guide dl { margin: 0; font-size: 0.84rem; line-height: 1.55; }
+    .pc-guide dt { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.5); margin-top: 10px; }
+    .pc-guide dd { margin: 2px 0 0; color: rgba(245,240,232,0.85); }
+    .pc-guide ol { margin: 4px 0 0; padding-left: 18px; }
+    .pc-guide a { color: var(--clr-honey, #e8a84c); }
+    .pc-note { font-size: 0.78rem; color: rgba(245,240,232,0.6); margin-top: 6px; line-height: 1.5; }
+    .pc-done { font-size: 0.9rem; line-height: 1.6; }
+    .pc-done a { color: var(--clr-honey, #e8a84c); font-weight: 700; }
+    .pc-pull { margin-top: 14px; }
+    .pc-pull li { margin: 4px 0; font-size: 0.84rem; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="pc-top">
+    <a class="pc-brand" href="index.html">Earthbux <em>News</em></a>
+    <div id="ebx-nav-mount"></div>
+    <div id="ebx-user-badge-mount"></div>
+  </div>
+
+  <main class="pc">
+    <section class="pc-card" aria-labelledby="pc-h1">
+      <div class="pc-kicker" id="pc-kicker">Post</div>
+      <h1 class="pc-h1" id="pc-h1">New post</h1>
+
+      <div class="pc-tabs" id="pc-cats" role="tablist" aria-label="What kind of post"></div>
+      <div class="pc-pills" id="pc-types" role="tablist" aria-label="Type"></div>
+      <div id="pc-tagwrap">
+        <span class="pc-lab">What kind of post is it? <span class="pc-count">(tags — pick any)</span></span>
+        <div class="pc-tags" id="pc-tags" role="group" aria-label="Tags"></div>
+      </div>
+
+      <div id="pc-target"></div>
+
+      <label class="pc-lab" for="pc-title">Title</label>
+      <input class="pc-in pc-in--title" id="pc-title" type="text" maxlength="140" placeholder="A title (optional for a general post)" />
+      <label class="pc-lab" for="pc-body">Your post</label>
+      <textarea class="pc-text" id="pc-body" placeholder="What do you want to say?"></textarea>
+
+      <div id="pc-fields"></div>
+      <div id="pc-refbox"></div>
+
+      <div class="pc-media">
+        <label class="pc-mbtn" for="pc-img">&#128247; Image</label>
+        <input type="file" id="pc-img" accept="image/*" hidden />
+        <button type="button" class="pc-mbtn" disabled title="Video needs file hosting — BACKLOG › Infra">&#127909; Video</button>
+        <span id="pc-imgprev"></span>
+        <label style="display:flex;gap:6px;align-items:center;color:rgba(245,240,232,0.6);"><input type="checkbox" id="pc-lead" /> The image is the post; the text is its caption</label>
+      </div>
+
+      <div class="pc-foot">
+        <span class="pc-msg" id="pc-msg" role="status" aria-live="polite"></span>
+        <a class="pc-btn pc-btn--ghost" id="pc-cancel" href="index.html">Cancel</a>
+        <button type="button" class="pc-btn" id="pc-send">Post</button>
+      </div>
+      <div class="pc-done" id="pc-done" hidden></div>
+      <div class="pc-pull" id="pc-pull" hidden></div>
+    </section>
+
+    <aside class="pc-card pc-guide" id="pc-guide" aria-label="How to post this type">
+      <div class="pc-kicker">How to post</div>
+      <h3 id="pc-g-title">…</h3>
+      <dl id="pc-g-body"></dl>
+      <p class="pc-note"><a href="about.html#posting">Every post type, and what it can earn &rarr;</a></p>
+    </aside>
+  </main>
+
+  <div id="ebx-footer-mount"></div>
+  <script src="resources/js/ebx_shared.js?v=20260929"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const Q = new URLSearchParams(location.search);
+    const API = () => (EBX.config.apiBase || '');
+    const get = async (p) => { try { const r = await fetch(API() + p); return r.ok ? await r.json() : null; } catch (e) { return null; } };
+
+    // ── state ────────────────────────────────────────────────────────────
+    const S = {
+      guide: null, causes: [], tivs: [], orgs: [], missions: [], me: null,
+      cat: 'general', type: 'general', tags: [],
+      target: { kind: 'none', id: null },         // general: chosen target
+      fixed: null,                                // a preselected post/budget target {kind,id,label}
+      cause: null, tivTags: [], org: null, mission: null, tiv: null,
+      kit: null, picked: new Set(), links: [],
+      image: null, edit: null,
+    };
+    const CAT_OF = { general: 'general', context: 'mission_support', investigation: 'mission_support',
+      analysis: 'mission_support', service: 'budgeting', supply: 'budgeting', support: 'budgeting' };
+    const TYPE_OF_WORD = { background: 'context', context: 'context', investigation: 'investigation', vetting: 'investigation',
+      analysis: 'analysis', service: 'service', supply: 'supply', support: 'support', general: 'general', post: 'general' };
+
+    const causeName = id => (S.causes.find(c => c.id === id) || {}).name || id;
+    const tivOf = id => S.tivs.find(t => t.id === id) || null;
+    const orgName = id => (S.orgs.find(o => o.id === id) || {}).name || id;
+    function missionName(m) {
+      if (!m) return '';
+      const t = m.winning_tiv_id ? tivOf(m.winning_tiv_id) : null;
+      return t ? t.title : causeName(m.cause_id) + ' ' + ((m.cycle_num || 0) + 1);
+    }
+    const typeInfo = key => ((S.guide && S.guide.types) || []).find(t => t.key === key) || null;
+
+    // ── painting ─────────────────────────────────────────────────────────
+    function paintTabs() {
+      const cats = (S.guide && S.guide.categories) || [];
+      $('pc-cats').innerHTML = cats.map(c => '<button type="button" class="pc-tab" role="tab" data-cat="' + c.key + '" aria-pressed="' + (S.cat === c.key) + '"' +
+        (S.edit ? ' disabled' : '') + '>' + esc(c.label) + '</button>').join('');
+      const cat = cats.find(c => c.key === S.cat);
+      const types = cat ? cat.types : [];
+      $('pc-types').hidden = S.cat === 'general';
+      $('pc-types').innerHTML = S.cat === 'general' ? '' : types.map(k => {
+        const t = typeInfo(k);
+        return '<button type="button" class="pc-pill" role="tab" data-type="' + k + '" aria-pressed="' + (S.type === k) + '"' +
+          (S.edit ? ' disabled' : '') + '>' + esc(t ? t.label : k) + '</button>';
+      }).join('');
+      $('pc-tagwrap').hidden = S.cat !== 'general';
+      $('pc-tags').innerHTML = ((S.guide && S.guide.general_tags) || []).map(g =>
+        '<button type="button" class="pc-tag" data-tag="' + g.key + '" title="' + esc(g.hint) + '" aria-pressed="' + (S.tags.indexOf(g.key) >= 0) + '">' + esc(g.label) + '</button>').join('');
+      const t = typeInfo(S.type);
+      $('pc-kicker').textContent = (S.edit ? 'Edit · version ' + ((S.edit.version || 1) + 1) : 'New post') + ' · ' + (cat ? cat.label : '');
+      $('pc-h1').textContent = S.edit ? 'Edit your ' + (t ? t.label : 'post') : (S.cat === 'general' ? 'New post' : 'New ' + (t ? t.label : ''));
+      document.title = $('pc-h1').textContent + ' — Earthbux';
+      $('pc-send').textContent = S.edit ? 'Save as a new version' : 'Post';
+      $('pc-title').placeholder = S.cat === 'general' ? 'A title (optional)' : 'A title';
+    }
+
+    function paintGuide() {
+      const t = typeInfo(S.type);
+      if (!t || !t.guide) { $('pc-g-title').textContent = ''; $('pc-g-body').innerHTML = ''; return; }
+      const g = t.guide;
+      $('pc-g-title').textContent = t.label === 'Post' ? 'A general post' : t.label;
+      const tagHint = S.cat === 'general' && S.tags.length
+        ? '<dt>' + esc(S.tags[0]) + '</dt><dd>' + esc(((S.guide.general_tags || []).find(x => x.key === S.tags[0]) || {}).hint || '') + '</dd>' : '';
+      $('pc-g-body').innerHTML =
+        '<dt>What it is for</dt><dd>' + esc(g.purpose) + '</dd>' + tagHint +
+        '<dt>What it points at</dt><dd>' + esc(g.points_at) + '</dd>' +
+        '<dt>Limit</dt><dd>' + esc(g.limit) + '</dd>' +
+        '<dt>What it can earn</dt><dd>' + esc(g.earns) + '</dd>' +
+        '<dt>Votes on it</dt><dd>' + esc(t.vote_name) + '</dd>' +
+        '<dt>Steps</dt><dd><ol>' + g.steps.map(s => '<li>' + esc(s) + '</li>').join('') + '</ol></dd>';
+    }
+
+    function opt(v, label, sel) { return '<option value="' + esc(v) + '"' + (sel ? ' selected' : '') + '>' + esc(label) + '</option>'; }
+    function causeSelect(id, sel) {
+      return '<select class="pc-sel" id="' + id + '">' + opt('', '— pick the cause —', !sel) +
+        S.causes.map(c => opt(c.id, c.name, c.id === sel)).join('') + '</select>';
+    }
+    function orgSelect(id, sel) {
+      return '<select class="pc-sel" id="' + id + '">' + opt('', '— pick the organization —', !sel) +
+        S.orgs.slice().sort((a, b) => a.name.localeCompare(b.name)).map(o => opt(o.id, o.name, o.id === sel)).join('') + '</select>';
+    }
+    function tivSelect(id, sel) {
+      const by = {};
+      S.tivs.forEach(t => (by[t.cause_id] = by[t.cause_id] || []).push(t));
+      return '<select class="pc-sel" id="' + id + '">' + opt('', '— pick the initiative —', !sel) +
+        S.causes.map(c => by[c.id] ? '<optgroup label="' + esc(c.name) + '">' +
+          by[c.id].map(t => opt(t.id, t.title, t.id === sel)).join('') + '</optgroup>' : '').join('') + '</select>';
+    }
+    function missionSelect(id, sel, filter) {
+      const ms = S.missions.filter(filter || (() => true)).sort((a, b) => new Date(a.started_at) - new Date(b.started_at));
+      return '<select class="pc-sel" id="' + id + '">' + opt('', '— pick the mission —', !sel) +
+        ms.map(m => opt(m.id, missionName(m) + ' · ' + causeName(m.cause_id), m.id === sel)).join('') + '</select>';
+    }
+
+    function paintTarget() {
+      const box = $('pc-target');
+      if (S.edit) {
+        box.innerHTML = '<span class="pc-lab">About</span><div class="pc-fixed">' + (S.edit.target_label ? esc(S.edit.target_label) : 'Nothing in particular') +
+          ' <span class="pc-count">— a post keeps its target; edits change its words</span></div>';
+        return;
+      }
+      if (S.type === 'general') {
+        if (S.fixed) {
+          box.innerHTML = '<span class="pc-lab">About</span><div class="pc-fixed">' +
+            (S.tags.indexOf('response') >= 0 ? 'In response to ' : 'On the ' + (S.fixed.kind === 'budget' ? 'budget item ' : 'post ')) +
+            '<b>' + esc(S.fixed.label) + '</b><button type="button" id="pc-unfix" title="Remove">&times;</button></div>';
+          return;
+        }
+        const k = S.target.kind;
+        const second = k === 'cause' ? causeSelect('pc-tid', S.target.id) : k === 'initiative' ? tivSelect('pc-tid', S.target.id)
+          : k === 'organization' ? orgSelect('pc-tid', S.target.id) : k === 'mission' ? missionSelect('pc-tid', S.target.id) : '';
+        box.innerHTML = '<span class="pc-lab">What is it about? <span class="pc-count">(optional, but it helps people find it)</span></span>' +
+          '<div class="pc-row2"><select class="pc-sel" id="pc-tkind">' +
+            [['none', 'Nothing in particular'], ['cause', 'A cause'], ['initiative', 'An initiative'], ['organization', 'An organization'], ['mission', 'A mission']]
+              .map(([v, l]) => opt(v, l, v === k)).join('') + '</select>' + (second || '<span></span>') + '</div>';
+        return;
+      }
+      if (S.type === 'context') {
+        const cands = S.tivs.filter(t => t.cause_id === S.cause && (() => {
+          const m = S.missions.find(x => x.id === t.mission_id); return !m || !m.winning_tiv_id || m.winning_tiv_id === t.id; })());
+        box.innerHTML = '<label class="pc-lab" for="pc-cause">The cause *</label>' + causeSelect('pc-cause', S.cause) +
+          (S.cause ? '<span class="pc-lab">The initiatives it covers <span class="pc-count">(tag any, or none — it previews under each)</span></span>' +
+            (cands.length ? '<div class="pc-checks" id="pc-tivtags">' + cands.map(t => '<label><input type="checkbox" value="' + esc(t.id) + '"' +
+              (S.tivTags.indexOf(t.id) >= 0 ? ' checked' : '') + ' /> ' + esc(t.title) + '</label>').join('') + '</div>'
+              : '<div class="pc-note">No initiatives on this cause’s ballot yet.</div>') : '');
+        return;
+      }
+      if (S.type === 'investigation') {
+        box.innerHTML = '<label class="pc-lab" for="pc-org">The organization you investigated *</label>' + orgSelect('pc-org', S.org) +
+          '<div class="pc-note">It need not be running. The version standing when an organization election it stands in closes stays with that mission.</div>';
+        return;
+      }
+      if (S.type === 'analysis') {
+        box.innerHTML = '<label class="pc-lab" for="pc-mission">The mission *</label>' +
+          missionSelect('pc-mission', S.mission, m => !!m.winning_tiv_id) +
+          '<div class="pc-note" id="pc-kitnote"></div>';
+        paintKitNote();
+        return;
+      }
+      // budget
+      box.innerHTML = '<label class="pc-lab" for="pc-tiv">The initiative *</label>' + tivSelect('pc-tiv', S.tiv) +
+        '<div class="pc-note">Any time — before it is elected, or after budget day. It carries into the mission when the initiative wins.</div>';
+    }
+
+    function paintKitNote() {
+      const n = $('pc-kitnote'); if (!n) return;
+      const k = S.kit;
+      if (!S.mission) { n.textContent = 'Analyses open when a mission’s organization election closes, and are elected on budget day.'; return; }
+      if (!k) { n.textContent = 'Loading the research…'; return; }
+      const d = x => new Date(x).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      n.innerHTML = k.open ? 'Open until budget day, <b>' + d(k.closes_at) + '</b>.'
+        : (new Date(k.opens_at) > new Date() ? 'Opens when the organization election closes, <b>' + d(k.opens_at) + '</b>.' : 'Closed — elected on budget day, <b>' + d(k.closes_at) + '</b>.');
+    }
+
+    function paintFields() {
+      const f = (id, ph, t, v) => '<input class="pc-in" id="' + id + '" type="' + (t || 'text') + '" placeholder="' + ph + '"' +
+        (t === 'number' ? ' min="0" step="any"' : '') + (v != null ? ' value="' + esc(v) + '"' : '') + ' />';
+      const row = (S.edit && (S.edit.line_items || [])[0]) || {};
+      const t = S.type;
+      $('pc-fields').innerHTML =
+        t === 'service' ? '<span class="pc-lab">The job</span><div class="pc-row">' + f('pc-job', 'Job — e.g. field technician', 'text', row.job) + f('pc-rate', 'Hourly rate, $', 'number', row.hourly_rate) + f('pc-days', 'Days needed', 'number', row.days_needed) + '</div>'
+        : t === 'supply' ? '<span class="pc-lab">The item</span><div class="pc-row">' + f('pc-item', 'Item — e.g. 40 air-quality sensors', 'text', row.item) + f('pc-supplier', 'Supplier', 'text', row.supplier) + f('pc-cost', 'Cost, $', 'number', row.cost) + '</div>'
+        : t === 'support' ? '<span class="pc-lab">What is needed</span>' + f('pc-item', 'An approval, advice, an introduction', 'text', row.item)
+        : '';
+    }
+
+    function paintRefs() {
+      const box = $('pc-refbox');
+      const links = '<span class="pc-lab">Sources <span class="pc-count">(links you lean on)</span></span><div class="pc-refs" id="pc-links">' +
+        S.links.map((l, i) => '<div class="pc-row2"><input class="pc-in" data-link-label="' + i + '" placeholder="Label" value="' + esc(l.label || '') + '" />' +
+          '<input class="pc-in" data-link-url="' + i + '" placeholder="https://…" value="' + esc(l.url || '') + '" /></div>').join('') +
+        '</div><button type="button" class="pc-mbtn" id="pc-addlink" style="margin-top:6px;">+ Add a source</button>';
+      if (S.type !== 'analysis') { box.innerHTML = links; return; }
+      const k = S.kit;
+      if (!k) { box.innerHTML = links; return; }
+      const lead = k.leads || {};
+      const locked = new Set([lead.background_id, lead.investigation_id].filter(Boolean));
+      locked.forEach(id => S.picked.add(id));
+      const nb = [...S.picked].filter(id => k.backgrounds.some(p => p.id === id)).length;
+      const ni = [...S.picked].filter(id => k.investigations.some(p => p.id === id)).length;
+      const item = p => {
+        const lock = locked.has(p.id);
+        return '<label class="' + (lock ? 'pc-lock' : '') + '"><input type="checkbox" data-ref="' + esc(p.id) + '"' +
+          (S.picked.has(p.id) ? ' checked' : '') + (lock ? ' disabled' : '') + ' /> <span>' + esc(p.title || String(p.body || '').slice(0, 70)) +
+          ' <small>· ' + esc(p.target_label || '') + ' · &uarr;' + ((p.helpful_count || 0) - (p.harmful_count || 0)) +
+          (lock ? ' · leading, attached' : '') + '</small></span></label>';
+      };
+      box.innerHTML =
+        '<span class="pc-lab">Backgrounds <span class="pc-count">' + nb + ' / ' + k.max_backgrounds + ' — ordered by their votes</span></span>' +
+        '<div class="pc-checks">' + (k.backgrounds.map(item).join('') || '<small>No Backgrounds yet.</small>') + '</div>' +
+        '<span class="pc-lab">Investigations <span class="pc-count">' + ni + ' / ' + k.max_investigations + '</span></span>' +
+        '<div class="pc-checks">' + (k.investigations.map(item).join('') || '<small>No Investigations yet.</small>') + '</div>' +
+        (k.budget_items.length ? '<span class="pc-lab">Budget items <span class="pc-count">(referenced, never paid)</span></span><div class="pc-checks">' +
+          k.budget_items.map(item).join('') + '</div>' : '') + links;
+    }
+
+    function paintAll() { paintTabs(); paintTarget(); paintFields(); paintRefs(); paintGuide(); }
+
+    async function loadKit() {
+      S.kit = null; paintKitNote(); paintRefs();
+      if (!S.mission) return;
+      S.kit = await get('/posts/analysis-kit?mission_id=' + encodeURIComponent(S.mission));
+      paintKitNote(); paintRefs();
+    }
+
+    // ── events ───────────────────────────────────────────────────────────
+    document.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      if (b.dataset.cat && !S.edit) {
+        S.cat = b.dataset.cat;
+        const cat = S.guide.categories.find(c => c.key === S.cat);
+        S.type = cat.types[0];
+        paintAll(); if (S.type === 'analysis') loadKit();
+      } else if (b.dataset.type && !S.edit) {
+        S.type = b.dataset.type; paintAll(); if (S.type === 'analysis') loadKit();
+      } else if (b.dataset.tag) {
+        const i = S.tags.indexOf(b.dataset.tag);
+        if (i >= 0) S.tags.splice(i, 1); else S.tags.push(b.dataset.tag);
+        paintTabs(); paintTarget(); paintGuide();
+      } else if (b.id === 'pc-unfix') {
+        S.fixed = null; S.tags = S.tags.filter(t => t !== 'response'); paintAll();
+      } else if (b.id === 'pc-addlink') {
+        readLinks(); S.links.push({ url: '', label: '' }); paintRefs();
+      }
+    });
+    document.addEventListener('change', e => {
+      const t = e.target;
+      if (t.id === 'pc-tkind') { S.target = { kind: t.value, id: null }; paintTarget(); }
+      else if (t.id === 'pc-tid') S.target.id = t.value || null;
+      else if (t.id === 'pc-cause') { S.cause = t.value || null; S.tivTags = []; paintTarget(); }
+      else if (t.closest && t.closest('#pc-tivtags')) S.tivTags = [...document.querySelectorAll('#pc-tivtags input:checked')].map(x => x.value);
+      else if (t.id === 'pc-org') S.org = t.value || null;
+      else if (t.id === 'pc-tiv') S.tiv = t.value || null;
+      else if (t.id === 'pc-mission') { S.mission = t.value || null; loadKit(); }
+      else if (t.dataset && t.dataset.ref) {
+        if (t.checked) S.picked.add(t.dataset.ref); else S.picked.delete(t.dataset.ref);
+        readLinks(); paintRefs();
+      } else if (t.id === 'pc-img') readImage(t.files && t.files[0]);
+    });
+
+    function readLinks() {
+      S.links = S.links.map((l, i) => {
+        const u = document.querySelector('[data-link-url="' + i + '"]'), lb = document.querySelector('[data-link-label="' + i + '"]');
+        return { url: u ? u.value.trim() : l.url, label: lb ? lb.value.trim() : l.label };
+      });
+    }
+
+    // An image is attached as a data URL, downscaled so a phone photo does
+    // not become a 6 MB post row.
+    function readImage(file) {
+      if (!file) return;
+      const fr = new FileReader();
+      fr.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          S.image = c.toDataURL('image/jpeg', 0.82);
+          $('pc-imgprev').innerHTML = '<img src="' + S.image + '" alt="" /> <button type="button" class="pc-mbtn" id="pc-noimg">Remove</button>';
+          $('pc-noimg').onclick = () => { S.image = null; $('pc-imgprev').innerHTML = ''; $('pc-img').value = ''; };
+        };
+        img.src = fr.result;
+      };
+      fr.readAsDataURL(file);
+    }
+
+    const say = (t, ok) => { $('pc-msg').textContent = t; $('pc-msg').style.color = ok ? '#8fce9d' : '#f08a6a'; };
+    const val = id => { const v = $(id); return v ? v.value.trim() : ''; };
+    const num = id => { const v = $(id); return v && v.value !== '' ? Number(v.value) : null; };
+
+    function payload() {
+      readLinks();
+      const body = val('pc-body');
+      const d = { title: val('pc-title') || null, body };
+      const refs = S.links.filter(l => l.url).map(l => ({ kind: 'link', url: l.url, label: l.label || null }));
+      if (S.type === 'analysis' && S.kit) {
+        const lead = S.kit.leads || {};
+        [...S.picked].filter(id => id !== lead.background_id && id !== lead.investigation_id)
+          .forEach(id => refs.unshift({ kind: 'post', post_id: id }));
+      }
+      d.references = refs;
+      if (['service', 'supply', 'support'].indexOf(S.type) >= 0) {
+        if (S.type === 'service') d.line_items = [{ job: val('pc-job'), hourly_rate: num('pc-rate'), days_needed: num('pc-days') }];
+        if (S.type === 'supply') d.line_items = [{ item: val('pc-item'), supplier: val('pc-supplier') || null, cost: num('pc-cost') }];
+        if (S.type === 'support') d.line_items = [{ item: val('pc-item') }];
+      }
+      if (S.edit) {
+        if (S.cat === 'general') d.tags = S.tags.concat((S.edit.tags || []).filter(t => t.indexOf(':') >= 0));
+        return d;
+      }
+      Object.assign(d, { id: 'pp-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+        author_type: 'ben', category: S.cat, type: S.type });
+      if (S.image) { d.image_url = S.image; if ($('pc-lead').checked) d.tags = ['media']; }
+      if (S.type === 'general') {
+        d.tags = S.tags.concat(d.tags || []);
+        if (S.fixed) { d.target_kind = S.fixed.kind; d.target_id = S.fixed.id; }
+        else if (S.target.kind !== 'none') { d.target_kind = S.target.kind; d.target_id = S.target.id; }
+        if (d.target_kind && !d.target_id) throw new Error('Pick the ' + d.target_kind + ' it is about — or choose “Nothing in particular”.');
+      } else if (S.type === 'context') {
+        if (!S.cause) throw new Error('Pick the cause.');
+        d.target_kind = 'cause'; d.target_id = S.cause; d.tags = S.tivTags.map(id => 'tiv:' + id);
+      } else if (S.type === 'investigation') {
+        if (!S.org) throw new Error('Pick the organization you investigated.');
+        d.target_kind = 'organization'; d.target_id = S.org;
+        if (Q.get('mission')) d.mission_id = Q.get('mission');
+      } else if (S.type === 'analysis') {
+        if (!S.mission) throw new Error('Pick the mission.');
+        d.target_kind = 'mission'; d.target_id = S.mission;
+      } else {
+        if (!S.tiv) throw new Error('Pick the initiative.');
+        d.target_kind = 'initiative'; d.target_id = S.tiv;
+      }
+      return d;
+    }
+
+    $('pc-send').onclick = async function () {
+      if (!EBX.Auth.isLoggedIn()) { say('Sign in to post.'); EBX.Auth.openModal('login'); return; }
+      let data;
+      try { data = payload(); } catch (e) { return say(e.message); }
+      if (!data.body) return say('Write something first.');
+      this.disabled = true; say(S.edit ? 'Saving…' : 'Posting…', true);
+      try {
+        const r = await EBX.Auth.fetchAuthed(S.edit ? '/posts/' + encodeURIComponent(S.edit.id) : '/posts',
+          { method: S.edit ? 'PUT' : 'POST', body: JSON.stringify(data) });
+        const out = await r.json().catch(() => ({}));
+        if (!r.ok) { say(typeof out.detail === 'string' ? out.detail : 'Refused (' + r.status + ').'); return; }
+        done(out);
+      } catch (e) { say('Could not reach the server.'); }
+      finally { this.disabled = false; }
+    };
+
+    function done(p) {
+      say(S.edit ? 'Saved as version ' + p.version + '.' : 'Posted.', true);
+      const back = Q.get('back');
+      const where = p.mission_id ? EBX.Post.missionHref(p.mission_id) : null;
+      $('pc-done').hidden = false;
+      $('pc-done').innerHTML = '<p>' + (S.edit ? 'Your edit is <b>version ' + p.version + '</b>. Earlier versions stay exactly as they were.' :
+          'Your <b>' + esc(EBX.Post.kind(p)) + '</b> is up' + (p.target_label ? ' on <b>' + esc(p.target_label) + '</b>' : '') + '.') + '</p>' +
+        '<p><a href="#" id="pc-view" data-id="' + esc(p.id) + '">See it</a>' +
+        (where ? ' &middot; <a href="' + esc(where) + '">Go to ' + esc(p.mission_label || 'the mission') + '</a>' : '') +
+        (back ? ' &middot; <a href="' + esc(back) + '">Back to where you were</a>' : '') +
+        ' &middot; <a href="' + esc(EBX.Post.composeUrl({ back: back || '' })) + '">Write another</a></p>';
+      $('pc-view').onclick = e => { e.preventDefault(); EBX.Post.open(p.id); };
+      window.PostPage.last = p;
+    }
+
+    // D21: bring one of your earlier posts into this mission.
+    async function paintPull() {
+      const mid = Q.get('mission');
+      if (!mid || !S.me || S.edit) return;
+      const mine = (await get('/posts?roots_only=true&limit=200&ben_author_id=' + S.me.id)) || [];
+      const m = S.missions.find(x => x.id === mid);
+      const eligible = mine.filter(p => p.mission_id !== mid && p.type !== 'analysis' &&
+        !(p.type === 'context' && m && p.cause_id !== m.cause_id));
+      if (!eligible.length) return;
+      $('pc-pull').hidden = false;
+      $('pc-pull').innerHTML = '<span class="pc-lab">Or bring one of your earlier posts into <b>' + esc(missionName(m)) + '</b> — its votes start again from zero here</span><ul>' +
+        eligible.slice(0, 8).map(p => '<li>' + esc(EBX.Post.kind(p)) + ' · ' + esc(p.title || String(p.body || '').slice(0, 60)) +
+          ' <button type="button" class="pc-mbtn" data-pull="' + esc(p.id) + '">Pull it in</button></li>').join('') + '</ul>';
+      $('pc-pull').querySelectorAll('[data-pull]').forEach(b => b.onclick = async () => {
+        const r = await EBX.Auth.fetchAuthed('/posts/' + encodeURIComponent(b.dataset.pull) + '/pull', { method: 'POST', body: JSON.stringify({ mission_id: mid }) });
+        const out = await r.json().catch(() => ({}));
+        if (!r.ok) return say(out.detail || 'Refused.');
+        b.replaceWith(document.createTextNode('— pulled in'));
+        say('Pulled into this mission.', true);
+      });
+    }
+
+    // ── boot: read the link, preselect, paint ─────────────────────────────
+    async function boot() {
+      const [g, causes, tivs, orgs, missions] = await Promise.all([
+        EBX.Post.guide(), get('/causes'), get('/initiatives'), get('/organizations'), get('/missions')]);
+      S.guide = g; S.causes = (causes || []).sort((a, b) => a.index - b.index); S.tivs = tivs || []; S.orgs = orgs || []; S.missions = missions || [];
+      EBX.config.missions = EBX.config.missions && EBX.config.missions.length ? EBX.config.missions : S.missions;
+      try { S.me = EBX.Auth.isLoggedIn() ? await EBX.Auth.fetchMe() : null; } catch (e) {}
+      const back = Q.get('back');
+      $('pc-cancel').href = back || 'index.html';
+
+      if (Q.get('edit')) {
+        const p = await get('/posts/' + encodeURIComponent(Q.get('edit')));
+        if (!p) { say('That post was not found.'); return paintAll(); }
+        S.edit = p; S.cat = CAT_OF[p.type] || 'general'; S.type = p.type in CAT_OF ? p.type : 'general';
+        S.tags = (p.tags || []).filter(t => t.indexOf(':') < 0);
+        $('pc-title').value = p.title || ''; $('pc-body').value = p.body || '';
+        S.links = (p.references || []).filter(r => r.kind === 'link').map(r => ({ url: r.url, label: r.label }));
+        (p.references || []).filter(r => r.post_id).forEach(r => S.picked.add(r.post_id));
+        if (p.type === 'analysis') { S.mission = p.mission_id; paintAll(); await loadKit(); return; }
+        return paintAll();
+      }
+
+      const word = (Q.get('type') || '').toLowerCase();
+      const tag = (Q.get('tag') || '').toLowerCase();
+      S.type = TYPE_OF_WORD[word] || (((g.general_tags || []).some(x => x.key === word)) ? 'general' : null) || 'general';
+      if (!TYPE_OF_WORD[word] && word && S.type === 'general') S.tags.push(word);
+      if (tag && S.tags.indexOf(tag) < 0) S.tags.push(tag);
+      S.cat = CAT_OF[S.type];
+
+      // the target the link named
+      const cause = Q.get('cause'), tiv = Q.get('initiative'), org = Q.get('org'), mission = Q.get('mission');
+      const post = Q.get('post'), budget = Q.get('budget');
+      const m = mission ? S.missions.find(x => x.id === mission) : null;
+      S.cause = cause || (m && m.cause_id) || (tiv && (tivOf(tiv) || {}).cause_id) || null;
+      S.org = org || null;
+      S.mission = mission || null;
+      S.tiv = tiv || (m && m.winning_tiv_id) || null;
+      if (tiv && S.type === 'context') S.tivTags = [tiv];
+      if (S.type === 'general') {
+        if (post || budget) {
+          const other = await get('/posts/' + encodeURIComponent(post || budget));
+          if (other) S.fixed = { kind: budget ? 'budget' : 'post', id: other.id, label: other.title || String(other.body || '').slice(0, 70) };
+        } else if (org) S.target = { kind: 'organization', id: org };
+        else if (tiv) S.target = { kind: 'initiative', id: tiv };
+        else if (mission) S.target = { kind: 'mission', id: mission };
+        else if (cause) S.target = { kind: 'cause', id: cause };
+      }
+      paintAll();
+      if (S.type === 'analysis') await loadKit();
+      paintPull();
+    }
+    window.PostPage = { state: S, boot, last: null };
+    document.addEventListener('DOMContentLoaded', boot);
+  })();
+  </script>
+</body>
+</html>

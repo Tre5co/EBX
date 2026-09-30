@@ -32,6 +32,17 @@ def configured() -> bool:
     return bool(s.resend_api_key or s.smtp_host)
 
 
+def route() -> str:
+    """Which route `send` will try first — for logs and the staff status check.
+    Never includes a secret."""
+    s = get_settings()
+    if s.resend_api_key:
+        return f"resend (from {s.mail_from})"
+    if s.smtp_host:
+        return f"smtp ({s.smtp_host}:{s.smtp_port})"
+    return "none — RESEND_API_KEY and SMTP_HOST are both unset; messages are stored only"
+
+
 def _send_resend(to: str, subject: str, body: str, reply_to: Optional[str]) -> bool:
     s = get_settings()
     payload = {"from": s.mail_from, "to": [to], "subject": subject, "text": body}

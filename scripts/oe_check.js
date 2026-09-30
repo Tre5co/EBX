@@ -95,7 +95,8 @@ const section = t => console.log('\n=== ' + t);
   ok(st.sub.indexOf(title) >= 0, '…and the line under it names the initiative', st.sub);
   ok(st.phase === 'org', 'the phase toggle is on 3 · Organization election');
   ok(st.bar.indexOf(title) >= 0, 'the ballot topbar names THIS race, not the one closing soonest', st.bar.slice(0, 80));
-  ok(st.ballot.toUpperCase().indexOf(title.toUpperCase()) >= 0, '…and so does the ballot under it', st.ballot.slice(0, 90));
+  // Unified elections (2026-09-29): the header line names the race; the ballot no longer repeats the title.
+  ok(!/ORGANIZATION ELECTION:/i.test(st.ballot), '…and the ballot does not repeat it (the redundant title is gone)', st.ballot.slice(0, 90));
   ok(/Organization election/i.test(st.ov) && /Election open/i.test(st.ov), 'the overview says the organization is being elected');
   ok(/Guaranteed/i.test(st.ov) && /Committed/i.test(st.ov), '…and carries both pools (D3)');
   const ovApi = await (await fetch(BASE + '/missions/' + race.id + '/overview')).json();

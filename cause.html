@@ -1452,8 +1452,11 @@
           <select class="fd-in fd-in--sort" id="fd-sort" aria-label="Order">
             <option value="hot">Hot</option>
             <option value="recent">Newest</option>
+            <option value="trending">Trending</option>
+            <option value="research">Research</option>
+            <option value="missions">By mission</option>
           </select>
-          <a class="fd-compose" id="fd-compose" href="mission.html">+ Post in a mission</a>
+          <a class="fd-compose" id="fd-compose" href="post.html?back=cause.html">+ Post</a>
         </div>
         <!-- the phase and category tabs, as FILTERS rather than as a frame -->
         <div class="fd-filters" id="fd-filters"></div>
@@ -1476,7 +1479,7 @@
   <!-- §2 (2026-08-05): the Propose and Nominate dialogs come from EBX.Dialogs
        (resources/js/ebx_shared.js) — the same ones the Context page mounts. -->
 
-  <script src="resources/js/ebx_shared.js?v=20260925b"></script>
+  <script src="resources/js/ebx_shared.js?v=20260929"></script>
   <!-- §7b (2026-08-10) — see the identical note on main.html. `missionDates`
        lives in a separately cached file; a stale copy threw
        "EBX.Cycle.missionDates is not a function" and blanked the page. The
@@ -3129,12 +3132,12 @@
     const CATS = [
       ['', 'Everything'],
       ['mission_support', 'Research'],
-      ['review', 'Reviews'],
+      ['general', 'Posts'],        // P3: the Review lane is gone; case / evaluation are tags on general posts
       ['budgeting', 'Budgeting'],
       ['editorial', 'Earthbux'],
     ];
     const TYPE_LABEL = {
-      context: 'Background', investigation: 'Vetting', analysis: 'Analysis',   // reviews 2026-09-24 · 09-25 · P2 2026-09-25 (Organization → Vetting)
+      context: 'Background', investigation: 'Investigation', analysis: 'Analysis',   // P3 (2026-09-29): Vetting → Investigation
       case: 'Case', evaluation: 'Evaluation',
       service: 'Service', supply: 'Supplies', support: 'Support',
     };
@@ -3143,9 +3146,9 @@
     // the card shows the buttons that exist rather than three that 400.
     const REACTS_ALL = [['helpful', '▲', 'Helpful'], ['neutral', '•', 'Neutral'], ['harmful', '▼', 'Harmful']];
     const REACTS_FAIR = [['helpful', '▲', 'Fair'], ['harmful', '▼', 'Unfair']];
-    const REACTS_OK = [['helpful', '▲', 'Approve']];
+    const REACTS_OK = [['helpful', '▲', 'Upvote']];
     function reactsFor(p) {
-      if (['service', 'supply', 'support'].includes(p.type)) return REACTS_OK;
+      if (['service', 'supply', 'support', 'general'].includes(p.type)) return REACTS_OK;
       if (['case', 'evaluation'].includes(p.type)) return REACTS_FAIR;
       return REACTS_ALL;
     }
@@ -3181,11 +3184,13 @@
       return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
     function who(p) {
+      if (p.author_name) return p.author_name;
       if (p.author_type === 'earthbux') return 'Earthbux';
       if (p.author_type === 'org') return p.org_author_id || 'Organization';
       return 'Benefactor #' + (p.ben_author_id || '—');
     }
     function kind(p) {
+      if (p.type === 'general' && window.EBX && EBX.Post) return EBX.Post.kind(p);
       return TYPE_LABEL[p.type] || (p.category === 'editorial' ? 'News'
         : (p.category || 'post').replace(/_/g, ' '));
     }
@@ -3216,16 +3221,21 @@
       const s = $('fd-search');
       if (s && st.q) s.value = st.q;
     }
+    function openThreadFor(id) { st.thread = id; return openHandedThread(); }
     async function openHandedThread() {
       const id = st.thread; if (!id) return;
       st.thread = '';
       if (!st.posts.some(p => p.id === id)) {
-        // Older than the first page: fetch it and put it on top.
+        // Older than the first page: fetch it (P3: GET /posts/{id}) and put it
+        // on top. A reply opens the thread it belongs to.
         try {
-          const r = await fetch((EBX.config.apiBase || '') + '/posts?limit=500&roots_only=true');
-          const all = r.ok ? await r.json() : [];
-          const p = all.find(x => x.id === id);
-          if (p) st.posts.unshift(p);
+          let r = await fetch((EBX.config.apiBase || '') + '/posts/' + encodeURIComponent(id));
+          let p = r.ok ? await r.json() : null;
+          if (p && p.parent_id) {
+            r = await fetch((EBX.config.apiBase || '') + '/posts/' + encodeURIComponent(p.parent_id));
+            p = r.ok ? await r.json() : p;
+          }
+          if (p) { st.posts.unshift(p); if (p.id !== id) { st.thread = ''; return openThreadFor(p.id); } }
         } catch (e) {}
       }
       const i = st.posts.findIndex(p => p.id === id);
@@ -3261,10 +3271,9 @@
       // A reply inherits its parent's category, and the API gates categories:
       // editorial and headline are Earthbux's own, org_update belongs to the
       // organization. Rather than offer a box that always 403s, say so.
-      const STAFF_CATS = ['editorial', 'headline', 'org_update', 'mission_update', 'testimonial'];
-      const replyBox = STAFF_CATS.includes(p.category)
-        ? '<div class="fd-msg">Earthbux and organization posts do not take replies here yet.</div>'
-        : (loggedIn()
+      // P3 (2026-09-29): "everyone can reply" — to anything, Earthbux's and
+      // organizations' posts included.
+      const replyBox = (loggedIn()
           ? '<div class="fd-replybox"><textarea data-replyfor="' + esc(p.id) + '" placeholder="Reply…"></textarea>' +
             '<button class="fd-morebtn" type="button" data-send="' + esc(p.id) + '">Send</button></div>'
           : '<div class="fd-msg">Sign in to reply.</div>');
@@ -3278,12 +3287,15 @@
             (mid ? '<span>·</span><a class="fd-card__mission" href="mission.html?mission=' + esc(mid) + '">' +
                    esc(mname) + ' →</a>' : '') +
           '</div>' +
+          (window.EBX && EBX.Post ? EBX.Post.targetLine(p) : '') +
           (p.title ? '<h3 class="fd-card__title">' + esc(p.title) + '</h3>' : '') +
           '<div class="fd-card__body">' + esc((p.body || '').slice(0, 600)) +
             ((p.body || '').length > 600 ? '…' : '') + '</div>' +
           '<div class="fd-card__foot">' +
             '<button class="fd-link" type="button" data-toggle="' + esc(p.id) + '">' +
               (st.open[p.id] ? 'Hide replies' : 'Reply') + '</button>' +
+            '<button class="fd-link" type="button" data-full="' + esc(p.id) + '">Full view</button>' +
+            '<a class="fd-link" href="post.html?type=general&amp;tag=response&amp;post=' + encodeURIComponent(p.id) + '&amp;back=cause.html">Respond in a post</a>' +
             (mid ? '<a class="fd-link" href="mission.html?mission=' + esc(mid) + '">Open the mission</a>' : '') +
           '</div>' +
           '<div class="fd-replies' + (st.open[p.id] ? ' fd-replies--open' : '') + '" data-repliesfor="' + esc(p.id) + '">' +
@@ -3379,8 +3391,9 @@
       const more = $('fd-more');
       if (more) more.onclick = () => { st.limit += PAGE; paint(); };
       document.addEventListener('click', ev => {
-        const t = ev.target.closest ? ev.target.closest('[data-cat],[data-cause],[data-react],[data-toggle],[data-send]') : null;
+        const t = ev.target.closest ? ev.target.closest('[data-cat],[data-cause],[data-react],[data-toggle],[data-send],[data-full]') : null;
         if (!t) return;
+        if (t.dataset.full) return EBX.Post.open(t.dataset.full, { onChange: () => load() });
         if (t.dataset.cat !== undefined) { st.cat = t.dataset.cat; st.limit = PAGE; return paint(); }
         if (t.dataset.cause !== undefined) { st.cause = st.cause ? '' : t.dataset.cause; st.limit = PAGE; return paint(); }
         if (t.dataset.react) return react(t.dataset.post, t.dataset.react);

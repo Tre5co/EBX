@@ -24,7 +24,7 @@ Review 2026-09-24 (INSTRUCTIONS "P1. Mission"), also pinned here:
   · the head reads "<Cause>: <Phase>"; the cause toggle sits above the phase
     toggle; the ballot tabs are folded into the phase toggle (D14) — one stage
   · the phase toggle keeps the mission (recap / not yet), the cause toggle
-    keeps the phase, the pager pages through the toggled cause only
+    keeps the phase, the navigator lists the toggled cause only
   · no allocations panel, no post-support ring, no discussion box, no "Show
     all Initiatives" / "Show active missions", no link to the page you are on
   · the posting dialogue at the foot of the story + the full-screen composer
@@ -76,14 +76,15 @@ print('\n=== the annulus row, and the order of the page')
 i_row = s.index('id="mx-row"'); i_ph = s.index('id="mx-phases"'); i_tabs = s.index('id="cause-tabs"')
 i_el3 = s.index('id="el3"'); i_tbl = s.index('id="init-table-body"')
 i_mb = s.index('id="mb"'); i_stage = s.index('id="mx-stage"'); i_recap = s.index('id="mx-recap"')
-i_how = s.index('id="mx-how"'); i_budget = s.index('id="mb-budget-add"'); i_report = s.index('id="mb-report"')
-ok(i_tabs < i_row < i_stage < i_ph < i_how < i_recap < i_el3 < i_tbl < i_mb < i_budget < i_report,
-   '7 causes → the row → the stage (5 phases, how it works, recap, ballot, TABLE) → story (budget panel, then the report)')
+i_post = s.index('id="mx-postbar"'); i_report = s.index('id="mb-report"')
+ok(i_tabs < i_row < i_stage < i_ph < i_post < i_recap < i_el3 < i_tbl < i_mb < i_report,
+   '7 causes → the row → the stage (the phase log | post button, recap, ballot, TABLE) → the report (P1 edits 2026-09-28)')
 ok(s.index('id="mx-stage"') < i_tbl < s.index('<section class="mb"'), 'the table sits inside the ballot panel (review 2)')
 row = s[i_row:i_stage]
 ok(row.index('id="mx-toggler"') < row.index('id="mx-wheel"') < row.index('id="mx-overview"'),
    'toggler left, wheel centre, overview right')
-ok(row.index('id="mx-pager"') < row.index('id="mx-cards"'), 'the pager sits ABOVE the three missions (structure §6 a)')
+ok('id="mx-pager"' not in s and row.index('id="mx-search"') < row.index('id="mx-cards"') and 'Mission Navigator' in row
+   and '.mx-cards--scroll' in s, 'the Mission Navigator: titled, search on top, one scrolling list, no pager (P1 edits 2026-09-28)')
 ok("W().mount('#mx-wheel', { variant: 'mission'" in s, 'the wheel is EBX.Wheel in its mission variant')
 ok("variant === 'mission'" in wheel and 'function show(' in wheel and 'onFocus' in wheel and 'function pinFor(' in wheel,
    'ebx_wheel.js has the variant, show(), the sector hand-off and the pinned race')
@@ -137,8 +138,9 @@ ok(not re.search(r'(seven|7) (consecutive )?weeks in a row|seven consecutive', s
 
 print('\n=== review 2026-09-24')
 mx = s[s.index('// ══ MX'):]
-ok("document.getElementById('mx-title').textContent = STEP_TITLE[S.step];" in mx and "tiv: 'Initiative Election'" in mx,
-   'review 2: no top title — the phase title sits above the annulus (the cause is the toggle above it)')
+ok("h1.textContent = named || STEP_TITLE[S.step];" in mx and "tiv: 'Initiative Election'" in mx
+   and "S.step !== 'cause' && S.step !== 'tiv'" in mx,
+   'the title above the annulus: the phase for the cause and initiative elections, the mission title after (P1 edits 2026-09-28)')
 wc = s[s.index('<div class="mx-wheelcell">'):s.index('<aside class="mx-side mx-panel" aria-label="Mission overview">')]
 ok(wc.index('id="mx-title"') < wc.index('id="mx-wheel"') and '.lw--mission .lw-cap { display: none; }' in s,
    '…above the wheel, and the caption under the wheel is gone')
@@ -149,14 +151,14 @@ ok('function paintRecap' in mx and "when: 'past'" in mx and "when: 'future'" in 
    'a past phase shows a recap, a future one says not yet')
 ok('info.short' in mx[mx.index('function paintPhases'):mx.index('function paintRecap')],
    '…and each phase tab carries its recap line and date even when closed')
-ok("causeMissions(cid)" in mx[mx.index('function pages()'):mx.index('function pageOf')], 'the pager pages through the toggled cause only')
-ok('const PER_PAGE = 5;' in mx, 'review 2: five missions a page')
+ok("causeMissions(cid)" in mx[mx.index('function navList()'):mx.index('function cardHTML')], 'the navigator lists the toggled cause only')
+ok('PER_PAGE' not in mx and 'S.page' not in mx, 'no pages left to turn')
 ok("'cause-tab--me'" not in s and 'cause-tab__mark">' not in s and 'window._causeTabDate' in s,
    'one glow on the cause toggle — no ME/OE marks — and the selected phase’s date on each tab')
 code = re.sub(r'<!--.*?-->', '', re.sub(r'/\*.*?\*/', '', s, flags=re.S), flags=re.S)
 code = '\n'.join(l for l in code.split('\n') if not l.strip().startswith('//'))
 for gone in ['id="alloc-mount"', 'id="oe-actions-mount"', 'id="show-all-inits"', 'id="show-cause-missions"',
-             'id="ps-ring"', 'id="mp-disc"', 'ebx_postsbox.js', 'Open the mission page', 'Discuss &rarr;', 'Discuss →',
+             'id="ps-ring"', 'id="mp-disc"', 'ebx_postsbox.js', 'Open the mission page',
              'make your case', 'View Organizations']:
     ok(gone not in code, 'gone: ' + gone)
 ok(not re.search(r"href=\"mission\.html\?mission=' \+", s), 'no link to mission.html?mission= — the page you are on')
@@ -166,16 +168,36 @@ for k in ["'context', 'Background'", "'investigation', 'Vetting'", "'analysis', 
 ok('id="mxc-bg"' in s and 'Make the image or video the post' in s and "C.cat === 'review'" in s,
    'the full-screen composer: media drawn (P3), review is a reply to anything')
 print('\n=== review 2 (2026-09-25)')
-ok('function paintHow' in mx and 'W().COPY[S.step]' in mx, 'each phase panel opens with the home page\u2019s "how it works" copy')
-ok('id="mb-budget-add"' in s and 'data-budget="service"' in s and 'function renderBudget' in s,
-   'budget items live in the panel, with Suggest buttons at its foot')
+ok('function paintHow' not in mx and 'id="mx-how"' not in s and 'href="about.html#ab-phases"' in s,
+   'P1 edits (2026-09-28): Process / Reason left for the About page; the log links there')
+ok('function budgetHTML' in s and 'data-budget="service"' in s and 'function renderBudget' in s
+   and 'id="mb-budget-add"' not in s and "if (!mission || !mission.winning_tiv_id) return '';" in s,
+   'P1 edits: budget posting + explanation live in the report, once the initiative is elected')
 for k in ['Mission statement', 'Plan']:
     ok("<h4>" + k + "</h4>" in s, 'the report has: ' + k)
 ok("['investigation', 'Vetting'" in s and "['context', 'Background'" in s and "['analysis', 'Analysis'" in s,
    '…and Background · Organization · Analysis, each its leading post')
-ok('id="mxt-bg"' in s and "report.addEventListener('click', () => openThread())" in s and '/react' in s,
+ok('id="mxt-bg"' in s and "report.addEventListener('click', e =>" in s and 'openThread();' in s and '/react' in s,
    'clicking the report opens its thread: read, rate (POST /posts/{id}/react), reply, write')
 ok('id="mp-cattabs"' not in s and 'id="mb-post"' not in s, 'budgeting and research are no longer two toggles of one list')
+
+print('\n=== P1 mission edits (2026-09-28)')
+ok("mine.map(e => '<span class=\"mx-phase__ev" in mx and 'eventsFor: mid =>' in s and 'id="mp-log"' not in s,
+   'the progress log IS the phase toggle — each phase carries its dated events')
+ok('.mx-stage { display: grid; grid-template-columns: 236px minmax(0, 1fr)' in s, '…with the ballot to its right')
+for st, t in [('cause', 'context'), ('tiv', 'context'), ('org', 'investigation'), ('frame', 'analysis')]:
+    ok("%s: { cat: 'mission_support', type: '%s'" % ('cause' if st == 'cause' else st, t) in mx or
+       ("%s:   { cat: 'mission_support', type: '%s'" % (st, t)) in mx or ("%s: { cat: 'mission_support', type: '%s'" % (st, t)) in mx,
+       'the %s ballot has a post button: %s' % (st, t))
+ok("ex:    { cat: 'budgeting'" in mx, 'the exchange ballot has a post button: a budget item')
+ok('function lostTiv' in mx and 'Initiative election · closed' in mx and 'data-step="tiv"' in mx,
+   'an initiative that lost gets a page with its ballot locked and a link to the next election')
+ok("(col === 'me' && (_mainMode !== 'tiv' || _tableTab !== 'me'))" in s, 'bug: leaving the cause tab puts the table back on initiatives')
+ok("const causeOf = causeF || ((typeof window.voteCauseId === 'function')" in s, 'bug: the initiative table is always one cause\u2019s')
+ok("_th('cause', 'Cause', 'Sort by cause')" not in s and 'init-table__cause" style' not in s, 'the initiative table has no Cause column')
+wal = rd('backend', 'app', 'wallet.py')
+ok('def _voted_in_me(' in wal and 'or _voted_in_me(db, ben_id, m.id)' in wal and wal.count('_voted_in_me(db, ben_id, mission_id)') == 2,
+   'bug: voting in a mission\u2019s initiative election opens its organization election in any week (ruling 16)')
 
 print('\n=== D13 · D15')
 ok(os.path.exists(R('backend', 'alembic', 'versions', 'c9e4a7d2b6f1_sep24_initiative_slugs.py'))

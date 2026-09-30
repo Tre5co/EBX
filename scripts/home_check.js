@@ -1,23 +1,50 @@
-// home_check — P2 · Home (2026-09-25): the Network row and the feed, in jsdom,
-// against FIXTURES (no server).
+// home_check — Home (index.html), in jsdom, against FIXTURES (no server).
 //
 //   node scripts/home_check.js            # from the repo root; needs `npm i jsdom`
 //
-// Pins what P2 put on Home below the annulus: THE NETWORK as one row
-// (News · Research · Budgeting) that is also the feed's filter; the feed is
-// ALL posts by default; research posts carry their B · V · A tag; Home's only
-// other filters are a cause and "mine" (D6); and everything past that — a
-// thread, a reply, search, a second filter — is a link into News
-// (cause.html?thread= / ?q= / ?cat= / ?cause=). It also checks that News
-// reads those parameters.
+// Rewritten 2026-09-30 for P2 · Home mods. Pins, top to bottom:
+//   · THE HERO, left-aligned, with THE FIVE STEPS to its right (ebx_steps.js):
+//     five pages Cause → Initiative → Organization → Network → Reporting, one
+//     message each and no other text, arrows both ways, a dot per step, and
+//     every scene drawable at any second without throwing;
+//   · THE MISSION HUB: seven rows, the cause election first, then the missions
+//     newest first; each mission's stage read from its dates; "Week x" on every
+//     post-ME mission; this week's decisions glow; ‹ › « » and collapse;
+//   · THE NETWORK + THE FEED with no toggles on Home — tiles and posts link into
+//     News (cause.html?cat= / ?thread=), which reads those parameters;
+//   · the phase blurbs now standing in the mission page's ballot panels.
 const { JSDOM, VirtualConsole } = require('jsdom');
 const fs = require('fs'), path = require('path');
 const ROOT = path.resolve(__dirname, '..');
 const R = f => path.join(ROOT, f);
 
-const now = Date.now(), day = 864e5, iso = t => new Date(t).toISOString();
-const CAUSES = ['atmosphere','oceans','land','forests','wildlife','human-rights','human-progress']
-  .map((id, i) => ({ id, index: i, name: id.replace(/-/g,' '), color: '#4aa3c7', emoji: '🌱' }));
+const now = Date.now(), day = 864e5, WK = 7 * day, iso = t => new Date(t).toISOString();
+// the mission clock's weekly boundary (ebx_shared.js cycleStart)
+const CS = new Date('2026-04-28T12:00:00').getTime();
+const weekEnd = CS + (Math.floor((now - CS) / WK) + 1) * WK;
+const CAUSES = ['atmosphere', 'oceans', 'land', 'forests', 'wildlife', 'human-rights', 'human-progress']
+  .map((id, i) => ({ id, index: i, name: id.replace(/-/g, ' '), color: '#4aa3c7', emoji: '🌱' }));
+// started_at = T − 7 weeks (EBX.Cycle.missionDates)
+const M = (id, cause, n, T, tiv, org) => ({ id, cause_id: cause, cycle_num: n, started_at: iso(T - 7 * WK),
+  winning_tiv_id: tiv || null, winning_org_id: org || null, current_phase: 'initiative', credit_value: 1.25 });
+const MISSIONS = [
+  M('oce4', 'oceans', 4, now + 5 * WK),                 // initiative election
+  M('oce3', 'oceans', 3, now - 1 * WK),                 // closed with no initiative
+  M('oce2', 'oceans', 2, now - 2 * WK - day, 't2'),     // organization election, week 2
+  M('oce1', 'oceans', 1, now - 10 * WK - day, 't1', 'o1'), // framing, week 10
+  M('oce0', 'oceans', 0, now - 20 * WK - day, 't0', 'o1'), // exchange, week 20
+  M('lan2', 'land', 2, weekEnd),                         // initiative election closing this week → glows
+];
+const TIVS = [
+  { id: 't0', cause_id: 'oceans', mission_id: 'oce0', title: 'Garbage Patch Analysis', ebx_committed: 90 },
+  { id: 't1', cause_id: 'oceans', mission_id: 'oce1', title: 'Coastal Water Monitoring', ebx_committed: 70 },
+  { id: 't2', cause_id: 'oceans', mission_id: 'oce2', title: 'Deep Sea Protection Zones', ebx_committed: 60 },
+  { id: 't4a', cause_id: 'oceans', mission_id: 'oce4', title: 'Coral Restoration Alliance', ebx_committed: 30 },
+  { id: 't4b', cause_id: 'oceans', mission_id: 'oce4', title: 'Kelp Forest Recovery', ebx_committed: 10 },
+];
+const ORGS = [{ id: 'o1', name: 'Blue Coast Fund' }, { id: 'o2', name: 'Reef Keepers' }];
+const SLATE = { first_open_slot: 7, slots: CAUSES.map((c, i) => ({ slot: 7 + ((i - 1 + 7) % 7), weeks_out: 7 + ((i - 1 + 7) % 7),
+  incumbent_id: c.id, challenger_id: c.id === 'land' ? 'forests' : null, streak: c.id === 'land' ? 2 : 0, weeks_required: 6, votable: true })) };
 const P = (id, category, type, cause, extra) => Object.assign({ id, category, type, cause_id: cause, mission_id: null,
   title: id, body: 'body of ' + id, author_type: 'ben', ben_author_id: 2, helpful_count: 1, harmful_count: 0,
   created_at: iso(now - day) }, extra || {});
@@ -29,9 +56,16 @@ const POSTS = [
   P('b1', 'budgeting', 'service', 'atmosphere', { est_cost_usd: 160, ben_author_id: 7 }),
   P('v1', 'review', 'case', 'forests'),
 ];
-const ROUTES = { '/causes': CAUSES, '/missions': [], '/initiatives': [], '/organizations': [],
-  '/causes/slate': { slots: [] }, '/candidacies': [], '/posts': POSTS };
-const route = u => { const p = String(u).replace(/^https?:\/\/[^/]+/, '').split('?')[0]; return p in ROUTES ? ROUTES[p] : null; };
+const ROUTES = { '/causes': CAUSES, '/missions': MISSIONS, '/initiatives': TIVS, '/organizations': ORGS,
+  '/causes/slate': SLATE, '/candidacies': [{ mission_id: 'oce2', org_id: 'o2' }], '/posts': POSTS, '/initiatives/slugs': [] };
+const route = u => {
+  const p = String(u).replace(/^https?:\/\/[^/]+/, '').split('?')[0];
+  if (p in ROUTES) return ROUTES[p];
+  if (/\/p2\/tally$/.test(p)) return { entries: [{ org_id: 'o2', net_votes: 4 }] };
+  if (/\/claims$/.test(p)) return [];
+  if (/^\/causes\/ballot\//.test(p)) return { columns: [] };
+  return null;
+};
 
 (async () => {
   const errors = [];
@@ -41,68 +75,124 @@ const route = u => { const p = String(u).replace(/^https?:\/\/[^/]+/, '').split(
     runScripts: 'dangerously', pretendToBeVisual: true, virtualConsole: vc, url: 'http://localhost/index.html',
     beforeParse(win) {
       win.fetch = async u => { const b = route(u); return { ok: b !== null, status: b === null ? 404 : 200, json: async () => b }; };
-      win.matchMedia = () => ({ matches: false, addListener(){}, removeListener(){} });
+      win.matchMedia = () => ({ matches: false, addListener() {}, removeListener() {} });
       win.requestAnimationFrame = () => 0;
-      win.IntersectionObserver = class { observe(){} disconnect(){} };
+      win.cancelAnimationFrame = () => {};
+      win.IntersectionObserver = class { observe() {} disconnect() {} };
     },
   });
   const win = dom.window, d = win.document;
-  win.eval(fs.readFileSync(R('resources/js/ebx_shared.js'), 'utf8'));
+  // the page's own <script src> tags don't resolve from disk in this harness
+  for (const f of ['resources/js/ebx_shared.js', 'resources/js/ebx_wheel.js', 'resources/js/ebx_steps.js']) win.eval(fs.readFileSync(R(f), 'utf8'));
+  await win.EBX.loadCauses();
+  win.EBX.Steps.mount('#ebx-steps');
   await win.HomeFeed.reload();
-  await new Promise(r => setTimeout(r, 100));
+  await win.HomeHub.reload();
+  await new Promise(r => setTimeout(r, 150));
   const txt = e => (e ? e.textContent.replace(/\s+/g, ' ').trim() : '');
   const click = el => el.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   let bad = 0, n = 0;
   const ok = (c, what, detail) => { n++; if (!c) bad++; console.log('  ' + (c ? 'ok  ' : 'FAIL') + '  ' + what + (detail ? '  ' + detail : '')); };
-  const cards = () => [...d.querySelectorAll('#hf-list .hp')];
 
   console.log('\n=== runtime');
-  const real = errors.filter(e => !/Not implemented|getContext|SVGElement|cloudflareinsights|Could not load/i.test(e));
-  ok(!real.length, 'no script errors', real.join(' | '));
+  const real = () => errors.filter(e => !/Not implemented|getContext|SVGElement|cloudflareinsights|Could not load/i.test(e));
+  ok(!real().length, 'no script errors', real().join(' | '));
 
-  console.log('\n=== the Network row');
+  console.log('\n=== the hero, left · the five steps, right');
+  const hx = d.querySelector('.hx');
+  ok(hx && hx.children[0].classList.contains('ld-a') && hx.children[1].id === 'ebx-steps', 'hero first, steps to its right');
+  ok(txt(d.querySelector('.ld-sub')) === 'you donate, we follow' && d.querySelectorAll('#ld-cta .ld-cta__btn').length === 2, 'the hero\'s words and two calls to action are unchanged');
+  ok(/text-align:\s*left/.test(d.querySelector('style').textContent.match(/\.ld-a\s*\{[^}]*\}/)[0]), 'the hero is left-aligned');
+  ok(!d.getElementById('ebx-wheel') && !d.querySelector('.lw-phase, .lw-card, #lw-topcard'), 'the phase rows, top card, annulus and side cards are off Home');
+  const S = d.getElementById('ebx-steps');
+  ok(S.querySelectorAll('.sx__scene').length === 5, 'five pages');
+  const MSG = ['A fresh focus each week', 'Broad causes → narrow missions', 'Identify those worthy of the job',
+    'Collaborate and create a plan', 'Regular updates and built in control'];
+  ok(txt(S.querySelector('.sx__msg')) === MSG[0], 'page 1 is Cause', txt(S.querySelector('.sx__msg')));
+  ok(S.querySelectorAll('.sx__scene.on').length === 1, 'one page showing');
+  ok(!!S.querySelector('.sx__arrow--prev') && !!S.querySelector('.sx__arrow--next'), 'arrows left and right');
+  ok(S.querySelectorAll('.sx__dot').length === 5, 'a dot per step');
+  ok(S.querySelectorAll('text').length === 0 && txt(S) === MSG[0], 'the message is the only text');
+  const names = win.EBX.Steps.STEPS.map(s => s.name).join(' · ');
+  ok(names === 'Cause · Initiative · Organization · Network · Reporting', 'the order', names);
+  let threw = '';
+  for (let i = 0; i < 5; i++) for (const t of [0, 1.5, 4, 7.5, 9.9]) { try { win.EBX.Steps._at(i, t); } catch (e) { threw += i + '@' + t + ' ' + e.message + '; '; } }
+  ok(!threw, 'every scene draws at any second', threw);
+  const msgs = [];
+  for (let i = 0; i < 5; i++) { win.EBX.Steps._at(i, 0); msgs.push(txt(S.querySelector('.sx__msg'))); }
+  ok(msgs.join('|') === MSG.join('|'), 'one message per page, in order');
+  win.EBX.Steps._at(4, 0);
+  click(S.querySelector('.sx__arrow--next'));
+  await new Promise(r => setTimeout(r, 400));
+  ok(S.querySelector('.sx__scene.on') === S.querySelectorAll('.sx__scene')[0] && txt(S.querySelector('.sx__msg')) === MSG[0], '→ from Reporting wraps to Cause');
+  click(S.querySelector('.sx__arrow--prev'));
+  ok(S.querySelector('.sx__scene.on') === S.querySelectorAll('.sx__scene')[4], '← from Cause goes to Reporting');
+  click(S.querySelectorAll('.sx__dot')[2]);
+  ok(S.querySelector('.sx__scene.on') === S.querySelectorAll('.sx__scene')[2], 'a dot jumps to its page');
+  ok(Object.keys(win.EBX.Steps.PANOS).length === 7, 'a vista for each of the seven causes');
+
+  console.log('\n=== the mission hub');
+  const hub = d.getElementById('mh');
+  const heads = [...hub.querySelectorAll('.mh__rowhead')];
+  ok(heads.length === 7, 'seven rows, one per cause');
+  // the whole grid, whatever the width: open every column
+  win.HomeHub.state.vis = 99;
+  const row = cid => win.HomeHub.state.rows.find(r => r.c.id === cid).cells.map(c => c.html);
+  const oce = row('oceans');
+  ok(/mc--ce/.test(oce[0]) && /mission\.html\?slot=7/.test(oce[0]), 'column 0 is the cause election, linked to its window');
+  const ids = oce.slice(1).map(h => (h.match(/data-mission="([^"]+)"/) || [])[1]);
+  ok(ids.join(',') === 'oce4,oce3,oce2,oce1,oce0', 'then its missions, newest first', ids.join(','));
+  const kind = h => (h.match(/class="mc mc--([a-z-]+)/) || [])[1];
+  ok(oce.slice(1).map(kind).join(',') === 'me,no-tiv,oe,fr,ex', 'each mission\'s stage from its dates', oce.slice(1).map(kind).join(','));
+  ok(!/Week \d/.test(oce[1]), 'no "Week x" before the initiative election closes');
+  ok(/Week 2</.test(oce[3]) && /Week 10</.test(oce[4]) && /Week 20</.test(oce[5]), '"Week x" on every post-ME mission');
+  ok(/Coral Restoration Alliance/.test(oce[1]) && /2 initiatives · leading 75%/.test(oce[1]), 'an initiative election shows its leader');
+  ok(/leading: Reef Keepers/.test(oce[3]) && /Blue Coast Fund/.test(oce[4]), 'later stages show the organization');
+  ok(/mc--now/.test(oce[0]) && /mc--now/.test(row('land')[1]), 'this week\'s decisions glow (a cause election, a closing initiative election)');
+  ok(!/mc--now/.test(oce[1]) && !/mc--now/.test(oce[5]), '…and nothing else does');
+  ok(/forests challenging · 2\/6/.test(row('land')[0]), 'a challenger shows its streak');
+  ok(/decided this week/.test(txt(d.getElementById('mh-sub'))), 'the head counts this week\'s decisions', txt(d.getElementById('mh-sub')));
+  // paging: three columns at a time
+  const S2 = win.HomeHub.state;
+  Object.defineProperty(d.getElementById('mh-body'), 'clientWidth', { configurable: true, get: () => 128 + 3 * 206 });
+  S2.off = 0; click(d.querySelector('[data-mh="1"]'));
+  ok(S2.vis === 3 && S2.off === 1, '› moves one column', S2.vis + '/' + S2.off);
+  click(d.querySelector('[data-mh="page"]'));
+  ok(S2.off === S2.cols - S2.vis, '» moves a page (and stops at the end)', S2.off + ' of ' + S2.cols);
+  ok(d.querySelector('[data-mh="1"]').disabled, '› is off at the end');
+  click(d.querySelector('[data-mh="-page"]'));
+  ok(S2.off === 0 && d.querySelector('[data-mh="-1"]').disabled, '« back to the start');
+  ok(hub.querySelectorAll('.mh__grid .mc').length === 7 * 3 - hub.querySelectorAll('.mc--empty').length, 'a card or an empty cell in every visible slot');
+  click(d.getElementById('mh-toggle'));
+  ok(d.getElementById('mh-body').hidden && d.getElementById('mh-toggle').getAttribute('aria-expanded') === 'false', 'collapses');
+  click(d.getElementById('mh-toggle'));
+  ok(!d.getElementById('mh-body').hidden, '…and opens again');
+
+  console.log('\n=== the Network + the feed — no toggles on Home');
   const tiles = [...d.querySelectorAll('#hn-row .hn__tile')];
-  ok(tiles.length === 3, 'one row of three');
-  ok(['News', 'Research', 'Budgeting'].every((t, i) => txt(tiles[i] && tiles[i].querySelector('.hn__name')) === t), 'News · Research · Budgeting, in that order');
-  ok(['funded', 'wins rewards', 'drives the mission'].every((t, i) => txt(tiles[i].querySelector('.hn__tag')) === t), 'funded · wins rewards · drives the mission');
-  ok(/2 this week/.test(txt(tiles[1])), 'counts this week\'s posts', txt(tiles[1].querySelector('.hn__n')));
-  ok(tiles.every(t => t.getAttribute('aria-pressed') === 'false'), 'nothing pressed by default');
-
-  console.log('\n=== the feed — all posts by default');
-  ok(cards().length === POSTS.length, 'every root post is shown', String(cards().length));
-  ok(/all posts/i.test(txt(d.getElementById('hf-state'))), 'the state line says all posts');
+  ok(tiles.length === 3 && ['News', 'Research', 'Budgeting'].every((t, i) => txt(tiles[i].querySelector('.hn__name')) === t), 'News · Research · Budgeting');
+  ok(tiles.every(t => t.tagName === 'A' && !t.hasAttribute('aria-pressed')), 'the tiles are links, not toggles');
+  ok(['editorial', 'mission_support', 'budgeting'].every((c, i) => tiles[i].getAttribute('href') === 'cause.html?cat=' + c), '…into News, filtered');
+  ok(/2 this week/.test(txt(tiles[1])), 'counts this week\'s posts');
+  const cards = () => [...d.querySelectorAll('#hf-list .hp')];
+  ok(cards().length === POSTS.length, 'the feed is every root post', String(cards().length));
   const tag = id => txt(d.querySelector('.hp[data-post="' + id + '"] .hp__bia'));
-  ok(tag('r1') === 'B' && tag('r2') === 'V' && tag('r3') === 'A', 'research tagged B · V · A');
-  ok(/Vetting/.test(txt(d.querySelector('.hp[data-post="r2"]'))), 'the investigation type reads Vetting');
+  ok(tag('r1') === 'B' && tag('r2') === 'I' && tag('r3') === 'A', 'research tagged B · I · A');
   ok(/example\.org/.test(txt(d.querySelector('.hp[data-post="r2"] .hp__src'))), 'a pulled-in news link shows its source');
-
-  console.log('\n=== the filter split (D6)');
   click(tiles[1]);
-  ok(cards().length === 3 && cards().every(c => c.classList.contains('hp--research')), 'Research tile filters to research');
-  ok(d.querySelector('#hn-row .hn__tile--research').getAttribute('aria-pressed') === 'true', '…and shows pressed');
-  click(d.querySelector('.hf-chip[data-cause="land"]'));
-  ok(cards().length === 2, 'a cause narrows it further', String(cards().length));
-  ok(d.getElementById('hf-more-news').getAttribute('href') === 'cause.html?cat=mission_support&cause=land', 'more filters → News with both carried');
-  click(d.querySelector('#hn-row .hn__tile--research'));
-  ok(cards().length === 2 && !d.querySelector('.hn__tile[aria-pressed="true"]'), 'pressing the tile again clears it');
-  click(d.querySelector('.hf-chip[data-cause=""]'));
-  ok(cards().length === POSTS.length, 'All causes restores the full feed');
-  const mine = d.querySelector('.hf-chip[data-mine="1"]');
-  ok(mine && mine.disabled, '"Mine" needs a sign-in');
-  win.HomeFeed.state.me = 7; win.HomeFeed.state.mine = true; click(d.querySelector('.hf-chip[data-cause=""]'));
-  ok(cards().length === 1 && cards()[0].dataset.post === 'b1', '"Mine" shows only my posts');
-  win.HomeFeed.state.mine = false; click(d.querySelector('.hf-chip[data-cause=""]'));
-  ok(d.querySelectorAll('.hn select, .hn input[type=date]').length === 0, 'no second-axis filters on Home');
-
-  console.log('\n=== what goes to News');
-  ok(cards().every(c => /^cause\.html\?(.*&)?thread=/.test(c.getAttribute('href'))), 'every post opens its thread in News');
-  const f = d.getElementById('hf-search');
-  ok(f && f.getAttribute('action') === 'cause.html' && f.querySelector('input[name=q]'), 'search submits to News (?q=)');
-  ok(!d.querySelector('#hf-list textarea, #hf-list [data-send]'), 'no reply box on Home — replying is in News');
+  ok(cards().length === POSTS.length, 'a tile does not filter Home');
+  ok(!d.querySelector('.hn .hf-chip, .hn input, .hn select, .hn form, .hn [aria-pressed]'), 'no filter, search or toggle on Home');
+  ok(cards().every(c => /^cause\.html\?thread=/.test(c.getAttribute('href'))), 'every post opens its thread in News');
+  ok(/post\.html/.test((d.getElementById('hn-post') || {}).href || ''), "Home's + opens the composer (P3)");
   const news = fs.readFileSync(R('cause.html'), 'utf8');
-  ok(/function readHandoff\(\)/.test(news) && /P\.get\('q'\)/.test(news) && /P\.get\('cat'\)/.test(news) &&
-     /P\.get\('cause'\)/.test(news) && /P\.get\('thread'\)/.test(news), 'News reads ?q ?cat ?cause ?thread');
+  ok(/function readHandoff\(\)/.test(news) && /P\.get\('cat'\)/.test(news) && /P\.get\('thread'\)/.test(news), 'News reads ?cat ?thread');
 
+  console.log('\n=== the phase lines moved to the ballots');
+  const mp = fs.readFileSync(R('mission.html'), 'utf8');
+  ok(['ce', 'me', 'oe', 'fr', 'ex'].every(k => mp.includes('id="el3-blurb-' + k + '"')), 'each ballot panel has its line');
+  ok(/W\.PHASE\[_PH\[k\]\]/.test(mp) && Object.keys(win.EBX.Wheel.PHASE).length === 5, '…read from EBX.Wheel.PHASE (one source)');
+
+  ok(!real().length, 'still no script errors', real().join(' | '));
   console.log('\n' + (bad ? 'FAILED ' + bad + '/' + n : 'all ' + n + ' checks passed'));
   process.exit(bad ? 1 : 0);
 })();

@@ -4,8 +4,9 @@
 //   node scripts/composer_check.js [http://127.0.0.1:8000]
 //
 // Review 2 (2026-09-25, INSTRUCTIONS "P1. Mission"): budgeting and research are
-// separate. Budget items live in the panel beside the progress log, with the
-// "suggest a budget item" buttons at its foot. Under them, the mission REPORT is
+// separate. P1 mission edits (2026-09-28): the budget panel moved INTO the
+// report (once the initiative is elected), and the report sits straight under
+// the ballot, which carries a post button. The mission REPORT is
 // the page's main display — the leading post of each category: a mission
 // statement, a plan, Background · Vetting · Analysis (Organization until P2, 2026-09-25). Clicking it opens
 // the thread, where research posts are read, rated, replied to and written.
@@ -54,40 +55,58 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
   await page.waitForSelector('#mb-report .mb-report__sec', { timeout: 20000 });
   await page.waitForTimeout(500);
 
-  section('the story: a budget panel, then the report');
-  ok(JSON.stringify(await page.$$eval('#mb-budget-add .mb-budget__btn b', els => els.map(e => e.textContent))) === '["Service","Supply","Support"]',
-     'the budget panel ends in Suggest: Service · Supply · Support');
+  section('the story: the report, straight under the ballot (P1 edits 2026-09-28)');
   const heads = await page.$$eval('#mb-report .mb-report__sec h4', els => els.map(e => e.childNodes[0].textContent.trim()));
-  ok(JSON.stringify(heads) === '["Mission statement","Plan","Background","Vetting","Analysis"]',
-     'the report: mission statement · plan · background · organization · analysis', heads.join(' · '));
-  ok((await page.$$('#mp-cattabs, #mb-post, #mp-disc, #pb, #ps-ring')).length === 0,
-     'no posts toggle, no old dialogue, no discussion box, no post-support ring');
+  ok(JSON.stringify(heads) === '["Mission statement","Plan","Background","Investigation","Analysis"]',
+     'before the initiative is elected: mission statement · plan · background · investigation · analysis — no budget yet', heads.join(' · '));
+  ok((await page.$$('#mp-cattabs, #mb-post, #mp-disc, #pb, #ps-ring, #mp-log, #mb-budget-add')).length === 0,
+     'no posts toggle, no old dialogue, no discussion box, no post-support ring, no log card, no budget panel');
+  // Unified elections (2026-09-29): the post button is the right end of the ballot's action bar.
+  ok(/Post a Background/.test(await page.textContent('.el3__col.on .bb .bb__post')), 'the initiative ballot\'s bar ends in "Post a Background"');
+  // P3 (2026-09-29): a NEW post is written on post.html, preselected.
+  await Promise.all([page.waitForURL(/post\.html/, { timeout: 15000 }), page.click('.el3__col.on .bb .bb__post')]);
+  const u1 = new URL(page.url());
+  ok(u1.searchParams.get('type') === 'background' && u1.searchParams.get('cause') === mission.cause_id,
+     '…which opens post.html on Background, the cause preselected', u1.search);
+  await page.goto(BASE + '/m/' + mission.id, { waitUntil: 'networkidle' });
+  await page.waitForSelector('#mb-report .mb-report__sec', { timeout: 20000 });
 
-  section('budget: a costed supply item, from the panel');
-  await page.click('.mb-budget__btn[data-budget="supply"]'); await page.waitForTimeout(300);
-  ok((await page.$$('#mxc-item, #mxc-supplier, #mxc-cost')).length === 3, 'supply asks for an item, a supplier and a cost');
-  await page.fill('#mxc-in-title', 'Air-quality sensors'); await page.fill('#mxc-in-body', 'Forty sensors.');
-  await page.fill('#mxc-item', '40 air-quality sensors'); await page.fill('#mxc-supplier', 'Acme'); await page.fill('#mxc-cost', '4000');
-  await page.click('#mxc-send'); await page.waitForTimeout(1300);
-  ok(/Posted/.test(await page.textContent('#mxc-msg')), 'it posts', await page.textContent('#mxc-msg'));
-  await page.waitForTimeout(900);
-  ok(/Air-quality sensors/.test(await page.textContent('#mp-posts')), 'it is in the budget panel');
-  ok(/Air-quality sensors/.test(await page.textContent('#mb-report')), '…and in the report’s plan');
+  section('budget: in the report once the initiative is elected');
+  const elected = (await J('/missions')).find(m => m.winning_tiv_id);
+  if (elected) {
+    await page.goto(BASE + '/m/' + elected.id, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#mb-report .mb-report__budget', { timeout: 20000 });
+    ok(JSON.stringify(await page.$$eval('#mb-report .mb-budget__btn b', els => els.map(e => e.textContent))) === '["Service","Supply","Support"]',
+       'the report ends in Suggest: Service · Supply · Support');
+    ok(/Budget items are how this mission gets planned/.test(await page.textContent('#mb-report .mb-report__budget')), '…with the explanation');
+    await Promise.all([page.waitForURL(/post\.html/, { timeout: 15000 }), page.click('#mb-report .mb-budget__btn[data-budget="supply"]')]);
+    await page.waitForSelector('#pc-item', { timeout: 10000 });
+    ok(new URL(page.url()).searchParams.get('initiative') === elected.winning_tiv_id, 'the button opens post.html on Supply, the initiative preselected');
+    ok((await page.$$('#pc-item, #pc-supplier, #pc-cost')).length === 3, 'supply asks for an item, a supplier and a cost');
+    await page.goto(BASE + '/m/' + mission.id, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#mb-report .mb-report__sec', { timeout: 20000 });
+    await page.waitForTimeout(500);
+  } else ok(false, 'no mission with an elected initiative to test against');
 
   section('the report opens its thread');
   await page.click('#mb-report'); await page.waitForTimeout(700);
   const box = await page.$eval('#mxt-bg .mxc', e => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; });
   ok(!(await page.$eval('#mxt-bg', e => e.hidden)) && box.w > 700, 'a full-screen thread', box.w + '×' + box.h);
   ok(JSON.stringify(await page.$$eval('#mxt-tabs .mxc__type', els => els.map(e => e.childNodes[0].textContent.trim()))) ===
-     '["Background","Vetting","Analysis"]', 'three sections — "investigation" reads Vetting (P2)');
-  await page.click('#mxt-write'); await page.waitForTimeout(400);
-  ok(await page.$eval('#mxc-types .mxc__type.on', e => e.textContent) === 'Background', '"Write yours" opens the composer on the section');
-  await page.fill('#mxc-in-title', 'What the survey measured');
-  await page.fill('#mxc-in-body', 'A background post from composer_check.');
-  await page.click('#mxc-send'); await page.waitForTimeout(1500);
-  ok(/Posted/.test(await page.textContent('#mxc-msg')), 'it posts');
-  await page.waitForTimeout(900);
-  ok(/What the survey measured/.test(await page.textContent('#mxt-body')), 'the thread shows it');
+     '["Background","Investigation","Analysis"]', 'three sections before the initiative is elected — Investigation (P3); Budget joins after');
+  await Promise.all([page.waitForURL(/post\.html/, { timeout: 15000 }), page.click('#mxt-write')]);
+  await page.waitForSelector('#pc-cause', { timeout: 10000 });
+  ok(await page.$eval('#pc-types .pc-pill[aria-pressed="true"]', e => e.textContent) === 'Background', '"Write yours" opens post.html on the section');
+  await page.fill('#pc-title', 'What the survey measured');
+  await page.fill('#pc-body', 'A background post from composer_check.');
+  await page.click('#pc-send'); await page.waitForTimeout(1500);
+  ok(/Posted/.test(await page.textContent('#pc-msg')), 'it posts');
+  const posted = await page.evaluate(() => window.PostPage.last);
+  await page.goto(BASE + '/m/' + ((posted && posted.mission_id) || mission.id), { waitUntil: 'networkidle' });
+  await page.waitForSelector('#mb-report .mb-report__sec', { timeout: 20000 });
+  await page.waitForTimeout(600);
+  await page.click('#mb-report'); await page.waitForTimeout(900);
+  ok(/What the survey measured/.test(await page.textContent('#mxt-body')), 'the thread of the mission it landed in shows it');
   ok(/What the survey measured/.test(await page.textContent('#mb-report')), 'and the report leads with it');
 
   section('rate it, reply to it');

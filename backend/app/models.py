@@ -696,6 +696,24 @@ class Post(Base):
     flag: Mapped[str] = mapped_column(String, default="green", nullable=False)
     flag_reason: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
+    # ── P3 · Posting (2026-09-29) ─────────────────────────────────────────
+    # What the post is ABOUT, stated once: cause | initiative | organization |
+    # mission | post | budget | none. The FK columns above stay filled for the
+    # kinds that have one, so every existing filter keeps working; `target_id`
+    # is the one place a post-or-budget-item target is recorded.
+    target_kind: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    target_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    # Tags: a general post's subtype ("opinion", "case" …) and entity tags
+    # ("tiv:<id>", "org:<id>", "cause:<id>", "mission:<id>", "post:<id>").
+    tags: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    # D21: every edit is a new version (PostVersion); this is the newest.
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Vote counts IN THE POST'S CURRENT MISSION (D21: "votes count per
+    # mission"). A post pulled or rolled into a new mission starts again from
+    # zero there; the votes it earned before stay in `post_votes` under their
+    # own `mission_id`.
     helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     neutral_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     harmful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -722,17 +740,96 @@ class Post(Base):
 class PostVote(Base):
     __tablename__ = "post_votes"
     __table_args__ = (
-        UniqueConstraint("post_id", "ben_id", name="uq_post_vote_ben"),
+        # P3 (D21): one vote per person per post PER MISSION — a post pulled
+        # into a new mission is voted on again there. `mission_scope` is the
+        # mission id, or '' for a post that belongs to no mission (a NULL would
+        # let the unique index admit duplicates).
+        UniqueConstraint("post_id", "ben_id", "mission_scope", name="uq_post_vote_ben_mission"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     post_id: Mapped[str] = mapped_column(ForeignKey("posts.id"), nullable=False)
     ben_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
     value: Mapped[str] = mapped_column(String, nullable=False)  # helpful|neutral|harmful
+    mission_scope: Mapped[str] = mapped_column(String, default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     post: Mapped["Post"] = relationship(back_populates="votes")
     ben: Mapped["BenefactorAccount"] = relationship()
+
+
+# ===========================================================================
+# P3 · Posting (2026-09-29) — versions, missions, references, leads.
+# ===========================================================================
+class PostVersion(Base):
+    """D21: every edit is a new version, and old versions never change. The
+    version an election or an Analysis used is the one pinned in `post_missions`
+    / `post_refs`; the author edits forward, never back."""
+    __tablename__ = "post_versions"
+    __table_args__ = (UniqueConstraint("post_id", "version", name="uq_post_version"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    post_id: Mapped[str] = mapped_column(ForeignKey("posts.id"), nullable=False, index=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    line_items: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PostMission(Base):
+    """Which missions a post belongs to, and the version each one keeps.
+
+    `via`: origin (written in it) · roll (a Background carried into its cause's
+    next mission, D19) · pull (its author brought it in, D21) · cite (an
+    Analysis of that mission cites it). `pinned_version` is set once the
+    mission's election for that type has closed — that version stays with the
+    mission for good."""
+    __tablename__ = "post_missions"
+    __table_args__ = (UniqueConstraint("post_id", "mission_id", name="uq_post_mission"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    post_id: Mapped[str] = mapped_column(ForeignKey("posts.id"), nullable=False, index=True)
+    mission_id: Mapped[str] = mapped_column(ForeignKey("missions.id"), nullable=False, index=True)
+    via: Mapped[str] = mapped_column(String, default="origin", nullable=False)
+    pinned_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    pinned_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class PostRef(Base):
+    """A reference one post makes: to another post (at the version it cited),
+    a mission, or an outside link. An Analysis's Backgrounds and Investigations
+    are rows here; `auto` marks the two leading ones it cannot remove."""
+    __tablename__ = "post_refs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    post_id: Mapped[str] = mapped_column(ForeignKey("posts.id"), nullable=False, index=True)
+    kind: Mapped[str] = mapped_column(String, nullable=False)   # post | mission | link
+    ref_post_id: Mapped[Optional[str]] = mapped_column(ForeignKey("posts.id"), nullable=True, index=True)
+    ref_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ref_mission_id: Mapped[Optional[str]] = mapped_column(ForeignKey("missions.id"), nullable=True)
+    url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    label: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    auto: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    position: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class MissionLead(Base):
+    """D20: the Background and the Investigation that lead a mission — fixed
+    when each election closes (the Background at T, the Investigation at T+8)
+    and attached to every Analysis of that mission."""
+    __tablename__ = "mission_leads"
+
+    mission_id: Mapped[str] = mapped_column(ForeignKey("missions.id"), primary_key=True)
+    background_id: Mapped[Optional[str]] = mapped_column(ForeignKey("posts.id"), nullable=True)
+    background_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    background_fixed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    investigation_id: Mapped[Optional[str]] = mapped_column(ForeignKey("posts.id"), nullable=True)
+    investigation_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    investigation_fixed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 # ===========================================================================
 # Query — EMPLOYEE-ONLY saved data-access tool (the "navigate the database"
 # staff permission). Tooling, not domain spine. Gated to role in (employee,admin).
