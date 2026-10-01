@@ -83,6 +83,7 @@
       <div class="item special" data-view="mission">Search by mission</div>
       <div class="item special" data-view="gantt">Gantt · mission plan</div>
       <div class="item special" data-view="accounts">Accounts · remove</div>
+      <div class="item special" data-view="remove">Remove · posts, initiatives, orgs</div>
       <div class="item special" data-view="contact">Contact us · messages</div>
     </div>
     <div id="org-nav" class="hidden">
@@ -127,7 +128,10 @@ async function api(path, opts = {}) {
   const r = await fetch(path, { ...opts, headers: authHeaders(opts.headers || {}) });
   if (r.status === 401) { token = ""; localStorage.removeItem(TOKEN_KEY); showLogin(); throw new Error("unauthorized"); }
   if (r.status === 403) throw new Error("This account is not an Earthbux employee.");
-  if (!r.ok) throw new Error(path + " → " + r.status);
+  if (!r.ok) {
+    let d = ""; try { d = (await r.json()).detail || ""; } catch (e) {}
+    throw new Error(typeof d === "string" && d ? d : path + " → " + r.status);
+  }
   return r.json();
 }
 
@@ -624,6 +628,88 @@ async function removeAccount(r) {
   } catch (e) { alert("Could not remove the account.\n\n" + e.message); }
 }
 document.querySelector('[data-view="accounts"]').onclick = selectAccountsView;
+
+// ---------- Remove content (2026-10-01) ----------
+// "Allow me to delete posts, organizations, and initiatives as admin." Pick a
+// kind, filter by text, press Remove: the server answers a dry run first
+// (`?dry_run=true` — what would go), you confirm, then it deletes. Refused,
+// with the reason: an elected initiative or organization, an initiative with
+// tokens on it, an organization on the ledger.
+const RM = {
+  post: { label: "Posts", list: "/posts?limit=500&sort=recent", del: id => "/admin/posts/" + encodeURIComponent(id),
+          row: p => [p.id, p.title || (p.body || "").slice(0, 80), (p.tags || []).filter(t => t.indexOf(":") < 0).join(" ") || p.type || p.category,
+                     p.author_name || "", p.target_label || "", (p.created_at || "").slice(0, 10)],
+          head: ["id", "title / text", "kind", "author", "about", "date"],
+          what: r => "post " + r.post_id + " (" + r.title + ")\n\nThis deletes it and " + r.replies + " repl" + (r.replies === 1 ? "y" : "ies") +
+                     ", " + r.votes + " vote(s)" + (r.cited_by ? ", and " + r.cited_by + " citation(s) of it" : "") + "." },
+  initiative: { label: "Initiatives", list: "/initiatives", del: id => "/admin/initiatives/" + encodeURIComponent(id),
+          row: t => [t.id, t.title, t.cause_id, t.mission_id || "", t.status || "", String(t.ebx_committed || 0)],
+          head: ["id", "title", "cause", "mission", "status", "tokens"],
+          what: r => "initiative " + r.tiv_id + " (" + r.title + ")\n\nThis deletes it and " + r.preferences +
+                     " standing preference(s). " + r.posts_untargeted + " post(s) about it stay, no longer pointing at it." },
+  organization: { label: "Organizations", list: "/organizations", del: id => "/admin/organizations/" + encodeURIComponent(id),
+          row: o => [o.id, o.name, o.website_link || "", o.verified ? "verified" : "", String(o.founded_year || "")],
+          head: ["id", "name", "website", "verified", "founded"],
+          what: r => "organization " + r.org_id + " (" + r.name + ")\n\nThis deletes it, " + r.candidacies + " candidac" + (r.candidacies === 1 ? "y" : "ies") +
+                     (r.races.length ? " (" + r.races.join(", ") + ")" : "") + ", " + r.memberships + " membership(s) and " + r.claims + " claim(s). " +
+                     r.picks_cleared + " benefactor pick(s) are cleared — their tokens stay in the race." },
+};
+let RM_KIND = "post", RM_ROWS = [];
+async function selectRemoveView() {
+  current = { kind: "remove" };
+  setActive((i) => i.dataset.view === "remove");
+  $("#main").innerHTML = `
+    <div class="toolbar">
+      <span class="title mono">remove</span>
+      <select id="rm-kind">${Object.keys(RM).map(k => `<option value="${k}"${k === RM_KIND ? " selected" : ""}>${RM[k].label}</option>`).join("")}</select>
+      <input id="rm-q" placeholder="filter by id, title or text" size="28" />
+      <span class="count" id="rowcount"></span>
+    </div>
+    <div class="msg" style="margin:8px 0 12px">Remove asks the server what would go, then asks you. Elected initiatives and organizations, initiatives with tokens on them, and organizations on the ledger are refused.</div>
+    <div id="grid"><div class="msg">Loading…</div></div>`;
+  $("#rm-kind").onchange = () => { RM_KIND = $("#rm-kind").value; loadRemove(); };
+  $("#rm-q").addEventListener("input", paintRemove);
+  await loadRemove();
+}
+async function loadRemove() {
+  $("#grid").innerHTML = '<div class="msg">Loading…</div>';
+  try { RM_ROWS = await api(RM[RM_KIND].list); } catch (e) { $("#grid").innerHTML = `<div class="msg warn">${e.message}</div>`; return; }
+  paintRemove();
+}
+function paintRemove() {
+  const K = RM[RM_KIND], q = ($("#rm-q").value || "").trim().toLowerCase();
+  const rows = RM_ROWS.map(x => ({ x, cells: K.row(x) }))
+    .filter(r => !q || r.cells.join(" ").toLowerCase().includes(q) || String(r.x.body || r.x.description || "").toLowerCase().includes(q));
+  $("#rowcount").textContent = rows.length + " of " + RM_ROWS.length;
+  const table = el("table"), head = el("thead"), htr = el("tr");
+  K.head.concat([""]).forEach(h => { const th = el("th"); th.textContent = h; htr.appendChild(th); });
+  head.appendChild(htr); table.appendChild(head);
+  const tb = el("tbody");
+  rows.slice(0, 300).forEach(r => {
+    const tr = el("tr");
+    r.cells.forEach(v => { const td = el("td"); td.textContent = v == null ? "" : String(v); tr.appendChild(td); });
+    const td = el("td"), b = el("button");
+    b.textContent = "Remove"; b.style.cssText = "color:#f87171;border-color:#f87171;";
+    b.onclick = () => removeContent(r.x.id, b);
+    td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
+  });
+  table.appendChild(tb);
+  const g = $("#grid"); g.innerHTML = ""; g.appendChild(table);
+}
+async function removeContent(id, btn) {
+  const K = RM[RM_KIND];
+  let plan;
+  try { plan = await api(K.del(id) + "?dry_run=true", { method: "DELETE" }); }
+  catch (e) { alert("Can't remove " + id + ".\n\n" + e.message); return; }
+  if (!confirm("Remove " + K.what(plan) + "\n\nThis cannot be undone.")) return;
+  btn.disabled = true; btn.textContent = "Removing…";
+  try {
+    await api(K.del(id), { method: "DELETE" });
+    RM_ROWS = RM_ROWS.filter(x => x.id !== id);
+    paintRemove();
+  } catch (e) { btn.disabled = false; btn.textContent = "Remove"; alert("Could not remove " + id + ".\n\n" + e.message); }
+}
+document.querySelector('[data-view="remove"]').onclick = selectRemoveView;
 
 // ---------- Contact us (2026-09-25) — the footer's messages ----------
 // Every message the footer dialog sends lands here (POST /contact); "emailed"

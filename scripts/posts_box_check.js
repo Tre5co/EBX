@@ -188,18 +188,18 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
     ok(after.mission_id === other.id, '…and pulling one moves it here, votes from zero', after.mission_id);
   }
 
-  section('nominating carries a Justification post');
-  await open('/mission.html', '#mb-report');
+  section('nominating carries a post — a Mission statement (mission pass 2026-10-01)');
+  await open('/mission.html', '#mb');
   const created = await page.evaluate(async (causeId) => {
     EBX.Dialogs.propose({ causeId });
     await new Promise(r => setTimeout(r, 300));
     document.getElementById('ebx-dlg-title').value = 'posts_box_check initiative ' + Date.now();
-    document.getElementById('ebx-dlg-desc').value = 'Why it should win, from posts_box_check.';
+    document.getElementById('ebx-dlg-desc').value = 'What it will do, from posts_box_check.';
     document.querySelector('#ebx-dlg-propose [data-act=submit]').click();
     await new Promise(r => setTimeout(r, 2500));
     return (document.getElementById('ebx-dlg-msg') || {}).textContent || '';
   }, cause.id);
-  ok(/Justification is posted/.test(created), 'proposing an initiative with a justification posts it', created);
+  ok(/mission statement is posted/.test(created), 'proposing an initiative with a mission statement posts it', created);
   const orgDlg = await page.evaluate(async () => {
     EBX.Dialogs.orgRegister({});
     await new Promise(r => setTimeout(r, 300));

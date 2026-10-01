@@ -2574,6 +2574,13 @@
     }
     .mx-stage .mx-log .mx-phase.on .mx-phase__n { background: #16241c; }
     .mx-phase__b { min-width: 0; }
+    /* Mission pass 2026-10-01 — the log is one row per phase: number · title · date */
+    .mx-stage .mx-log .mx-phase--row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 7px 12px; }
+    .mx-stage .mx-log .mx-phase--row::before { top: 26px; bottom: -8px; }
+    .mx-stage .mx-log .mx-phase--row .mx-phase__n { width: 20px; height: 20px; flex: none; box-sizing: border-box; }
+    .mx-stage .mx-log .mx-phase--row .mx-phase__l { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mx-stage .mx-log .mx-phase--row .mx-phase__d { font-family: var(--font-mono, monospace); font-size: 0.62rem; white-space: nowrap; color: rgba(245,240,232,0.55); margin: 0; }
+    .mx-stage .mx-log .mx-phase--row.on .mx-phase__d { color: var(--clr-honey, #e8a84c); }
     .mx-phase__ev { display: block; font-size: 0.68rem; line-height: 1.35; color: rgba(245,240,232,0.62); margin-top: 4px; }
     .mx-phase__ev i { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.52rem; letter-spacing: 0.06em;
       text-transform: uppercase; color: rgba(245,240,232,0.4); margin-right: 5px; }
@@ -2632,6 +2639,9 @@
       font-size: 0.95rem; font-weight: 500; color: rgba(245,240,232,0.85); white-space: normal; }
     .mx-stage .el3__top-title b { color: var(--clr-parchment, #f5f0e8); font-weight: 700; }
     .mx-stage .el3__top-days { font-size: 0.74rem; }
+    .mx-stage .el3__top-tiv { font-size: 0.9rem; font-weight: 600; color: var(--clr-parchment, #f5f0e8);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 40%; }
+    .mx-stage .el3__top-none { color: rgba(245,240,232,0.5); }
     .el3__top-chip { font-family: var(--font-mono, monospace); font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em;
       text-transform: uppercase; white-space: nowrap; padding: 3px 9px; border-radius: 999px;
       color: #0f1a14; background: var(--el3c, var(--clr-honey)); }
@@ -2657,6 +2667,35 @@
       padding: 6px 13px; border-radius: 999px; background: none; color: var(--clr-honey, #e8a84c);
       border: 1px solid rgba(232,168,76,0.6); }
     .bb__post:hover { background: var(--clr-honey, #e8a84c); color: #0f1a14; }
+    /* Mission pass 2026-10-01 — posts before the report */
+    .mx-pre { margin: 0 0 14px; padding: 16px 18px; border: 1px solid rgba(245,240,232,0.14); border-radius: 14px; background: rgba(15,26,20,0.6); }
+    .mx-pre__title { font-family: var(--font-body, sans-serif); font-size: 0.95rem; font-weight: 500; margin: 4px 0 12px; color: rgba(245,240,232,0.85); }
+    .mx-pre__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+    .mx-pre__empty { font-size: 0.86rem; color: rgba(245,240,232,0.55); font-style: italic; margin: 0; }
+    /* Mission pass 2026-10-01 — the initiative expansion, small */
+    .vb-x { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: rgba(245,240,232,0.04); color: var(--clr-parchment, #f5f0e8); border-color: rgba(245,240,232,0.16); }
+    .vb-x .ep-prev { color: rgba(245,240,232,0.82); }
+    .vb-x .ep-prev a { color: var(--clr-honey, #e8a84c); }
+    .vb-x__title { font-weight: 700; font-size: 0.92rem; padding-right: 26px; }
+    .vb-x__rn { all: unset; cursor: pointer; margin-left: 8px; font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); }
+    .vb-x__rn:hover { text-decoration: underline; }
+    .vb-x__rename { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding-right: 26px; }
+    .vb-x__rename input { flex: 1 1 220px; min-width: 0; font: inherit; font-size: 0.86rem; padding: 6px 9px; color: var(--clr-parchment, #f5f0e8); background: rgba(255,255,255,0.05); border: 1px solid rgba(245,240,232,0.25); border-radius: 6px; }
+    .vb-x__msg { font-size: 0.72rem; color: #f08a6a; }
+    .vb-x__slider { margin: 0; }
+    .vb-x__prev .ep-prev { font-size: 0.8rem; line-height: 1.45; }
+    .vb-x__acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .vb-x__acts .bb__post { margin-left: auto; text-decoration: none; }
+    .vb-x__why { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--vb, var(--clr-honey)); margin-right: 4px; }
+    .vb-x__ok { font-size: 0.66rem; font-weight: 500; color: #8fce9d; }
+    .vb-x__site { font-size: 0.72rem; font-weight: 500; color: var(--clr-honey, #e8a84c); margin-left: 6px; }
+    .vb-x__sugg { font-size: 0.8rem; color: rgba(245,240,232,0.8); }
+    .vb-x__sugg:empty { display: none; }
+    .vb-x__sugg--oe { margin-top: 8px; }
+    .vb-x__chip { display: inline-flex; gap: 6px; align-items: center; margin-right: 10px; }
+    .vb-x__desc { font-size: 0.84rem; line-height: 1.5; color: rgba(245,240,232,0.85); }
+    .vb-stake--ro b { color: var(--clr-parchment, #f5f0e8); margin-left: 4px; }
+    .bb__post--icon { font-family: var(--font-mono, monospace); letter-spacing: 0.04em; padding-left: 12px; padding-right: 12px; }
     /* cause election: the six-week bars, the week's vote */
     .ce-bars { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 18px; }
     .ce-bars__row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
@@ -2667,6 +2706,18 @@
     .ce-bars__segs i.on { background: var(--uc); box-shadow: 0 0 5px var(--uc); }
     .ce-bars__n { font-family: var(--font-mono, monospace); font-size: 0.62rem; color: rgba(245,240,232,0.5); }
     .ce-bars__more { font-size: 0.68rem; color: rgba(245,240,232,0.45); align-self: center; }
+    /* Mission pass 2026-10-01 — one bar per open window: lit when a challenger has a week, dim otherwise, the page's own marked */
+    .ce-bars--slate { grid-template-columns: 1fr; gap: 3px; }
+    .ce-bars--slate .ce-bars__row { all: unset; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 11rem) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 3px 8px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+    .ce-bars--slate .ce-bars__row:hover { background: rgba(245,240,232,0.04); }
+    .ce-bars--slate .ce-bars__row:focus-visible { outline: 2px solid var(--clr-honey, #e8a33d); }
+    .ce-bars--slate .ce-bars__name { color: var(--hc); }
+    .ce-bars--slate .ce-bars__row--dim { opacity: 0.42; }
+    .ce-bars--slate .ce-bars__row--dim .ce-bars__name { color: rgba(245,240,232,0.75); }
+    .ce-bars--slate .ce-bars__row--here { opacity: 1; border-color: rgba(245,240,232,0.22); background: rgba(245,240,232,0.05); }
+    .ce-bars--slate .ce-bars__segs i { width: 26px; height: 6px; }
+    .ce-bars--slate .ce-bars__n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ce-row--sugg .ce-nominate { margin-left: auto; }
     .ce-dist { display: flex; flex-direction: column; gap: 4px; }
     .ce-dist__bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: rgba(245,240,232,0.08); }
     .ce-dist__bar i { display: block; height: 100%; }
@@ -2954,6 +3005,16 @@
     <div class="container">
       <h2 class="mb__title" id="mb-title">This mission</h2>
       <div class="mx-empty" id="mb-none" style="display:none;"></div>
+      <!-- Mission pass (2026-10-01): "Before the report appears, show posts below
+           the table." While a mission has no elected initiative there is no
+           report; the cause election shows the posts on the cause holding the
+           window and its challengers, the initiative election the posts on any
+           of its initiatives. Painted by MX › paintPrePosts. -->
+      <section class="mx-pre" id="mx-pre" hidden>
+        <div class="mx-pre__head"><div class="mp-eyebrow" style="margin:0" id="mx-pre-kicker">The discussion</div>
+          <h3 class="mx-pre__title" id="mx-pre-title">What people are saying</h3></div>
+        <div class="mx-pre__list" id="mx-pre-list"></div>
+      </section>
       <div id="mb-live">
       <!-- P1 mission edits (2026-09-28): "The report will now go directly below
            the ballot section." The progress log became the phase tabs above, and
@@ -3132,7 +3193,7 @@
        the date/number formatters, and the watchlist. See its header for why it
        is not part of ebx_shared.js. -->
   <script src="resources/js/ebx_page.js?v=20260908"></script>
-  <script src="resources/js/ebx_shared.js?v=20260929"></script>
+  <script src="resources/js/ebx_shared.js?v=20261001"></script>
   <!-- build-seq P1: the globe inside the annulus -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -3191,9 +3252,12 @@
     const discuss = o.causeId
       ? '<a class="vb-btn vb-btn--ghost bb__link" href="cause.html?cause=' + encodeURIComponent(o.causeId) +
         '" onclick="event.stopPropagation()" title="The discussion, in News">Discuss &rarr;</a>' : '';
+    // Mission pass (2026-10-01): "instead of 'post a <type>' just have the
+    // '+ post' icon". The type is still what the button opens (and its title).
     const post = (o.step && POST[o.step])
-      ? '<button type="button" class="bb__post" data-step="' + o.step + '"' +
-        ' onclick="event.stopPropagation();window.MX&&MX.post&&MX.post(\'' + o.step + '\')">' + POST[o.step] + ' &rarr;</button>'
+      ? '<button type="button" class="bb__post bb__post--icon" data-step="' + o.step + '"' +
+        ' title="' + POST[o.step] + '" aria-label="' + POST[o.step] + '"' +
+        ' onclick="event.stopPropagation();window.MX&&MX.post&&MX.post(\'' + o.step + '\')">+ post</button>'
       : '';
     return '<div class="bb">' + (left ? '<span class="bb__pair">' + left + '</span>' : '') +
       (o.acts || []).filter(Boolean).join('') + discuss + '<span class="bb__sp"></span>' +
@@ -3204,6 +3268,10 @@
   // build-seq P1 (2026-09-24): the boot is a promise the mission controller awaits.
   window._electBoot = (async function () {
     await EBX.loadAll();
+    // Mission pass (2026-10-01): who is signed in — the initiative expansion
+    // offers Rename to an initiative's proposer.
+    window._ebxMe = null;
+    try { if (EBX.Auth && EBX.Auth.fetchMe) EBX.Auth.fetchMe().then(m => { window._ebxMe = m; try { _mountVoteBar(); } catch (e) {} }); } catch (e) {}
 
     // build-seq 9: the signed-in benefactor's phase-1 vote state, loaded once
     // and shared by every election card. mission_id -> { shares, ebx, committed }.
@@ -3553,10 +3621,12 @@
       const budget = committableFor(causeId);
       const others = _slateFor(causeId).reduce((s, i) => s + (i.id === tivId ? 0 : _pctFor(i.id)), 0);
       const v = Math.min(Math.max(0, Math.round(Number(raw) || 0)), Math.max(0, 100 - others));
-      const el = document.querySelector('.vb-slider[data-tiv="' + tivId + '"]');
-      if (el && Number(el.value) !== v) el.value = v;
-      const lbl = document.getElementById('vb-val-' + tivId);
-      if (lbl) lbl.textContent = (Math.round(v * budget) / 100) + ' tk · ' + v + '%';
+      // (2026-10-01) the expansion carries a second slider for the same initiative
+      document.querySelectorAll('.vb-slider[data-tiv="' + tivId + '"]').forEach(el => { if (Number(el.value) !== v) el.value = v; });
+      ['vb-val-', 'vb-val-x-'].forEach(k => {
+        const lbl = document.getElementById(k + tivId);
+        if (lbl) lbl.textContent = (Math.round(v * budget) / 100) + ' tk · ' + v + '%';
+      });
       const free = Math.max(0, 100 - others - v);
       const uf = document.getElementById('vb-unc-fill'), uv = document.getElementById('vb-unc-val');
       if (uf) uf.style.width = free + '%';
@@ -3686,7 +3756,22 @@
       const t = _tk(ct);
       return (Math.abs(t - Math.round(t)) < 0.005 ? String(Math.round(t)) : t.toFixed(1));
     }
-    window._walletRowFor = mid => _walletRows.find(r => r.mission_id === mid) || null;
+    // Mission pass (2026-10-01): a race outside the eight `/wallet` carries
+    // (OPEN DEFECTS F11) still has the benefactor's stake in it. Its row is
+    // fetched on its own (GET /wallet/row/<id>) the first time its ballot asks.
+    const _extraOeRows = {}, _extraOeAsked = {};
+    window._walletRowFor = mid => _walletRows.find(r => r.mission_id === mid) || _extraOeRows[mid] || null;
+    window._fetchOeRow = async function (mid) {
+      if (!mid || _extraOeAsked[mid] || _walletRows.find(r => r.mission_id === mid)) return;
+      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn())) return;
+      _extraOeAsked[mid] = true;
+      try {
+        const r = await EBX.Auth.fetchAuthed('/wallet/row/' + encodeURIComponent(mid));
+        if (r && r.ok) { _extraOeRows[mid] = await r.json(); _mountVoteBar(); }
+      } catch (e) {}
+    };
+    window._forgetOeRow = mid => { delete _extraOeRows[mid]; delete _extraOeAsked[mid]; };
+    window._clearPending = mid => { delete _pending[mid]; };
     window._walletFree = () => (_wallet ? Number(_wallet.free_ct) || 0 : 0);
     window._walletPurchasedFree = () => (_wallet
       ? Math.min(Number(_wallet.purchased_ct) || 0, Number(_wallet.free_ct) || 0) : 0);
@@ -3714,6 +3799,9 @@
         _hardensWeek = (data.hardens_week != null) ? data.hardens_week : null;
         _walletRows = data.rows || [];
         _pending = {};
+        // a fresh wallet makes every out-of-table row stale (mission pass, 2026-10-01)
+        Object.keys(_extraOeRows).forEach(k => delete _extraOeRows[k]);
+        Object.keys(_extraOeAsked).forEach(k => delete _extraOeAsked[k]);
       } catch (e) {}
     }
     window.loadWallet = loadWallet;
@@ -4109,6 +4197,10 @@
       const mount = document.getElementById('votebar-mount');
       if (!mount) return;
       mount.innerHTML = (typeof voteBarHTML === 'function') ? voteBarHTML() : '';
+      _paintTivPreviews(mount);
+      _paintTivSuggestions(mount);
+      _paintOeSuggestions(mount);
+      _paintOrgPreviews(mount);
       // …and so does the second panel, which is the same repaint: the notice
       // names the OTHER race, so anything that changes cause or mode changes it.
       const notice = document.getElementById('votebar-notice-mount');
@@ -4127,6 +4219,126 @@
       }
     }
     window._mountVoteBar = _mountVoteBar;
+
+    // ── the initiative expansion (mission pass, 2026-10-01) ────────────────
+    window._tivRenaming = null;
+    function _tivElected(tivId) {
+      return (EBX.config.missions || []).some(m => m.winning_tiv_id === tivId);
+    }
+    function _canRenameTiv(t) {
+      const me = window._ebxMe;
+      if (!me || !t) return false;
+      if (me.is_staff) return true;
+      return t.proposer_ben_id != null && Number(t.proposer_ben_id) === Number(me.id) && !_tivElected(t.id);
+    }
+    function _meExpansionHTML(t, esc, budget) {
+      const pct = _pctFor(t.id);
+      const tk = Math.round(pct * budget) / 100;
+      const title = ((typeof window._titleAndCase === 'function') ? window._titleAndCase(t).title : t.title) || 'Untitled';
+      let page = '';
+      try { page = EBX.Slug.href(t.mission_id || null, t.id); } catch (e) { page = 'mission.html?id=' + encodeURIComponent(t.id); }
+      const postUrl = (EBX.Post && EBX.Post.composeUrl) ? EBX.Post.composeUrl({ initiative: t.id }) : 'post.html?initiative=' + encodeURIComponent(t.id);
+      const renaming = window._tivRenaming === t.id;
+      const canRename = _canRenameTiv(t);
+      const head = renaming
+        ? '<form class="vb-x__rename" onsubmit="event.preventDefault();event.stopPropagation();window._tivRenameSave(\'' + t.id + '\')">' +
+            '<input type="text" id="vb-x-rename-in" maxlength="120" value="' + esc(t.title || '') + '" aria-label="New name for this initiative" />' +
+            '<button type="submit" class="vb-btn">Save</button>' +
+            '<button type="button" class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();window._tivRenameToggle(null)">Cancel</button>' +
+            '<span class="vb-x__msg" id="vb-x-rename-msg"></span></form>'
+        : '<div class="vb-x__title">' + (t.emoji ? t.emoji + ' ' : '') + esc(title) +
+            (canRename ? ' <button type="button" class="vb-x__rn" onclick="event.stopPropagation();window._tivRenameToggle(\'' + t.id + '\')" title="You proposed it — you can rename it until it is elected">Rename</button>' : '') +
+          '</div>';
+      return '<div class="vb-detail vb-x" data-tiv="' + esc(t.id) + '">' +
+        '<button class="vb-detail__x" title="Close" aria-label="Close"' +
+          ' onclick="event.stopPropagation();window._meDetailClear()">✕</button>' +
+        head +
+        '<div class="vb-row vb-x__slider">' +
+          '<div><div class="vb-row__name">My share</div></div>' +
+          '<input type="range" class="vb-slider" data-tiv="' + t.id + '" min="0" max="100" step="1" value="' + pct + '"' +
+            ' oninput="event.stopPropagation();dragAlloc(\'' + t.id + '\', this.value)"' +
+            ' onchange="event.stopPropagation();setAlloc(\'' + t.id + '\', this.value)"' +
+            ' onclick="event.stopPropagation()" aria-label="Share of my tokens on ' + esc(title) + '" />' +
+          '<div class="vb-row__val" id="vb-val-x-' + t.id + '">' + tk + ' tk · ' + pct + '%</div>' +
+        '</div>' +
+        '<div class="vb-x__prev" data-prev-tiv="' + esc(t.id) + '"></div>' +
+        '<div class="vb-x__sugg" data-sugg-tiv="' + esc(t.id) + '"></div>' +
+        '<div class="vb-x__acts">' +
+          '<a class="vb-btn vb-btn--ghost" href="' + esc(page) + '" onclick="event.stopPropagation()">Page &rarr;</a>' +
+          '<button type="button" class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();nominateOrgFor(\'' + t.id + '\')">+ Suggest an organization</button>' +
+          '<a class="bb__post bb__post--icon" href="' + esc(postUrl) + '" onclick="event.stopPropagation()" title="Post about this initiative">+ post</a>' +
+        '</div>' +
+      '</div>';
+    }
+    // The preview is fetched once per initiative and kept, so dragging the
+    // slider (which repaints the ballot) does not refetch it.
+    window._tivPrevCache = {};
+    function _paintTivPreviews(root) {
+      if (!(root && window.EBX && EBX.Post && EBX.Post.preview)) return;
+      root.querySelectorAll('[data-prev-tiv]').forEach(async el => {
+        const id = el.getAttribute('data-prev-tiv');
+        const bind = () => el.querySelectorAll('[data-ep-open]').forEach(a => a.onclick = e => {
+          e.preventDefault(); e.stopPropagation(); EBX.Post.open(a.dataset.epOpen); });
+        if (window._tivPrevCache[id]) { el.innerHTML = window._tivPrevCache[id]; bind(); return; }
+        el.innerHTML = '<div class="ep-prev">Loading the discussion&hellip;</div>';
+        await EBX.Post.preview(el, { tiv_id: id }, { noWrite: true });
+        window._tivPrevCache[id] = el.innerHTML;
+      });
+    }
+    // Organizations suggested for an initiative (mission pass, 2026-10-01): the
+    // Justifications on an organization that carry the initiative's tag.
+    window._suggCache = {};
+    async function _suggestedOrgs(tivId) {
+      if (window._suggCache[tivId]) return window._suggCache[tivId];
+      let rows = [];
+      try {
+        const r = await fetch('/posts?target_kind=organization&tag=' + encodeURIComponent('tiv:' + tivId) + '&roots_only=true&limit=100');
+        rows = r.ok ? await r.json() : [];
+      } catch (e) {}
+      const seen = {}, out = [];
+      rows.forEach(p => { if (p.target_id && !seen[p.target_id]) { seen[p.target_id] = 1; out.push({ org_id: p.target_id, name: p.target_label || _orgName(p.target_id), post: p.id }); } });
+      window._suggCache[tivId] = out;
+      return out;
+    }
+    window._suggestedOrgs = _suggestedOrgs;
+    function _paintTivSuggestions(root) {
+      if (!root) return;
+      root.querySelectorAll('[data-sugg-tiv]').forEach(async el => {
+        const list = await _suggestedOrgs(el.getAttribute('data-sugg-tiv'));
+        el.innerHTML = list.length
+          ? '<span class="vb-row__sub">Suggested to run it:</span> ' + list.map(o => '<b>' + _esc(o.name) + '</b>').join(' &middot; ')
+          : '';
+      });
+    }
+    window._tivRenameToggle = function (id) {
+      window._tivRenaming = id;
+      _mountVoteBar();
+      if (id) setTimeout(() => { const i = document.getElementById('vb-x-rename-in'); if (i) { i.focus(); i.select(); } }, 0);
+    };
+    window._tivRenameSave = async function (id) {
+      const inp = document.getElementById('vb-x-rename-in');
+      const msg = document.getElementById('vb-x-rename-msg');
+      const title = ((inp && inp.value) || '').trim();
+      if (title.length < 3) { if (msg) msg.textContent = 'A name needs at least 3 characters.'; return; }
+      let r;
+      try {
+        r = await EBX.Auth.fetchAuthed('/initiatives/' + encodeURIComponent(id) + '/title',
+          { method: 'PUT', body: JSON.stringify({ title }) });
+      } catch (e) { if (msg) msg.textContent = 'Cannot reach the server.'; return; }
+      if (!r || !r.ok) {
+        let d = ''; try { d = (await r.json()).detail || ''; } catch (e) {}
+        if (msg) msg.textContent = d || 'That name was refused.';
+        return;
+      }
+      const upd = await r.json();
+      [EBX.config.initiatives || [], (window._allInitsPublic && window._allInitsPublic()) || []].forEach(list => {
+        const x = list.find(i => i.id === id);
+        if (x) x.title = upd.title;
+      });
+      window._tivRenaming = null;
+      _mountVoteBar();
+      try { filterInitiatives(); } catch (e) {}
+    };
 
     function _voteBarTiv(esc) {
       const causeId = voteCauseId();
@@ -4212,19 +4424,17 @@
             'a share of your tokens onto it &mdash; up to ' + MAX_SPLIT + ' initiatives. What you leave unallocated stays yours.</div>' +
             (uncRow ? '<div class="votebar__rows">' + uncRow + '</div>' : ''));
 
-      // The expansion that used to unfold under the table row. It is the same
-      // markup (`_idxInitDetailHTML`), in a fixed place, with a way to shut it.
+      // Mission pass (2026-10-01) — the initiative's onclick expansion, small:
+      // "a new slider row, a post preview, link to its page, option to suggest
+      // an org for it, and option to post about it. No more convert and donate
+      // buttons, the description shouldn't even exist, no 'selected initiative'
+      // or 'oceans - suggested' or status." Its proposer can rename it here
+      // until it is elected.
       let detail = '';
-      if (_meDetailTivId && typeof window._idxInitDetailHTML === 'function') {
+      if (_meDetailTivId) {
         const dTiv = ((window._allInitsPublic && window._allInitsPublic()) ||
                       EBX.config.initiatives || []).find(i => i.id === _meDetailTivId);
-        if (dTiv) {
-          detail = '<div class="vb-detail">' +
-            '<button class="vb-detail__x" title="Close" aria-label="Close"' +
-              ' onclick="event.stopPropagation();window._meDetailClear()">✕</button>' +
-            window._idxInitDetailHTML(dTiv) +
-          '</div>';
-        }
+        if (dTiv) detail = _meExpansionHTML(dTiv, esc, budget);
       }
 
       return '<div class="votebar votebar--u" style="--vb:' + col + ';">' +
@@ -4346,6 +4556,7 @@
       // committed), so a benefactor cannot dial ct the two-door rule forbids.
       const _wr = (typeof window._walletRowFor === 'function') ? window._walletRowFor(mid) : null;
       const _authed = !!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn());
+      if (_authed && !_wr && typeof window._fetchOeRow === 'function') setTimeout(() => window._fetchOeRow(mid), 0);
       const _mine = _wr ? (Number(_wr.my_stake_ct) || 0) : 0;
       const _room = _wr ? Math.max(0, (Number(_wr.max_stake_ct) || 0) - _mine) : 0;
       const _pend = (typeof window._pendingFor === 'function') ? window._pendingFor(mid) : 0;
@@ -4413,34 +4624,55 @@
       const mineLine = !_authed ? 'Sign in to vote'
         : (myOrg ? 'My vote <b>' + esc(_orgName(myOrg)) + '</b>' + (myOrg !== liveOrg ? ' <span class="vb-draft">not yet committed</span>' : '')
                  : 'My vote <span class="vb-row__sub">&mdash; click an organization in the table below</span>');
+      // Mission pass (2026-10-01): "The 'My slate' in org race shouldn't be a
+      // clickable editable box. It can be edited by withdrawing or donating
+      // more. If the user hasn't donated at all, it should just say 'Donate'."
+      // The stake is a figure; Donate / Donate more opens a small "add" line
+      // (the dialled amount is what Commit sends), Withdraw opens its own.
+      // Withdraw is offered for the NON-FINAL part — the stake less what the
+      // skims made final — which is what the server lets go (it used to be
+      // offered only for unminted ct, so a stake that had hardened into EBX
+      // showed and could not leave).
+      const _final = _wr ? (Number(_wr.my_final_ct) || 0) : 0;
+      const _wdMax = Math.max(0, _mine - _final);
       const wdOpen = !!(window._oeWdOpen && window._oeWdOpen[mid]);
+      const addOpen = !!(window._oeAddOpen && window._oeAddOpen[mid]);
+      const _added = Math.max(0, (_target != null ? _target : _mine) - _mine);
       const stakeCtl = !_authed ? ''
         : _notOpen
           ? '<span class="vb-row__sub">Open to the backers of its initiative election &mdash; this week&rsquo;s race is open to everyone.</span>'
-          : '<label class="vb-stake" onclick="event.stopPropagation()">My stake' +
-              '<input class="vb-amt" id="vb-amt-' + mid + '" type="number" step="0.1"' +
-                ' min="' + (_minted / 100) + '" max="' + ((_mine + _room) / 100) + '"' +
-                ' value="' + ((_target != null ? _target : _mine) / 100) + '" inputmode="decimal"' +
-                (_blocked && !_mine ? ' disabled title="This week\u2019s grant can only go to its own cause; purchased tokens can go anywhere"' : '') +
-                ' oninput="event.stopPropagation();setPending(\'' + mid + '\', this.value)" />tokens</label>';
+          : (_mine > 0 ? '<span class="vb-stake vb-stake--ro">My stake <b>' + _tk(_mine) + ' tokens</b></span>' : '');
+      const addForm = (addOpen && _authed && !_notOpen)
+        ? '<div class="vb-wd vb-add" onclick="event.stopPropagation()">' + (_mine > 0 ? 'Add' : 'Donate') +
+            ' <input class="vb-amt" id="vb-add-' + mid + '" type="number" step="0.1" min="0" max="' + (_room / 100) + '"' +
+              ' value="' + (_added ? _added / 100 : '') + '" placeholder="0" inputmode="decimal"' +
+              (_room > 0 ? '' : ' disabled') +
+              ' onclick="event.stopPropagation()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}"' +
+              ' onchange="event.stopPropagation();setPending(\'' + mid + '\', ' + (_mine / 100) + ' + (Number(this.value) || 0))" /> tokens' +
+            ' <span class="vb-row__sub">' + (_room > 0
+              ? _tk(_room) + ' tokens available &mdash; press Commit to send it'
+              : 'nothing available to add here &mdash; this week&rsquo;s grant goes to this week&rsquo;s race, and purchasing is not live yet') + '</span></div>'
+        : '';
       const wdForm = wdOpen
         ? '<div class="vb-wd" onclick="event.stopPropagation()">Withdraw <input class="vb-amt" id="vb-wd-' + mid + '" type="number" step="0.1" min="0"' +
-            ' max="' + (_mine / 100) + '" placeholder="0" /> tokens to cash' +
+            ' max="' + (_wdMax / 100) + '" placeholder="0" /> tokens to cash' +
             ' <button class="vb-btn" onclick="event.stopPropagation();window._oeWithdraw(\'' + mid + '\')">Withdraw</button>' +
-            ' <span class="vb-row__sub" id="vb-wd-msg-' + mid + '">the part that is not final yet, until budget day</span></div>'
+            ' <span class="vb-row__sub" id="vb-wd-msg-' + mid + '">up to ' + _tk(_wdMax) + ' tokens &mdash; the part that is not final yet, until budget day</span></div>'
         : '';
+      const donateBtn = '<button class="vb-btn vb-btn--ghost vb-btn--donate" onclick="event.stopPropagation();window._oeAddToggle(\'' + mid + '\')"' +
+        (_notOpen ? ' disabled' : '') + '>' + (_mine > 0 ? 'Donate more' : 'Donate') + '</button>';
       return '<div class="votebar votebar--u" style="--vb:' + col + ';">' +
         '<div class="vb-oe">' +
           '<div class="vb-oe__l"><div class="vb-oe__line">' + leadLine + '</div><div class="vb-oe__line">' + mineLine + '</div></div>' +
           '<div class="vb-oe__r">' +
             '<span class="votebar__chip" title="Initiative-election money kept in this race, plus tokens added here">Pool<b>' + Math.round(poolEbx) + ' tokens</b></span>' +
             stakeCtl +
-            (_authed ? '<span class="vb-oe__acts">' +
-              '<button class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();buyVoteEbx(\'' + (cause ? cause.id : '') + '\')" title="Buy more tokens — every one is a donation">Donate more</button>' +
-              '<button class="vb-btn vb-btn--ghost vb-btn--wd" onclick="event.stopPropagation();window._oeWdToggle(\'' + mid + '\')"' +
-                (_mine > _minted ? '' : ' disabled title="Nothing here is withdrawable"') + '>Withdraw</button></span>' : '') +
+            (_authed ? '<span class="vb-oe__acts">' + donateBtn +
+              (_mine > 0 ? '<button class="vb-btn vb-btn--ghost vb-btn--wd" onclick="event.stopPropagation();window._oeWdToggle(\'' + mid + '\')"' +
+                (_wdMax > 0 ? '' : ' disabled title="All of this stake is final"') + '>Withdraw</button>' : '') + '</span>' : '') +
           '</div>' +
-        '</div>' + wdForm +
+        '</div>' + addForm + wdForm + _oeExpansionHTML(mid, esc, { myOrg, liveOrg, leadId }) +
+        (mission.winning_tiv_id ? '<div class="vb-x__sugg vb-x__sugg--oe" data-oe-sugg="' + esc(mid) + '" data-tiv="' + esc(mission.winning_tiv_id) + '"></div>' : '') +
         window._ballotBar({
           commit: '<button class="vb-btn" onclick="event.stopPropagation();commitOrgVote(\'' + mid + '\')"' +
             (dirty.any ? '' : ' disabled') + '>Commit' + (_pend > 0 ? ' ' + _tk(_pend) : '') + '</button>',
@@ -4453,10 +4685,84 @@
         }) +
       '</div>';
     }
+    // Mission pass (2026-10-01) — the organization election's expansion: "a
+    // description of the [organization] the user is currently selecting, if
+    // none the one they are currently voting for, and if still none the leading
+    // organization." `myOrg` is the draft pick, else the committed vote.
+    window._orgPrevCache = {};
+    function _oeExpansionHTML(mid, esc, o) {
+      const id = o.myOrg || o.leadId;
+      if (!id) return '';
+      const org = (EBX.config.organizations || []).find(x => String(x.id) === String(id)) || { id, name: _orgName(id) };
+      const why = o.myOrg ? (o.myOrg !== o.liveOrg ? 'Your pick' : 'Your vote') : 'Leading';
+      const site = org.website_link
+        ? ' <a class="vb-x__site" href="' + esc(org.website_link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">website &nearr;</a>' : '';
+      const postUrl = (EBX.Post && EBX.Post.composeUrl)
+        ? EBX.Post.composeUrl({ org: id, type: 'investigation', mission: mid }) : 'post.html?org=' + encodeURIComponent(id);
+      return '<div class="vb-detail vb-x vb-x--org" data-org="' + esc(id) + '">' +
+        '<div class="vb-x__title"><span class="vb-x__why">' + why + '</span> ' + esc(org.name || id) +
+          (org.verified ? ' <span class="vb-x__ok" title="Verified">&#10003; verified</span>' : '') + site + '</div>' +
+        '<div class="vb-x__desc">' + (org.description ? esc(org.description)
+          : '<span class="vb-row__sub">No description yet &mdash; the organization writes one when it claims its page.</span>') + '</div>' +
+        '<div class="vb-x__prev" data-prev-org="' + esc(id) + '"></div>' +
+        '<div class="vb-x__acts">' +
+          '<a class="bb__post bb__post--icon" href="' + esc(postUrl) + '" onclick="event.stopPropagation()" title="Post an Investigation of this organization">+ post</a>' +
+        '</div>' +
+      '</div>';
+    }
+    function _paintOrgPreviews(root) {
+      if (!(root && window.EBX && EBX.Post && EBX.Post.preview)) return;
+      root.querySelectorAll('[data-prev-org]').forEach(async el => {
+        const id = el.getAttribute('data-prev-org');
+        const bind = () => el.querySelectorAll('[data-ep-open]').forEach(a => a.onclick = e => {
+          e.preventDefault(); e.stopPropagation(); EBX.Post.open(a.dataset.epOpen); });
+        if (window._orgPrevCache[id]) { el.innerHTML = window._orgPrevCache[id]; bind(); return; }
+        el.innerHTML = '<div class="ep-prev">Loading the discussion&hellip;</div>';
+        await EBX.Post.preview(el, { org_id: id }, { noWrite: true });
+        window._orgPrevCache[id] = el.innerHTML;
+      });
+    }
+    window._paintOrgPreviews = _paintOrgPreviews;
+    // The organizations suggested for this race's initiative before it won, not
+    // yet running here — each one nominated with a click (mission pass, 2026-10-01).
+    function _paintOeSuggestions(root) {
+      if (!root || typeof window._suggestedOrgs !== 'function') return;
+      root.querySelectorAll('[data-oe-sugg]').forEach(async el => {
+        const mid = el.getAttribute('data-oe-sugg');
+        const running = new Set((_candByMission[mid] || []).map(c => c.org_id));
+        const list = (await window._suggestedOrgs(el.getAttribute('data-tiv'))).filter(o => !running.has(o.org_id));
+        el.innerHTML = list.length
+          ? '<span class="vb-row__sub">Suggested before the initiative won:</span> ' + list.map(o =>
+              '<span class="vb-x__chip"><b>' + _esc(o.name) + '</b> <button type="button" class="vb-x__rn"' +
+              ' onclick="event.stopPropagation();window._nominateExisting(\'' + mid + '\', \'' + o.org_id + '\', this)">Nominate</button></span>').join(' ')
+          : '';
+      });
+    }
+    window._nominateExisting = async function (mid, orgId, btn) {
+      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn())) { if (EBX.Auth && EBX.Auth.openModal) EBX.Auth.openModal('login'); return; }
+      const org = (EBX.config.organizations || []).find(o => String(o.id) === String(orgId)) || {};
+      if (btn) { btn.disabled = true; btn.textContent = 'Nominating…'; }
+      try {
+        const r = await EBX.Auth.fetchAuthed('/organizations/register', { method: 'POST', body: JSON.stringify({
+          name: org.name || orgId, website_link: org.website_link || null, kind: 'nomination',
+          mission_id: mid, mission_statement: null, member_name: null, member_position: null, org_id: orgId, force: false }) });
+        if (!r.ok) { const d = await r.json().catch(() => ({})); if (btn) { btn.disabled = false; btn.textContent = d.detail ? 'Refused' : 'Try again'; btn.title = d.detail || ''; } return; }
+      } catch (e) { if (btn) { btn.disabled = false; btn.textContent = 'Try again'; } return; }
+      try { await loadP2All(); } catch (e) {}
+      _mountVoteBar();
+    };
     // The OE panel's Withdraw (2026-09-29): the non-final part of a stake, as
     // cash, until budget day (POST /wallet/withdraw-stake).
     window._oeWdOpen = window._oeWdOpen || {};
-    window._oeWdToggle = function (mid) { window._oeWdOpen[mid] = !window._oeWdOpen[mid]; filterInitiatives(); };
+    window._oeWdToggle = function (mid) { window._oeWdOpen[mid] = !window._oeWdOpen[mid]; window._oeAddOpen[mid] = false; filterInitiatives(); };
+    window._oeAddOpen = window._oeAddOpen || {};
+    window._oeAddToggle = function (mid) {
+      window._oeAddOpen[mid] = !window._oeAddOpen[mid];
+      window._oeWdOpen[mid] = false;
+      if (!window._oeAddOpen[mid] && typeof window._clearPending === 'function') window._clearPending(mid);
+      filterInitiatives();
+      if (window._oeAddOpen[mid]) setTimeout(() => { const i = document.getElementById('vb-add-' + mid); if (i) i.focus(); }, 0);
+    };
     window._oeWithdraw = async function (mid) {
       const inp = document.getElementById('vb-wd-' + mid), msg = document.getElementById('vb-wd-msg-' + mid);
       const ct = Math.round((Number(inp && inp.value) || 0) * 100);
@@ -4466,6 +4772,7 @@
         const b = await r.json().catch(() => ({}));
         if (!r.ok) { if (msg) msg.textContent = b.detail || ('Refused (' + r.status + ')'); return; }
         window._oeWdOpen[mid] = false;
+        if (typeof window._forgetOeRow === 'function') window._forgetOeRow(mid);
         if (typeof loadWallet === 'function') await loadWallet();
         try { await loadP2All(); } catch (e) {}
         filterInitiatives(); renderCards();
@@ -5488,12 +5795,16 @@
       // phase: "<what> is finalized on <date> — n d left", and the cause (with
       // its mission number) on the right.
       const chipOf = m => _esc(c.name + (m && m.cycle_num != null ? ' ' + ((m.cycle_num || 0) + 1) : ''));
-      const bar = (what, date, verb, chip, extra) => {
-        if (!what) return '';
+      // Mission pass (2026-10-01): "The top row of the ballot panels only needs
+      // 'Finalized on x' … For the last 3, add the title of the initiative to
+      // the right." `title` is that initiative (organization · framing ·
+      // exchange); the cause and initiative elections pass none.
+      const bar = (date, verb, chip, title, extra) => {
         const past = date && new Date(date).getTime() < Date.now();
-        const v = verb || (past ? 'was finalized on' : 'is finalized on');
-        return '<div class="el3__top-title">' + what + (date ? ' ' + v + ' <b>' + _fmtShort(date) + '</b>' : '') + '</div>' +
-          (date && !past && !(verb && /began/.test(verb)) ? '<span class="el3__top-days">' + _daysLeft(date) + ' d left</span>' : '') +
+        const v = verb || (past ? 'Was finalized on' : 'Finalized on');
+        return '<div class="el3__top-title">' + (date ? v + ' <b>' + _fmtShort(date) + '</b>' : '<span class="el3__top-none">Not scheduled</span>') + '</div>' +
+          (date && !past && !(verb && /began/i.test(verb)) ? '<span class="el3__top-days">' + _daysLeft(date) + ' d left</span>' : '') +
+          (title ? '<span class="el3__top-tiv">' + title + '</span>' : '') +
           (extra ? '<span class="el3__top-date">' + _esc(extra) + '</span>' : '') +
           '<span class="el3__top-chip">' + chip + '</span>';
       };
@@ -5525,15 +5836,15 @@
       let exBegan = null;
       try { exBegan = exM && W && W.budgetDay ? W.budgetDay(exM) : null; } catch (e) {}
       const out = {
-        ce: bar('Cause for the window that runs <b class="el3__runs">' + (ceRuns ? _fmtFullDate(ceRuns) : '—') + '</b>', ceDay, null, _esc(c.name)),
-        me: bar('Initiative for ' + chipOf(meMission), weekly, null, chipOf(meMission)),
-        oe: electing ? bar('Organization for ' + _esc(tivOf(electing)), orgClose, null, chipOf(electing))
-                     : bar('Organization for ' + _esc(c.name), null, null, _esc(c.name), 'no race open'),
-        fr: framing ? bar('Preparation for ' + _esc(tivOf(framing)), (W && W.budgetDay) ? W.budgetDay(framing) : null, null, chipOf(framing))
-                    : bar('Preparation', null, null, _esc(c.name), 'nothing in framing'),
-        ex: exM ? bar('Exchange of ' + _esc(tivOf(exM)), exBegan, 'began on', chipOf(exM),
+        ce: bar(ceDay, null, _esc(c.name), null, ceRuns ? 'window runs ' + _fmtFullDate(ceRuns) : ''),
+        me: bar(weekly, null, chipOf(meMission)),
+        oe: electing ? bar(orgClose, null, chipOf(electing), _esc(tivOf(electing)))
+                     : bar(null, null, _esc(c.name), null, 'no race open'),
+        fr: framing ? bar((W && W.budgetDay) ? W.budgetDay(framing) : null, null, chipOf(framing), _esc(tivOf(framing)))
+                    : bar(null, null, _esc(c.name), null, 'nothing in framing'),
+        ex: exM ? bar(exBegan, 'Began on', chipOf(exM), _esc(tivOf(exM)),
                       exchanging.length > 1 ? exchanging.length + ' trading' : '')
-                : bar('Exchange', null, null, _esc(c.name), 'none trading'),
+                : bar(null, null, _esc(c.name), null, 'none trading'),
       };
       // P2 · Home mods (2026-09-30): each phase's one-line description — the
       // text Home's five phase cards carried (EBX.Wheel.PHASE) — sits under its
@@ -6260,31 +6571,36 @@
         const k = (_allCauses.length ? _allCauses : causes).find(x => x.id === id);
         return (k && k.name) || id;
       };
-      const cands = [{ id: incumbent.id, name: incumbent.name, color: incumbent.color }].concat(alts);
-      // Weeks won IN A ROW, counted back from the last finished week (column 2;
-      // column 1 is the week still being voted).
-      const runOf = id => {
-        if (!ballot) return 0;
-        let n = 0;
-        for (let k = 1; k < (ballot.columns || []).length; k++) {
-          if ((ballot.columns[k] || {}).winner === id) n++; else break;
-        }
-        return Math.min(n, CAUSE_STREAK_WEEKS);
-      };
-      // Seven bars at most (the drawing's seven): the holder, then the
-      // challengers closest to taking it — longest run, then this week's share.
-      const shown = [cands[0]].concat(cands.slice(1).sort((a, b) =>
-        (runOf(b.id) - runOf(a.id)) || ((b.share || 0) - (a.share || 0))).slice(0, 6));
-      const more = cands.length - shown.length;
-      const bars = '<div class="ce-bars" title="A challenger takes the window by winning ' + CAUSE_STREAK_WEEKS + ' weeks in a row">' +
-        shown.map(k => {
-          const n = runOf(k.id);
-          return '<div class="ce-bars__row' + (k.id === incumbent.id ? ' ce-bars__row--inc' : '') + '" style="--uc:' + (k.color || colorOf(k.id)) + ';">' +
-            '<span class="ce-bars__name">' + esc(k.name) + (k.id === incumbent.id ? ' <i>holds it</i>' : '') + '</span>' +
+      // ── Mission pass (2026-10-01) — "6 horizontal bars for each of the 7
+      // active causes, showing how close each of them are to replacement."
+      // One row per OPEN window on the slate (seven — one per active cause):
+      // the cause that holds it, and six segments lit for the weeks in a row
+      // its leading challenger has won. A window with a challenger that has
+      // won at least one week is coloured; the rest are dim. The row for the
+      // window this page is deciding is marked, and every row is a door to
+      // its own window.
+      const slateSlots = ((_causeSlate && _causeSlate.slots) || [])
+        .filter(x => x.slot >= CAUSE_FIRST_OPEN).sort((a, b) => a.slot - b.slot).slice(0, 7);
+      const barRows = slateSlots.length ? slateSlots : _causeWindows().filter(w => w.votable).slice(0, 7)
+        .map(w => ({ slot: w.slot, holder_id: w.holderId, holder_name: w.holderName, holder_color: w.holderColor,
+                     challenger_id: w.challengerId, streak: w.streak }));
+      const bars = '<div class="ce-bars ce-bars--slate" title="A challenger takes a window by winning ' + CAUSE_STREAK_WEEKS + ' weeks in a row">' +
+        barRows.map(r => {
+          const n = Math.min(Number(r.streak) || 0, CAUSE_STREAK_WEEKS);
+          const lit = n >= 1 && r.challenger_id;
+          const here = r.slot === slot;
+          const holderCol = r.holder_color || colorOf(r.holder_id);
+          const chCol = r.challenger_id ? colorOf(r.challenger_id) : holderCol;
+          return '<button type="button" class="ce-bars__row' + (lit ? ' ce-bars__row--lit' : ' ce-bars__row--dim') +
+              (here ? ' ce-bars__row--here' : '') + '" data-slot="' + r.slot + '"' +
+              ' style="--uc:' + chCol + ';--hc:' + holderCol + ';"' +
+              (here ? ' aria-current="true"' : '') +
+              ' onclick="event.stopPropagation();openCauseVote(' + r.slot + ')">' +
+            '<span class="ce-bars__name">' + esc(r.holder_name || nameOf(r.holder_id)) + (here ? ' <i>&#9664; this page</i>' : '') + '</span>' +
             '<span class="ce-bars__segs">' + Array.from({ length: CAUSE_STREAK_WEEKS }, (_, w) =>
               '<i class="' + (w < n ? 'on' : '') + '"></i>').join('') + '</span>' +
-            '<span class="ce-bars__n">' + n + '/' + CAUSE_STREAK_WEEKS + '</span></div>';
-        }).join('') + (more > 0 ? '<span class="ce-bars__more">+' + more + ' more nominated &mdash; click through them below</span>' : '') + '</div>';
+            '<span class="ce-bars__n">' + (lit ? esc(nameOf(r.challenger_id)) + ' ' : '') + n + '/' + CAUSE_STREAK_WEEKS + '</span></button>';
+        }).join('') + '</div>';
       const counts = (ballot && ballot.columns && ballot.columns[0] && ballot.columns[0].counts) || {};
       const total = Object.keys(counts).reduce((a, k) => a + (Number(counts[k]) || 0), 0);
       const dist = '<div class="ce-dist">' +
@@ -6307,6 +6623,7 @@
             : '<span class="rf-none">no cause has been nominated for this window yet</span>') + '</span>' +
           '<button type="button" class="rf-btn rf-btn--tiny" onclick="event.stopPropagation();pageCauseChoices(1)"' +
             (at >= alts.length - 1 ? ' disabled' : '') + '>&raquo;</button>' +
+          '<button type="button" class="vb-btn vb-btn--ghost bb__nom ce-nominate" onclick="event.stopPropagation();suggestCause()">+ Nominate a cause</button>' +
         '</div>';
       const votes = '<div class="ce-row ce-row--votes">' +
           '<span class="ce-row__label">Keep</span>' +
@@ -6321,7 +6638,7 @@
           (committable ? ' &middot; ' + esc((alts.find(x => x.id === _ceDraft) || incumbent).name || '') : '') + '</button>',
         cancel: '<button type="button" class="vb-btn vb-btn--ghost" onclick="event.stopPropagation();cancelCauseVote()"' +
           (_ceDraft ? '' : ' disabled') + '>Cancel</button>',
-        acts: ['<button type="button" class="vb-btn vb-btn--ghost bb__nom" onclick="event.stopPropagation();suggestCause()">+ Nominate</button>'],
+        acts: [],
         causeId: incumbent.id, step: 'cause',
         note: myVote ? 'my vote: <b>' + esc((alts.find(x => x.id === myVote) || incumbent).name || myVote) + '</b>' : '',
       });
@@ -6329,7 +6646,7 @@
       // able to ask which window the panel is deciding.
       return '<div class="ce-panel ce-panel--u" data-slot="' + slot + '"' +
         ' data-cause="' + esc(incumbent.id) + '" style="--ce:' + col + ';">' +
-        bars + dist + pager + votes + barHTML +
+        bars + votes + pager + dist + barHTML +
       '</div>';
     }
 
@@ -7118,7 +7435,8 @@
         idxRowCollapseAll();
         tr.classList.add('row-selected');
         if (typeof window.pickOrg === 'function') window.pickOrg(orgRace, id);
-        _rowPreview(tr, { org_id: id });
+        // (2026-10-01) the organization's description and discussion preview
+        // are in the ballot's expansion now, not under the row
         return;
       }
       if (kind === 'org') {
@@ -7127,24 +7445,14 @@
       } else {
         const init = (_allInits || []).find(i => String(i.id) === String(id));
         if (init) idxSelectInit(JSON.stringify(init));
-        if (kind === 'tiv') _rowPreview(tr, { tiv_id: id });
+        // (2026-10-01) the preview is inside the ballot's expansion now, not under the row
       }
     });
     tbody._ebxClickBound = true;
   }
 
-  // P3 (2026-09-29): "Clicking an initiative or an organization in its table
-  // shows a preview of the discussion (using algorithm). A highly rated
-  // justification if available, or anything relevant. It should not show too
-  // much text." One line under the row — `EBX.Post.preview` picks the post.
-  function _rowPreview(tr, q) {
-    if (!(window.EBX && EBX.Post) || !tr || !tr.parentNode) return;
-    const row = document.createElement('tr');
-    row.className = 'init-detail-row ep-prevrow';
-    row.innerHTML = '<td colspan="5"><div class="ep-prevbox">Loading the discussion&hellip;</div></td>';
-    tr.parentNode.insertBefore(row, tr.nextSibling);
-    EBX.Post.preview(row.querySelector('.ep-prevbox'), q);
-  }
+  // (2026-10-01) `_rowPreview` — the one-line discussion preview under a clicked
+  // row — moved into each ballot's expansion (`_meExpansionHTML`, `_oeExpansionHTML`).
 
   // build-seq 8: collapse any open inline detail row + clear row highlight.
   function idxRowCollapseAll() {
@@ -7234,37 +7542,14 @@
           ${stat('Org running it', runOrg)}
           ${stat('Key dates', keyDates)}
         </div>
-        ${kind === 'tiv' ? `
-        <!-- §1 (2026-08-05): the row's own actions. Vote toggles this
-             initiative into the top-row dialog (structure.md: "clicking on
-             'vote' toggles that initiative/organization in the top-row
-             dialog"); Discuss leaves for the Discussion page, because Context
-             carries no posts. Convert + Donate are money actions on the credit
-             model (README §5 / backlog "Money / credit / donations") with no
-             endpoint yet — FRAMED here, and they say so on click. -->
-        <div class="init-detail-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:var(--sp-md);">
-          <button class="init-table__votebtn${(typeof window.inSlate === 'function' && window.inSlate(entity.id)) ? ' on' : ''}"
-                  onclick="event.stopPropagation();toggleSlate('${entity.id}')">${(typeof window.inSlate === 'function' && window.inSlate(entity.id)) ? '✓ In my slate' : 'Vote'}</button>
-          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();rowConvert('${entity.id}')">⇄ Convert</button>
-          <button class="btn btn-forest btn-sm" onclick="event.stopPropagation();rowDonate('${entity.id}')">Donate</button>
-        </div>` : ''}
         <div style="font-family:var(--font-mono);font-size:0.58rem;opacity:0.45;margin-top:8px;">
           frame — winning case / winning posts resolve once posts carry their winning flags (backlog: Context table).
         </div>
       </div>`;
   }
 
-  // §4 (2026-08-02): Convert / Donate stubs. Kept deliberately honest rather
-  // than silently no-op — the credit lifecycle (generic → cause → mission →
-  // org → live) is still parked in the backlog.
-  function rowConvert(tivId) {
-    alert('Convert — moves tokens you already hold between causes/missions.\n\nThe credit lifecycle this depends on is still parked (backlog: Money / credit / donations), so this is framed, not live.');
-  }
-  function rowDonate(tivId) {
-    alert('Donate — adds new money to this initiative\'s pool.\n\nThe donation + tax-deductibility flow is still parked (backlog: Money / credit / donations), so this is framed, not live.');
-  }
-  window.rowConvert = rowConvert;
-  window.rowDonate = rowDonate;
+  // (2026-10-01) the row Convert / Donate stubs went with the expansion buttons:
+  // "Convert should not be an option for the initiative election."
 
   // Detail-panel markup for an initiative — reuses the .init-selected-panel chrome.
   // §2 (2026-09-08): exposed, because the ME ballot renders it now instead of the
@@ -7951,10 +8236,12 @@
       vote:  i => ((typeof window.inSlate === 'function') && window.inSlate(i.id)) ? 1 : 0,
     };
     renderInitTable(_sortRows(filtered, tKey[_tableSort.key] || tKey.total));
-    // build-seq 8: re-open the selected row's inline detail after re-render.
+    // Mission pass (2026-10-01): the selected initiative's expansion lives in
+    // the ballot; after a re-render the row only keeps its highlight (it used
+    // to re-open the old inline panel, Convert and Donate included).
     if (_selectedInit) {
       const row = document.querySelector(`#init-table-body tr[data-id="${_selectedInit.id}"]`);
-      if (row) idxRowExpand(row, _selectedInit, 'tiv');
+      if (row) row.classList.add('row-selected');
     }
   }
 
@@ -8380,6 +8667,10 @@
       const b = p.body || '';
       return esc(b.slice(0, n)) + (b.length > n ? '…' : '');
     }
+    async function _missionStatementPost(tivId) {
+      const rows = (await jget('/posts?tiv_id=' + encodeURIComponent(tivId) + '&tag=mission_statement&roots_only=true&limit=20&sort=hot')) || [];
+      return rows.slice().sort((a, b) => ((b.helpful_count || 0) - (b.harmful_count || 0)) - ((a.helpful_count || 0) - (a.harmful_count || 0)))[0] || null;
+    }
     async function renderReport() {
       _research = ((await jget('/posts?mission_id=' + MID + '&category=mission_support&roots_only=true&limit=60')) || []).sort(byScore);
       document.getElementById('mb-report-title').textContent = 'The report on ' + mname();
@@ -8387,13 +8678,20 @@
       const won = mission.winning_org_id ? candidacies.find(c => c.org_id === mission.winning_org_id) : null;
       const lead = !won && candidacies.length ? candidacies.slice().sort((a, b) =>
         ((tally[b.org_id] || {}).net_votes || 0) - ((tally[a.org_id] || {}).net_votes || 0))[0] : null;
-      let statement;
+      let statement, msPost = null;
       if (won && (won.mission_statement || '').trim()) {
         statement = '<p class="mb-report__quote">&ldquo;' + esc(won.mission_statement.trim()) + '&rdquo;</p>' +
           '<p class="mb-report__by">' + esc((orgsById[won.org_id] || {}).name || won.org_id) + ', elected to run it</p>';
       } else if (lead && (lead.mission_statement || '').trim()) {
         statement = '<p class="mb-report__quote">&ldquo;' + esc(lead.mission_statement.trim()) + '&rdquo;</p>' +
           '<p class="mb-report__by">' + esc((orgsById[lead.org_id] || {}).name || lead.org_id) + ' — leading the organization election</p>';
+      } else if (winningTiv && (msPost = await _missionStatementPost(winningTiv.id))) {
+        // Mission pass (2026-10-01): a mission statement is a post now — a
+        // general post tagged mission_statement on the initiative; the most
+        // voted one stands until an organization writes its own.
+        statement = '<p class="mb-report__quote">&ldquo;' + esc(String(msPost.body || '').trim()) + '&rdquo;</p>' +
+          '<p class="mb-report__by">' + esc(msPost.author_handle || msPost.author_name || 'a benefactor') +
+          ' &middot; &#9650; ' + (msPost.helpful_count || 0) + ' &middot; the leading mission statement, until an organization writes one</p>';
       } else if (winningTiv && winningTiv.description) {
         statement = '<p>' + esc(winningTiv.description) + '</p><p class="mb-report__by">the initiative&rsquo;s own case, until an organization writes one</p>';
       } else {
@@ -8412,7 +8710,7 @@
           '<p class="mb-report__by">the leading ' + top.length + ' of ' + _budget.length + ' budget items · ' + money(total) + '</p>';
       } else {
         plan = mission.winning_tiv_id
-          ? '<p class="mb-report__empty">No budget items yet — the plan is built from the leading ones. Suggest the first below.</p>'
+          ? '<p class="mb-report__empty">No budget items yet — the plan is built from the leading ones. Suggest the first:</p>'
           : '<p class="mb-report__empty">Budget items open once the initiative is elected; the plan is built from the leading ones.</p>';
       }
       const sec = ([key, label, hint]) => {
@@ -8426,27 +8724,23 @@
       };
       document.getElementById('mb-report-body').innerHTML =
         '<div class="mb-report__top"><section class="mb-report__sec"><h4>Mission statement</h4>' + statement + '</section>' +
-        '<section class="mb-report__sec"><h4>Plan</h4>' + plan + '</section></div>' +
-        '<div class="mb-report__three">' + SECTIONS.map(sec).join('') + '</div>' + budgetHTML();
+        '<section class="mb-report__sec"><h4>Plan</h4>' + plan + budgetHTML() + '</section></div>' +
+        '<div class="mb-report__three">' + SECTIONS.map(sec).join('') + '</div>';
     }
-    // P1 mission edits (2026-09-28): "Budget posting link and explanation will
-    // appear in the report once the initiative has been elected."
+    // Mission pass (2026-10-01): "Move the budget item suggestion up to the plan
+    // area, and delete the budget item description, it lives inside the post
+    // page." The three Suggest buttons (and the way into every item) sit under
+    // the plan, once the initiative has been elected.
     function budgetHTML() {
       if (!mission || !mission.winning_tiv_id) return '';
-      return '<section class="mb-report__sec mb-report__budget"><div><h4>Budget <small>' + _budget.length +
-          ' item' + (_budget.length === 1 ? '' : 's') + '</small></h4>' +
-        '<p>Budget items are how this mission gets planned. A <b>service</b> is a job someone does — a rate and the days; ' +
-        'a <b>supply</b> is something they need and what it costs; <b>support</b> is how the work gets resolved honestly — ' +
-        'an approval, advice, an introduction. The leading items become the plan above, and the organization builds its ' +
-        'budget from them before budget day. Items can be suggested for as long as the mission runs.</p>' +
-        (_budget.length ? '<p class="mb-report__by"><button type="button" class="mp-post__reply" data-open-sec="budget">See all ' +
-          _budget.length + ' budget item' + (_budget.length === 1 ? '' : 's') + ' &rarr;</button></p>' : '') + '</div>' +
-        '<div class="mb-budget__add">' +
-          '<span class="mb-budget__lab">Suggest a budget item</span>' +
+      return '<div class="mb-budget__add mb-budget__add--plan">' +
+          '<span class="mb-budget__lab">Suggest a budget item' +
+            (_budget.length ? ' &middot; <button type="button" class="mp-post__reply" data-open-sec="budget">all ' +
+              _budget.length + ' item' + (_budget.length === 1 ? '' : 's') + ' &rarr;</button>' : '') + '</span>' +
           '<button type="button" class="mb-budget__btn" data-budget="service"><b>Service</b><small>a job, a rate, the days</small></button>' +
           '<button type="button" class="mb-budget__btn" data-budget="supply"><b>Supply</b><small>an item and its cost</small></button>' +
           '<button type="button" class="mb-budget__btn" data-budget="support"><b>Support</b><small>a connection; no cost</small></button>' +
-        '</div></section>';
+        '</div>';
     }
     const report = document.getElementById('mb-report');
     report.addEventListener('click', e => {
@@ -8649,7 +8943,7 @@
       const claimedOrgIds = new Set(claims.map(c => c.org_id));
       if (!candidacies.length) {
         box.innerHTML = '<span style="font-size:0.84rem;opacity:0.6;">No organizations are competing yet. ' +
-          'Nominate one from the ballot above (<b>+ org</b> on any initiative), or register yours.</span>';
+          'Suggest one from the initiative election (click an initiative, then <b>+ Suggest an organization</b>), or register yours.</span>';
       } else {
         box.innerHTML = candidacies.map(c => {
           const org = orgsById[c.org_id];
@@ -9438,16 +9732,25 @@
     function paintPhases() {
       const el = document.getElementById('mx-phases');
       const m = S.mission;
-      const evs = (m && !m.virtual && window.MB && MB.eventsFor) ? MB.eventsFor(m.id) : [];
+      // Mission pass (2026-10-01): "The progress log only needs the title and
+      // date — these can be accomplished in one row. Everything else is shown
+      // in the ballot." The date is the one that matters for where the phase
+      // stands: when it closes (live), opens (future) or closed (past).
       el.innerHTML = STEPS.map(st => {
         const info = phaseInfo(m, st);
-        const mine = evs.filter(e => e.phase === st && !e.dup);
-        return '<button type="button" role="tab" class="mx-phase mx-phase--' + info.when + (st === S.step ? ' on' : '') +
-          '" data-step="' + st + '" aria-selected="' + (st === S.step) + '">' +
-          '<span class="mx-phase__n">' + STEP_N[st] + '</span><span class="mx-phase__b"><span class="mx-phase__l">' + STEP_NAME[st] + '</span>' +
-          '<span class="mx-phase__d">' + esc(info.short) + '</span>' +
-          mine.map(e => '<span class="mx-phase__ev' + (e.upcoming ? ' mx-phase__ev--up' : '') + '"><i>' + fmt(e.t) + '</i>' + e.html + '</span>').join('') +
-          '</span></button>';
+        let d = '';
+        if (!m) d = phaseDateThisWeek(st, S.cause) || '';
+        else {
+          const D = datesOf(m)[st] || {};
+          d = info.when === 'future' ? (D.from ? fmt(D.from) : '') : (D.to ? fmt(D.to) : (D.from ? fmt(D.from) : ''));
+        }
+        return '<button type="button" role="tab" class="mx-phase mx-phase--row mx-phase--' + info.when + (st === S.step ? ' on' : '') +
+          '" data-step="' + st + '" aria-selected="' + (st === S.step) + '"' +
+          ' title="' + esc(info.short) + '">' +
+          '<span class="mx-phase__n">' + STEP_N[st] + '</span>' +
+          '<span class="mx-phase__l">' + STEP_NAME[st] + '</span>' +
+          '<span class="mx-phase__d">' + esc(d) + '</span>' +
+          '</button>';
       }).join('');
     }
     // The panel under the toggle when the selected phase is not the mission's
@@ -9647,7 +9950,7 @@
         el.hidden = false;
         el.insertAdjacentHTML('afterbegin', '<p class="mx-recap__p mx-recap__p--warn">' + opts.notice + '</p>');
       }
-      if (opts.samePage) return;               // a phase switch: the story is the same mission's
+      if (opts.samePage) { paintPrePosts(m, page); return; }   // a phase switch: the story is the same mission's
       const c = causeById(S.cause);
       if (page) {
         const win = lost ? tivById(m.winning_tiv_id) : null;
@@ -9657,6 +9960,7 @@
             '<div id="ti-report" class="ti-report">Loading its report&hellip;</div>' });
         paintTivReport(page, m);
         loadOverview(m);
+        paintPrePosts(m, page);
         return;
       }
       MB.load(m && !m.virtual ? m.id : null, {
@@ -9668,7 +9972,55 @@
           : 'No ' + esc(c ? c.name : '') + ' mission is in ' + esc(STEP_NAME[S.step].toLowerCase()) + ' this week.',
       });
       loadOverview(m);
+      paintPrePosts(m, null);
     }
+    // Mission pass (2026-10-01) — the posts that stand in for the report until
+    // the initiative is elected.
+    let _preSeq = 0;
+    async function paintPrePosts(m, page) {
+      const box = document.getElementById('mx-pre'), list = document.getElementById('mx-pre-list');
+      const report = document.getElementById('mb-report');
+      const before = !page && (!m || m.virtual || !m.winning_tiv_id) && (S.step === 'cause' || S.step === 'tiv');
+      if (report) report.hidden = !!(before && m && !m.virtual);
+      if (!box) return;
+      if (!before) { box.hidden = true; return; }
+      const seq = ++_preSeq;
+      const c = causeById(S.cause) || {};
+      let ids = [], kind, what;
+      if (S.step === 'cause') {
+        let all = [];
+        try { const r = await fetch('/causes?status=all'); all = r.ok ? await r.json() : []; } catch (e) {}
+        ids = [c.id].concat(all.filter(x => x.status === 'suggested' && x.id !== c.id).map(x => x.id)).filter(Boolean);
+        kind = 'cause';
+        what = 'Posts on ' + esc(c.name || 'the cause') + ', which holds this window, and on the causes nominated to replace it';
+      } else {
+        ids = (EBX.config.initiatives || []).filter(i => m && i.mission_id === m.id).map(i => i.id);
+        kind = 'initiative';
+        what = 'Posts on the initiatives running in ' + esc(missionName(m) || 'this election');
+      }
+      document.getElementById('mx-pre-kicker').textContent = S.step === 'cause' ? 'Cause election · the discussion' : 'Initiative election · the discussion';
+      document.getElementById('mx-pre-title').innerHTML = what;
+      list.innerHTML = '<p class="mx-pre__empty">Loading&hellip;</p>';
+      box.hidden = false;
+      let rows = [];
+      try {
+        const r = await fetch('/posts?target_kind=' + kind + '&roots_only=true&limit=300&sort=hot');
+        rows = r.ok ? await r.json() : [];
+      } catch (e) {}
+      if (seq !== _preSeq) return;
+      const set = new Set(ids);
+      const net = p => (p.helpful_count || 0) - (p.harmful_count || 0);
+      rows = rows.filter(p => set.has(p.target_id)).sort((a, b) => (net(b) - net(a)) ||
+        (new Date(b.created_at) - new Date(a.created_at))).slice(0, 12);
+      list.innerHTML = rows.length
+        ? rows.map(p => (EBX.Post && EBX.Post.collapsed) ? EBX.Post.collapsed(p, { chars: 220, click: true, href: false }) : '').join('')
+        : '<p class="mx-pre__empty">Nothing posted yet. Use <b>+ post</b> in the ballot to start the discussion.</p>';
+      list.querySelectorAll('[data-post]').forEach(a => a.addEventListener('click', e => {
+        if (!(EBX.Post && EBX.Post.open)) return;
+        e.preventDefault(); EBX.Post.open(a.getAttribute('data-post'));
+      }));
+    }
+
     window.MX = { go, state: S, missionFor, stepOf, resolve, phaseInfo, afterStory, repaintPhases: () => paintPhases(),
       compose: kind => window.MB && MB.compose(kind), post: step => post(step) };
 

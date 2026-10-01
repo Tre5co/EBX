@@ -5,6 +5,7 @@ verb:
 
     GET  /wallet          the four segments, the grant, the eight rows, the rules
     GET  /wallet/rows     the same rows for a signed-out visitor
+    GET  /wallet/row/{id} one race's row, even outside the eight (2026-10-01)
     POST /wallet/commit   set this race's allocation — a position, up or down
     POST /wallet/move     race -> race, carrying the philanthropy vote with it
     POST /wallet/withdraw purchased, unvoted tokens back to cash
@@ -117,6 +118,20 @@ def get_wallet(
 def get_rows(db: Session = Depends(get_db)):
     """The OE table for a signed-out visitor: the races, no commitments."""
     return w.oe_rows(db, None)
+
+
+@router.get("/row/{mission_id}", response_model=dict)
+def get_row(
+    mission_id: str,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """One organization race's row for the signed-in benefactor, even when it
+    is not among the eight `/wallet` carries (mission pass, 2026-10-01)."""
+    row = w.oe_row_for(db, user.id, mission_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="No organization election is open for that mission")
+    return row
 
 
 @router.post("/commit", response_model=dict)

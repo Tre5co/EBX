@@ -308,6 +308,12 @@ def prepare_new(db: Session, post: models.Post, *, target_kind: Optional[str],
             post.target_kind, post.target_id = "none", None
         if "response" in tags and post.target_kind != "post":
             raise Refusal("a Response is 'in response to' another post — target the post (target_kind='post')")
+        if pcfg.MISSION_STATEMENT_TAG in tags:
+            if post.target_kind != "initiative":
+                raise Refusal("a Mission statement is about an initiative — target it (target_kind='initiative')")
+            if len((post.body or "").strip()) > pcfg.MISSION_STATEMENT_MAX:
+                raise Refusal(f"a Mission statement is one or two lines — {pcfg.MISSION_STATEMENT_MAX} "
+                              "characters at most; post the longer argument as a Justification")
 
     # Entity tags must name something real; the rest are words.
     post.tags = _valid_entity_tags(db, tags) or None

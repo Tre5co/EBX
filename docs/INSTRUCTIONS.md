@@ -27,8 +27,9 @@ never carries a second copy of a spec.*
 - [2. DECIDE](#2-decide)
 - [3. BUILD SEQUENCE](#3-build-sequence)
   - [P1. Mission](#p1-mission)
+  - [P2b · Organization experience](#p2b--organization-experience)
   - [P2 · Home](#p2--home)
-  - [NOW. Footer.](#now-footer)
+  - [Footer](#footer)
   - [P3 · Posting](#p3--posting)
   - [P3b · News](#p3b--news)
   - [P4 · Event log + Inbox](#p4--event-log--inbox)
@@ -54,7 +55,12 @@ never carries a second copy of a spec.*
   - [Added 2026-09-29 (P3 · Posting)](#added-2026-09-29-p3--posting)
   - [Added 2026-09-29 (inbox)](#added-2026-09-29-inbox)
   - [Added 2026-09-30 (P2 · Home mods)](#added-2026-09-30-p2--home-mods)
+  - [Added 2026-10-01c (Home tweaks)](#added-2026-10-01c-home-tweaks)
+  - [Added 2026-10-01 (mission pass)](#added-2026-10-01-mission-pass)
 - [ARCHIVE](#archive)
+  - [2026-10-01c — Home tweaks · HR2 backfilled · admin removal · Posting and Footer re-sorted](#2026-10-01c--home-tweaks--hr2-backfilled--admin-removal--posting-and-footer-re-sorted)
+  - [2026-10-01b — P2 · Home pass (the four doors) · P2b rebuilt on D26/D28](#2026-10-01b--p2--home-pass-the-four-doors--p2b-rebuilt-on-d26d28)
+  - [2026-10-01 — P1 mission pass (Jax's 17 items) · DECIDE cleared · P2b added](#2026-10-01--p1-mission-pass-jaxs-17-items--decide-cleared--p2b-added)
   - [2026-09-30 — P2 · Home mods (the five steps, the mission hub)](#2026-09-30--p2--home-mods-the-five-steps-the-mission-hub)
   - [2026-09-29b — Unified elections (Jax's CE · ME · OE panels)](#2026-09-29b--unified-elections-jaxs-ce--me--oe-panels)
   - [2026-09-29 — P3 · Posting (and the inbox, filed)](#2026-09-29--p3--posting-and-the-inbox-filed)
@@ -123,6 +129,12 @@ anywhere, News is where every post can be *found* — the one ordered,
 searchable feed of everything, algorithmic but not personalized. Home is the
 personalized cut of it and Mission the mission-ized one (G3, G4).
 
+**P2b Organization experience** is next (added 2026-10-01: "I need to do this
+asap"). Every mission ends in an organization, and today an organization has
+no page, no way in before its initiative wins, and no voice. It comes before
+P3b because News and the inbox both carry organization posts, and before P6
+because P6 pays an organization that P2b lets claim itself.
+
 **P4 Event log + Inbox** turns single visits into a habit (G3). It needs P3's
 posts and P1's phase changes as its event sources.
 
@@ -152,6 +164,8 @@ gantt
     Answer the DECIDE list (P1 rows)          :done, unblock4, 2026-09-23, 1d
     Answer the DECIDE list (P2 rows + D13-D17) :done, unblock5, 2026-09-24, 2d
     Answer the DECIDE list (P3 rows D8 + D19-D21) :done, unblock6, 2026-09-28, 1d
+    Answer D26 + D28 (organization accounts)  :done, unblock7, 2026-10-01, 1d
+    Answer D29 + D30                          :done, unblock8, 2026-10-01, 1d
 
     section Surfaces
     Landing wheel + Elect two cards           :done, s0, 2026-09-20, 1d
@@ -161,11 +175,16 @@ gantt
     P1 follow-ups (dead top-card + box code)  :p1b, after p1r2, 2d
     P1 mission edits (the compact page)       :done, p1e, 2026-09-28, 1d
     P1 unified elections (CE/ME/OE panels)    :done, p1u, 2026-09-29, 1d
+    P1 mission pass (Jax's 17 items)          :done, p1m, 2026-10-01, 1d
+    P2 Home pass (four doors, steps list, hub) :done, p2h, 2026-10-01, 1d
+    P2 Home tweaks + admin removal            :done, p2t, 2026-10-01, 1d
+    P3c Posting display (card, votes on Home)  :p3c, after p2b, 3d
+    P2b Organization experience (accounts, 3 tabs, campaign pages) :crit, p2b, after p1m, 12d
     P2 Home (annulus + The Network + feed)    :done, p2, 2026-09-25, 1d
     P2 Home mods (five steps + mission hub)   :done, p2m, 2026-09-30, 1d
     Footer + Contact us (F9)                  :done, foot, 2026-09-25, 1d
     P3 Posting (post.html, gates off)         :done, p3, 2026-09-29, 1d
-    P3b News (the feed of everything, RSS, OG) :p3b, after p3, 4d
+    P3b News (the feed of everything, RSS, OG) :p3b, after p2b, 4d
     P4 Event log + Inbox                      :p4, after p3b, 5d
     P8 About (tabbed, phase copy + How to post) :p8, after p4, 3d
     Animated process diagram                  :s4, after p4, 7d
@@ -185,7 +204,7 @@ gantt
     section Counterparty (P6)
     Mail transport                            :c1, after unblock1, 3d
     M1 registered / M2 might-win / M3 won     :c2, after c1, 7d
-    Org registration + claim page             :c3, after p5, 14d
+    Org registration + claim page (now P2b)   :c3, after p1m, 7d
     Vetting gates                             :c4, after c3, 7d
     Check flow + payee                        :c5, after unblock3, 14d
 
@@ -205,91 +224,230 @@ gantt
 liability surface. It should not be designed until one mission has resolved.
 
 ## 2. DECIDE
-*Only Jax answers these. Each says which pass it blocks. A pass with an open
-blocker does not start.*
+*Only Jax answers these. A pass with an open blocker does not start. Answered
+questions are cleared: each answer now lives in the pass or doc it shaped.*
 
-| id | Question | Blocks |
-|---|---|---|
-| **D6** | Which filters keep you on Home and which throw you to News? Proposed: the three Network chips stay; anything with a second axis (cause + type + date, or any search) goes to News. | P2 | - ANSWER - For now, you can only filter by cause or by your own posts on home. Opening the thread or doing any further filters brings you to news. **→ Superseded 2026-09-30 (Home mods):** "Remove all togglability from home page feed" — Home has no filters at all; the tiles and posts link into News.
-| **D7** | Does any signed-out marketing copy survive on Home, given "the signed out version is not different"? If yes, where do the five phase descriptions and "How it Works" live once the feed is the first thing below the annulus? | P2 | - ANSWER - described in instructions
-| **D8** | Post types on `post.html`, and which ones an organization account sees versus a benefactor. | P3 | - PARTLY ANSWERED (inbox, 2026-09-28) - Benefactors write four kinds of post, each with its own target: Background (cause), Investigation (organization), budget items (initiative), Analysis (mission) — P3 › The model. A plain post attached to nothing comes later (BACKLOG). **Still open:** what an organization account sees and writes, and whether Case and Evaluation survive now that the composer's Review lane lists replies (since 2026-09-25). ANSWER - Case and evaluation will now be optional tags on the all-purpose posts, along with other various tags. The review lane is gone. **→ Folded into P3 2026-09-28** (the all-purpose post, with tags, comes in P3). What an organization account sees and writes split off as **D26** (P6).
-| **D9** | Which events notify, and where they land — inbox only, or inbox + email weekly digest? (Mail transport is a P6 dependency.) | P4 | - ANSWER - Users should be able to optionally get email updates, but there will be many notifications that only come through through the inbox.
-| **D10** | Do friendships exist at all? Messaging is now mission-members-only, which may make a friend model unnecessary — but Profile still lists "friends". | P4 | - ANSWER - I think there could be some use to building friendships across missions - 2 people who collaborated on one mission might want to collaborate on another one.
-| **D11** | Fee-for-coverage instead of a cut of donations ("Earthbux donates 100%, collects a fee from the philanthropy"). Changes `money_model.md` and the nonprofit application, and carries an independence risk worth writing down. | P5, P6 |
-| **D12** | Where the money actually lives — the banking and custody question behind G2. | P6 |
-| **D13** | *(from P1, 2026-09-24)* Mission URLs are derived from the initiative title, so **renaming an initiative moves its URL** and old links fall back to the default mission with a notice. Keeping old links alive needs a stored `slug` column plus a `slug_history` table (a migration — proposed, not applied). Do it now, or only once titles become editable? | P1 follow-up | - ANSWER - Yes, old titles of the initiative should also link to the new title. **→ Done 2026-09-24 (P1 review):** `initiative_slugs` (migration `c9e4a7d2b6f1`), `PUT /initiatives/{id}/title` keeps the old slug forwarding.
-| **D14** | *(from P1)* The page now has **two five-way toggles**: the phase toggle under the annulus (moves the page to this cause's mission in that phase) and the ballot tabs (open a ballot, change nothing else). Keep both, or fold the ballot tabs into the phase toggle? | P2 | - ANSWER - Fold the ballot tabs into the phase toggle. Try to visually connect them as well. **→ Done 2026-09-24:** five tabs across the top of one panel.
-| **D15** | *(from P1 / D5)* Six columns now. The oldest column **aggregates the six weeks before the contest opened** — does it count as one of the "6 weeks in a row", or should a challenger need six live weeks plus the head start? The code counts it (5 live + 1 aggregate). | — | - ANSWER - It needs to win 6 elections. Upon winning its sixth election, it will be the newest open ME race. **→ Done 2026-09-24:** six weekly columns, the aggregate head start removed. "Becomes the newest open ME race" is the spec for the swap, which is still unbuilt (README §4).
-| **D16** | *(from P1)* The toggler's first page shows the newest **cause election** window (slot 7, not a mission yet — `/m?slot=7`), the newest **initiative** election and the newest **organization** election. "Newest" is the one furthest from closing; the one closing **this week** is on page 2+. Is newest right, or should page one be the three that close soonest? | P2 | - ANSWER - Newest means newest. That's right, but see issues in my review. **→ Done 2026-09-24:** newest, per toggled cause.
-| **D17** | *(from P1 sweep, F11)* Two organization elections (wil0, hpr0) are **past their close date with no winner** — their only candidates are pending approval. They hold the "this week's race" slot and push live races out of `/wallet/rows`' eight. What happens to a race that closes with no approved candidate? | P5 / P7 | - ANSWER - I need to backfill these. **→ Open on Jax** (F11 waits on the backfill).
-| **D18** | *(from the P1 review)* A one-line description for **Home**, **Missions** and **News**. Suggestions, to pick from or react to — **Home:** "You donate. We follow." · "A dollar a week, and a say in where it goes." · "The social network for charities." · "Where the week's giving is decided." **Missions:** "Every mission, from the vote to the last receipt." · "Pick the cause, elect the plan, watch the money work." · "One page for a mission's whole life." · "Where the pool becomes a plan." **News:** "What the network found this week." · "Journalists, scientists and auditors — on your missions." · "The reporting your donation paid for." · "Every mission, covered like a story." | P2 | - ANSWER - Home: "You donate. We follow." (the strapline stays as it is). **→ Done 2026-09-25 (P2).** Missions and News still open.
-| **D19** | *(inbox, 2026-09-28)* **Where a Background points.** "Background may only target a cause" (2026-09-26), but the inbox sketch draws `initiative <- background`. Proposed: the cause, stamped with the initiative election it was written in (the stamp is what "one per person per initiative election" counts), with the initiatives it covers as tags — so it previews under each of them. | P3 | ANSWER - Each user writes a background for a cause, and can tag as many initiatives as they like, or 0. When they post it, it automatically appears electable for this weeks election. That version remains in the history for that mission. After election day, any edits they make will be posted to the next mission in that cause. Every background is tied to a cause. **→ Folded into P3 2026-09-28.**
-| **D20** | *(inbox, 2026-09-28)* **Which Background and Investigation lead** — the two every Analysis attaches automatically. Proposed: fixed when each election closes — the most helpful Background at T, and the most helpful Investigation on any of the mission's candidate organizations at T+8. Analyses (T+8 → T+15) then build on a pair that can't shift under them, the reference still rewards having informed the vote, and a critical Investigation of an organization that lost can lead. | P3 | Yes, I agree with your proposal. **→ Folded into P3 2026-09-28.**
-| **D21** | *(inbox, 2026-09-28)* **Edit lock or version pin.** The inbox locks Backgrounds and Investigations until budget day. But any later mission's Analysis can cite them, each with its own budget day, so a popular post would never unlock — and a lock stops authors fixing mistakes. Proposed: no lock. A citation pins the version it cited, and edits become new versions (edits are already versioned). | P3 | ANSWER - Edits become new versions - this means that all posts lock permanently after elections. We need to allow users to pull their old posts from previous missions into new missions. Citing old posts should reset the vote count. **→ Folded into P3 2026-09-28**; it also settles the first half of D22(b) — a post's votes count per mission.
-| **D22** | *(inbox, 2026-09-28)* **Research paid in minted EBX.** The inbox: on budget day the winning Analysis pays 1/3 to its author, 1/3 to its cited Backgrounds and 1/3 to its cited Investigations, each third split by votes, in EBX minted by diluting every donor rather than in cash — so all cash splits organization 5–15/16 · Earthbux 1–5/16 (this checks out: research's 3/32 joins the flexible slice). To settle: **(a)** the pot — 3/32, so each third is 1/32 as today? (the inbox also says "a 1/32 pool"). **(b)** Which votes split it — proposed: only votes cast during this mission, which gives posts cited from earlier missions the smaller share the inbox asks for, weighted by EBX held in the mission like budget votes. **(c)** Deployment order — "last of all" puts research EBX behind the initiative's winning backers, whose last place is today's reward for being right (money_model §7); proposed: the same tier as them. **(d)** EBX never buys anything personal (merch, travel, shoutouts): if it can, the reward is pay, not voice. Likewise "priced in dollars" must never become "sold for dollars" (money_model §1). Becomes a money_model §0 ruling once answered. | P5 |
-| **D23** | *(inbox, 2026-09-28)* **Budget-item checks.** Items can be posted any time, including after budget day, so wrong ones need catching. Proposed: three checks, each owned by whoever can actually verify it — **price** (evidence attached: a quote or a listing), **feasible** (the organization accepts the item), **legal/honest** (Earthbux News; Support is already its lane). A wrong claim gets a challenge with evidence rather than a downvote, so budgeting stays upvote-only. | P5 |
-| **D24** | *(inbox, 2026-09-28)* **What budget day hands over.** The inbox: on budget day Earthbux takes the reins and donors step back to reading. But holders still trigger releases in the exchange phase (money_model §8), and D22's EBX is only worth something if holding it is still a say. Proposed: budget day hands over the reporting, not the control. And Earthbux can't be absent before budget day: the organization is paid its 5/16 that day, so vetting (mission_model §6) has to be finished first. | P5 |
-| **D25** | *(inbox, 2026-09-28)* **Move budget day back — framing 8 or 10 weeks instead of 7** ("so people don't have to worry about multiple elections in the same cause simultaneously"). Worth knowing before choosing: the overlap does not come from framing's length. With a 7-week rotation and phases of 7–8 weeks, every cause *always* has one mission in each phase at once — mission k's framing (T+8 → T+15) runs alongside mission k+1's organization election (T+7 → T+15) and mission k+2's initiative election, and an organization election of 8 weeks already overlaps the next one by a week. A longer framing moves budget day to T+16 or T+18 but keeps every overlap. What would actually separate them is making the phases *sequential per benefactor* (one ballot at a time in the UI) rather than per cause. Touches money_model §0 rulings 1, 4, 5, 9 (every "T+15"), `BUDGET_SET_WEEKS`, the Analysis window and the build of P5. | P5 |
-| **D26** | *(split from D8, 2026-09-28)* What an **organization account** sees and writes on `post.html` — today it has `org_update`; does it also write Backgrounds, answer Vetting, post budget items as the party that will do the work? | P6 |
-| **D27** | *(P1 mission edits, 2026-09-28)* **The name of phase 4.** "Maybe instead of 'preparation' replacing framing we can do 'Analysis'." Earlier candidates: Planning (backlog), Orientation (mission_model §3). "Analysis" names the phase for the post elected in it — one word, one thing — but the phase also holds budget voting and the organization's setup, and "the Analysis" would then mean both a phase and a post. Not renamed yet. *(2026-09-29: Jax's drawing of the phase-4 panel reads "**Preparation** for <initiative> is finalized on <date>", and the header line now says Preparation; the phase tab still says Framing.)* *(inbox 2026-09-29: "what was I gonna call framing?" — the BACKLOG answer was **Planning** ("I think planning is the move"), which is the word the weekly update in P4 uses until this is settled.)* | — | I'm calling it 'prep'
+| id | Question | Proposed | Blocks |
+|---|---|---|---|
+| **D11** | Fee-for-coverage instead of a cut of donations ("Earthbux donates 100%, collects a fee from the philanthropy")? | — (changes `money_model.md` and the nonprofit application; an independence risk) | P5, P6 |
+| **D12** | Where does the money actually live — banking and custody? | — | P6 |
+| **D17** | What happens to a race that closes with no approved candidate (wil0, hpr0 — F11)? | Jax backfills them | P5, P7 |
+| **D18** | One-line descriptions for **Missions** and **News** (Home is "You donate. We follow."). | Missions: "Every mission, from the vote to the last receipt." · News: "What the network found this week." | P3b (not blocking) |
+| **D22** | Research paid in minted EBX on budget day: (a) the pot, (b) which votes split it, (c) its place in deployment order, (d) EBX never buys anything personal. | 3/32 · only this mission's votes, weighted by EBX held · same tier as the initiative's winning backers · nothing personal | P5 |
+| **D23** | Who checks a budget item, and how is a wrong one caught? | price — evidence attached · feasible — the organization · legal/honest — Earthbux News; a challenge with evidence, not a downvote | P5 |
+| **D24** | What does budget day hand over? | the reporting, not the control; vetting finished before it | P5 |
+| **D25** | Move budget day back (framing 8 or 10 weeks)? | the overlap is the rotation, not framing's length — separate ballots per benefactor instead | P5 |
 
 ## 3. BUILD SEQUENCE
 
 ### P1. Mission
-*Unified elections — Jax's CE · ME · OE panels, one frame for all five phases,
-the progress log inside the panel (F21) and the initiative page — shipped
-2026-09-29, see `## ARCHIVE` › 2026-09-29b. The mission edits (the compact page)
-shipped 2026-09-28 — see `## ARCHIVE` › 2026-09-28. Nothing open here; the phase-4 name is D27, and the About tab the
-Process / Reason copy moved to is P8. The follow-ups on the build clock (dead
-top-card code, the register below) are still due.*
+*The mission pass (Jax's 17 items) shipped 2026-10-01 — see `## ARCHIVE` ›
+2026-10-01, where his list is kept. Unified elections shipped 2026-09-29, the
+compact page 2026-09-28. The progress-report item moved to **P2b** (it needs
+organization accounts). The follow-ups on the build clock (dead top-card code,
+the register below) are still due.*
 
-- The initiative expansion doesn't need to be gigantic. And it should open up to a section with a new slider row, a post preview, link to its page, and option to post about it. No more convert and donate buttons, the description shouldn't even exist, no "selected initiative" or "oceans - suggested" or status. - they should all be converted to justificaiton posts.
-- In a similar fashion, The organization election should contain a description of the election the user is currently selecting, if none the one they are currently voting for, and if still none the leading organization. 
+- ~~Human Rights 2 backfill~~ — **done on the live site 2026-10-01**: hmr1
+  elected *Environmental Defender Emergency Fund* (the local winner, proposed by
+  the staff account first). Its organization election runs to Nov 3.
+- **Waiting on a deploy:** run the description conversion on the live site
+  (the endpoint is new — the live site answers 404 until today's code is up):
+  `POST /admin/initiatives/descriptions-to-posts` (dry run) → `?apply=true`.
+  Locally it turns 82 descriptions into 81 Mission statements and 1
+  Justification.
 
-- Ok. The top row of the ballot panels only needs "Finalized on x" not "Initiative for oceans is finalized on x". For CE and ME, that's the full change. For the last 3, add a row below that titled as the initiative.
+### P2b · Organization experience
+*(Added 2026-10-01; rebuilt the same day on Jax's answers to D26 and D28, and his
+notes on the public profile and the campaign page.)*
 
-- The "My slate" in org race shouldn't be a clickable editable box. It can be edited by withdrawing or donating more. If the user hasn't donated at all, it should just say "Donate".
+**Goal.** Organizations get **their own accounts and their own experience**. An
+organization cannot vote; it cares about the missions it might run and the
+campaigns it is already in. Everyone else sees two public pages for it: its
+**profile** and, for each election it runs in, its **campaign page** (G4, G5).
 
-- Theres an issue with being unable to withdraw my slate. Even when it detects me as having a slate, I cant withdraw because it says I have no slate.
+**Decided** *(cleared from DECIDE 2026-10-01 — D26, D28, then D29, D30)*.
+- **D28 — its own login.** "Organization accounts will need their own login
+  because people may want to be active on Earthbux separately from their
+  involvement with the org they work for. Membership roles will need to be
+  changed to account for this."
+- **D26 — a different experience, in three tabs.** "The org has a unique campaign
+  page for each mission. They will have an entirely different experience,
+  because they are not able to vote … Home will be where they stay connected
+  with Earthbux and navigate through their active campaigns. Initiatives will be
+  where they find potential missions (similar to missions.html but only steps
+  2–3), profile will be where they create general content, and create an
+  outward facing profile. 3 tabs, and a campaign-specific tab for each campaign
+  accessible from profile."
+
+**Includes**
+
+*Accounts*
+- **Organization accounts** — a second account kind with its own sign-up and
+  sign-in, never a mode of a benefactor account; one person may hold both. An
+  organization account belongs to one organization. **D29:** "Each organization
+  member will have their own login, with their account being created by someone
+  with an administrative role in that organization" — the claimer becomes its
+  first administrator and creates the others' logins (Profile › Members).
+- **Membership roles reshaped** — `memberships` (community · rep · executive ·
+  beneficiary, all on benefactor accounts today): rep and executive move to
+  organization accounts; benefactors keep community and beneficiary. A
+  migration — proposed, not applied.
+- **No voting** — an organization account has no wallet and no ballots; every
+  vote route refuses it (the server, not just the page).
+- **Claiming makes the account** — a person claims an organization (the
+  agreement already in `org_claims`); staff approve; the organization account is
+  created, or linked if one exists. Registering an organization stays open to
+  anyone, from Home, Mission and Profile, with or without an initiative.
+
+*The organization's own site — the nav is three tabs, plus one per campaign*
+- **Home** — where it stays connected with Earthbux: its active campaigns (each
+  race, its standing and days left), what changed on them, Earthbux's updates,
+  and a way into each campaign.
+- **Initiatives** — where it finds potential missions: the mission page's steps
+  2–3 only — the initiative elections (what may become a mission) and the open
+  organization elections (what it can run for) — with **Run for this** (a
+  candidacy) and **Suggest us** on an initiative that has not won.
+- **Profile** — where it writes general content (organization updates) and edits
+  its outward-facing profile; the campaign tabs open from here.
+- **A tab per campaign** — where it writes what its campaign page shows: the
+  plan, the promises, its answers in the Q&A.
+
+- **Verification** — an organization that has not been in the top 3 of a race
+  with 4 weeks left applies for a verified profile (Jax: "I think that was my
+  spec" — the rule to confirm against `mission_model.md` §6 before building).
+
+*Two public pages*
+- **The organization profile** — `/o/<slug>`, for everyone, and every
+  organization name on the site links here. Claimed: name, logo, website,
+  description, verified state, its updates, its campaigns, the missions it won.
+  **Unclaimed**: the title, a discussion, any missions won or running, and a big
+  **UNCLAIMED** panel. **D30:** "a general all-purpose display describing to
+  benefactors what Earthbux is doing to contact the organization, and what they
+  might be able to do" — one shared panel (not written per organization), with
+  the organization's contact state if Earthbux has one.
+- **The campaign page** — one per election the organization runs in
+  (`/o/<slug>/<mission>`):
+  - **Plan** — budget, timeline, milestones (built from the mission's budget
+    items, with the organization's own);
+  - **Receipts** — past outcomes, dollars moved, missions completed;
+  - **Live ballot slate** — who endorses it, its vote count, time left;
+  - **Q&A** — every post about the organization, pulled in, with its answers;
+  - **What they are promising** — the campaign's mission statement.
+  The mission page's organization election links each candidate to its campaign
+  page.
+
+  The campaign page is the mission page seen from the organization's side
+  (Jax): "Benefactors will see what the organization plans to do / wants to do,
+  organizations will see what they have to do and what benefactors want them to
+  do, both will see the progress and history and news." So it reuses the
+  mission page's report and posts rather than building a second copy.
+
+*Carried over from the first draft*
+- **Suggestions become candidacies** — `mission_candidacies.tiv_id` (a
+  migration — proposed, not applied), so an organization suggested for an
+  initiative before it won becomes a pending candidate when it wins, and the
+  `tiv:` tag link retires.
+- **Progress reports** *(from P1 › The Report)* — once a campaign wins, its page
+  carries the organization's report beside Earthbux News's parallel report,
+  benefactor-moderated, facing Background · Investigation · Analysis.
+- **Framing shows the organization's input** — the campaign's plan and its
+  answers on the budget items, in place of the mission statement and initiative.
+- **An organization-side bot** — a clearly fictional test organization with its
+  own account that claims, runs a campaign and answers, so the pass can be
+  exercised end to end.
+
+**Decides.** — none open (D26, D28, D29, D30 answered 2026-10-01). The
+verification rule above is a spec check, not a decision.
+
+**Done when.** An `org_check` covers: signing up and in as an organization;
+an organization account refused by every vote route; claiming, and the account
+it creates; the three tabs and a campaign tab per campaign; the public profile
+claimed and unclaimed; an organization administrator creating a member's
+login; a campaign page's five sections against the API; Run
+for this creating a candidacy; and a suggestion becoming a candidacy when its
+initiative wins.
+
+**Out of scope.** Payment, payee, check flow, vetting gates and mail (P6). The
+benefactor profile ("still shoddy") — BACKLOG › Profile.
+
+---
 
 ### P2 · Home
-*Home mods shipped 2026-09-30 — see `## ARCHIVE` › 2026-09-30, where Jax's
-text is kept. Nothing open here; "this week's races open" waits in
-`## BACKLOG` › Home.*
+*Home pass and its tweaks shipped 2026-10-01 — see `## ARCHIVE` › 2026-10-01b and
+› 2026-10-01c, where Jax's text is kept. Nothing open here.*
 
+### Footer
+*Built 2026-09-25 — see `## ARCHIVE` › 2026-09-25c, where the sorting table is
+kept. Status 2026-10-01.*
 
-### NOW. Footer.
+**Done**
+- Five columns — Earthbux · Take part · Causes (the seven) · Support · Legal — and
+  the bottom line (© 2026 Earthbux · earthbux.net · earthbuxinc.com); the
+  tagline "Collective action, measured in impact."
+- Live links: About (and its sections), Join a mission → Missions, Read the
+  news, Nominate an organization, Join the team, the seven causes.
+- **Contact us** opens a dialog; every message is stored and emailed to
+  jax@earthbux.net through Resend (2026-09-26).
+- Anything without a page is drawn "soon", never a dead link (F9).
 
-*Built 2026-09-25 — see `## ARCHIVE` › 2026-09-25c. The table below is what it was built from; "later" items are drawn as "soon" in the footer, not linked.*
-
-**Footer** *(saved for later by the P2 spec; about.html now exists — F9)*
-
-Jax's list, sorted into four columns and a bottom line. **Keep** = worth a link
-at launch; **later** = needs a page or a thing that does not exist yet;
-**drop** = a duplicate, or not a footer item.
-
-| Column | Keep | Later | Drop / merge |
-|---|---|---|---|
-| **Earthbux** | About (about.html) · White paper (→ `money_model.md` rendered) · Rules | Docs · GitHub (once the repo is public) | earthbuxinc.com (the company site — one link at the bottom line, not a column item) |
-| **Take part** | Join a mission (→ Missions) · Register a philanthropy / Organizations (one link, P6's claim page) | Beneficiaries (P6: beneficiary surface) · Get the app | Join Us (= Join the team) |
-| **Support** | Help Center (earthbux.net/help) · Contact us · Safety | Accessibility (a statement page) | the second Contact Us · Links |
-| **Legal** | Privacy · Terms / user agreement | — | Ads (there are none; say so in Terms instead) |
-| **Bottom line** | © 2026 Earthbux · earthbux.net · earthbuxinc.com | Send love / Pay us (a donate-to-Earthbux link — needs D11/D12) | Copyright (already the ©) |
-
-- One important thing - 'Contact us' should open a dialogue for them to send a message, which messages jax@earthbux.net
-
-Also kept from the spec: "collective action, measured in impact" as the
-footer's tagline, and the seven Causes column (it is the only footer list that
-links real pages today). "Join the team" belongs under Earthbux once there is a
-careers page.
-
+**Still waiting** (each is drawn "soon" until its page exists)
+| Item | Waits on |
+|---|---|
+| White paper | Jax's document (BACKLOG › Footer: "Replace money model in white paper with my document") |
+| Rules | a rules page (P7 › moderation) |
+| Register a philanthropy | the organization accounts and claim flow — **P2b** |
+| Help Center · Safety | a help page (`earthbux.net/help`) and a safety page |
+| Privacy · Terms | legal copy (the nonprofit / legal review) |
+| Accessibility | a statement page |
+| Docs · GitHub | the repo going public |
+| Beneficiaries | the beneficiary surface (P6) |
+| Get the app | an app |
+| Send love / Pay us | a donate-to-Earthbux link — D11, D12 |
 
 ### P3 · Posting
+*Built 2026-09-29 — see `## ARCHIVE` › 2026-09-29 (the full report) and
+› 2026-10-01 (the Mission statement). Status 2026-10-01.*
 
-*Built 2026-09-29 — see `## ARCHIVE` › 2026-09-29. The spec below is what it
-was built from; what is left of it is listed in the report.*
+**Goal.** One way to make a post, reachable from everywhere, easily customizable
+for any posting purpose — every post displayable by every page on the platform.
 
-**Goal.** One way to make a post, reachable from everywhere, easily customizable for any posting purpose — every post displayable by every page on the platform.
+**Done**
+- One composer (`post.html`), reached from Home, News, a profile, every post
+  button on the mission page and About; the link decides the type and target.
+- All posting gates removed; the Review lane gone (Case, Evaluation — and from
+  2026-10-01 **Mission statement** — are tags on the all-purpose post).
+- Targets and limits per type (Background → cause · Investigation →
+  organization · Analysis → mission · budget item → initiative · general →
+  anything), versions (D21), Backgrounds rolling (D19), votes per mission,
+  pulling an old post, the Analysis composer with its leads (D20).
+- `EBX.Post` — the collapsed and full views; How to post on `about.html#posting`;
+  the feed framework (`feed_rank.py`) and the vote names.
+- Nominations may carry a post; the initiative expansion previews the
+  discussion (2026-10-01).
+- Admin can delete a post with its replies (2026-10-01, P7).
+
+**Still waiting — the next posting pass** *(Jax, 2026-10-01, and BACKLOG ›
+Posting)*
+- **The card, redrawn** — title top left; the posting account and date top
+  right, the type/tag under it, then the cause; the content preview below the
+  title; votes bottom left, **Discussion →** bottom right:
+  ```
+   _________________________________________________________________________
+  | Title                                                    | account-date |
+  |                                                          | Type/tag     |
+  |      content preview                                     | cause        |
+  |__votes___________________________________________________|_Discussion->_|
+  ```
+- **No color coding on posts.**
+- **Vote on posts from Home.**
+- **Up and down votes** on general and research posts (budget items stay
+  upvote-only).
+- **Show whether the author took part in the mission's initiative election**
+  when a post is about a mission.
+- One post at a time as you scroll, centred — the Instagram-like reader
+  (BACKLOG › Future; likely News, P3b).
+- Left from P3: the reward for suggesting a winning initiative (Jax: "I should
+  brainstorm"); notifications when a cited post changes (P4); video (F23).
 
 **The model** *(folded from the inbox 2026-09-28 — Jax's sketch, redrawn; D8 and
 D19–D21 answered the same day)*. Each arrow is what a post is about. The Analysis is the only
@@ -414,65 +572,11 @@ Alex · Sep 29
 
 Both views must clearly display what mission, org, or initiative the post targets (if any)
 
-**Includes**
-*The composer*
-- `post.html` — new posts only. Entry from Home's **+**, a mission, a profile, News.
-- The link that opened it decides what is preselected: the target (cause · initiative · organization · mission, budget item, post) and the type.
-- **All posting gates removed** — everyone can post, everyone can reply.
-- The Review lane is gone.
-- **Background** → a cause, tagged with as many of its initiatives as the author likes, or none (D19). **One per person per cause**, and it lives: posted, it is at once electable in this week's initiative election; the version standing when that election closes stays in that mission's history; edits made after election day go to the next mission of that cause.
-- **Investigation** → an organization; may tag causes and initiatives. **One per person per organization**, written any time, whether or not the organization is running; the version standing when an organization election closes stays with that mission. It must name the organization — true since 2026-09-25 (`TYPES_REQUIRING_ORG`; was BACKLOG › Home feedback 1).
-- **Budget item** (service · supply · support) → an initiative, **any time** — before the initiative is elected and after budget day. It carries into the mission when the initiative wins. One per type per person per initiative, rolling as now. Backend: one create route per type, with the type's own required fields (service: job · rate · days; supply: item · cost; support: no cost line).
-- **Analysis** → a mission. Opens when the organization election closes (T+8) and is elected on budget day (T+15). **One per person per mission.**
-- Research posts become **editable**, and every edit is a new version (D21). The version an election or an Analysis used is **locked for good**; the author edits forward, never back.
-  - If you cite a post, you are notified when its author changes it, and the posts keeps links to the original and updated versions.
-    - New likes on the updated version add to your tally
-- **Pull an old post into this mission** — an author can bring a post from an earlier mission into the current one. Pulled or cited into a new mission, a post's **votes start again from zero** there (D21): votes count per mission.
-- A post that belongs to a mission also shows **Go to <mission>**
+**Decides.** — none open.
 
-*The Analysis composer*
-- Cites up to **12 Backgrounds and 12 Investigations**, from any mission and of any age, and may reference budget items (referenced, never paid).
-- The **leading Background and leading Investigation are attached automatically** and can't be removed. Which ones lead is fixed when each election closes (D20): the most helpful Background at T, and the most helpful Investigation on any of the mission's candidate organizations at T+8 — so a critical Investigation of an organization that lost can lead.
-- References are ordered by their votes; the author doesn't rank them. The split they feed is P5 (D22).
-
-*Nominations, and what a row shows*
-- The automatic description on nomination goes. Nominating an initiative or an organization or a cause lets you optionally post, defaulting to a justificaiton.
-  - I should brainstorm a reward for suggesting a winning initiative.
-- Clicking an initiative or an organization in its table shows a preview of the discussion (using algorithm). A highly rated justification if available, or anything relevant. It should not show too much text.
-- The organization nomination dialog **loses its initiative checkboxes**. The mission comes from where the dialog was opened (an initiative row's **+ org**, the mission page), or is chosen on the organization's page.
-  - The nominate/propose dialogue can even just appear in the table, and have a popup *suggested - make a post*
-- New budget items, new initiatives and new organizations strongly suggest posting.
-
-*The feed framework* *(inbox 2026-09-29: "we should start testing now … set up the framework here so that I am prepared later on")*
-- `backend/app/feed_rank.py`: named, swappable orders — **Latest · Hot · Trending** (velocity with time decay) **· Research · Missions** — each with its weights on display (`GET /posts/strategies`), and every one breaking ties the same way (newest, then id — "posts with identical timestamps will cause problems"). `GET /posts?sort=<name>`.
-- The signals it reads are the ones that exist today: votes and when they were cast, replies and when, recency, the flag, type and tags. The personal ones (follows, views, already-seen, proximity, affinity) wait for P4's event log and are named in the file (`FUTURE_SIGNALS`), so the frame says what it will read before it can.
-- Tuning it is P5 ("Build the algorithm"); the News page that uses it is **P3b**.
-
-*Votes have names* *(inbox 2026-09-29: "Votes each need distinct names — Research, Analysis, and Election")*
-- An **Election vote** is a ballot (cause · initiative · organization). A **Research vote** is a vote on a Background or an Investigation. An **Analysis vote** is a vote on an Analysis. General posts and budget items take an **Upvote**. `post_config.VOTE_NAMES`; every vote button and the How-to say which one it is.
-
-*How to post* (Jax, 2026-09-28: be ready to add a How-to section)
-- Each post type carries its user-facing guide in `post_config.py`, beside the rules it describes: what it is for, what it points at, the per-person limit, what it can earn, and two or three steps. The composer, the How-to section and each mission's outline all read that one table, so the guide can't drift from the rules.
-- `post.html` shows the chosen type's guide beside the composer, with a link to the full section.
-- A **How to post** section opens with the model above, redrawn in plain words, then one card per type.
-  - It lives on about.html
-- Mission discussion gets its instructions/outline, from the same guide.
-
-**Notes for later passes** — moved to **P3b · News** (scope and personalization)
-and `feed_rank.py` (`FUTURE_SIGNALS`), 2026-09-29.
-
-**Decides.** — D8, D19, D20, D21 answered 2026-09-28. (What an organization account writes is D26, for P6.)
-
-**Done when.** `posts_box_check` / `feed_check` extended to cover creation from
-each entry point, the gate removal, each type's target and limit, the Analysis
-composer's reference rules (12 + 12, the two leading attached), versions (the
-elected version locked, edits forward, pulling an old post restarts its votes),
-the all-purpose post and its tags, and the How-to rendering every type's guide
-from `post_config.py`.
-
-**Out of scope.** Notifications (P4). Rewards, the research split and post
-ranking (P5, D22). Budget-item checks (P5, D23). What an organization account
-writes (P6, D26).
+**Done when** (the next posting pass). `posts_box_check` / `home_check` cover the
+new card layout on every surface, voting from Home, up/down on general and
+research posts, and the initiative-election badge.
 
 ---
 
@@ -498,7 +602,7 @@ cause problems (both handled in `feed_rank.py`). The signal list is in
 **Includes**
 - `cause.html` → **`news.html`** (the old address forwards): one feed, unified with filters — the four orders above, plus cause · type · tag · date · search.
 - **What News carries:** every post; the **weekly updates** (P4 writes them; until then Earthbux's editorial posts); every Earthbux and organization post. A benefactor post is never "elevated" into News — it is in it from the start. Elevation is the Mission page's job (the report's leading posts).
-- **Home vs News (D6 stands):** Home filters by cause or by your own posts; anything more — a thread, a second filter, a search — opens News.
+- **Home vs News:** Home has no filters (Home mods, 2026-09-30); every filter, thread and search is News.
 - **A thread has an address:** `/p/<post id>` serves the Full view (`EBX.Post.full`) as its own page.
 - **Discoverability:** meta and social-preview tags on every page; **per-thread dynamic OG** (`/p/<id>` answers with the post's title, author and excerpt in its `<meta>`); an **RSS feed** of News (`/news.rss`, `?cause=` per cause); **`robots.txt`** and **`sitemap.xml`** (the pages, every mission by its slug, every post).
 
@@ -519,23 +623,28 @@ four loops: inbox · your stake changed · the weekly ritual · status and rewar
 
 **Includes**
 
+- Start by messaging users when someone replies to their post, or when it gets a like. Also send out the weekly report.
+- Message threads vs. notifications - toggle.
+
 - A **backend event log** — the single source for notifications, the weekly update, and later the admin audit trail.
 - Event types that notify: replies, reactions, and **phase changes with win/lose/what is coming next** — and, from P3, **a post you cited has a new version** ("If you cite a post, you are notified when its author changes it"; the Full view already shows "cited v1 · now v3").
 - `inbox.html`: the stream, read/unread, and **YOUR weekly update**.
 - **What the weekly update carries** *(inbox 2026-09-29)* — assembled from the event log, the same edition on Home (the most recent one) and in News:
   - the **new initiative** and the **new organization** elected that week, each with its **winning posts** (the leading Background at T, the leading Investigation at T+8 — D20);
   - the mission that **entered exchange**: its tokens released and free to trade, its winning **Analysis**, and the research prize paid (D22 — reads P5's payout, so until P5 it says what *will* be paid);
-  - an update on **each mission in planning** (phase 4 — the name is D27);
+  - an update on **each mission in prep** (phase 4 — Jax: "I'm calling it 'prep'", D27, 2026-09-29);
   - a **preview of next week**: the elections that close, the budget day that falls.
 - Messaging, **mission members only**, with the no-campaigning rule stated in the UI and a report button.
 - The nav's Inbox stub becomes real.
 
-**Decides.** D9, D10.
+**Decided** *(cleared from DECIDE 2026-10-01)*. D9: email updates are
+optional; many notifications are inbox-only. D10: no friendships — message
+threads between users, searchable by name or by mission.
 
 **Done when.** An `inbox_check` covers event creation for each notifying type,
 per-user fan-out, and the weekly-update assembly.
 
-**Out of scope.** Email delivery (needs mail transport — P6/c1). Friend graph, unless D10 says it exists.
+**Out of scope.** Email delivery (needs mail transport — P6/c1). A friend graph (D10: none).
 
 ---
 
@@ -569,15 +678,15 @@ actions, and one figure reconciled across ballot, profile and mission page.
 
 **Goal.** A real organization can be found, can claim, and can be paid (G4, G5).
 
-**Includes.** Organization profile (initiative coins, tasklist, memberships) ·
-registration and claim page · the M1 registered / M2 might-win / M3 won
+**Includes.** Initiative coins on the organization home (P2b builds the home,
+registration and claim) · the M1 registered / M2 might-win / M3 won
 messages · vetting gates · beneficiary surface (voice at phase-2 start) ·
 mail transport · check flow and payee.
 
 **Decides.** D11, D12.
 
-**Done when.** An organization can be nominated, claim its page, and appear as
-payee in a dry-run, with the vetting state visible on the mission page.
+**Done when.** A claimed organization (P2b) appears as payee in a dry-run, with
+the vetting state visible on the mission page and on its home.
 
 ---
 
@@ -585,7 +694,19 @@ payee in a dry-run, with the vetting state visible on the mission page.
 
 **Goal.** Run the thing without a second website, and keep it from being gamed.
 
-**Includes.** `admin.html` absorbed into the site, off Profile · admin data hub
+**Done** *(2026-10-01)*: staff **remove posts (with their replies),
+initiatives and organizations** — admin.html › Remove, `DELETE
+/admin/posts|initiatives|organizations/{id}` (`?dry_run=true` first). Refused:
+an elected initiative or organization, an initiative with tokens on it, an
+organization on the ledger. The bots' `backfill` now elects initiatives too
+(`--missions hmr1`; staff password from `bots.local.json`).
+
+**Includes.**
+- **Admin edits any part of a mission** (Jax, 2026-10-01: "I would like to be
+  able to go in from admin and edit any part of the mission") — its initiative
+  and organization (elect / un-elect), dates and phase, title, candidacies,
+  posts' targets and tags (BACKLOG › Admin), with every edit logged.
+- `admin.html` absorbed into the site, off Profile · admin data hub
 keyed on missions, accounts, organizations, purchases · bot task split
 (voting · researching · proposing · exchanging · budgeting), scheduling and
 network-wide deploy, and the **bot vote-spread bug** (**F6**) · vote event log
@@ -651,7 +772,7 @@ lands, and the phase tab's copy is the same string Home shows.
 | ~~**F10**~~ | ~~The mission page's discussion box got `p2Active: ph >= 2` where `ph` was an object — always false.~~ Reads the mission now. | 2026-09-24 | **P1, 2026-09-24** |
 | **F11** | wil0 and hpr0 are organization elections **past their close** (Sep 8, Sep 22) with no winner — their only candidates are `pending`. They sort first, so wil0 is "this week's race, open to everyone" and two live races (hpr1, atm2) fall outside `/wallet/rows`' eight. Needs D17. | 2026-09-24 | P5 / P7 |
 | **F12** | ~~"Show all races" threw~~ — its `onclick` called `_oeScope()`, which in markup is the page's `let` string, not the accessor. **Fixed P1.** | 2026-09-24 | **P1, 2026-09-24** |
-| **F13** | A race missing from `/wallet/rows` (see F11) shows **live** Vote buttons, because the ballot only locks on `can_take_part === false`; the server then refuses. The ballot should treat "no row" as closed. | 2026-09-24 | P5 |
+| ~~**F13**~~ | ~~A race missing from `/wallet/rows` (see F11) shows **live** Vote buttons.~~ The ballot now fetches a missing race's row (`GET /wallet/row/{id}`), so it knows `can_take_part` — and the stake, which was the "I can't withdraw my slate" bug. Signed out there is nothing to vote with. | 2026-09-24 | **Mission pass, 2026-10-01** |
 | ~~**F14**~~ | ~~At phone width the top bar overflows.~~ At ≤640px the five tabs pin to the bottom and hide while scrolling down (`ebx_shared.js` `bindNavScroll`, `ebx_frontend.css`). | 2026-09-24 | **P2, 2026-09-25** |
 | **F15** | Legacy phase-2 rows carry `donated_ct = 0` after their ME closed (oce1 is one), so the **guaranteed pool reads 0** where the ladder says 10% is final. The overview reads the rows as booked — the same number `read_wallet` gives — so this is data, not display. | 2026-09-24 | P5 |
 | ~~**F17**~~ | ~~The initiative ballot's head printed the cause cadence ("decision Sep 22") over an election that closes Nov 10; its own topbar was right.~~ Reads the election's T now. | 2026-09-24 | **P1, 2026-09-24** |
@@ -662,79 +783,74 @@ lands, and the phase tab's copy is the same string Home shows.
 | **F22** | *(P3 §0 sweep)* `scripts/oe_check.js` fails 3 of 23 on the compact mission page (2026-09-28): it expects "Organization Election" as the phase title and the initiative's name in the head. Same 3 failures with P3's code removed — the check predates the page, not a regression. | 2026-09-29 | P1 follow-ups |
 | **F23** | *(P3)* Images on posts are stored as downscaled data URLs in `posts.image_url` (≤1280px JPEG). Fine at pilot scale; at volume they belong in file storage, and **video** needs that storage before the composer's Video button can work. | 2026-09-29 | BACKLOG › Infra |
 | **F24** | *(Home mods §0 sweep)* hmr1's initiative election closed on Sep 8 with no winner, and `EBX.Wheel.meMission` picks the **oldest** un-won mission in phase `pre`/`initiative` — so for Human Rights it returns hmr1, not the open hmr2, wherever the wheel's "this week's initiative election" is read. `missions.current_phase` is also stale (every mission reads `initiative`, winners or not); the mission hub reads dates and winners instead. `meMission` should skip missions past T. | 2026-09-30 | P1 follow-ups |
+| **F25** | *(mission pass §0 sweep)* `feed_check.js` fails "…a way through to the mission it was written in" on a fresh database: the HOT order's first post is a target-less general post (P3 made those possible), which has no mission to link. The same on the baseline — the check predates target-less posts. | 2026-10-01 | P3b (feed_check rewrite) |
+| **F26** | *(mission pass)* Legacy organization-race rows with `donated_ct = 0` (F15) count nothing as final. `withdraw_stake` now treats the 10% initiative-election skim as final when it **materializes** a derived stake, but a row that already has `stake_ct` and no recorded skim (e.g. GameMaster's hmr1 locally) can still withdraw all of it. Needs the same read-only production count as F20 before a backfill. | 2026-10-01 | P5 |
 | **F20** | Some organization races hold no carried initiative-election money: locally atm1, oce1, lan1, wil0 and hpr0 have `votes_p1` stakes but no `settle_me` element on their `votes_p2` rows (elected before the carry existed, or by a path that skipped it). The 2026-09-28 fix lets those voters vote; the money itself is still not in the race (cf. F15). Check production with a read-only count before any backfill. | 2026-09-28 | P5 |
 
 ## 5. BACKLOG
 
 *Named, not queued. Reorganize freely during a pass; do not build.*
 
-
-
-- there should be a central wallet with funds in it that can be put towards any election. That should be the recipient of simulated funds. When actual funds are used, trying to donate without it should say "add funds to your wallet to donate", and the amount of money you have should always be visible.
-
-- I think you should be able to vote in an org election without participating on the tiv election, but your vote should be worth a lot less. 
-
-- You misunderstood the top of the section for the causes - this is supposed to show the 6 horizontal bars for each active cause, showing how close they are to replacement.
-
-- The progress log literally only needs the title and date - these can be accomplished in one row. 
-
-- AAgh - I want to be able to register the environmental integrity project, but it's initiative isn't elected yet! I need a place to register new orgs! Probably a link available on the home, mission, and profile pages.
-  - The nominate/register can count as a post.
-- Human rights 2 still needs to be backfilled.
-
-- Convert should not be an option for the initiative election. 
 **Future/Conceptual**
-- News is just every post, missions is strictly per-mission, home is somewhere in between.
-- Still the top priority is creating an org home. Also the benefactor profile is still shoddy.
-- I'm thinking that a phase 6 may include the rewards and also travel opportunities.
-- It would be nice if people could attach an organization to an initiative before that initiative has won. 
-- Framing -> Planning? Vettong? Framing is not the prefect term.
-  - I think planning is the move.
-- Ok. Enough of this 'You can commit to an organization with your grant'. You cant. The whole idea behind the platform is that if you don't care about the initiative, you don't get a say in who runs it. The grant can only be used on initiatives.
-- The side cards make it clear that there is a 7 cause rotation, but it's confusing what they show in any given state.
+- A bot console in admin for me to run them autonomously.
+- Have the posts kind of like the instagram thing, where as you scroll it shows you exactly 1 post at a time, centering it in your face.
+- Make the UI more similar to other charity platforms - simple, clean, monochrome, interlocking panels, calming white background.
+- Monochrome on things that aren't cause-related
+  - The 4 home page descriptors
+- Move budget day to T + 16
+- Create email addresses like inquiries@earthbux.net or admin or purchasing or hr or operations
+- Phase 6 - rewards and travel
+- Framing → **Prep** — decided (D27, 2026-09-29: "I'm calling it 'prep'"); the phase tab, header line, About and the docs still say Framing.
+- The grant can only be used on initiatives.
 - A light/dark mode choice in settings would be nice. 
-- *(inbox 2026-09-28)* Spend your EBX on things for the mission or for yourself — travel, merch, targeted journalism, shoutouts, specific budget items. ⚠ Anything personal turns EBX into pay: see D22(d).
+- *(inbox 2026-09-28)* Spend your EBX on things for the mission or for yourself — travel, merch, targeted journalism, shoutouts, specific budget items. This would be approved charitable options.
 - *(inbox 2026-09-28)* Research the planning software large projects run on — Jira, Canvas/Moodle and the like — for mission steps and the organization tasklist (P6).
-- Step 6 - rewards and travel
+- I should have an option to share the link to earthbux on social media. 
+- *(inbox 2026-09-29)* **`MissionStep` is out of date** (`models.py`): it still carries `guaranteed_ebx` / `potential_ebx` per step from the pre-2026-09-16 pool model, and nothing on the page writes steps. It needs reshaping around the mission clock (`mission_model.md`) and the organization's tasklist (P6; see the Jira/Canvas research note above) before anything builds on it.
 
-**ORG EXPERIENCE**
-- I need to do this asap. It should be added to my build sequence.
+**Admin**
+- ~~Admin needs to be able to remove initiatives, organizations, and posts.~~ Built 2026-10-01 (P7 › Done).
+- Edit any part of a mission from admin → P7 › Includes.
+- I should also be able to retarget posts and change their tags.
+- The link to the admin page from profile should direct to admin.html. The version it goes to is outdated and can be deleted. 
+- Each accounts dashboard should be viewable by admin.
 
+**Posting**
+- *(Up/down votes on general and research posts → P3 › Still waiting, 2026-10-01.)*
 
 **Mission**
-
-- *(unified elections, 2026-09-29)* An initiative's page opened from **Vote on it in that election** keeps the initiative's address, so a reload lands on its page again rather than on the ballot. A `?ballot=1` would keep the ballot.
-- *(unified elections, 2026-09-29)* The CE drawing also had **Discuss → News** at the right of the click-through line; the Discuss button in the bar goes to the same place, so it is drawn once.
-- *(inbox 2026-09-29)* **`MissionStep` is out of date** (`models.py`): it still carries `guaranteed_ebx` / `potential_ebx` per step from the pre-2026-09-16 pool model, and nothing on the page writes steps. It needs reshaping around the mission clock (`mission_model.md`) and the organization's tasklist (P6; see the Jira/Canvas research note above) before anything builds on it.
-- Progress reports: org report vs. the Earthbux News parallel report, benefactor-moderated — the org report faces B · I · A.
-- Tables inside missions (the same data News can produce with filters).
-- The story area should be different before the initiative is elected - it should be toggleable by initiative (or cause). The report only starts upon initiative election.
-- The active phase should be highlighted in the toggles.
-- Every post in missions has an underlying news thread. The report is a conglomeration of many posts, so it is seperate, but it has leading contributors (the highest rated threads in each category, and highest rated budget items.)
-
-*Cause*
-If the same cause wins 6 weeks in a row, it replaces the old initiative for all future missions.
+- Each of the 7 causes will have an image 
 
 - The post-support ring (annulus layer 1) returns inside the **framing** and **exchange** phase panels — review 2026-09-24. `GET /missions/{id}/post-support` is unchanged. Move this to backlog - I haven't yet decided what to do in these 2 rings.
 - Mission gantt chart / annulus ring widget (deadlines, 7–12 steps).
 - Tune step guaranteed/potential pool ratios + early-resolution bonus size.
 - Tune `resolution_value_bump` and its relation to the global coin value.
 
-
 **Home**
-- *(2026-09-30, from the Home mods)* "I will probably want to have each of this week's races open even when the table is not collapsed." Waits on the budget-day move (probably T+16). The hub already knows which cards decide this week (`mc--now`).
+
 - Real images for the five steps: each cause's vista and its three problems are drawn in `ebx_steps.js` › `PANOS`, as placeholders "until we report on real missions".
-- Better step names ("Probably going to need better terminology"): the pages are labelled Cause · Initiative · Organization · Network · Reporting (screen readers and the dots only — the visible text is the message).
+- Will need a real image behind the left side of the hero. Just 1. I will find a good one.
+- *(Home pass 2026-10-01)* "I will probably want to have each of this week's races open even when the table is not collapsed" — collapsed now shows this week's two elections; open, the grid still glows them (`mc--now`). Revisit with the budget-day move (T+16, BACKLOG › Future).
 
 **News**
+- With the news page, comes reporting. I'm going to need to create a plan for what the earthbux team actually does. These responsibilities won't be able to be undertaken until the website is running smoothly, and will be very difficult before there is cash flow, because organization won't want to join us before then. 
 - The corner annulus — News is the only page without the large one; the corner one reflects the status of the mission of the post being viewed.
 - Learn from: Meta, LinkedIn, Reddit, TikTok; fantasy sports, Polymarket, Strava, Duolingo, stock investing, GitHub.
 - Mission member communication channel - inbox stage.
+*Framing*
+- Don't need to seperate the 7 into weeks, should be ALL TASKS DONE by budget day.
+- (Budget items with the organization's input → P2b.)
 
 **Profile**
+- "The benefactor profile is still shoddy" (from ORG EXPERIENCE, 2026-10-01).
 - In the profile, the choice cards need work. The organization choices don't say which initiative they're choosing, and it seems like one is choosing a related initiative + organization.
 - Messageing should be about *Creating your fund* - choosing is important, but so is donating. 
 - *(inbox 2026-09-29)* **The timeline as a visual on Home** — one mission's phases on a dated line (T, T+8, T+15, exchange). Pairs with the animated process diagram on the clock (`s4`), which may be the same drawing.
+- Each benefactor needs to add funds to their account first, which appear in their wallet. The grants should appear as a seperate entity in the wallet, as should ebx and pre-ebx tokens. Every transaction made should rely on what is already in the wallet. Create this asap and organization and clarity will improve.
+  - Every action relies on the contents of the wallet - if a user participates in a tiv election, the subsequent org election becomes a wallet item
+  - If there are no unallocated funds in the wallet, it should prompt something like "Add funds..."
+- Each person should have a full dashboard of everything they've done.
+
 **Locations**
 - `location_type` + coordinates on missions (site / region / distributed / global); home location on benefactors; location(s) on orgs.
 - Globe rendering per location type (pin · shaded region · multi-pin).
@@ -761,6 +877,8 @@ If the same cause wins 6 weeks in a row, it replaces the old initiative for all 
 - `the_social_network.md` becomes the design document — the four engagement loops live there, not here.
 - An animated, Prezi-like diagram of the process and how the steps relate.
 - Need a list of services used - vscode, google, windows, railway, sql, resend, cloudflare, etc.
+*Cause*
+If the same cause wins 6 weeks in a row, it replaces the old initiative for all future missions.
 
 **Bots** *(2026-09-25 — gathered here from where the notes had scattered: the
 build clock (`bots`, `bots2`), P7's "bot task split", F6, the two lines that were
@@ -1071,9 +1189,233 @@ guards on a mount that no longer exists, so it paints nothing.
 | `.hf-chip`, `.hf__side`, `.hf__search`, `.hf__more` styles | were `index.html` | Done — removed with Home's filters this pass. |
 | `cause.html`'s `?q=` / `?cause=` handoff | `cause.html` | §D. Looks dead from Home (Home no longer sends them) — is not: the mission page's *Discuss* and bookmarked links still send `?cause=`. |
 
+### Added 2026-10-01c (Home tweaks)
+- §A, safe now: the Network tiles' CSS in `index.html` (`.hn__row`, `.hn__tile*`, `.hn__top`, `.hn__name`, `.hn__tag`, `.hn__n`) and `HomeFeed.row()` / `GROUPS[].tag` — nothing draws the row.
+
+### Added 2026-10-01 (mission pass)
+
+#### Done this pass
+- `_rowPreview` (the one-line preview under a clicked row) — removed; the previews are in the ballot expansions.
+- `rowConvert` / `rowDonate` and the expansion's Convert / Donate buttons — removed.
+- The re-opening of the old inline initiative panel after a re-render (`filterInitiatives` → `idxRowExpand(…, 'tiv')`) — the row keeps only its highlight.
+
+#### New — §B, one edit then safe
+- `_idxInitDetailHTML` and the tiv branch of `_idxRowStatusHTML` (`mission.html`) — nothing on the mission page opens them now; `idxRowExpand` is still reached for organizations (`idxSelectOrg`). Drop the tiv path and the `window._idxInitDetailHTML` export.
+- `buyVoteEbx` — an alert stub ("Buying tokens is not wired up yet"); still behind the initiative ballot's **Donate more**. Goes when purchasing lands (P5).
+
+#### New — §C, live but replaced
+- `initiatives.description` — replaced by Mission-statement / Justification posts. Still read as the report's last fallback until `POST /admin/initiatives/descriptions-to-posts?apply=true` has run on the live site; then the column can go (a migration — proposed, not applied).
+- The `tiv:<id>`-tagged Justification as the link between a suggested organization and an initiative — replaced in P2b by `mission_candidacies.tiv_id`.
+
 ## ARCHIVE
 
 *Finished pass reports. Nothing here is executed.*
+
+### 2026-10-01c — Home tweaks · HR2 backfilled · admin removal · Posting and Footer re-sorted
+
+- ✅ *"This week's elections" collapsed, "All missions" expanded* (was "4 decided this week").
+- ✅ *The four descriptors not numbered.*
+- ✅ *Maximize space: not separate boxes; "Make your impact" narrower; bigger text* — open columns divided by hairlines (impact at 0.62 of the others), body text 0.98rem, headings up to 1.35rem.
+- ✅ *"Decide what gets funded" and "My profile" gone from the hero* — signed out, the hero keeps only Log in / Sign up; the doors carry both links.
+- ✅ *"can be as impactful as your money"* — "just" dropped.
+- ✅ *News · Research · Budgeting tabs gone* — the row is not drawn (its CSS is in the register, §A).
+- ✅ *Initiative elections in the hub say Leading* — on the grid's cards ("Leading · 64% · 9 initiatives") and over the collapsed cards' top three.
+- ✅ *"Show all missions"* (and "Collapse missions").
+
+**Also done** (same message):
+- **Human Rights 2 backfilled on the live site.** The bots' `backfill` task now
+  elects initiatives in past initiative elections that never got one (it did
+  only organizations), choosing from the content file, else the local
+  database's winner (proposed on the site by staff if missing), else the most
+  preferences; `--missions` limits it; the staff password can live in
+  `bots.local.json`. Run: hmr1 → *Environmental Defender Emergency Fund*.
+- **Admin removes posts, initiatives and organizations** — P7 › Done.
+- **Posting and Footer** re-sorted into Done / Still waiting; Jax's new posting
+  notes are the next posting pass (P3 › Still waiting).
+- **P2b** takes D29 (each member their own login, created by the
+  organization's administrator) and D30 (one general UNCLAIMED panel), the
+  verification note and "the campaign page is the mission page from the
+  organization's side". DECIDE has no organization questions left.
+- **Not done — waits on a deploy:** the description conversion. The endpoint
+  is in today's code, which is not on the live site yet (it answers 404).
+
+**Checks.** `home_check` **72** · `landing_check` 21 · `render_check` clean ·
+admin Remove driven in a browser (an initiative removed; an elected one refused
+with its reason) · the removal routes against the local API (a post with its
+reply, an initiative, an organization; the refusals; 403 for a non-staff
+account).
+
+**Jax's text, as written** (moved from `## BUILD SEQUENCE` › P2):
+
+- Instead of "4 decided this week" say *This weeks elections* when collapsed and *All missions* when expanded.
+- The 4 descriptors should not be numbered.
+- Maximize space in the 4 descriptors - the Make your impact section can be narrower, and they don't need to be seperate boxes with extra padding and borders. The inner text should be bigger.
+- "Decide what gets funded" and "My profile" links in the hero should be gone.
+- "can be as impactful as your money" - drop "just"
+- News research and budgeting tabs are still there. They should be gone.
+- The initiative elections in the missions hub should say *Leading* to indicate that it isn't final yet.
+"Show all missions", not "see"
+
+### 2026-10-01b — P2 · Home pass (the four doors) · P2b rebuilt on D26/D28
+
+**Read as** (no decision was open): the four doors sit between the hero and the
+mission hub, Jax's words as written; "'Decide what gets funded' … replaces 'vote
+now' in hero" — the hero's button now says it, and door 1 carries the same
+link; "For charities" goes to the existing organization door
+(`admin.html?register=1`) until P2b builds the organization accounts.
+
+- ✅ *Navigation between the hero and the hub — 1 Two key decisions · 2 Every voice matters · 3 Feedback and accountability · 4 Make your impact* — `#hk`, four cards; links: Decide what gets funded → Missions · Who are we? → About · Go to the discussion → News · Sign in (My profile when signed in) + For charities.
+- ✅ *"Decide what gets funded" replaces "Vote now" in the hero.*
+- ✅ *Move the news, research and budgeting descriptions to the about page* — the tiles keep their names, tags and counts; About › What the network is for carries the three descriptions (`#ab-net`).
+- ✅ *Remove "The social network for charities".*
+- ✅ *To the right of the visual: Cause · Initiative · Organization · Network · Reporting stacked, arrows down, each glowing as it is shown* — `#ld-flow`; `EBX.Steps.mount(…, { onChange })` tells it the page; a click on a step shows it; at phone width it wraps into a row.
+- ✅ *Only 1 column for posts.*
+- ✅ *Missions hub collapsed by default* — a new remembered key, so everyone starts collapsed once.
+- ✅ *"<cause> <number>", not "holds"* — a cause election card names the mission its window becomes (e.g. Oceans 5).
+- ✅ *Week 0 at the bottom, week 6 at the top* — rows ordered by (active − cause) mod 7: Land, Forests, Wildlife, Human Rights, Human Progress, Atmosphere, Oceans today.
+- ✅ *Collapsed: this week's two election cards (ME and OE) with the top 3 leaders* — `#mh-week`: the initiative election and the organization election that decide this week (else the next to), leaders by share / votes.
+- ✅ *"See all missions" and "Collapse missions"* — the paging buttons show only when the grid is open.
+
+**P2b** rebuilt on Jax's answers: organization accounts are their own login;
+membership roles reshaped (rep · executive move to organization accounts); an
+organization cannot vote; its site is Home · Initiatives (the mission page's
+steps 2–3) · Profile, plus a tab per campaign; two public pages — the profile
+(with the UNCLAIMED state) and a campaign page per election (plan · receipts ·
+live ballot slate · Q&A · promises). D26 and D28 cleared; **D29** (who signs in
+to an organization account) and **D30** (the unclaimed plan) added. The clock
+gives P2b 12 days.
+
+**Checks.** `home_check` **72** (new: collapsed by default, the two cards, row
+order, "<cause> <number>", the steps list glowing and clickable, the four doors,
+one column, the descriptions on About) · `landing_check` **21** · `render_check`
+clean · `wheel_check` 40. No horizontal overflow at 390 · 1000 · 1400px.
+
+Docs touched: this file (P2, P2b, DECIDE, the clock, BACKLOG › Home),
+`structure.md` §4.
+
+**Jax's text, as written** (moved from `## BUILD SEQUENCE` › P2):
+
+- In between the mission hub and the hero will be navigation to the main uses of the site.
+1. Two key decisions: 
+What mission to fund, - We grant $1 to everybody each week to make this decision. 
+Which organization to lead it. - To win money, a charity agrees to put it towards the elected mission
+“Decide what gets funded” link to missions- replaces “vote now” in hero
+2. Every voice matters
+Public interest in charity is lacking, we’re changing that by creating a social network for philanthropy. We believe your ideas and opinions can be just as impactful as your money.
+“Who are we?” - link to about
+3. Feedback and accountability
+Our news team covers each mission independently so that you are always equipped to make important decisions. Organizations don’t receive money until there is a plan and trust in their ability to complete it..
+“Go to the discussion” - link to news
+4. Make your impact
+2 links:
+ sign in/my profile - benefactor profile
+For charities
+- Move the news, research, and budgeting descriptions to the about page. 
+- Remove "The social network for charities"
+- To the right of the visual, have Cause · Initiative · Organization · Network · Reporting vertically stacked with arrows pointing downward, each step glowing as it is being shown
+- only 1 column for posts.
+- Missions hub 
+  - should be collapsed by default
+  - Say "<cause><number>", not "holds"
+  - The current cause with amission in week 0 should be the bottom row of the hub, and week 6 should be the top row.
+  - In the collapsed table row, show this weeks 2 election cards (ME and OE), and include the top 3 leaders. 
+  - say "See all missions" instead of expand and "Collapse missions", not just collapse.
+
+### 2026-10-01 — P1 mission pass (Jax's 17 items) · DECIDE cleared · P2b added
+
+**Read as** (no decision was open): build every item in P1's list except the
+two that are not page work — the Human Rights 2 backfill (a staff data op,
+left with Jax) and the progress reports (they need organization accounts, so
+they moved to the new P2b). "The organization election onclick expansion should
+contain a description of the election…" is read as the description of the
+*organization* being picked, else voted for, else leading.
+
+- ✅ *Suggesting an initiative: a title and an optional "Suggest a mission statement"; a mission statement is a general post tied to an initiative* — the propose dialog's second box; the post is general, tagged `mission_statement` (new in `post_config.GENERAL_TAGS`), target the initiative, ≤280 characters (`posting.prepare_new` refuses longer, or untargeted).
+- ✅ *The progress log only needs the title and date, in one row* — `paintPhases`: number · name · date (closes / opens / closed).
+- ✅ *The top of the cause section: 6 horizontal bars for each of the 7 active causes; this page indicated; coloured if a replacement has won ≥1 week, the rest dim* — one bar per open window (slots 7–13, from `/causes/slate`'s `challenger_id` / `streak`), labelled by its holder; click → that window.
+  - ✅ *keep/replace just below* · ✅ *the click-through below that* · ✅ *"Nominate a cause" to the right of the click-through* (out of the action bar).
+- ✅ *"+ post" instead of "Post a <type>"* — `_ballotBar`; the title still names the type.
+- ✅ *The proposer can rename an initiative until it is elected* — `PUT /initiatives/{id}/title` is open to the proposer (staff: any, any time); 403 for others, 409 once elected. `POST /initiatives` now records the proposer (it never did). **Rename** in the expansion.
+- ✅ *Attach an org to an initiative in earlier phases, in the expansion* — **+ Suggest an organization**. Before the initiative wins there is no race to enter, so the organization is registered and linked by a Justification tagged `tiv:<id>`; the expansion lists "Suggested to run it", and once the initiative wins its race offers each suggestion with one-click **Nominate**. (The proper link, `mission_candidacies.tiv_id`, is a migration → P2b.)
+- ✅ *Convert is not an option in the initiative election* — the expansion's Convert / Donate and their stubs are gone.
+- ✅ *The initiative expansion: small — a slider row, a post preview, its page, suggest an org, post about it; no convert / donate / description / "selected initiative" / "oceans · suggested" / status* — `_meExpansionHTML`.
+  - ✅ *Descriptions → Justifications or Mission statements by length* — `POST /admin/initiatives/descriptions-to-posts` (staff; dry run unless `?apply=true`; idempotent). Locally: 82 → 81 Mission statements + 1 Justification, written by the proposer, else the staff account. **Not run on the live site** — P1 lists it. The report's mission statement reads the leading Mission-statement post.
+- ✅ *The organization expansion* — `_oeExpansionHTML`: the picked organization, else my vote, else the leader — name, website, description, discussion preview, + post (an Investigation).
+- ✅ *Top row: "Finalized on x"; CE and ME stop there; the last three add the initiative on the right* — `renderBallotHeads` (exchange: "Began on x").
+- ✅ *"My slate" in the org race is not an editable box; edited by withdrawing or donating more; "Donate" when nothing is donated* — My stake is a figure; Donate / Donate more opens an Add line (Commit sends it); Withdraw offers the non-final part.
+- ✅ *Unable to withdraw my slate* — two causes. (1) `withdraw_stake` read only `stake_ct`, so a stake the page showed from the carried initiative-election money (legacy rows, F20) answered "You have no stake in that mission"; it now reads the same derived figure as every other wallet path, writes it onto the row, and treats the initiative-election skim as final if the row never recorded it. (2) The page offered Withdraw only for **unminted** ct, and a race outside `/wallet`'s eight rows (F11) had no row at all — `GET /wallet/row/{mission_id}` (new) and a non-final test fix both. ⚠ This is money-moving code, done because the pass names the bug: **review `wallet.withdraw_stake` before deploying.**
+- ✅ *The Report: posts below the table before the report appears — CE: posts on the incumbent cause or a replacement; ME: posts on any initiative* — `#mx-pre` / `paintPrePosts`; the report waits for the initiative election.
+- ✅ *Budget item suggestion up into the plan; the budget description deleted* — `budgetHTML` now sits under the plan.
+- ↪ *Progress reports: org report vs. the Earthbux News report* — P2b.
+- ↪ *Human Rights 2 backfill* — still in P1, Jax's.
+
+**Also this pass** (asked in the same message): `## DECIDE` cleared of every
+answered question (D6–D10, D13–D16, D19–D21, D27, D18's Home half) and
+rewritten as one line each with the proposal beside it; D9/D10's answers moved
+into P4, D8's remainder into D26; **D28** added (organization account: a login
+or a role). **P2b · Organization experience** added to the build sequence, from
+BACKLOG › ORG EXPERIENCE, D26, P6's profile and claim page and P1's report note;
+P6 narrowed to payment, vetting and mail.
+
+**§0 sweep.** F25 (feed_check's mission-link assertion fails on a target-less
+first post — pre-existing), F26 (legacy rows with no recorded skim) filed; F13
+struck. Register: § Added 2026-10-01.
+
+**Checks.** `mission_layout_check` **131** (new § Mission pass, 16) · `ce_check`
+**85** (the seven window bars, the order, Nominate a cause) · `composer_check`
+**20** (posts before the report, + post, budget in the plan) · `posts_box_check`
+**40** (the mission statement) · `render_check` clean · `posting_check` 62 ·
+`wallet_check` 133 · `home_check` 52 · `wheel_check` 40 · `landing_check` 19 ·
+`oe_check` 19/22 — the same three as the baseline (F22) · `feed_check` — F25,
+same as the baseline. Browser runs: propose with a statement → rename →
+suggest an organization → it shows under the initiative; rename refused once
+elected (409) and for a non-proposer (403); a 300-character statement refused;
+withdraw on lan1 / oce1 / oce2 (one outside the eight rows) succeeds. No new
+overflow at 390px.
+
+**Jax's text, as written** (moved from `## BUILD SEQUENCE` › P1):
+
+- Human rights 2 still needs to be backfilled.
+- When suggesting an initiative, the inputs should be a title, and the other box should be an optional "Suggest a mission statement." Mission statement should be a type of general post that is tied to an initiative.
+- The progress log only needs the title and date - these can be accomplished in one row. Everything else is shown in the ballot.
+- You misunderstood the top of the section for the causes - this is supposed to show the 6 horizontal bars for each of the 7 active causes, showing how close each of them are to replacement. Whichever cause page we are currently in should be indicated. Whichever ones have a replacement that has won at least 1 week should be colored, and the rest should be dim.
+  - edit - move the keep/replace row to just below this
+  - and just below that, have the click-through causes.
+  - Move the nominate button to the right of the click through and have it say "nominate a cause"
+- For each ballot, instead of "post a <type>" just have the "+ post" icon
+- The proposer of an initiative should be allowed to change its name, as long as it hasn't already been elected.
+- Option to attach an org to an initiative in earlier phases - shown in the expansion when you click on an initiative.
+- Convert should not be an option for the initiative election.
+- The initiative onclick expansion doesn't need to be gigantic. It should open up to a section with a new slider row, a post preview, link to its page, option to suggest an org for it, and option to post about it. No more convert and donate buttons, the description shouldn't even exist, no "selected initiative" or "oceans - suggested" or status. - they should all be converted to justificaiton posts or mission statements, depending on their length. Mission statements should be 1-2 liners.
+- In a similar fashion, The organization election onclick expansion should contain a description of the election the user is currently selecting, if none the one they are currently voting for, and if still none the leading organization.
+- The top row of the ballot panels only needs "Finalized on x" not "Initiative for oceans is finalized on x". For CE and ME, that's the full change. For the last 3, add the title of the initiative to the right.
+- The "My slate" in org race shouldn't be a clickable editable box. It can be edited by withdrawing or donating more. If the user hasn't donated at all, it should just say "Donate".
+- Theres an issue with being unable to withdraw my slate. Even when it detects me as having a slate, I cant withdraw because it says I have no slate.
+
+*The Report*
+- Progress reports: org report vs. the Earthbux News parallel report, benefactor-moderated — the org report faces B · I · A.
+- Before the report appears, show posts below the table. In the cause election, focus on posts targeting either the incumbent cause or a potential replacement. For initiative election, show posts targeting any initiative.
+- Move the budget item suggestion up to the plan area, and delete the budget item description, it lives inside the post page.
+
+**The decisions cleared** (their answers, for the record): D6 — no filters on
+Home (superseded 2026-09-30) · D7 — the phases are described on the mission
+page · D8 — Case and Evaluation are tags; the rest is the org-UX design (D26) ·
+D9 — optional email; many notifications inbox-only · D10 — no friendships,
+message threads searchable by name or mission · D13 — old initiative titles
+forward (built 2026-09-24) · D14 — ballot tabs folded into the phase toggle ·
+D15 — six won elections; the sixth makes it the newest open ME race · D16 —
+newest means newest · D18 — Home: "You donate. We follow." · D19 — a Background
+is a cause's, tags any initiatives, is electable at once, edits after election
+day go to the next mission · D20 — the leading Background fixed at T, the
+leading Investigation at T+8 · D21 — edits are new versions, used versions lock,
+pulled or cited posts restart their votes · D27 — phase 4 is "prep".
+
+Docs touched: this file (DECIDE, P1, P2b, P4, P6, the clock, pass order,
+defects, register, BACKLOG), `structure.md` §6. *README (999-d), suggested:*
+§ API — add `GET /wallet/row/{mission_id}`, `POST
+/admin/initiatives/descriptions-to-posts`, and that `PUT
+/initiatives/{id}/title` is open to an initiative's proposer; § Posting — the
+`mission_statement` tag.
 
 ### 2026-09-30 — P2 · Home mods (the five steps, the mission hub)
 

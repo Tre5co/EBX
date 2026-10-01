@@ -13,9 +13,9 @@ const PAGES = [
   // and the feed; the explainer (bands, dimes, runway) moved to about.html.
   // P2 · Home mods (2026-09-30): the hero with the five steps to its right,
   // the mission hub, the Network (links, not toggles) and the feed.
-  ['index.html', '', ['.ld-claim', '#ld-cta .ld-cta__btn', '.hx #ebx-steps .sx__scene.on', '#ebx-steps .sx__msg',
-                      '#mh .mh__rowhead', '#mh .mc--ce', '#mh .mc[data-mission]',
-                      '#hn-row a.hn__tile', '#hf-list .hp']],
+  ['index.html', '', ['#ld-flow .ld-flow__i', '#hk .hk__card', '#mh-week .mw', '.hx #ebx-steps .sx__scene.on', '#ebx-steps .sx__msg',
+                      '#mh-toggle',
+                      '#hf-list .hp']],
   ['about.html', '', ['.ld-band', '.ld-trio__cell', '#ld-dime-viz svg', '.ld-runway__bars', '#ld-active-users b', '#ab-phases li']],
   // build-seq P1 (2026-09-24) — THE MERGE. main.html is a redirect; the mission
   // page carries the elections. Its default (/m) is the newest initiative
@@ -34,7 +34,7 @@ const PAGES = [
                         '#fr-ballot-mount .votebar', '#ex-ballot-mount .votebar', '#fx-view',
                         '#init-search',
                         '#votebar-notice-mount .votebar--notice', '#votebar-notice-mount .vb-notice__body',
-                        '#mx-phases .mx-phase__ev', '#mh-candidates', '.el3__col.on .bb .bb__post', '#mb-report .mb-report__sec', '#mxt-bg', '#mxc-bg',
+                        '#mx-phases .mx-phase--row', '#mh-candidates', '.el3__col.on .bb .bb__post', '#mb-report .mb-report__sec', '#mxt-bg', '#mxc-bg',
                         '#mx-stage .mx-logcol__how', '#mx-stage #mx-table #init-table-body', '#mx-head #mx-title', '#mx-sub .mx-now']],
   // An organization election, by its old link. The discussion box (structure.md
   // §6 box i, 2026-09-17) and the final standings of the initiative election

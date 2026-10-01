@@ -148,8 +148,16 @@ GENERAL_TAGS = (
     "observation", "criticism", "proposal", "update", "response",
     # the Review lane's two types, folded in as tags (D8)
     "case", "evaluation",
+    # Mission pass (2026-10-01): "Mission statement should be a type of general
+    # post that is tied to an initiative … Mission statements should be 1-2
+    # liners." It replaces the initiative's own description.
+    "mission_statement",
 )
 GENERAL_TAG_LABELS = {t: t.capitalize() for t in GENERAL_TAGS}
+GENERAL_TAG_LABELS["mission_statement"] = "Mission statement"
+# A Mission statement is a one- or two-liner, always about an initiative.
+MISSION_STATEMENT_TAG = "mission_statement"
+MISSION_STATEMENT_MAX = 280
 GENERAL_TAG_HINTS = {
     "opinion": "What you think, and why.",
     "idea": "Something the mission could try.",
@@ -164,6 +172,7 @@ GENERAL_TAG_HINTS = {
     "response": "A reply lifted into its own post — 'in response to' another post.",
     "case": "The case for (or against) an initiative or an organization.",
     "evaluation": "How the organization is doing on the mission.",
+    "mission_statement": "What the initiative will do, in one or two lines — the line it is known by.",
 }
 # The tag a nomination defaults to (P3 › Nominations).
 NOMINATION_DEFAULT_TAG = "justification"

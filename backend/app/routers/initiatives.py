@@ -54,6 +54,10 @@ def create_tiv(
 ):
     if crud.get_tiv(db, data.id):
         raise HTTPException(status_code=409, detail="Initiative already exists")
+    # Mission pass (2026-10-01): the proposer is whoever is signed in — it is
+    # what lets them rename it until it is elected (PUT /{id}/title).
+    if not data.proposer_org_id:
+        data.proposer_ben_id = user.id
     return crud.create_tiv(db, data)
 
 
@@ -62,9 +66,22 @@ def rename_tiv(
     tiv_id: str,
     data: dict,
     db: Session = Depends(get_db),
-    staff: BenefactorAccount = Depends(get_current_staff),
+    user: BenefactorAccount = Depends(get_current_benefactor),
 ):
-    """Staff-only: rename an initiative. Its old /m/<slug> keeps forwarding (D13)."""
+    """Rename an initiative. Its old /m/<slug> keeps forwarding (D13).
+
+    Mission pass (2026-10-01): "The proposer of an initiative should be allowed
+    to change its name, as long as it hasn't already been elected." Staff may
+    rename any initiative at any time; the proposer, only their own and only
+    until it wins an initiative election."""
+    tiv = crud.get_tiv(db, tiv_id)
+    if tiv is None:
+        raise HTTPException(status_code=404, detail="Initiative not found")
+    if not getattr(user, "is_staff", False):
+        if tiv.proposer_ben_id != user.id:
+            raise HTTPException(status_code=403, detail="only the initiative's proposer can rename it")
+        if crud.tiv_is_elected(db, tiv_id):
+            raise HTTPException(status_code=409, detail="this initiative has been elected — its name is settled")
     try:
         return crud.rename_tiv(db, tiv_id, str(data.get("title") or ""))
     except ValueError as e:

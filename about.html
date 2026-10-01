@@ -220,6 +220,18 @@
     .ab-card ol { margin: 2px 0 0; padding-left: 16px; }
     .ab-card a { color: var(--clr-honey, #e8a84c); font-size: 0.8rem; font-weight: 700; }
     .ab-postbtn { display: inline-block; padding: 9px 20px; border-radius: 999px; background: var(--clr-honey, #e8a84c); color: #0f1a14 !important; font-weight: 700; text-decoration: none; }
+      /* Home pass (2026-10-01) — the network's three parts, moved from Home */
+    .ab-net { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 16px 0 0; }
+    @media (max-width: 760px) { .ab-net { grid-template-columns: 1fr; } }
+    .ab-net__i { --tc: #e8a84c; padding: 12px 14px; border-radius: 12px; background: rgba(245,240,232,0.03);
+      border: 1px solid rgba(245,240,232,0.12); border-top: 3px solid var(--tc); }
+    .ab-net__i--research { --tc: #8ec5e8; } .ab-net__i--budgeting { --tc: #8fce9d; }
+    .ab-net dt { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem; margin: 0 0 6px; }
+    .ab-net dt a { color: var(--clr-parchment, #f5f0e8); text-decoration: none; }
+    .ab-net dt a:hover { text-decoration: underline; }
+    .ab-net dt span { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tc); margin-left: 6px; }
+    .ab-net dd { margin: 0; font-size: 0.82rem; line-height: 1.55; color: rgba(245,240,232,0.7); }
+    .ab-net dd b { color: rgba(245,240,232,0.92); font-weight: 600; }
   </style>
 </head>
 
@@ -280,6 +292,16 @@
     <section class="ab-sec" id="what">
       <p class="ab-kick">What the network is for</p>
       <p class="ab-p" style="margin-top:0;">Research and news are how a mission gets decided and run, not decoration.</p>
+      <!-- Home pass (2026-10-01): "Move the news, research, and budgeting
+           descriptions to the about page." Home's three tiles carried these. -->
+      <dl class="ab-net" id="ab-net">
+        <div class="ab-net__i ab-net__i--news"><dt><a href="cause.html?cat=editorial">News</a> <span>funded</span></dt>
+          <dd>Our <b>journalists, scientists and auditors</b> on the missions your donation pays for.</dd></div>
+        <div class="ab-net__i ab-net__i--research"><dt><a href="cause.html?cat=mission_support">Research</a> <span>wins rewards</span></dt>
+          <dd><b>Background · Investigation · Analysis</b> &mdash; one Background per cause, one Investigation per organization, one Analysis per mission. The best share 3/32 of the pool.</dd></div>
+        <div class="ab-net__i ab-net__i--budgeting"><dt><a href="cause.html?cat=budgeting">Budgeting</a> <span>drives the mission</span></dt>
+          <dd><b>Service · Supply · Support</b> &mdash; costed suggestions the community approves into the budget.</dd></div>
+      </dl>
     </section>
     <!-- ══ research, then budgeting (build-seq §2 Landing, 2026-09-16) ════════
          Order swapped, each heading over its own trio: the research posts are
@@ -434,7 +456,7 @@
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20260929"></script>
+  <script src="resources/js/ebx_shared.js?v=20261001"></script>
   <script>
   // How to post — one card per type, from GET /posts/guide (post_config.py).
   (async function () {

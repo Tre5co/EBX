@@ -44,16 +44,20 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   ok(!errors.length, 'no script errors', errors.join(' | '));
   ok(/Earthbux News/.test(txt(d.querySelector('.ld-wordmark'))), 'wordmark');
   ok(txt(d.querySelector('.ld-sub')) === 'you donate, we follow', 'tagline (D18)');
-  ok(d.querySelectorAll('#ld-cta .ld-cta__btn').length === 2, 'two calls to action');
+  ok(!/Decide what gets funded|My profile/.test(d.getElementById('ld-cta').textContent), 'the hero carries no Decide / My profile links (tweaks 2026-10-01)');
 
   console.log('\n=== Home · the five steps (2026-09-30)');
-  ok(d.querySelector('.hx .ld-a') && d.querySelector('.hx #ebx-steps'), 'the hero, with the steps to its right');
+  ok(d.querySelector('.hx .ld-a') && d.querySelector('.hx #ebx-steps') && d.querySelectorAll('#ld-flow .ld-flow__i').length === 5, 'the hero, with the steps to its right and their list');
+  ok(d.querySelectorAll('#hk .hk__card').length === 4, 'the four doors');
   ok(d.querySelectorAll('#ebx-steps .sx__scene').length === 5, 'five pages');
   ok(txt(d.querySelector('#ebx-steps .sx__msg')) === 'A fresh focus each week', 'page 1 is Cause');
   ok(!d.getElementById('ebx-wheel') && !d.querySelector('.lw-phase, .lw-card'), 'the wheel block is off Home');
 
   console.log('\n=== Home · the mission hub');
   const missions = await fetch(BASE + '/missions').then(r => r.json());
+  // Home pass (2026-10-01): collapsed by default — open it to count
+  ok(d.getElementById('mh-body').hidden && d.querySelectorAll('#mh-week .mw').length >= 1, 'collapsed by default, with this week\'s elections');
+  d.getElementById('mh-toggle').click();
   ok(d.querySelectorAll('#mh .mh__rowhead').length === 7, 'seven rows');
   const hub = d.defaultView.HomeHub;
   const cells = hub ? hub.state.rows.reduce((a, r) => a + r.cells.length, 0) : 0;
@@ -61,7 +65,7 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   ok(d.querySelectorAll('#mh .mc--ce').length === 7, 'a cause election on every row');
 
   console.log('\n=== Home · the Network + the feed');
-  ok(d.querySelectorAll('#hn-row a.hn__tile').length === 3, 'the Network row, as links into News');
+  ok(!d.querySelector('.hn__tile'), 'no Network tiles (tweaks 2026-10-01)');
   const shown = d.querySelectorAll('#hf-list .hp').length;
   ok(shown === Math.min(12, roots.length), 'the feed is every post, newest first', shown + ' of ' + roots.length);
   ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]'), 'no toggles on Home');

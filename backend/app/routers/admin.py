@@ -234,3 +234,48 @@ def backfill_org(
         return crud.backfill_org_election(db, mission_id, staff, org_id, mission_statement)
     except (ValueError, PermissionError) as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/initiatives/descriptions-to-posts", response_model=dict)
+def descriptions_to_posts(
+    apply: bool = False,
+    db: Session = Depends(get_db),
+    staff: BenefactorAccount = Depends(get_current_staff),
+):
+    """Mission pass (2026-10-01): turn every initiative description into a post
+    on the initiative — a Mission statement (one or two lines) or a
+    Justification — and clear the description. `?apply=true` writes; without it
+    this only reports what it would do."""
+    return crud.tiv_descriptions_to_posts(db, staff, apply=apply)
+
+
+# ── Remove content (2026-10-01) — posts, initiatives, organizations ────────
+# Each answers `?dry_run=true` with what it would remove and changes nothing.
+def _removal(fn, *a, **kw):
+    try:
+        return fn(*a, **kw)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404 if "not found" in str(e).lower() else 409, detail=str(e))
+
+
+@router.delete("/posts/{post_id}", response_model=dict)
+def remove_post(post_id: str, dry_run: bool = False, db: Session = Depends(get_db),
+                staff: BenefactorAccount = Depends(get_current_staff)):
+    """Delete a post and every reply under it."""
+    return _removal(crud.remove_post, db, post_id, staff, dry_run=dry_run)
+
+
+@router.delete("/initiatives/{tiv_id}", response_model=dict)
+def remove_initiative(tiv_id: str, dry_run: bool = False, db: Session = Depends(get_db),
+                      staff: BenefactorAccount = Depends(get_current_staff)):
+    """Delete an initiative (refused once elected, or with tokens committed)."""
+    return _removal(crud.remove_initiative, db, tiv_id, staff, dry_run=dry_run)
+
+
+@router.delete("/organizations/{org_id}", response_model=dict)
+def remove_organization(org_id: str, dry_run: bool = False, db: Session = Depends(get_db),
+                        staff: BenefactorAccount = Depends(get_current_staff)):
+    """Delete an organization (refused once elected, or on the ledger)."""
+    return _removal(crud.remove_organization, db, org_id, staff, dry_run=dry_run)

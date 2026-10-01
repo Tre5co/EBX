@@ -2045,6 +2045,19 @@
         return r.ok ? await r.json() : null;
       } catch (e) { return null; }
     },
+    /** Mission pass (2026-10-01) — a Mission statement: a general post tagged
+     *  mission_statement on an initiative, one or two lines (≤280). */
+    async _statement(tivId, text) {
+      text = (text || "").trim().slice(0, 280);
+      if (!text || !tivId) return null;
+      try {
+        const r = await Auth.fetchAuthed("/posts", { method: "POST", body: JSON.stringify({
+          id: "pm-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+          author_type: "ben", category: "general", type: "general", body: text,
+          tags: ["mission_statement"], target_kind: "initiative", target_id: tivId }) });
+        return r.ok ? await r.json() : null;
+      } catch (e) { return null; }
+    },
     _justifyField(id, what) {
       return '<label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="' + id + '-on" checked /> ' +
         "Post a Justification with it <span style=\"opacity:0.55;font-weight:400;\">(optional — recommended)</span></label>" +
@@ -2068,10 +2081,12 @@
         // description is a case" — a short name goes in the title, the argument
         // goes below it, and the two are displayed apart everywhere.
         "<label>Title * <span style=\"opacity:0.5;font-weight:400;\">(a short name — 90 characters)</span></label><input type=\"text\" id=\"ebx-dlg-title\" maxlength=\"90\" placeholder=\"e.g. Restore kelp forests in the Pacific\" />" +
-        // P3 (2026-09-29): "The automatic description on nomination goes.
-        // Nominating … lets you optionally post, defaulting to a
-        // justification." The case is a post now, not the initiative's text.
-        Dialogs._justifyField("ebx-dlg-desc", "this initiative") +
+        // Mission pass (2026-10-01): "When suggesting an initiative, the inputs
+        // should be a title, and the other box should be an optional 'Suggest a
+        // mission statement.'" The statement is a general post tagged
+        // mission_statement on the new initiative — a one- or two-liner.
+        '<label for="ebx-dlg-desc">Suggest a mission statement <span style="opacity:0.55;font-weight:400;">(optional — one or two lines)</span></label>' +
+        '<textarea id="ebx-dlg-desc" maxlength="280" style="min-height:60px;" placeholder="e.g. Pull 40 tonnes of ghost nets from the reefs of the Coral Triangle by next autumn."></textarea>' +
         '<div class="ebx-dlg__actions">' +
           '<button class="ebx-dlg__btn ebx-dlg__btn--ghost" data-act="cancel">Cancel</button>' +
           '<button class="ebx-dlg__btn" data-act="submit">Submit proposal</button>' +
@@ -2081,7 +2096,7 @@
       bg.querySelector('[data-act=submit]').onclick = async (ev) => {
         const causeId = (bg.querySelector("#ebx-dlg-cause").value || "").trim();
         const title = (bg.querySelector("#ebx-dlg-title").value || "").trim();
-        const desc = bg.querySelector("#ebx-dlg-desc-on").checked ? (bg.querySelector("#ebx-dlg-desc").value || "").trim() : "";
+        const desc = (bg.querySelector("#ebx-dlg-desc").value || "").trim();
         if (!causeId) { msg.style.color = "#e8a84c"; msg.textContent = "Please select a cause."; return; }
         if (!title) { msg.style.color = "#e8a84c"; msg.textContent = "An initiative needs a title."; return; }
         if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) {
@@ -2110,10 +2125,10 @@
             return;
           }
           const created = await res.json();
-          const post = await Dialogs._justify("initiative", created.id, desc);
+          const post = await Dialogs._statement(created.id, desc);
           msg.style.color = "#5abd6c";
           msg.innerHTML = 'Proposal submitted! "' + title.replace(/[<>&"]/g, "") + '" is now in the election.' +
-            (post ? " Your Justification is posted." : Post.suggest("initiative", created.id, "it"));
+            (post ? " Your mission statement is posted." : Post.suggest("initiative", created.id, "it"));
           bg.querySelector("#ebx-dlg-title").value = "";
           bg.querySelector("#ebx-dlg-desc").value = "";
           if (typeof opts.onCreated === "function") { try { opts.onCreated(created); } catch (e) {} }
@@ -2221,7 +2236,15 @@
       const tivId = opts.tivId || null;
       const all = config.initiatives || [];
       const tiv = tivId ? all.find((i) => i.id === tivId) : null;
-      const missionId = opts.missionId || (tiv && tiv.mission_id) || null;
+      // Mission pass (2026-10-01): "Option to attach an org to an initiative in
+      // earlier phases." An initiative that has not won has no organization
+      // race yet (its mission's race is for whichever initiative wins), so the
+      // organization is registered on its own and SUGGESTED for the initiative
+      // by a Justification tagged with it; if the initiative wins, its race
+      // lists the suggestion for anyone to nominate in one click.
+      const tivElected = !!(tiv && (config.missions || []).some((x) => x.winning_tiv_id === tiv.id));
+      const suggestOnly = !!(tiv && !tivElected && !opts.missionId);
+      const missionId = suggestOnly ? null : (opts.missionId || (tiv && tiv.mission_id) || null);
       const m = missionId ? (config.missions || []).find((x) => x.id === missionId) : null;
       const mtiv = m && m.winning_tiv_id ? all.find((i) => i.id === m.winning_tiv_id) : null;
       const forWhat = tiv ? tiv.title : (mtiv ? mtiv.title : null);
@@ -2233,9 +2256,12 @@
           '<button class="ebx-dlg__btn ebx-dlg__btn--sm ebx-dlg__btn--ghost" data-kind="registration">Register (I\'m a member) →</button>' +
         "</div>" +
         '<p id="ebx-dlg-org-for" style="font-size:0.82rem;line-height:1.5;margin:4px 0 0;color:rgba(245,240,232,0.75);">' +
-          (missionId
+          (suggestOnly
+            ? "It is suggested for <b>" + String(tiv.title || tiv.id).replace(/[<>&"]/g, "") + "</b>. If that initiative wins its election, " +
+              "its organization race lists your suggestion for anyone to nominate."
+            : missionId
             ? "It enters the organization race for <b>" + String(forWhat || missionId).replace(/[<>&"]/g, "") + "</b>."
-            : "It is registered on Earthbux. Put it forward for a mission from that mission&rsquo;s page, or from an initiative&rsquo;s <b>+ org</b>.") +
+            : "It is registered on Earthbux. Put it forward for a mission from that mission&rsquo;s page, or click an initiative and <b>+ Suggest an organization</b>.") +
         "</p>" +
         "<label>Organization name *</label><input type=\"text\" id=\"ebx-dlg-org-name\" placeholder=\"e.g. River Cleanup Collective\" />" +
         "<label>Website *</label><input type=\"text\" id=\"ebx-dlg-org-site\" placeholder=\"https://…\" />" +
@@ -2301,9 +2327,12 @@
           }
           const orgId = data.org ? data.org.id : pickedId;
           pickedId = null; force = false;
-          const post = await Dialogs._justify("organization", orgId, just, tivId ? ["tiv:" + tivId] : []);
+          // A suggestion needs its post — it is the link to the initiative.
+          const text = just || (suggestOnly ? "Suggested to run " + (tiv.title || tiv.id) + "." : "");
+          const post = await Dialogs._justify("organization", orgId, text, tivId ? ["tiv:" + tivId] : []);
           msg.style.color = "#5abd6c";
-          msg.innerHTML = (missionId ? "✓ Nominated. It shows in this election (capped until approved)." : "✓ Registered on Earthbux.") +
+          msg.innerHTML = (suggestOnly ? "✓ Suggested for " + String(tiv.title || tiv.id).replace(/[<>&"]/g, "") + "."
+            : missionId ? "✓ Nominated. It shows in this election (capped until approved)." : "✓ Registered on Earthbux.") +
             (post ? " Your Justification is posted." : Post.suggest("organization", orgId, "it"));
           if (typeof opts.onDone === "function") { try { opts.onDone(data); } catch (e) {} }
           if (post) setTimeout(() => Dialogs.close("ebx-dlg-orgreg"), 1700);
@@ -2474,7 +2503,7 @@
     function kind(p) {
       if (p.type && TYPE[p.type] && p.type !== "general") return TYPE[p.type];
       const tag = (p.tags || []).find((t) => t.indexOf(":") < 0);
-      if (tag) return tag.charAt(0).toUpperCase() + tag.slice(1);
+      if (tag) return (tag.charAt(0).toUpperCase() + tag.slice(1)).replace(/_/g, " ");
       return CAT_WORD[p.category] || "Post";
     }
     function when(iso) {
@@ -2632,22 +2661,24 @@
     // A short preview of a discussion — for an initiative's or an
     // organization's row. "A highly rated justification if available, or
     // anything relevant. It should not show too much text."
-    async function preview(el, q) {
+    async function preview(el, q, opts) {
+      opts = opts || {};
       css();
       if (!el) return;
       const params = new URLSearchParams(Object.assign({ roots_only: "true", sort: "hot", limit: "20" }, q || {}));
       let rows = [];
       try { const r = await fetch((config.apiBase || "") + "/posts?" + params); rows = r.ok ? await r.json() : []; } catch (e) {}
-      const score = (p) => ((p.tags || []).indexOf("justification") >= 0 || (p.tags || []).indexOf("case") >= 0 ? 1000 : 0) + votes(p);
+      const score = (p) => (["justification", "case", "mission_statement"].some((t) => (p.tags || []).indexOf(t) >= 0) ? 1000 : 0) + votes(p);
       const best = rows.slice().sort((a, b) => score(b) - score(a))[0];
       const target = q.tiv_id ? { initiative: q.tiv_id } : q.org_id ? { org: q.org_id } : {};
-      const write = '<a href="' + esc(composeUrl(Object.assign({ tag: "justification" }, target))) + '">Post about it</a>';
+      // opts.noWrite: the caller draws its own post button (the mission ballot's expansion)
+      const write = opts.noWrite ? "" : '<a href="' + esc(composeUrl(Object.assign({ tag: "justification" }, target))) + '">Post about it</a>';
       el.innerHTML = best
         ? '<div class="ep-prev">' + '<span class="ep__kind">' + esc(kind(best)) + "</span> " +
             esc((best.title ? best.title + " — " : "") + String(best.body || "").slice(0, 160)) + (String(best.body || "").length > 160 ? "…" : "") +
             ' <span class="ep__ver">&uarr; ' + votes(best) + "</span>" +
-            '<br/><a href="#" data-ep-open="' + esc(best.id) + '">Read</a> &middot; ' + rows.length + " post" + (rows.length === 1 ? "" : "s") + " &middot; " + write + "</div>"
-        : '<div class="ep-prev">No discussion yet &middot; ' + write + "</div>";
+            '<br/><a href="#" data-ep-open="' + esc(best.id) + '">Read</a> &middot; ' + rows.length + " post" + (rows.length === 1 ? "" : "s") + (write ? " &middot; " + write : "") + "</div>"
+        : '<div class="ep-prev">No discussion yet' + (write ? " &middot; " + write : "") + "</div>";
       el.querySelectorAll("[data-ep-open]").forEach((a) => a.onclick = (e) => { e.preventDefault(); e.stopPropagation(); open(a.dataset.epOpen); });
     }
 

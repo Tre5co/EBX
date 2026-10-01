@@ -22,6 +22,7 @@ Conventions
 from __future__ import annotations
 
 import json
+import secrets
 import re
 import uuid
 from datetime import datetime, timedelta
@@ -718,6 +719,57 @@ def ensure_slugs(db: Session) -> int:
     return n
 
 
+def tiv_descriptions_to_posts(db: Session, staff: models.BenefactorAccount,
+                              apply: bool = False) -> dict:
+    """Mission pass (2026-10-01): "the description shouldn't even exist … they
+    should all be converted to justification posts or mission statements,
+    depending on their length. Mission statements should be 1-2 liners."
+
+    Every initiative that still carries a description gets it back as a
+    general post on the initiative — tagged `mission_statement` when it is a
+    one- or two-liner (≤ 280 characters, at most two sentences), else
+    `justification` — written by its proposer, or by the staff account running
+    this when there is none. The description is then cleared. Dry run unless
+    `apply`; idempotent (an initiative with no description is skipped)."""
+    from . import post_config as pcfg
+    tivs = db.scalars(select(models.Initiative).where(
+        models.Initiative.description.is_not(None))).all()
+    plan = []
+    for t in tivs:
+        text = (t.description or "").strip()
+        if not text:
+            continue
+        sentences = [x for x in re.split(r"(?<=[.!?])\s+", text) if x.strip()]
+        tag = (pcfg.MISSION_STATEMENT_TAG
+               if len(text) <= pcfg.MISSION_STATEMENT_MAX and len(sentences) <= 2
+               else "justification")
+        author = db.get(models.BenefactorAccount, t.proposer_ben_id) if t.proposer_ben_id else None
+        plan.append({"tiv_id": t.id, "title": t.title, "tag": tag, "chars": len(text),
+                     "author": (author.handle if author else staff.handle),
+                     "author_is_proposer": author is not None})
+        if apply:
+            p = models.Post(
+                id="pd-" + t.id[:40] + "-" + secrets.token_hex(3),
+                category="general", type="general", body=text,
+                author_type="ben", ben_author_id=(author or staff).id,
+                target_kind="initiative", target_id=t.id, tiv_id=t.id,
+                mission_id=t.mission_id, cause_id=t.cause_id,
+                tags=[tag], version=1)
+            db.add(p)
+            t.description = None
+    if apply:
+        db.commit()
+    return {"applied": bool(apply), "count": len(plan),
+            "mission_statements": sum(1 for x in plan if x["tag"] == pcfg.MISSION_STATEMENT_TAG),
+            "justifications": sum(1 for x in plan if x["tag"] == "justification"),
+            "initiatives": plan}
+
+
+def tiv_is_elected(db: Session, tiv_id: str) -> bool:
+    """True once some mission has elected this initiative (its name is settled)."""
+    return db.scalar(select(models.Mission.id).where(models.Mission.winning_tiv_id == tiv_id).limit(1)) is not None
+
+
 def rename_tiv(db: Session, tiv_id: str, title: str) -> models.Initiative:
     """Change an initiative's title; its old address keeps forwarding (D13)."""
     tiv = db.get(models.Initiative, tiv_id)
@@ -726,6 +778,8 @@ def rename_tiv(db: Session, tiv_id: str, title: str) -> models.Initiative:
     title = (title or "").strip()
     if not title:
         raise ValueError("a title cannot be empty")
+    if len(title) > 120:
+        raise ValueError("a title is a short name — 120 characters at most")
     tiv.title = title
     db.commit()
     ensure_slug(db, tiv)
@@ -1113,6 +1167,155 @@ def issue_temp_password(db: Session, ben_id: int, staff: models.BenefactorAccoun
         "note": "Send this to the registered address. It replaces the old password "
                 "immediately — the owner should change it from profile settings after signing in.",
     }
+
+
+# ── Staff removal of content (2026-10-01) ─────────────────────────────────
+# "If you can, allow me to delete posts, organizations, and initiatives as
+# admin." Each takes `dry_run`: it reports what it would remove and changes
+# nothing. Money is never deleted here: an initiative with tokens committed to
+# it, an elected initiative or organization, or an organization on the ledger
+# is refused with the reason.
+
+def _strip_tag(db: Session, tag: str) -> int:
+    n = 0
+    for p in db.scalars(select(models.Post).where(models.Post.tags.cast(String).like(f'%"{tag}"%'))).all():
+        p.tags = [t for t in (p.tags or []) if t != tag] or None
+        n += 1
+    return n
+
+
+def _untarget(db: Session, kind: str, ident: str) -> int:
+    n = 0
+    for p in db.scalars(select(models.Post).where(models.Post.target_kind == kind,
+                                                  models.Post.target_id == ident)).all():
+        p.target_kind, p.target_id = "none", None
+        n += 1
+    return n
+
+
+def remove_post(db: Session, post_id: str, staff: models.BenefactorAccount,
+                dry_run: bool = False) -> dict:
+    """Delete a post and every reply under it, with their votes, versions,
+    mission links and references. Posts that cited it lose the reference; a
+    mission that it led (D20) loses the lead."""
+    require_staff(staff)
+    root = db.get(models.Post, post_id)
+    if root is None:
+        raise ValueError("Post not found")
+    ids, frontier = [root.id], [root.id]
+    while frontier:
+        kids = [r[0] for r in db.execute(select(models.Post.id).where(models.Post.parent_id.in_(frontier))).all()]
+        frontier = [k for k in kids if k not in ids]
+        ids += frontier
+    out = {"post_id": post_id, "title": root.title or (root.body or "")[:60], "posts": len(ids),
+           "replies": len(ids) - 1, "dry_run": bool(dry_run)}
+    out["votes"] = db.scalar(select(sqlfunc.count()).select_from(models.PostVote).where(models.PostVote.post_id.in_(ids))) or 0
+    out["cited_by"] = db.scalar(select(sqlfunc.count()).select_from(models.PostRef).where(models.PostRef.ref_post_id.in_(ids))) or 0
+    if dry_run:
+        return out
+    for M in (models.PostVote, models.PostVersion, models.PostMission):
+        for r in db.scalars(select(M).where(M.post_id.in_(ids))).all():
+            db.delete(r)
+    for r in db.scalars(select(models.PostRef).where(or_(models.PostRef.post_id.in_(ids),
+                                                         models.PostRef.ref_post_id.in_(ids)))).all():
+        db.delete(r)
+    for ml in db.scalars(select(models.MissionLead).where(or_(models.MissionLead.background_id.in_(ids),
+                                                              models.MissionLead.investigation_id.in_(ids)))).all():
+        if ml.background_id in ids:
+            ml.background_id, ml.background_version = None, None
+        if ml.investigation_id in ids:
+            ml.investigation_id, ml.investigation_version = None, None
+    for i in ids:
+        _untarget(db, "post", i)
+    db.flush()
+    for i in reversed(ids):                         # replies first, the root last
+        p = db.get(models.Post, i)
+        if p is not None:
+            db.delete(p)
+            db.flush()
+    db.commit()
+    return out
+
+
+def remove_initiative(db: Session, tiv_id: str, staff: models.BenefactorAccount,
+                      dry_run: bool = False) -> dict:
+    """Delete an initiative. Refused if a mission elected it, or if tokens are
+    committed to it (those are donations — move them first). Its standing
+    preferences (0-token votes) go with it; posts about it stay, untargeted."""
+    require_staff(staff)
+    t = db.get(models.Initiative, tiv_id)
+    if t is None:
+        raise ValueError("Initiative not found")
+    won = db.scalar(select(models.Mission.id).where(models.Mission.winning_tiv_id == tiv_id).limit(1))
+    if won:
+        raise ValueError(f"{t.title} was elected by {won} — it is a mission now and cannot be deleted")
+    votes = db.scalars(select(models.VoteP1).where(models.VoteP1.tiv_id == tiv_id)).all()
+    money = sum(int(v.stake_ct or 0) for v in votes) + sum(float(v.ebx_committed or 0) for v in votes)
+    if money > 0:
+        raise ValueError(f"{t.title} has tokens committed to it by {len(votes)} benefactor(s) — "
+                         "those are donations; they have to move before it can be deleted")
+    posts = db.scalar(select(sqlfunc.count()).select_from(models.Post).where(or_(
+        models.Post.tiv_id == tiv_id, (models.Post.target_kind == "initiative") & (models.Post.target_id == tiv_id)))) or 0
+    out = {"tiv_id": tiv_id, "title": t.title, "preferences": len(votes), "posts_untargeted": posts,
+           "dry_run": bool(dry_run)}
+    if dry_run:
+        return out
+    for v in votes:
+        db.delete(v)
+    for v in db.scalars(select(models.VoteP2).where(models.VoteP2.marked_tiv_id == tiv_id)).all():
+        v.marked_tiv_id = None
+    for sl in db.scalars(select(models.InitiativeSlug).where(models.InitiativeSlug.tiv_id == tiv_id)).all():
+        db.delete(sl)
+    for p in db.scalars(select(models.Post).where(models.Post.tiv_id == tiv_id)).all():
+        p.tiv_id = None
+    _untarget(db, "initiative", tiv_id)
+    out["tags_removed"] = _strip_tag(db, "tiv:" + tiv_id)
+    db.flush()
+    db.delete(t)
+    db.commit()
+    return out
+
+
+def remove_organization(db: Session, org_id: str, staff: models.BenefactorAccount,
+                        dry_run: bool = False) -> dict:
+    """Delete an organization: its candidacies, memberships and claims. Refused
+    if a mission elected it or the ledger names it. Benefactors who picked it
+    keep their stake in the race with no pick; posts about it stay, untargeted;
+    its own posts stay with no author."""
+    require_staff(staff)
+    o = db.get(models.Organization, org_id)
+    if o is None:
+        raise ValueError("Organization not found")
+    won = db.scalar(select(models.Mission.id).where(models.Mission.winning_org_id == org_id).limit(1))
+    if won:
+        raise ValueError(f"{o.name} was elected by {won} — it runs a mission and cannot be deleted")
+    if db.scalar(select(models.Transaction.id).where(models.Transaction.counterparty_org_id == org_id).limit(1)):
+        raise ValueError(f"{o.name} is on the ledger — the ledger is append-only, so it cannot be deleted")
+    cands = db.scalars(select(models.MissionCandidacy).where(models.MissionCandidacy.org_id == org_id)).all()
+    picks = db.scalars(select(models.VoteP2).where(models.VoteP2.org_id == org_id)).all()
+    mems = db.scalars(select(models.Membership).where(models.Membership.org_id == org_id)).all()
+    claims = db.scalars(select(models.OrgClaim).where(models.OrgClaim.org_id == org_id)).all()
+    out = {"org_id": org_id, "name": o.name, "candidacies": len(cands), "picks_cleared": len(picks),
+           "memberships": len(mems), "claims": len(claims), "races": sorted({c.mission_id for c in cands}),
+           "dry_run": bool(dry_run)}
+    if dry_run:
+        return out
+    for v in picks:
+        v.org_id = None
+    for r in list(cands) + list(mems) + list(claims):
+        db.delete(r)
+    for t in db.scalars(select(models.Initiative).where(models.Initiative.proposer_org_id == org_id)).all():
+        t.proposer_org_id = None
+    for p in db.scalars(select(models.Post).where(models.Post.org_id == org_id)).all():
+        p.org_id = None
+    for p in db.scalars(select(models.Post).where(models.Post.org_author_id == org_id)).all():
+        p.org_author_id = None
+    _untarget(db, "organization", org_id)
+    out["tags_removed"] = _strip_tag(db, "org:" + org_id)
+    db.flush()
+    db.delete(o)
+    db.commit()
+    return out
 
 
 def remove_account(db: Session, ben_id: int, staff: models.BenefactorAccount) -> dict:

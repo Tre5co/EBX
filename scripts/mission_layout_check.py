@@ -182,8 +182,8 @@ ok('id="mxt-bg"' in s and "report.addEventListener('click', e =>" in s and 'open
 ok('id="mp-cattabs"' not in s and 'id="mb-post"' not in s, 'budgeting and research are no longer two toggles of one list')
 
 print('\n=== P1 mission edits (2026-09-28)')
-ok("mine.map(e => '<span class=\"mx-phase__ev" in mx and 'eventsFor: mid =>' in s and 'id="mp-log"' not in s,
-   'the progress log IS the phase toggle — each phase carries its dated events')
+ok('mx-phase--row' in mx and 'eventsFor: mid =>' in s and 'id="mp-log"' not in s,
+   'the progress log IS the phase toggle — one row per phase: title and date (mission pass 2026-10-01)')
 ok('.mx-stage { display: grid; grid-template-columns: 236px minmax(0, 1fr)' in s, '…with the ballot to its right')
 for st, t in [('cause', 'context'), ('tiv', 'context'), ('org', 'investigation'), ('frame', 'analysis')]:
     ok("%s: { cat: 'mission_support', type: '%s'" % ('cause' if st == 'cause' else st, t) in mx or
@@ -207,6 +207,45 @@ ok('def ensure_slug(' in crud and 'def rename_tiv(' in crud and '"/slugs"' in rd
 ok('async function load()' in shared and 'await EBX.Slug.load()' in s, 'the page reads the stored slugs before it resolves the URL')
 ok('for k in range(CAUSE_STREAK_WEEKS):' in crud and 'CAUSE_LOOKBACK_WEEKS' not in crud,
    'D15: six weekly elections, no aggregate column')
+
+print('\n=== Mission pass (2026-10-01) — Jax\'s P1 list')
+shared_js = rd('resources', 'js', 'ebx_shared.js')
+pcfg = rd('backend', 'app', 'post_config.py')
+tivr = rd('backend', 'app', 'routers', 'initiatives.py')
+walr = rd('backend', 'app', 'routers', 'wallet.py')
+ok('Suggest a mission statement' in shared_js and 'async _statement(tivId, text)' in shared_js
+   and '"mission_statement",' in pcfg and 'MISSION_STATEMENT_MAX = 280' in pcfg,
+   'proposing an initiative: a title and an optional mission statement — a general post tagged mission_statement (≤280)')
+ok("mx-phase--row" in mx and "mx-phase__ev" not in mx[mx.index('function paintPhases'):mx.index('function paintRecap')],
+   'the progress log is one row per phase — title and date, nothing else')
+ok('ce-bars--slate' in s and "filter(x => x.slot >= CAUSE_FIRST_OPEN)" in s and 'ce-bars__row--lit' in s
+   and 'ce-bars__row--dim' in s and 'ce-bars__row--here' in s,
+   'the cause panel: six-segment bars for each of the seven open windows — lit with a challenger, dim without, this page marked')
+ok("bars + votes + pager + dist + barHTML" in s and '+ Nominate a cause' in s,
+   '…then keep / replace, then the click-through with "Nominate a cause" on its right')
+ok(">+ post</button>" in s and "POST[o.step] + ' &rarr;</button>'" not in s, 'every ballot ends in "+ post", not "Post a <type>"')
+ok('tiv_is_elected' in tivr and 'only the initiative\'s proposer can rename it' in tivr
+   and 'data.proposer_ben_id = user.id' in tivr and 'window._tivRenameSave' in s,
+   'the proposer renames an initiative until it is elected (PUT /initiatives/{id}/title)')
+ok('suggestOnly' in shared_js and "+ Suggest an organization" in s and 'window._nominateExisting' in s,
+   'an organization can be suggested for an initiative before it wins; its race lists the suggestion to nominate')
+ok('rowConvert' not in s and '⇄ Convert' not in s, 'no Convert in the initiative election')
+ok('function _meExpansionHTML' in s and 'Selected Initiative' not in s[s.index('function _meExpansionHTML'):s.index('function _meExpansionHTML') + 6000]
+   and 'data-prev-tiv' in s and 'vb-x__slider' in s,
+   'the initiative expansion is small: a slider row, a post preview, its page, suggest an org, + post')
+ok('function _oeExpansionHTML' in s and "o.myOrg || o.leadId" in s,
+   'the organization expansion: the picked organization, else my vote, else the leader')
+ok("el3__top-tiv" in s and "Finalized on" in s and "'Cause for the window that runs" not in s,
+   'the header line reads "Finalized on x"; organization · framing · exchange add the initiative on the right')
+ok('vb-stake--ro' in s and "'Donate more' : 'Donate'" in s and 'id="vb-amt-\' + mid' not in s,
+   '"My stake" is a figure, not a box; with no stake the button just says Donate')
+ok('/row/{mission_id}' in walr and 'window._fetchOeRow' in s and 'derived = crud.p2_ebx_by_ben(db, mission_id)' in wal,
+   'withdraw: the stake is read the way the page reads it, even outside the eight rows (the "no slate" bug)')
+ok('id="mx-pre"' in s and 'function paintPrePosts' in s, 'before the report: the posts on the causes / the initiatives below the table')
+ok('mb-budget__add--plan' in s and 'Budget items are how this mission gets planned' not in s,
+   'the budget suggestions sit in the plan; the budget description is gone')
+ok('/initiatives/descriptions-to-posts' in rd('backend', 'app', 'routers', 'admin.py') and 'def tiv_descriptions_to_posts' in crud,
+   'initiative descriptions become Mission statements or Justifications (staff endpoint, dry run by default)')
 
 print('\n' + ('FAILED %d/%d' % (bad, n) if bad else 'all %d checks passed' % n))
 

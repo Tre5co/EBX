@@ -12,11 +12,12 @@ behind the pages is [`README.md`](../README.md).*
 - [1. Site layout](#1-site-layout)
 - [2. Communications](#2-communications)
 - [4. index.html (Home) — **the week, and the network** *(was Landing — About Earthbux)*](#4-indexhtml-home--the-week-and-the-network-was-landing--about-earthbux)
+  - [✅ P2 · HOME PASS — BUILT 2026-10-01](#p2--home-pass--built-2026-10-01)
   - [✅ P2 · HOME MODS — BUILT 2026-09-30](#p2--home-mods--built-2026-09-30)
   - [✅ P2 · HOME — BUILT 2026-09-25](#p2--home--built-2026-09-25)
 - [5. profile.html — Profiles](#5-profilehtml--profiles)
 - [6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout · MERGED 2026-09-24)](#6-missionhtml--mission-page-rebuilt-2026-08-01--jax-notes-2-layout--merged-2026-09-24)
-  - [✅ UNIFIED ELECTIONS — BUILT 2026-09-29](#unified-elections--built-2026-09-29)
+  - [✅ MISSION PASS — BUILT 2026-10-01](#mission-pass--built-2026-10-01)
   - [✅ P1 · THE MERGE — BUILT 2026-09-24](#p1--the-merge--built-2026-09-24)
   - [◑ Box **i** LANDED EARLY, 2026-09-17 — the discussion box moved in.](#box-i-landed-early-2026-09-17--the-discussion-box-moved-in)
   - [▶ NEXT — the redesign (build-seq §3). Build order, box by box.](#next--the-redesign-build-seq-3-build-order-box-by-box)
@@ -57,6 +58,39 @@ exist yet were drawn from the built page). The letters in a PAGE LAYOUT are the
 drawing's letters. `[ ]` in a legend = drawn but not built.
 
 ## 4. index.html (Home) — **the week, and the network** *(was Landing — About Earthbux)*
+
+### ✅ P2 · HOME PASS — BUILT 2026-10-01
+
+*Report and Jax's text: INSTRUCTIONS › ARCHIVE › 2026-10-01b. Pinned by
+`home_check` (72) and `landing_check`.* Top to bottom:
+
+```
+| Earthbux News              |  [ the five steps ]   CAUSE        |
+| you donate, we follow      |  [   (visual)     ]     ↓          |
+| [Decide what gets funded]  |  [                ]   INITIATIVE … |
+|----------------------------------------------------------------|
+| 1 Two key decisions | 2 Every voice | 3 Feedback and | 4 Make your |
+|   → Missions        |   matters     |   accountability|   impact    |
+|                     |   → About     |   → News       | Sign in ·   |
+|                     |               |                | For charities|
+|----------------------------------------------------------------|
+| Missions  · n decided this week              [See all missions] |
+|  [ this week's initiative election · top 3 ] [ this week's org election · top 3 ] |
+|  (open: the 7-row grid, week 6 at the top, week 0 at the bottom) |
+|----------------------------------------------------------------|
+| The Network: News · Research · Budgeting (names, tags, counts)  |
+| the feed — one column                                            |
+```
+
+- No "The social network for charities"; the hero's button is **Decide what
+  gets funded** (→ Missions).
+- `#ld-flow` — the five step names, arrows down; `EBX.Steps.mount(sel,
+  { onChange })` lights the one on screen; a click shows that page.
+- `#hk` — the four doors.
+- The hub is collapsed by default (`ebx_hub_open2`); collapsed it shows
+  `#mh-week`, open the grid. A cause election card reads "<cause> <number>" —
+  the mission its window becomes. Rows run (active − cause) mod 7, 6 → 0.
+- The Network tiles' descriptions live on about.html (`#ab-net`).
 
 ### ✅ P2 · HOME MODS — BUILT 2026-09-30
 
@@ -435,29 +469,65 @@ surface using the new name. The rename is NOT done.
 
 ## 6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout · MERGED 2026-09-24)
 
-### ✅ UNIFIED ELECTIONS — BUILT 2026-09-29
+### ✅ MISSION PASS — BUILT 2026-10-01
 
-*Report and Jax's drawings: INSTRUCTIONS › ARCHIVE › 2026-09-29b.* Below the
-hero, one panel for every phase:
+*Report and Jax's list: INSTRUCTIONS › ARCHIVE › 2026-10-01. Pinned by
+`mission_layout_check` (§ Mission pass), `ce_check`, `composer_check`.* Below
+the hero, one panel for every phase:
 
 ```
-|  PROGRESS LOG     | <what> is finalized on <date> — n d left          |CAUSE n |
-|  1 Cause …  date  |                                                            |
-|  2 Initiative … - |   the phase's ballot (CE: six-week bars per cause, this    |
-|  3 Organization … |   week's distribution, click-through, KEEP / REPLACE;      |
-|  4 Framing …      |   ME: Leading · pool · assigned, sliders, Unallocated;     |
-|  5 Exchange …     |   OE: Leading · My vote | pool · My stake · Donate · Withdraw)
-|___________________|_Commit|Cancel · acts · Discuss ____________ Post a <type>_|
-|                        the table, full width                                  |
+|  PROGRESS LOG        | Finalized on <date> · n d left · <initiative>* · CAUSE n |
+|  1 Cause …     date  |                                                          |
+|  2 Initiative  date  |   the phase's ballot                                     |
+|  3 Organization date |   + the expansion of what was clicked in the table       |
+|  4 Framing     date  |                                                          |
+|  5 Exchange    date  |                                                          |
+|______________________|_Commit|Cancel · acts · Discuss _____________ + post _____|
+|                        the table, full width                                    |
+   * organization · framing · exchange only
 ```
 
-- The header line is `renderBallotHeads` (`#el3-top-*`); the bar is
-  `window._ballotBar` — every ballot ends in it.
-- An initiative that is not its mission's elected one has its own page: no
-  ballot, no table, `paintTivReport` (what it is · what people say · what it
-  would need). "Vote on it in that election →" opens the ballot with it in it.
-- The ME sliders are shares of what the benefactor can put in
-  (`committableFor`); what none holds is **Unallocated** and is not committed.
+- **Progress log** — one row per phase: number · name · the date that matters
+  (closes / opens / closed). Everything else is in the ballot.
+- **Header line** (`renderBallotHeads`): "Finalized on <date>" ("Began on" for
+  exchange), days left, the initiative on the right for the last three phases,
+  the cause chip. The cause election adds "window runs <date>".
+- **Action bar** (`window._ballotBar`): ends in **+ post**; its title names the
+  type it opens (Background · Investigation · Analysis · budget item).
+- **Cause election**: seven six-segment bars — one per OPEN window (slots 7–13),
+  labelled by the cause holding it; lit in the challenger's colour when a
+  challenger has won ≥1 week in a row, dim otherwise; the page's window marked;
+  each bar opens its window · KEEP / REPLACE WITH · the click-through with
+  **+ Nominate a cause** on its right · this week's distribution · the bar.
+- **Initiative election**: Leading · pool · assigned, the slider rows,
+  Unallocated. Clicking an initiative opens a small **expansion** in the ballot
+  (`_meExpansionHTML`): its own slider row, a discussion preview, Page →,
+  **+ Suggest an organization**, + post — and **Rename** for its proposer until
+  it is elected (`PUT /initiatives/{id}/title`). No Convert, no Donate, no
+  description, no status.
+- **Proposing an initiative**: a title and an optional **mission statement** — a
+  general post tagged `mission_statement` (≤280 characters) on the initiative.
+  The report's mission statement is the organization's, else the leading
+  mission-statement post, else the old description. Old descriptions convert
+  with `POST /admin/initiatives/descriptions-to-posts` (dry run; `?apply=true`).
+- **Suggesting an organization for an initiative that has not won**: the
+  organization is registered on its own and linked by a Justification tagged
+  `tiv:<id>`; the expansion lists "Suggested to run it"; once the initiative
+  wins, its race lists the suggestions with one-click **Nominate**.
+- **Organization election**: Leading · My vote | Pool · **My stake** (a figure,
+  not a box) · **Donate** / **Donate more** (opens an Add line; Commit sends) ·
+  **Withdraw** (the non-final part). Clicking an organization opens its
+  expansion (`_oeExpansionHTML`): the picked one, else my vote, else the leader
+  — name, website, description, discussion preview, + post. A race outside the
+  eight `/wallet` rows reads its row from `GET /wallet/row/{mission_id}`.
+- **Below the table, before the report**: while a mission has no elected
+  initiative there is no report; `#mx-pre` lists the posts on the cause holding
+  the window and its challengers (cause election) or on the election's
+  initiatives (initiative election). The report starts at the initiative
+  election; its **Plan** carries Suggest a budget item (Service · Supply ·
+  Support); the budget description lives on post.html.
+- An initiative that is not its mission's elected one still has its own page
+  (`paintTivReport`).
 
 ### ✅ P1 · THE MERGE — BUILT 2026-09-24
 

@@ -665,7 +665,19 @@ def staff_session(args) -> Api:
     import getpass
     if not args.staff_handle:
         raise SystemExit("this task needs --staff-handle (your gamemaster account)")
-    pw = os.environ.get("EBX_STAFF_PASSWORD") or getpass.getpass(f"password for {args.staff_handle}: ")
+    # 2026-10-01: or from the git-ignored accounts file, beside the bots'
+    # passwords ({"GameMaster": "…"}), so a staff task can run unattended.
+    pw = os.environ.get("EBX_STAFF_PASSWORD")
+    if not pw:
+        try:
+            pw = json.loads(Path(args.accounts).read_text()).get(args.staff_handle)
+        except (OSError, ValueError):
+            pw = None
+    if not pw:
+        if not sys.stdin.isatty():
+            raise SystemExit(f"no password for {args.staff_handle}: set EBX_STAFF_PASSWORD, or add "
+                             f"\"{args.staff_handle}\": \"…\" to {args.accounts}")
+        pw = getpass.getpass(f"password for {args.staff_handle}: ")
     api = Api(args.base, dry_run=args.dry_run)
     tok = api._req("POST", "/auth/login", form={"username": args.staff_handle, "password": pw})
     api.token = tok["access_token"]
@@ -770,15 +782,71 @@ def task_sync(args, bots) -> int:
     return 0
 
 
+def backfill_initiatives(args, staff, content) -> None:
+    """Elect an initiative in every past initiative election that never got one
+    (2026-10-01 — "run the bot to backfill human rights 2").
+
+    The choice, in order: `{"backfill_tiv": {"<mission id>": "<initiative id>"}}`
+    in the content file; else the initiative the LOCAL database elected for that
+    mission (`--from-db`) — proposed on the site first, by staff, if it is not
+    there yet; else the server's own rule (the most preferences standing)."""
+    races = staff.get("/admin/elections/unelected-tivs") or []
+    if getattr(args, "missions", None):
+        keep = {m.strip() for m in args.missions.split(",")}
+        races = [r for r in races if r["mission_id"] in keep]
+    print(f"== backfill · {len(races)} past initiative election(s) with no initiative · {args.base}"
+          + (" · DRY RUN" if args.dry_run else ""))
+    wanted = (content or {}).get("backfill_tiv") or {}
+    local = None
+    if args.from_db and Path(args.from_db).exists():
+        try:
+            local = read_local(args.from_db)
+        except Exception as e:      # a missing or locked file is not fatal here
+            say("backfill", f"(local database unreadable — {e})")
+    for r in races:
+        mid = r["mission_id"]
+        running = {t["tiv_id"]: t["title"] for t in r.get("running") or []}
+        tiv_id = wanted.get(mid)
+        try:
+            if not tiv_id and local:
+                lm = local["missions"].get(mid) or {}
+                lw = lm.get("winning_tiv_id")
+                lt = next((t for t in local["initiatives"] if t["id"] == lw), None) if lw else None
+                if lt:
+                    same = next((i for i, ti in running.items() if _norm(ti) == _norm(lt["title"])), None)
+                    if same:
+                        tiv_id = same
+                    else:
+                        say("backfill", f"{mid}: proposing the local winner “{lt['title']}” on the site")
+                        res = staff.post("/initiatives", {
+                            "id": lt["id"], "title": lt["title"][:120], "description": lt.get("description"),
+                            "emoji": lt.get("emoji"), "cause_id": lt["cause_id"], "mission_id": mid,
+                            "status": "suggested"})
+                        tiv_id = lt["id"] if not (res or {}).get("dry_run") else lt["id"]
+            if args.dry_run:
+                say("backfill", f"[dry-run] {mid}: would elect " + (tiv_id or "the initiative with the most preferences")
+                    + f" · running: {', '.join(running.values()) or 'none'}")
+                continue
+            res = staff.post(f"/admin/missions/{mid}/backfill-tiv", {"tiv_id": tiv_id} if tiv_id else {})
+            say("backfill", f"{mid}: elected {res.get('winning_tiv_id')} ({res.get('on') or 'already'})")
+        except ApiError as e:
+            say("backfill", f"refused — {mid}: {e}")
+
+
 def task_backfill(args, content) -> int:
-    """Elect an organization in every past race that never got one.
+    """Elect an initiative in every past initiative election that never got one,
+    then an organization in every past race that never got one.
 
     For each race, in order: an organization named in the content file
     (`{"backfill": {"<mission id>": {"name", "website_link", "description",
     "mission_statement"}}}` — nominated first), else the best-placed candidate
     already running. Staff casts the free vote and the race finalizes normally."""
     staff = staff_session(args)
+    backfill_initiatives(args, staff, content)
     races = staff.get("/admin/elections/unelected-orgs") or []
+    if getattr(args, "missions", None):
+        keep = {m.strip() for m in args.missions.split(",")}
+        races = [r for r in races if r["mission_id"] in keep]
     print(f"== backfill · {len(races)} past race(s) with no organization · {args.base}"
           + (" · DRY RUN" if args.dry_run else ""))
     wanted = (content or {}).get("backfill") or {}
@@ -844,6 +912,8 @@ def main(argv=None) -> int:
                     help="sync: the local database to copy initiatives and organizations from")
     ap.add_argument("--staff-handle", default=os.environ.get("EBX_STAFF_HANDLE"),
                     help="sync/backfill: the staff (gamemaster) login; password from EBX_STAFF_PASSWORD or a prompt")
+    ap.add_argument("--missions", default=None,
+                    help="backfill: only these mission ids, comma-separated (e.g. hmr1)")
     ap.add_argument("--seed", default=None)
     args = ap.parse_args(argv)
 

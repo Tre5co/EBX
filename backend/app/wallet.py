@@ -297,6 +297,62 @@ def final_ct_of(db: Session, v: Optional[models.VoteP2],
     return tm.final_ct(stake_ct_of(v), int(getattr(v, "donated_ct", 0) or 0), reached)
 
 
+def _oe_row(db: Session, m: models.Mission, ben_id: Optional[int], ben, free: int,
+            purchased: int, active_id: Optional[str], week: int,
+            now: Optional[datetime] = None) -> dict:
+    """One organization race as the ballot reads it (the body of `oe_rows`)."""
+    from . import crud
+    tiv = db.get(models.Initiative, m.winning_tiv_id) if m.winning_tiv_id else None
+    v = _vote_row(db, ben_id, m.id) if ben_id else None
+    derived = crud.p2_ebx_by_ben(db, m.id).get(ben_id, 0.0) if ben_id else 0.0
+    my_ct = stake_ct_of(v, derived) if (v or derived) else 0
+    unminted = unminted_ct_of(v, week, derived) if v else 0
+    backed_winner = False
+    if ben_id and m.winning_tiv_id:
+        backed_winner = db.scalars(
+            select(models.VoteP1).where(models.VoteP1.ben_id == ben_id,
+                                        models.VoteP1.mission_id == m.id,
+                                        models.VoteP1.tiv_id == m.winning_tiv_id)
+        ).first() is not None
+    headroom = free if m.id == active_id else purchased
+    return {
+        "mission_id": m.id,
+        "cause_id": m.cause_id,
+        "cycle_num": m.cycle_num,
+        "tiv_id": m.winning_tiv_id,
+        "tiv_title": (tiv.title if tiv else m.winning_tiv_id),
+        "tiv_emoji": (tiv.emoji if tiv else None),
+        "vote_date": _vote_day(m).isoformat(),
+        "my_stake_ct": my_ct,
+        # The three states, per row, so the table can say which of a
+        # benefactor's ct here is still theirs to move.
+        "my_committed_ct": unminted,
+        "my_minted_ct": held_ebx_ct_of(v),
+        "my_donated_ct": max(0, int(getattr(v, "donated_ct", 0) or 0)) if v else 0,
+        "my_org_id": (v.org_id if v else None),
+        "marked_tiv_id": (getattr(v, "marked_tiv_id", None) if v else None),
+        "movable": is_movable(v, week),
+        "committed_week": (getattr(v, "committed_week", None) if v else None),
+        "hardens_week": (tm.hardens_at_week(v.committed_week)
+                         if (v and getattr(v, "committed_week", None) is not None)
+                         else None),
+        # 2026-09-16 — backing the winning initiative is a fact worth showing
+        # (bragging rights), not a multiplier. Being right is rewarded by the
+        # deployment order, so weight is the stake through the block curve.
+        "backed_winner": backed_winner,
+        "my_weight": tm.weight_tokens(my_ct),
+        "my_votes": tm.oe_votes(my_ct),            # 2026-09-17: the doubling ladder
+        "can_take_part": bool(ben_id) and (m.id == active_id or _carried_from_me(v)
+                                           or _voted_in_me(db, ben_id, m.id)),
+        "my_final_ct": final_ct_of(db, v, now) if v else 0,
+        "born_week": (v.born_week if v else None),
+        "origin_mission_id": ((v.origin_mission_id if v and v.origin_mission_id
+                               else m.id)),
+        "is_active_race": (m.id == active_id),
+        "max_stake_ct": my_ct + headroom,
+    }
+
+
 def oe_rows(db: Session, ben_id: Optional[int],
             now: Optional[datetime] = None) -> list[dict]:
     """The OE table: one row per mission with an open philanthropy election.
@@ -321,56 +377,28 @@ def oe_rows(db: Session, ben_id: Optional[int],
     # any of them by voting.
     active_id = open_missions[0].id if open_missions else None
     for m in open_missions:
-        tiv = db.get(models.Initiative, m.winning_tiv_id) if m.winning_tiv_id else None
-        v = _vote_row(db, ben_id, m.id) if ben_id else None
-        derived = crud.p2_ebx_by_ben(db, m.id).get(ben_id, 0.0) if ben_id else 0.0
-        my_ct = stake_ct_of(v, derived) if (v or derived) else 0
-        unminted = unminted_ct_of(v, week, derived) if v else 0
-        backed_winner = False
-        if ben_id and m.winning_tiv_id:
-            backed_winner = db.scalars(
-                select(models.VoteP1).where(models.VoteP1.ben_id == ben_id,
-                                            models.VoteP1.mission_id == m.id,
-                                            models.VoteP1.tiv_id == m.winning_tiv_id)
-            ).first() is not None
-        headroom = free if m.id == active_id else purchased
-        out.append({
-            "mission_id": m.id,
-            "cause_id": m.cause_id,
-            "cycle_num": m.cycle_num,
-            "tiv_id": m.winning_tiv_id,
-            "tiv_title": (tiv.title if tiv else m.winning_tiv_id),
-            "tiv_emoji": (tiv.emoji if tiv else None),
-            "vote_date": _vote_day(m).isoformat(),
-            "my_stake_ct": my_ct,
-            # The three states, per row, so the table can say which of a
-            # benefactor's ct here is still theirs to move.
-            "my_committed_ct": unminted,
-            "my_minted_ct": held_ebx_ct_of(v),
-            "my_donated_ct": max(0, int(getattr(v, "donated_ct", 0) or 0)) if v else 0,
-            "my_org_id": (v.org_id if v else None),
-            "marked_tiv_id": (getattr(v, "marked_tiv_id", None) if v else None),
-            "movable": is_movable(v, week),
-            "committed_week": (getattr(v, "committed_week", None) if v else None),
-            "hardens_week": (tm.hardens_at_week(v.committed_week)
-                             if (v and getattr(v, "committed_week", None) is not None)
-                             else None),
-            # 2026-09-16 — backing the winning initiative is a fact worth showing
-            # (bragging rights), not a multiplier. Being right is rewarded by the
-            # deployment order, so weight is the stake through the block curve.
-            "backed_winner": backed_winner,
-            "my_weight": tm.weight_tokens(my_ct),
-            "my_votes": tm.oe_votes(my_ct),            # 2026-09-17: the doubling ladder
-            "can_take_part": bool(ben_id) and (m.id == active_id or _carried_from_me(v)
-                                               or _voted_in_me(db, ben_id, m.id)),
-            "my_final_ct": final_ct_of(db, v, now) if v else 0,
-            "born_week": (v.born_week if v else None),
-            "origin_mission_id": ((v.origin_mission_id if v and v.origin_mission_id
-                                   else m.id)),
-            "is_active_race": (m.id == active_id),
-            "max_stake_ct": my_ct + headroom,
-        })
+        out.append(_oe_row(db, m, ben_id, ben, free, purchased, active_id, week, now))
     return out
+
+
+def oe_row_for(db: Session, ben_id: Optional[int], mission_id: str,
+               now: Optional[datetime] = None) -> Optional[dict]:
+    """Mission pass (2026-10-01): one organization race's row, whether or not it
+    is among the eight `oe_rows` returns. A race outside the eight (OPEN
+    DEFECTS F11) still holds stakes, and its ballot needs the same row to show
+    the stake and offer Withdraw. Read-only."""
+    m = db.get(models.Mission, mission_id)
+    if m is None or not m.winning_tiv_id or m.winning_org_id:
+        return None
+    week = current_week(now)
+    ben = db.get(models.BenefactorAccount, ben_id) if ben_id else None
+    free = int(ben.free_ct or 0) if ben else 0
+    purchased = min(int(ben.purchased_ct or 0), free) if ben else 0
+    open_missions = _open_p2_missions(db)
+    active_id = open_missions[0].id if open_missions else None
+    row = _oe_row(db, m, ben_id, ben, free, purchased, active_id, week, now)
+    row["in_table"] = any(x.id == m.id for x in open_missions)
+    return row
 
 
 # ---------------------------------------------------------------------------
@@ -849,10 +877,32 @@ def withdraw_stake(db: Session, ben_id: int, mission_id: str, ct: int,
         raise ValueError("Budget day has passed: every donation to this mission is final")
     week = current_week(now)
     harden_due(db, ben_id, now)
+    # Mission pass (2026-10-01) — "Even when it detects me as having a slate, I
+    # can't withdraw because it says I have no slate." The page reads a stake
+    # the way every other wallet path does: the row's `stake_ct`, or, for a row
+    # written before that column (or a carry that never made a row — F20), the
+    # DERIVED initiative-election money the race holds for this benefactor.
+    # This read only `stake_ct`, so those stakes showed and could not leave.
+    # Now it reads the same figure, writes it onto the row it withdraws from,
+    # and treats the initiative-election skim as final if the row never
+    # recorded it (F15) — a legacy row cannot hand back money the ladder says
+    # is already donated.
+    from . import crud
     v = _vote_row(db, ben_id, mission_id)
-    if v is None or stake_ct_of(v) <= 0:
+    derived = crud.p2_ebx_by_ben(db, mission_id).get(ben_id, 0.0)
+    stake = stake_ct_of(v, derived) if (v is not None or derived) else 0
+    if stake <= 0:
         raise ValueError("You have no stake in that mission")
-    stake = stake_ct_of(v)
+    if v is None:
+        v = models.VoteP2(ben_id=ben_id, mission_id=mission_id, org_id=None,
+                          votes=1, ebx_spent=0, valence="helpful", committed=False,
+                          origin_mission_id=mission_id, born_week=week,
+                          conversions=0, minted_ct=0, donated_ct=0)
+        db.add(v)
+    if int(v.stake_ct or 0) <= 0:
+        v.stake_ct = stake                      # materialize the derived figure
+        if int(getattr(v, "donated_ct", 0) or 0) <= 0:
+            v.donated_ct = tm.settle_me(stake).donated_ct
     final = max(0, int(getattr(v, "donated_ct", 0) or 0))
     open_ct = max(0, stake - final)
     take = min(max(0, int(ct or 0)), open_ct)

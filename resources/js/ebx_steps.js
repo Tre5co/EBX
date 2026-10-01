@@ -1142,6 +1142,8 @@
         '<button type="button" class="sx__dot" role="tab" data-sx-go="' + i + '" aria-label="' + (i + 1) + '. ' + s.name + '"><span></span></button>').join('') +
       '</div></div>');
     S.root = root; S.reduce = reduce; S.C = C;
+    // Home pass (2026-10-01): the vertical step list beside the visual follows the page.
+    S.onChange = typeof opts.onChange === 'function' ? opts.onChange : null;
     root.addEventListener('click', e => {
       const a = e.target.closest('[data-sx]'), dt = e.target.closest('[data-sx-go]');
       if (a) go(S.i + Number(a.dataset.sx), true);
@@ -1183,6 +1185,7 @@
     S.scenes.forEach((s, k) => s.svg.classList.toggle('on', k === S.i));
     S.t0 = now();
     label();
+    if (S.onChange) { try { S.onChange(S.i); } catch (e) {} }
     try { S.scenes[S.i].update(S.reduce ? 6.5 : 0); } catch (e) {}
     if (S.reduce) { if (S.i === 3) S.scenes[3].update(9.9); return; }
     resume();
@@ -1214,7 +1217,7 @@
   E.Steps = {
     mount, go: i => go(i, true), STEPS, PANOS,
     // scripts/home_check.js: draw page i at second t, without the clock
-    _at(i, t) { S.i = i; S.scenes.forEach((s, k) => s.svg.classList.toggle('on', k === i)); label(); S.scenes[i].update(t); },
+    _at(i, t) { S.i = i; S.scenes.forEach((s, k) => s.svg.classList.toggle('on', k === i)); label(); if (S.onChange) { try { S.onChange(i); } catch (e) {} } S.scenes[i].update(t); },
     _state: S,
   };
 })();

@@ -87,8 +87,24 @@ const section = t => console.log('\n=== ' + t);
   // Unified elections (2026-09-29): "progress bars for each cause" — a row of
   // six per cause on the ballot, and this week's vote as one stacked bar.
   const barRows = await page.$$eval('.ce-bars .ce-bars__row', els => els.map(e => e.querySelectorAll('.ce-bars__segs i').length));
-  ok(barRows.length >= 1 && barRows.every(n => n === 6),
-     'every cause on the ballot has a bar of six weeks (D5)', barRows.join(','));
+  // Mission pass (2026-10-01): "the 6 horizontal bars for each of the 7 active
+  // causes, showing how close each of them are to replacement" — one row per
+  // open window, the page's own marked, lit only with a challenger's week.
+  ok(barRows.length === 7 && barRows.every(n => n === 6),
+     'seven bars — one per open window, each of six weeks (D5)', barRows.join(','));
+  const slateBars = await page.$$eval('.ce-bars--slate .ce-bars__row', els => els.map(e => ({
+    slot: Number(e.dataset.slot), here: e.classList.contains('ce-bars__row--here'),
+    lit: e.classList.contains('ce-bars__row--lit'), dim: e.classList.contains('ce-bars__row--dim'),
+    on: e.querySelectorAll('.ce-bars__segs i.on').length })));
+  ok(JSON.stringify(slateBars.map(b => b.slot)) === '[7,8,9,10,11,12,13]', '…windows 7 through 13', slateBars.map(b => b.slot).join(','));
+  ok(slateBars.filter(b => b.here).length === 1 &&
+     slateBars.find(b => b.here).slot === Number(await page.$eval('.ce-panel', e => e.dataset.slot)),
+     '…the window this page decides is marked');
+  ok(slateBars.every(b => (b.lit && b.on >= 1) || (b.dim && b.on === 0)),
+     '…coloured when a challenger has won at least a week, dim otherwise');
+  const order = await page.$eval('.ce-panel', e => [...e.children].map(c => c.className.split(' ')[0] + (c.classList.contains('ce-row--votes') ? '--votes' : c.classList.contains('ce-row--sugg') ? '--sugg' : '')));
+  ok(order.indexOf('ce-bars') === 0 && order.indexOf('ce-row--votes') === 1 && order.indexOf('ce-row--sugg') === 2,
+     '…then keep / replace, then the click-through', order.join(' › '));
   ok(!!(await page.$('.ce-panel .ce-dist__bar')), '…and this week\'s vote is one distribution bar');
   ok(!(await page.$('.cs-bars .cs-col')), '…and the seven-column staircase is gone');
   ok(!(await page.$('.ce-panel__b')), 'no Show / Hide Cause Table: the cause election\'s table IS the cause table');
@@ -97,8 +113,8 @@ const section = t => console.log('\n=== ' + t);
   ok(ceBtns.length === 2 && /Commit/.test(ceBtns[0].t) && /Cancel/.test(ceBtns[1].t),
      'Commit and Cancel lead its action bar', ceBtns.map(b => b.t).join(' | '));
   const bar = await page.$eval('.ce-panel .bb', e => e.textContent.replace(/\s+/g, ' '));
-  ok(/Nominate/.test(bar) && /Discuss/.test(bar) && /Post a Background/.test(bar),
-     '…then Nominate · Discuss · Post a background', bar);
+  ok(/Discuss/.test(bar) && /\+ post/.test(bar) && !/Nominate/.test(bar),
+     '…then Discuss · + post (Nominate moved beside the click-through)', bar);
   ok(ceBtns.every(b => b.off), '…and both are dead until something is dialled');
   // It persists across the page states — that is the point of moving it here.
   const slotME = await page.$eval('.ce-panel', e => e.dataset.slot);
@@ -127,7 +143,7 @@ const section = t => console.log('\n=== ' + t);
       const top = document.getElementById('el3-top-ce');
       return { slot: Number(e.dataset.slot), cause: e.dataset.cause,
         chip: (top.querySelector('.el3__top-chip') || {}).textContent || '',
-        sub: 'runs ' + ((top.querySelector('.el3__runs') || {}).textContent || '') };
+        sub: 'runs ' + (((top.querySelector('.el3__top-date') || {}).textContent || '').replace(/^window runs /, '')) };
     });
     seen.push(p);
     ok(p.chip.toLowerCase() === tabNames[i].toLowerCase(),
@@ -252,8 +268,9 @@ const section = t => console.log('\n=== ' + t);
   // §1 (2026-08-21): a click-through pager, not a flat list.
   ok(!(await page.$('.ce-choices')), 'the all-at-once list of alternatives is gone');
   ok(!!(await page.$('.ce-panel .ce-row--sugg .ce-sugg')), '…replaced by a click-through pager');
-  const NOM = '.ce-panel .bb .bb__nom';
-  ok(!!(await page.$(NOM)), 'Nominate is in the action bar');
+  const NOM = '.ce-panel .ce-row--sugg .bb__nom';
+  ok(!!(await page.$(NOM)) && /Nominate a cause/.test(await page.$eval(NOM, e => e.textContent)),
+     '"Nominate a cause" sits to the right of the click-through (mission pass 2026-10-01)');
   ok(!(await page.$('#ce-suggest')),
      '…and it is no longer a name box wedged into a row');
   ok(await page.$eval(NOM, e => /Nominate/i.test(e.textContent)),
@@ -288,7 +305,7 @@ const section = t => console.log('\n=== ' + t);
   for (let i = 0; i < 30; i++) {
     const t = await page.$eval('.ce-sugg', e => e.textContent.replace(/\s+/g, ' ').trim());
     if (t.includes(CNAME)) { found = true; break; }
-    const next = await page.$('.ce-panel .ce-row--sugg .rf-btn:last-child');
+    const next = (await page.$$('.ce-panel .ce-row--sugg .rf-btn'))[1];   // » (Nominate a cause now ends the row)
     if (!next || await next.isDisabled()) break;
     await next.click();
     await page.waitForTimeout(400);
