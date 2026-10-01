@@ -246,8 +246,18 @@ ok(s == 200 and [v["version"] for v in full["versions"]] == [1, 2], "the full vi
 section("votes count per mission; a pulled post starts from zero (D21)")
 s, r = call("POST", f"/posts/{r2['id']}/react", {"value": "helpful"}, tok2)
 ok(s == 200 and r["helpful_count"] == 1, "an upvote counts", (s, r))
+# Posting pass (2026-10-01): general posts take up AND down votes; the vote
+# you already cast, pressed again, is taken back.
 s, r = call("POST", f"/posts/{r2['id']}/react", {"value": "harmful"}, tok2)
-ok(s == 400, "a general post is upvote-only", s)
+ok(s == 200 and r["helpful_count"] == 0 and r["harmful_count"] == 1, "a general post takes a downvote (it replaces the upvote)", (s, r))
+s, r = call("POST", f"/posts/{r2['id']}/react", {"value": "harmful"}, tok2)
+ok(s == 200 and r["harmful_count"] == 0, "pressing the same vote again takes it back", (s, r))
+s, r = call("POST", f"/posts/{r2['id']}/react", {"value": "helpful"}, tok2)
+ok(s == 200 and r["helpful_count"] == 1, "…and the upvote counts again", (s, r))
+s, mine = call("GET", f"/posts/votes/mine?ids={r2['id']}", None, tok2)
+ok(s == 200 and mine.get(r2["id"]) == "helpful", "GET /posts/votes/mine says which arrow is yours", (s, mine))
+s, r = call("POST", f"/posts/{r2['id']}/react", {"value": "neutral"}, tok2)
+ok(s == 400, "a general post has no neutral vote", s)
 other = next((m for m in missions if m["id"] != r2.get("mission_id")), None)
 s, pulled = call("POST", f"/posts/{r2['id']}/pull", {"mission_id": other["id"]}, tok)
 ok(s == 200 and pulled["helpful_count"] == 0 and pulled["mission_id"] == other["id"],

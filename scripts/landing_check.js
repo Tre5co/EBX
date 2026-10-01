@@ -66,9 +66,9 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
 
   console.log('\n=== Home · the Network + the feed');
   ok(!d.querySelector('.hn__tile'), 'no Network tiles (tweaks 2026-10-01)');
-  const shown = d.querySelectorAll('#hf-list .hp').length;
+  const shown = d.querySelectorAll('#hf-list .ep--card').length;
   ok(shown === Math.min(12, roots.length), 'the feed is every post, newest first', shown + ' of ' + roots.length);
-  ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]'), 'no toggles on Home');
+  ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]:not(.ep__v)'), 'no toggles on Home');
 
   console.log('\n=== about.html');
   const a = await page('about.html');

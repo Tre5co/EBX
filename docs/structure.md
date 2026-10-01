@@ -27,6 +27,7 @@ behind the pages is [`README.md`](../README.md).*
   - [▶ NEXT — the newsfeed rebuild (build-seq §3). Build order, box by box.](#next--the-newsfeed-rebuild-build-seq-3-build-order-box-by-box)
   - [✅ The discussion box (BUILT 2026-08-12, build-seq §1)](#the-discussion-box-built-2026-08-12-build-seq-1)
 - [8b. post.html — the composer (P3 · Posting, BUILT 2026-09-29)](#8b-posthtml--the-composer-p3--posting-built-2026-09-29)
+- [8c. The posting model (P3 · Posting, BUILT 2026-09-29 · the card 2026-10-01)](#8c-the-posting-model-p3--posting-built-2026-09-29--the-card-2026-10-01)
 - [9. admin.html — Data console](#9-adminhtml--data-console)
 - [10. Backend (FastAPI + SQLAlchemy + Alembic)](#10-backend-fastapi--sqlalchemy--alembic)
 
@@ -1261,14 +1262,110 @@ taxonomy and guides: `backend/app/post_config.py`; the shared display:
 - **The Full view** (`EBX.Post.open`) — the contents, References (with "cited
   v1 · now v3" when a cited post changed), the vote buttons named for the type
   (Research vote · Analysis vote · Upvote), *Go to <mission>*, *Edit*, replies.
-- **Row previews** (`EBX.Post.preview`) — clicking an initiative or an
-  organization row on the mission page shows one short post under it, a
-  Justification first.
+- **Previews** (`EBX.Post.preview`) — clicking an initiative or an organization
+  on the mission page shows one short post in the ballot's expansion, a
+  Justification or Mission statement first.
+- **The model, the diagrams and the card** — § 8c.
+
+## 8c. The posting model (P3 · Posting, BUILT 2026-09-29 · the card 2026-10-01)
+
+*Moved here from `INSTRUCTIONS.md` › P3 on 2026-10-01 (it is built). Rules:
+`backend/app/posting.py`; taxonomy, limits and every type's guide:
+`backend/app/post_config.py`; the display: `EBX.Post` in
+`resources/js/ebx_shared.js`.*
+
+**What every post carries** — author · created_at · type · tags · target ·
+content · references · votes · reply_count · version.
+
+**The taxonomy** *(Jax's sketch, inbox 2026-09-28; D8, D19–D21)*. Each arrow is
+what a post is about. The Analysis is the only post about a mission, and it is
+built from the others.
+
+```
+POST
+├── GENERAL — subtypes are tags; target optional (but suggested)
+│     Opinion · Idea · Experience · Justification · Prediction · Question ·
+│     Observation · Criticism · Proposal · Update · Response · Case ·
+│     Evaluation · Mission statement
+├── RESEARCH — target required, one per person per scope, versioned, rewarded
+│   ├── Background       → Cause
+│   ├── Investigation    → Organization
+│   └── Analysis         → Mission
+└── BUDGET — target required (an initiative)
+    └── Budget item → Service · Supply · Support
+```
+
+- **General posts** are unrestricted and social: anything relevant to the
+  author's thoughts, interests, experiences, questions, ideas or reactions,
+  under the platform's general rules. A general post can point at anything —
+  a cause, an initiative, an organization, a mission, a budget item, another
+  post — or at nothing (a geopolitical story unrelated to any mission).
+- **Justification** — tied to a cause, an initiative or an organization; the
+  default post when you nominate one.
+- **Mission statement** — one or two lines (≤280) on an initiative; the leading
+  one stands in the report until an organization writes its own (2026-10-01).
+- **Response** — an elevated reply: a standalone post "in response to" another.
+- Citations work like tags (`tiv:` · `org:` · `cause:` · `mission:` · `post:`).
+
+**How research feeds a mission**
+
+```
+Cause ◄──────────── Background ──────────────────┐
+  │  7 causes, rotating                          │   ─── cited and paid
+  ▼                                              │   ┄┄┄ cited, never paid
+Initiative ◄─────── Budget item ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤
+  │  elected at T                                │
+  ▼                                              │
+Organization ◄───── Investigation ───────────────┤
+  │  elected at T+8                              │
+  ▼                                              │
+Mission ◄────────── Analysis ◄───────────────────┘
+  budget day, T+15  written T+8 → T+15
+```
+
+```
+T      the initiative is elected; the leading Background is fixed (D20)
+T+8    the organization is elected; the leading Investigation is fixed (D20)
+       Analyses open: each cites up to 12 Backgrounds and 12 Investigations
+       (the two leading ones attached) plus any budget items
+T+15   budget day: the winning Analysis is elected and the research pot pays
+       (D22, P5) — 1/3 its author · 1/3 its cited Backgrounds · 1/3 its cited
+       Investigations, each third split by votes
+after  budget items and research carry on, and any Background or
+       Investigation can be cited again by a later mission's Analysis
+```
+
+**The card** (`EBX.Post.collapsed`, 2026-10-01 — Home, the mission page's post
+lists; News moves to it with P3b). Monochrome — no colour coding by kind.
+
+```
+ _________________________________________________________________________
+| Title                                                    | account date |
+| On the initiative <target>                               | TYPE · TAG   |
+|      content preview                                     | cause        |
+|                                                          | ✓ voted in its initiative election |
+|__▲ 12 ▼  ↩ 3_____________________________________________|_Discussion →_|
+```
+
+- **Votes** — ▲ / ▼ on general and research posts, ▲ only on budget items; a
+  second press takes your vote back (`POST /posts/{id}/react`); your own arrow
+  is lit (`GET /posts/votes/mine`). Signed out, a vote opens sign-in.
+  `EBX.Post.bindVotes(container)` wires any list.
+- **The initiative-election badge** — on a post that belongs to a mission:
+  whether its author voted in that mission's initiative election
+  (`author_in_me` on every serialized post).
+- **Discussion →** opens the thread in News (`cause.html?thread=<id>`).
+
+**The full view** (`EBX.Post.open`) — who · when · kind, what it targets, the
+full contents, References (with "cited v1 · now v3" when a cited post
+changed), the votes named for the type (Research vote · Analysis vote ·
+Upvote), *Go to <mission>*, *Edit (new version)*, then the replies. Both views
+always say what mission, organization or initiative the post is about.
 
 ## 9. admin.html — Data console
 *backlog*
 - [ ] Ability to send email updates to all users- for example if we move to a new domain.
-- [ ] Ability to remove initiatives, organizations, posts, etc as well as benefactoraccounts.
+- [x] Ability to remove initiatives, organizations, posts (admin › Remove, 2026-10-01) and benefactor accounts (Accounts · remove).
 - [ ] Event log (vote_events: CAST/UPDATE/REMOVE), duplicate/invalid-vote flags.
 - [ ] Full mission table; org verification queue (EN, 1/week).
 - [ ] In the benefactor accounts table, add most-recent-vote date and target columns for each of the 3 votes.

@@ -2473,6 +2473,36 @@
       .ep-prev { font-size:0.8rem; line-height:1.5; color:rgba(245,240,232,0.78); border-left:2px solid var(--clr-honey,#e8a84c); padding:4px 0 4px 10px; margin:6px 0; }
       .ep-prev a { color:var(--clr-honey,#e8a84c); text-decoration:none; }
       .ep-suggest { margin-top:8px; font-size:0.82rem; }
+      /* the post card (posting pass, 2026-10-01) — monochrome */
+      .ep--card { display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,190px); grid-template-areas:"main side" "votes disc";
+        gap:8px 18px; padding:14px 16px 10px; border-radius:12px; border:1px solid rgba(245,240,232,0.12); background:rgba(245,240,232,0.025); }
+      .ep--card:hover { border-color:rgba(245,240,232,0.28); }
+      .ep--card .ep__main { grid-area:main; min-width:0; }
+      .ep--card .ep__title { font-family:var(--font-display,serif); font-weight:800; font-size:1.05rem; line-height:1.3; margin:0; color:var(--clr-parchment,#f5f0e8); }
+      .ep--card .ep__body { font-size:0.88rem; line-height:1.55; color:rgba(245,240,232,0.74); margin:6px 0 0; white-space:normal;
+        display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+      .ep--card .ep__target, .ep--card .ep__target a { color:rgba(245,240,232,0.6); }
+      .ep--card .ep__target a { text-decoration:underline; text-underline-offset:2px; }
+      .ep--card .ep__side { grid-area:side; display:flex; flex-direction:column; align-items:flex-end; text-align:right; gap:3px; min-width:0; }
+      .ep--card .ep__who { font-size:0.8rem; font-weight:600; color:var(--clr-parchment,#f5f0e8); }
+      .ep--card .ep__when { font-weight:400; color:rgba(245,240,232,0.5); }
+      .ep--card .ep__kind { font-family:var(--font-mono,monospace); font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(245,240,232,0.6); }
+      .ep--card .ep__cause { font-size:0.74rem; color:rgba(245,240,232,0.6); }
+      .ep__me { font-size:0.66rem; line-height:1.3; color:rgba(245,240,232,0.55); max-width:190px; }
+      .ep__me--yes { color:rgba(245,240,232,0.85); }
+      .ep__src { font-size:0.7rem; color:rgba(245,240,232,0.6); }
+      .ep__votes { grid-area:votes; display:flex; align-items:center; gap:6px; font-size:0.8rem; color:rgba(245,240,232,0.75); }
+      .ep__votes.busy { opacity:0.55; }
+      .ep__v { font:inherit; font-size:0.72rem; line-height:1; cursor:pointer; width:28px; height:26px; border-radius:7px; background:none;
+        color:rgba(245,240,232,0.6); border:1px solid rgba(245,240,232,0.18); }
+      .ep__v:hover { color:var(--clr-parchment,#f5f0e8); border-color:rgba(245,240,232,0.5); }
+      .ep__v.on { color:#0f1a14; background:var(--clr-parchment,#f5f0e8); border-color:var(--clr-parchment,#f5f0e8); }
+      .ep__n { min-width:1.6em; text-align:center; font-weight:700; color:var(--clr-parchment,#f5f0e8); }
+      .ep__r { margin-left:8px; color:rgba(245,240,232,0.5); }
+      .ep__disc { grid-area:disc; justify-self:end; align-self:center; font-size:0.82rem; font-weight:700; text-decoration:none; color:var(--clr-parchment,#f5f0e8); }
+      .ep__disc:hover { text-decoration:underline; }
+      @media (max-width:520px) { .ep--card { grid-template-columns:1fr; grid-template-areas:"side" "main" "votes" "disc"; }
+        .ep--card .ep__side { align-items:flex-start; text-align:left; } .ep__disc { justify-self:start; } }
       .ep-suggest a { color:var(--clr-honey,#e8a84c); font-weight:700; }
       `;
       document.head.appendChild(s);
@@ -2547,24 +2577,109 @@
     }
     function votes(p) { return (p.helpful_count || 0) - (p.harmful_count || 0); }
 
-    // Collapsed: "Jax · Sep 29 · Opinion", the excerpt, "↑ 37  ↩ 12".
+    // ── The post card (posting pass, 2026-10-01) ─────────────────────────
+    //  _________________________________________________________________
+    // | Title                                            | account-date |
+    // |                                                  | Type/tag     |
+    // |      content preview                             | cause        |
+    // |_votes____________________________________________|_Discussion->_|
+    // Monochrome ("Remove color coding on posts"). ▲ / ▼ vote right on the
+    // card (`bindVotes`); budget items take ▲ only. A post that belongs to a
+    // mission says whether its author voted in that initiative election.
+    const UP_ONLY = { service: 1, supply: 1, support: 1 };
+    function causeName(p) {
+      const c = (config.causes || []).find((x) => x.id === p.cause_id);
+      return c ? c.name : (p.target_kind === "cause" ? (p.target_label || "") : "");
+    }
+    function meBadge(p) {
+      if (p.author_in_me == null) return "";
+      const where = p.mission_label ? " in " + esc(p.mission_label) + "\u2019s initiative election" : " in its initiative election";
+      return '<span class="ep__me ep__me--' + (p.author_in_me ? "yes" : "no") + '" title="' + (p.author_in_me ? "The author voted" : "The author did not vote") + where + '">' +
+        (p.author_in_me ? "&#10003; voted in its initiative election" : "didn\u2019t vote in its initiative election") + "</span>";
+    }
+    // A post may be a pulled-in news link: the first URL in it is its source.
+    function source(p) {
+      const m = /https?:\/\/([^\s/]+)[^\s]*/.exec(p.body || "");
+      return m ? '<span class="ep__src">&#8599; ' + esc(m[1].replace(/^www\./, "")) + "</span>" : "";
+    }
+    function voteBar(p, mine) {
+      const up = mine === "helpful", down = mine === "harmful";
+      return '<div class="ep__votes" data-ep-votes="' + esc(p.id) + '">' +
+        '<button type="button" class="ep__v ep__v--up' + (up ? " on" : "") + '" data-ep-vote="helpful" data-post="' + esc(p.id) + '"' +
+          (p.mission_id ? ' data-mission="' + esc(p.mission_id) + '"' : "") + ' aria-pressed="' + up + '" title="' + esc(p.vote_name || "Upvote") + '">&#9650;</button>' +
+        '<span class="ep__n" data-ep-n="' + esc(p.id) + '">' + votes(p) + "</span>" +
+        (UP_ONLY[p.type] ? "" : '<button type="button" class="ep__v ep__v--down' + (down ? " on" : "") + '" data-ep-vote="harmful" data-post="' + esc(p.id) + '"' +
+          (p.mission_id ? ' data-mission="' + esc(p.mission_id) + '"' : "") + ' aria-pressed="' + down + '" title="Downvote">&#9660;</button>') +
+        (p.reply_count ? '<span class="ep__r" title="Replies">&#8617; ' + p.reply_count + "</span>" : "") +
+      "</div>";
+    }
     function collapsed(p, opts) {
       css();
       opts = opts || {};
       const body = String(p.body || "");
       const cut = opts.chars || 280;
-      const tagName = opts.href === false ? "div" : "a";
-      const href = opts.href === false ? "" : ' href="' + esc(opts.href || threadHref(p.id)) + '"';
-      return "<" + tagName + ' class="ep' + (opts.click ? " ep--click" : "") + '"' + href + ' data-post="' + esc(p.id) + '">' +
-        '<div class="ep__meta"><span class="ep__who">' + esc(p.author_name || "Benefactor") + "</span>" +
-          "<span>&middot; " + when(p.created_at) + '</span><span>&middot;</span><span class="ep__kind">' + esc(kind(p)) + "</span>" +
-          tagsHTML(p) + (p.version > 1 ? '<span class="ep__ver">v' + (p.version_shown || p.version) + "</span>" : "") + "</div>" +
-        targetLine(p) +
-        (p.title ? '<div class="ep__title">' + esc(p.title) + "</div>" : "") +
-        '<p class="ep__body">' + esc(body.length > cut ? body.slice(0, cut).trim() + "…" : body) + "</p>" +
-        '<div class="ep__foot"><span title="' + esc(p.vote_name || "Votes") + '">&uarr; ' + votes(p) + "</span>" +
-          "<span title=\"Replies\">&#8617; " + (p.reply_count || 0) + "</span></div>" +
-        "</" + tagName + ">";
+      const disc = opts.href === false ? threadHref(p.id) : (opts.href || threadHref(p.id));
+      const title = p.title || (body.length > 90 ? body.slice(0, 90).replace(/\s+\S*$/, "") + "…" : body);
+      const preview = p.title ? body : (body.length > 90 ? body : "");
+      const cause = causeName(p);
+      const tags = (p.tags || []).filter((t) => t.indexOf(":") < 0);
+      const kinds = [kind(p)].concat(tags.slice(p.type === "general" ? 1 : 0).map((t) => t.replace(/_/g, " ")));
+      return '<article class="ep ep--card' + (opts.click ? " ep--click" : "") + '" data-post="' + esc(p.id) + '">' +
+        '<div class="ep__main">' +
+          '<h3 class="ep__title">' + esc(title || "Untitled") + "</h3>" +
+          targetLine(p) +
+          (preview ? '<p class="ep__body">' + esc(preview.length > cut ? preview.slice(0, cut).trim() + "…" : preview) + "</p>" : "") +
+        "</div>" +
+        '<div class="ep__side">' +
+          '<span class="ep__who">' + esc(p.author_name || "Benefactor") + ' <span class="ep__when">' + when(p.created_at) + "</span></span>" +
+          '<span class="ep__kind">' + esc(kinds.join(" · ")) + (p.version > 1 ? ' <span class="ep__ver">v' + (p.version_shown || p.version) + "</span>" : "") + "</span>" +
+          (cause ? '<span class="ep__cause">' + esc(cause) + "</span>" : "") +
+          meBadge(p) + source(p) +
+        "</div>" +
+        voteBar(p, (opts.myVotes || _mine)[p.id]) +
+        '<a class="ep__disc" href="' + esc(disc) + '">Discussion &rarr;</a>' +
+      "</article>";
+    }
+
+    // The viewer's own votes, so a card can light its arrow — loaded once per
+    // list (`loadMine(ids)`), kept here, used by `collapsed`.
+    const _mine = {};
+    async function loadMine(ids) {
+      if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn()) || !ids || !ids.length) return _mine;
+      try {
+        const r = await Auth.fetchAuthed("/posts/votes/mine?ids=" + encodeURIComponent(ids.slice(0, 300).join(",")));
+        if (r.ok) Object.assign(_mine, await r.json());
+      } catch (e) {}
+      return _mine;
+    }
+    // Delegated ▲ / ▼ on any container of cards. Signed out, it opens sign-in.
+    function bindVotes(root, opts) {
+      if (!root || root._epVotes) return;
+      root._epVotes = true;
+      opts = opts || {};
+      root.addEventListener("click", async (e) => {
+        const b = e.target.closest("[data-ep-vote]");
+        if (!b || !root.contains(b)) return;
+        e.preventDefault(); e.stopPropagation();
+        if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) { if (Auth && Auth.openModal) Auth.openModal("login"); return; }
+        const id = b.dataset.post, value = b.dataset.epVote;
+        const bar = b.closest("[data-ep-votes]");
+        if (bar) bar.classList.add("busy");
+        try {
+          const body = { value };
+          if (opts.mission || b.dataset.mission) body.mission_id = opts.mission || b.dataset.mission;
+          const r = await Auth.fetchAuthed("/posts/" + encodeURIComponent(id) + "/react", { method: "POST", body: JSON.stringify(body) });
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { if (bar) bar.title = d.detail || "Refused"; return; }
+          _mine[id] = _mine[id] === value ? undefined : value;
+          root.querySelectorAll('[data-ep-n="' + id + '"]').forEach((n) => { n.textContent = votes(d); });
+          root.querySelectorAll('[data-ep-votes="' + id + '"] [data-ep-vote]').forEach((x) => {
+            const on = _mine[id] === x.dataset.epVote;
+            x.classList.toggle("on", on); x.setAttribute("aria-pressed", String(on));
+          });
+          if (typeof opts.onVote === "function") opts.onVote(d);
+        } catch (err) {} finally { if (bar) bar.classList.remove("busy"); }
+      });
     }
 
     function refItem(r) {
@@ -2691,7 +2806,7 @@
         esc(composeUrl({ [key]: id, tag: "justification" })) + '">post a Justification for ' + esc(label || "it") + " &rarr;</a></div>";
     }
 
-    return { guide, composeUrl, kind, collapsed, full, open, preview, suggest, targetLine, css, threadHref, missionHref };
+    return { guide, composeUrl, kind, collapsed, full, open, preview, suggest, targetLine, css, threadHref, missionHref, bindVotes, loadMine };
   })();
 
   var EBX = {

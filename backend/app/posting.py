@@ -787,6 +787,15 @@ def serialize(db: Session, posts: list[models.Post], mission_ctx: Optional[str] 
         models.BenefactorAccount.id.in_({p.ben_author_id for p in posts if p.ben_author_id} or {0}))).all())
     org_names = dict(db.execute(select(models.Organization.id, models.Organization.name).where(
         models.Organization.id.in_({p.org_author_id for p in posts if p.org_author_id} or {""}))).all())
+    # Posting pass (2026-10-01): "If you post about a particular mission, it
+    # should be clear whether or not you participated in its ME." One query:
+    # the (author, mission) pairs that have an initiative-election vote.
+    pairs = {(p.ben_author_id, p.mission_id) for p in posts if p.ben_author_id and p.mission_id}
+    voted: set = set()
+    if pairs:
+        voted = set(db.execute(select(models.VoteP1.ben_id, models.VoteP1.mission_id).where(
+            models.VoteP1.ben_id.in_({a for a, _ in pairs}),
+            models.VoteP1.mission_id.in_({m for _, m in pairs}))).all())
     out = []
     for p in posts:
         d = {c.key: getattr(p, c.key) for c in models.Post.__table__.columns}
@@ -801,6 +810,8 @@ def serialize(db: Session, posts: list[models.Post], mission_ctx: Optional[str] 
         d["latest_version"] = int(p.version or 1)
         d["version_shown"] = int(p.version or 1)
         d["in_mission"] = None
+        d["author_in_me"] = ((p.ben_author_id, p.mission_id) in voted
+                             if p.ben_author_id and p.mission_id and p.author_type == "ben" else None)
         if mission_ctx and p.parent_id is None:
             row = pins.get(p.id)
             if row is not None or p.mission_id == mission_ctx:

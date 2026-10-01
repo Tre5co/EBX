@@ -382,7 +382,7 @@
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20261001"></script>
+  <script src="resources/js/ebx_shared.js?v=20261001b"></script>
   <!-- the globe in the first step: d3-geo + Natural Earth land, vendored -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -778,12 +778,19 @@
         '<div class="hp__foot"><span>&#9650; ' + votes + '</span><span>Read &amp; reply in News &rarr;</span></div></a>';
     }
 
+    // Posting pass (2026-10-01): the feed is the shared post card
+    // (EBX.Post.collapsed) — title left, account · date / type / cause right,
+    // ▲ votes ▼ and Discussion → along the foot, no colour coding — and "You
+    // should be able to vote on posts from home" (EBX.Post.bindVotes).
     function paint() {
       row();
       $('hf-state').innerHTML = 'Showing <b>all posts</b> &middot; newest first';
-      $('hf-list').innerHTML = st.posts.length
-        ? st.posts.slice(0, 12).map(card).join('')
+      const P = window.EBX && EBX.Post;
+      const list = st.posts.slice(0, 12);
+      $('hf-list').innerHTML = list.length
+        ? list.map(p => P ? P.collapsed(p, { chars: 320 }) : card(p)).join('')
         : '<div class="hf__empty">No posts yet.</div>';
+      if (P) P.bindVotes($('hf-list'));
     }
 
     async function load() {
@@ -792,6 +799,7 @@
         const r = await fetch((cfg().apiBase || '') + '/posts?roots_only=true&limit=120&sort=recent');
         st.posts = r.ok ? await r.json() : [];
       } catch (e) { st.posts = []; }
+      try { if (window.EBX && EBX.Post && EBX.Post.loadMine) await EBX.Post.loadMine(st.posts.slice(0, 12).map(p => p.id)); } catch (e) {}
       paint();
     }
     // scripts/home_check.js drives the feed through this.

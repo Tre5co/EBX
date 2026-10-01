@@ -4055,9 +4055,12 @@ def react_to_post(db: Session, post_id: str, ben_id: int, value: str,
         )
     )
     if existing:
+        # Posting pass (2026-10-01): pressing the vote you already cast takes
+        # it back, so the ▲ / ▼ on a card work as toggles.
         if existing.value == value:
-            return post
-        existing.value = value
+            db.delete(existing)
+        else:
+            existing.value = value
     else:
         db.add(models.PostVote(post_id=post_id, ben_id=ben_id, value=value, mission_scope=scope))
     db.flush()

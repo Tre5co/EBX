@@ -15,7 +15,7 @@ const PAGES = [
   // the mission hub, the Network (links, not toggles) and the feed.
   ['index.html', '', ['#ld-flow .ld-flow__i', '#hk .hk__card', '#mh-week .mw', '.hx #ebx-steps .sx__scene.on', '#ebx-steps .sx__msg',
                       '#mh-toggle',
-                      '#hf-list .hp']],
+                      '#hf-list .ep--card']],
   ['about.html', '', ['.ld-band', '.ld-trio__cell', '#ld-dime-viz svg', '.ld-runway__bars', '#ld-active-users b', '#ab-phases li']],
   // build-seq P1 (2026-09-24) — THE MERGE. main.html is a redirect; the mission
   // page carries the elections. Its default (/m) is the newest initiative

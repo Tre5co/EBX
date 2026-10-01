@@ -67,7 +67,7 @@ VOTE_MEANING = {
     "election": "Your ballot in a cause, initiative or organization election — it moves money.",
     "research": "Your vote on a Background or an Investigation — it decides which one leads, and how the research prize splits.",
     "analysis": "Your vote on an Analysis — the most-voted Analysis on budget day is elected.",
-    "upvote": "An upvote on a general post or a budget item — it ranks it, nothing more.",
+    "upvote": "An up or down vote on a general post (budget items take upvotes only) — it ranks it, nothing more.",
 }
 
 # Targets a post can point at. `none` is a general post about nothing on the
@@ -180,14 +180,16 @@ NOMINATION_DEFAULT_TAG = "justification"
 _GENERAL_TYPES = (
     PostType(
         key="general", label="Post", category="general",
-        limit_rule="none", reactions=("helpful",),
-        reaction_labels={"helpful": "Upvote"},
+        # Posting pass (2026-10-01): "General posts and research posts should
+        # have up and down voting."
+        limit_rule="none", reactions=("helpful", "harmful"),
+        reaction_labels={"helpful": "Upvote", "harmful": "Downvote"},
         target="any", target_required=False, vote_kind="upvote",
         guide=Guide(
             purpose="Anything relevant to your thoughts, interests, experiences, questions, ideas or reactions — under the platform's general rules.",
             points_at="Optional, but suggested: a cause, an initiative, an organization, a mission, a budget item or another post. Or nothing at all — a news story unrelated to any mission.",
             limit="No limit.",
-            earns="Nothing but upvotes — it ranks the post, it moves no money.",
+            earns="Up and down votes — they rank the post; they move no money.",
             steps=("Pick what it is about, if anything.",
                    "Tag what kind of post it is — Opinion, Question, Case …",
                    "Write it, cite what you lean on, and post."),

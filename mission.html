@@ -3193,7 +3193,7 @@
        the date/number formatters, and the watchlist. See its header for why it
        is not part of ebx_shared.js. -->
   <script src="resources/js/ebx_page.js?v=20260908"></script>
-  <script src="resources/js/ebx_shared.js?v=20261001"></script>
+  <script src="resources/js/ebx_shared.js?v=20261001b"></script>
   <!-- build-seq P1: the globe inside the annulus -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -9897,7 +9897,12 @@
           (list(budget) || '<p class="ti-p ti-p--none">No budget items yet.</p>') +
           '<p class="ti-acts"><a class="ti-btn ti-btn--ghost" href="' + esc(url({ type: 'service' })) + '">Suggest a budget item</a>' +
           '<button type="button" class="ti-btn ti-btn--ghost" onclick="window.nominateOrgFor&&nominateOrgFor(\'' + esc(t.id) + '\')">Nominate an organization for it</button></p>');
-      el.querySelectorAll('[data-post]').forEach(n => n.addEventListener('click', () => EBX.Post.open(n.dataset.post, { mission: m && m.id })));
+      // posting pass (2026-10-01): a card's ▲ ▼ and links act on their own; the rest of the card opens the post
+      el.querySelectorAll('article[data-post]').forEach(n => n.addEventListener('click', e => {
+        if (e.target.closest('button, a')) return;
+        EBX.Post.open(n.dataset.post, { mission: m && m.id });
+      }));
+      if (EBX.Post.bindVotes) EBX.Post.bindVotes(el, { mission: m && m.id });
     }
 
     // ── the one move: point the whole page ─────────────────────────────────
@@ -10015,10 +10020,11 @@
       list.innerHTML = rows.length
         ? rows.map(p => (EBX.Post && EBX.Post.collapsed) ? EBX.Post.collapsed(p, { chars: 220, click: true, href: false }) : '').join('')
         : '<p class="mx-pre__empty">Nothing posted yet. Use <b>+ post</b> in the ballot to start the discussion.</p>';
-      list.querySelectorAll('[data-post]').forEach(a => a.addEventListener('click', e => {
-        if (!(EBX.Post && EBX.Post.open)) return;
+      list.querySelectorAll('article[data-post]').forEach(a => a.addEventListener('click', e => {
+        if (!(EBX.Post && EBX.Post.open) || e.target.closest('button, a')) return;
         e.preventDefault(); EBX.Post.open(a.getAttribute('data-post'));
       }));
+      if (EBX.Post && EBX.Post.bindVotes) EBX.Post.bindVotes(list);
     }
 
     window.MX = { go, state: S, missionFor, stepOf, resolve, phaseInfo, afterStory, repaintPhases: () => paintPhases(),

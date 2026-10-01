@@ -506,6 +506,9 @@ class PostRead(PostBase):
     # Read inside a mission: {mission_id, via, pinned_version} — the counts
     # above are that mission's, and the body is the version it keeps.
     in_mission: Optional[dict] = None
+    # Posting pass (2026-10-01): did the author vote in the initiative election
+    # of the mission the post belongs to? None when it belongs to none.
+    author_in_me: Optional[bool] = None
 
 
 class PostDetail(PostRead):

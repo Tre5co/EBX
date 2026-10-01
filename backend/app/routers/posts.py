@@ -8,6 +8,7 @@ the version the mission keeps.
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import crud, feed_rank, models, post_config as pcfg, posting, schemas
@@ -88,6 +89,23 @@ def analysis_kit(mission_id: str, db: Session = Depends(get_db)):
     for k in ("backgrounds", "investigations", "budget_items"):
         kit[k] = posting.serialize(db, kit[k])
     return kit
+
+
+@router.get("/votes/mine", response_model=dict)
+def my_votes(
+    ids: str = "",
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Posting pass (2026-10-01): the signed-in benefactor's vote on each of
+    `ids` (comma-separated) — {post_id: helpful|harmful|neutral} — so a card
+    can show which arrow is theirs. Any mission's vote counts."""
+    want = [i for i in ids.split(",") if i][:300]
+    if not want:
+        return {}
+    rows = db.execute(select(models.PostVote.post_id, models.PostVote.value).where(
+        models.PostVote.ben_id == user.id, models.PostVote.post_id.in_(want))).all()
+    return {pid: v for pid, v in rows}
 
 
 @router.get("/{post_id}/comments", response_model=list[schemas.PostRead])

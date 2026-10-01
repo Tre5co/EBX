@@ -58,6 +58,7 @@ never carries a second copy of a spec.*
   - [Added 2026-10-01c (Home tweaks)](#added-2026-10-01c-home-tweaks)
   - [Added 2026-10-01 (mission pass)](#added-2026-10-01-mission-pass)
 - [ARCHIVE](#archive)
+  - [2026-10-01d — P3 · the posting display pass](#2026-10-01d--p3--the-posting-display-pass)
   - [2026-10-01c — Home tweaks · HR2 backfilled · admin removal · Posting and Footer re-sorted](#2026-10-01c--home-tweaks--hr2-backfilled--admin-removal--posting-and-footer-re-sorted)
   - [2026-10-01b — P2 · Home pass (the four doors) · P2b rebuilt on D26/D28](#2026-10-01b--p2--home-pass-the-four-doors--p2b-rebuilt-on-d26d28)
   - [2026-10-01 — P1 mission pass (Jax's 17 items) · DECIDE cleared · P2b added](#2026-10-01--p1-mission-pass-jaxs-17-items--decide-cleared--p2b-added)
@@ -178,7 +179,7 @@ gantt
     P1 mission pass (Jax's 17 items)          :done, p1m, 2026-10-01, 1d
     P2 Home pass (four doors, steps list, hub) :done, p2h, 2026-10-01, 1d
     P2 Home tweaks + admin removal            :done, p2t, 2026-10-01, 1d
-    P3c Posting display (card, votes on Home)  :p3c, after p2b, 3d
+    P3c Posting display (card, votes on Home)  :done, p3c, 2026-10-01, 1d
     P2b Organization experience (accounts, 3 tabs, campaign pages) :crit, p2b, after p1m, 12d
     P2 Home (annulus + The Network + feed)    :done, p2, 2026-09-25, 1d
     P2 Home mods (five steps + mission hub)   :done, p2m, 2026-09-30, 1d
@@ -250,11 +251,11 @@ the register below) are still due.*
 - ~~Human Rights 2 backfill~~ — **done on the live site 2026-10-01**: hmr1
   elected *Environmental Defender Emergency Fund* (the local winner, proposed by
   the staff account first). Its organization election runs to Nov 3.
-- **Waiting on a deploy:** run the description conversion on the live site
-  (the endpoint is new — the live site answers 404 until today's code is up):
-  `POST /admin/initiatives/descriptions-to-posts` (dry run) → `?apply=true`.
-  Locally it turns 82 descriptions into 81 Mission statements and 1
-  Justification.
+- ~~Description conversion~~ — **done on the live site 2026-10-01** after the
+  deploy: 68 initiative descriptions → 62 Mission statements + 6
+  Justifications, all authored by GameMaster (the live site never recorded
+  proposers before today). A few were junk one-liners ("a", "ex", ".") — delete
+  them from admin › Remove › Posts if you like.
 
 ### P2b · Organization experience
 *(Added 2026-10-01; rebuilt the same day on Jax's answers to D26 and D28, and his
@@ -405,8 +406,9 @@ kept. Status 2026-10-01.*
 | Send love / Pay us | a donate-to-Earthbux link — D11, D12 |
 
 ### P3 · Posting
-*Built 2026-09-29 — see `## ARCHIVE` › 2026-09-29 (the full report) and
-› 2026-10-01 (the Mission statement). Status 2026-10-01.*
+*Built 2026-09-29; the display pass 2026-10-01 — see `## ARCHIVE` › 2026-09-29,
+› 2026-10-01 (the Mission statement) and › 2026-10-01d (the card). The posting
+model, its diagrams and the card now live in `docs/structure.md` § 8c.*
 
 **Goal.** One way to make a post, reachable from everywhere, easily customizable
 for any posting purpose — every post displayable by every page on the platform.
@@ -414,169 +416,28 @@ for any posting purpose — every post displayable by every page on the platform
 **Done**
 - One composer (`post.html`), reached from Home, News, a profile, every post
   button on the mission page and About; the link decides the type and target.
-- All posting gates removed; the Review lane gone (Case, Evaluation — and from
-  2026-10-01 **Mission statement** — are tags on the all-purpose post).
-- Targets and limits per type (Background → cause · Investigation →
-  organization · Analysis → mission · budget item → initiative · general →
-  anything), versions (D21), Backgrounds rolling (D19), votes per mission,
-  pulling an old post, the Analysis composer with its leads (D20).
-- `EBX.Post` — the collapsed and full views; How to post on `about.html#posting`;
-  the feed framework (`feed_rank.py`) and the vote names.
-- Nominations may carry a post; the initiative expansion previews the
-  discussion (2026-10-01).
-- Admin can delete a post with its replies (2026-10-01, P7).
+- All posting gates removed; the Review lane gone (Case, Evaluation and
+  Mission statement are tags on the all-purpose post).
+- Targets and limits per type, versions (D21), Backgrounds rolling (D19), votes
+  per mission, pulling an old post, the Analysis composer with its leads (D20).
+- `EBX.Post`, How to post on `about.html#posting`, the feed framework and the
+  vote names; nominations may carry a post; admin deletes posts (P7).
+- **The display pass (2026-10-01):** the card redrawn (title left · account,
+  date, type, cause right · votes and Discussion → along the foot), no colour
+  coding, voting from Home, up and down votes on general and research posts
+  (a second press takes the vote back), and whether the author voted in the
+  mission's initiative election.
 
-**Still waiting — the next posting pass** *(Jax, 2026-10-01, and BACKLOG ›
-Posting)*
-- **The card, redrawn** — title top left; the posting account and date top
-  right, the type/tag under it, then the cause; the content preview below the
-  title; votes bottom left, **Discussion →** bottom right:
-  ```
-   _________________________________________________________________________
-  | Title                                                    | account-date |
-  |                                                          | Type/tag     |
-  |      content preview                                     | cause        |
-  |__votes___________________________________________________|_Discussion->_|
-  ```
-- **No color coding on posts.**
-- **Vote on posts from Home.**
-- **Up and down votes** on general and research posts (budget items stay
-  upvote-only).
-- **Show whether the author took part in the mission's initiative election**
-  when a post is about a mission.
-- One post at a time as you scroll, centred — the Instagram-like reader
-  (BACKLOG › Future; likely News, P3b).
-- Left from P3: the reward for suggesting a winning initiative (Jax: "I should
-  brainstorm"); notifications when a cited post changes (P4); video (F23).
-
-**The model** *(folded from the inbox 2026-09-28 — Jax's sketch, redrawn; D8 and
-D19–D21 answered the same day)*. Each arrow is what a post is about. The Analysis is the only
-post about a mission, and it is built from the others.
-
-*STABLE POST OBJECT*
-author
-created_at
-type
-tag
-target
-content
-references
-votes
-reply_count
-version
-
-POST
-│
-├── GENERAL
-│   ├── Opinion
-│   ├── Idea
-│   ├── Experience
-│   ├── Justification
-│   ├── Prediction
-│   ├── Question
-│   ├── Criticism
-│   └── ...
-│
-├── RESEARCH
-│   ├── Background       → Cause
-│   ├── Investigation    → Organization
-│   └── Analysis         → Mission
-│
-└── BUDGET
-    └── Budget Item      → Initiative
-        ├── Service
-        ├── Supply
-        └── Support
-
-    General · Justification
-      - Tied to a cause, initiative, or organization
-    General · Opinion
-    General · Experience
-    General · Prediction
-    General · Idea
-    General · Question
-    General · Observation
-    General · Criticism
-    General · Proposal
-    General · Update
-    General · Response
-      - Response posts are elevated replies- the user can make it a standalone post 'in response to' if they choose.
-  - Each general post can target entities in its own way.
-    - Targets can be budget items or other posts. Anything.
-  - The general post subtypes are tags.
-  - Citations also operate as tags.
-*Targets*
-- Research and budget posts require a target, general posts are target-optional (but heavily suggested)
-  - Example of targetless post - a geopolitical news story unrelated to any mission.
-- General posts - unrestricted and social. A user may post anything relevant to their thoughts, interests, experiences, questions, ideas, or reactions, subject to the platform's general rules.
-
-```
-Cause ◄──────────── Background ──────────────────┐
-  │  7 causes, rotating                          │   ─── cited and paid
-  ▼                                              │   ┄┄┄ cited, never paid
-Initiative ◄─────── Budget item ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┤
-  │  elected at T                                │
-  ▼                                              │
-Organization ◄───── Investigation ───────────────┤
-  │  elected at T+8                              │
-  ▼                                              │
-Mission ◄────────── Analysis ◄───────────────────┘
-  budget day, T+15  written T+8 → T+15
-```
-
-```
-T      the initiative is elected; the leading Background is fixed (D20)
-T+8    the organization is elected; the leading Investigation is fixed (D20)
-       Analyses open: each cites up to 12 Backgrounds and 12 Investigations
-       (the two leading ones attached) plus any budget items
-T+15   budget day: the winning Analysis is elected and the research pot pays
-       (D22) — 1/3 its author · 1/3 its cited Backgrounds · 1/3 its cited
-       Investigations, each third split by votes
-after  budget items and research carry on, and any Background or
-       Investigation can be cited again by a later mission's Analysis
-```
-
-**Display**
-*collapsed view:*
-Jax · Sep 29 · Opinion
-
-I think the monitoring network should prioritize
-industrial discharge points rather than simply
-sampling the city's drinking-water intakes...
-
-                     ↑ 37    ↩ 12
-
-*Full view:*
-Jax · Sep 29 · Opinion
-
-[Full contents]
-
-References
-──────────
-• Background #184
-• EPA report
-• Post by Sarah
-• Mission #32
-
-────────────────────
-
-↑ 37 votes
-
-12 replies
-
-Sarah · Sep 29
-...
-
-Alex · Sep 29
-...
-
-Both views must clearly display what mission, org, or initiative the post targets (if any)
+**Still waiting**
+- **News's cards** — `cause.html` still draws its own card (`fd-card`) with its
+  own reactions; it moves to `EBX.Post.collapsed` with the News rebuild (P3b).
+- **One post at a time as you scroll, centred** — the Instagram-like reader
+  (BACKLOG › Future), with P3b.
+- The reward for suggesting a winning initiative (Jax: "I should brainstorm").
+- Notifications when a cited post changes (P4).
+- Video on posts (needs file storage — F23).
 
 **Decides.** — none open.
-
-**Done when** (the next posting pass). `posts_box_check` / `home_check` cover the
-new card layout on every surface, voting from Home, up/down on general and
-research posts, and the initiative-election badge.
 
 ---
 
@@ -816,7 +677,7 @@ lands, and the phase tab's copy is the same string Home shows.
 - Each accounts dashboard should be viewable by admin.
 
 **Posting**
-- *(Up/down votes on general and research posts → P3 › Still waiting, 2026-10-01.)*
+- *(Up/down votes, the card, voting from Home, the initiative-election badge — built 2026-10-01, P3.)*
 
 **Mission**
 - Each of the 7 causes will have an image 
@@ -1210,6 +1071,26 @@ guards on a mount that no longer exists, so it paints nothing.
 ## ARCHIVE
 
 *Finished pass reports. Nothing here is executed.*
+
+### 2026-10-01d — P3 · the posting display pass
+
+**Read as**: the card is `EBX.Post.collapsed`, so it changes everywhere that
+uses it — Home's feed (which drew its own colour-coded card until now) and the
+mission page's post lists. News keeps its own card until the P3b rebuild.
+
+- ✅ *The card, redrawn* — title top left (the first line of the body when a post has no title), what it is about under it, the preview below; account and date, type/tags, cause top right; ▲ votes ▼ and replies bottom left, **Discussion →** bottom right. Stacks at phone width.
+- ✅ *No color coding on posts* — the card is monochrome; Home's `.hp--*` colours and B · I · A badges are gone from the feed.
+- ✅ *Vote on posts from Home* — `EBX.Post.bindVotes`; your arrow is lit (`GET /posts/votes/mine`); signed out, it opens sign-in. The mission page's lists vote too, without opening the post.
+- ✅ *Up and down votes on general and research posts* — general posts take Upvote / Downvote (research already had both); budget items stay upvote-only. Pressing the vote you cast again takes it back.
+- ✅ *Whether the author took part in the mission's initiative election* — `author_in_me` on every serialized post that belongs to a mission; the card says "✓ voted in its initiative election" or "didn't vote in its initiative election".
+- ✅ *Move the diagrams and the built content to the docs* — the taxonomy, the research diagram, the timeline, the card and the full view are `docs/structure.md` § 8c; P3 here keeps Done and Still waiting.
+
+**Checks.** `posting_check` **66** (down votes, take-back, my votes, no
+neutral on a general post) · `home_check` **75** (the card's layout, no
+colour, votes on every card, the source line) · `posts_box_check` 40 ·
+`composer_check` 20 · `landing_check` 21 · `render_check` clean ·
+`mission_layout_check` 131. Browser: an upvote on Home lights and counts; a
+downvote in the mission page's pre-report list counts without opening the post.
 
 ### 2026-10-01c — Home tweaks · HR2 backfilled · admin removal · Posting and Footer re-sorted
 
