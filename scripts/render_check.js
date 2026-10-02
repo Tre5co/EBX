@@ -53,7 +53,7 @@ const PAGES = [
   // only "it painted".
   ['cause.html', '?id=atmosphere', ['#fd-panel', '#fd-search', '#fd-sort', '#fd-compose',
                                     '#fd-filters .fd-chip', '#fd-filters .fd-chip--on',
-                                    '.fd-card', '.fd-card .fd-react', '.fd-card [data-toggle]',
+                                    'article.ep--card', 'article.ep--card [data-ep-vote]', 'article.ep--card [data-ep-reply]',
                                     '#leading-initiatives-panel',
                                     '#mission-header #mission-overview', '#lhs-vote',
                                     // §2 (2026-08-26) — THE ANNULUS SWAP. This page has the

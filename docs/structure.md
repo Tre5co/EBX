@@ -28,6 +28,10 @@ behind the pages is [`README.md`](../README.md).*
   - [✅ The discussion box (BUILT 2026-08-12, build-seq §1)](#the-discussion-box-built-2026-08-12-build-seq-1)
 - [8b. post.html — the composer (P3 · Posting, BUILT 2026-09-29)](#8b-posthtml--the-composer-p3--posting-built-2026-09-29)
 - [8c. The posting model (P3 · Posting, BUILT 2026-09-29 · the card 2026-10-01)](#8c-the-posting-model-p3--posting-built-2026-09-29--the-card-2026-10-01)
+  - [✅ The card, and Home's sources — BUILT 2026-10-02 (posting edits)](#the-card-and-homes-sources--built-2026-10-02-posting-edits)
+- [8d. org.html · o.html — the organization experience (P2b framework, BUILT 2026-10-02)](#8d-orghtml--ohtml--the-organization-experience-p2b-framework-built-2026-10-02)
+  - [✅ THE FRAMEWORK — BUILT 2026-10-02](#the-framework--built-2026-10-02)
+  - [The application — stage 1 (`backend/app/org_config.py` is the source)](#the-application--stage-1-backendapporg_configpy-is-the-source)
 - [9. admin.html — Data console](#9-adminhtml--data-console)
 - [10. Backend (FastAPI + SQLAlchemy + Alembic)](#10-backend-fastapi--sqlalchemy--alembic)
 
@@ -1361,6 +1365,128 @@ full contents, References (with "cited v1 · now v3" when a cited post
 changed), the votes named for the type (Research vote · Analysis vote ·
 Upvote), *Go to <mission>*, *Edit (new version)*, then the replies. Both views
 always say what mission, organization or initiative the post is about.
+
+### ✅ The card, and Home's sources — BUILT 2026-10-02 (posting edits)
+
+```
+ _____________________________________________________________________________
+|_Target______________Target · <next decision>: date___________________Cause_|
+| Title — source (handle / organization / Earthbux) · date              tag  |
+|   [image — shown collapsed too]                                            |
+|   contents (4 lines)                                     …show more        |
+|_▲ n ▼ · 💬 n comments · ↩ Reply_____________________________________________|
+```
+
+- One card everywhere (`EBX.Post.collapsed` + `EBX.Post.bindVotes`): Home,
+  News (`cause.html`, which no longer draws `fd-card`), the mission page,
+  `/o/<org>`. The top bar links to the targeted mission.
+- **Show more**, a click anywhere on the card, or Reply expands it in place
+  (`EBX.Post.expand`), filling once from `GET /posts/{id}` and `/comments`:
+  whether the author voted in its initiative election, citations, *see more like
+  this* (in <cause> · about <initiative> · from <author>), the replies and a
+  reply box. No dialog.
+- `posting.serialize` adds `source` (earthbux · charity · individual, from
+  `author_type`) and `next_decision` ({label, date}: initiative election →
+  organization election → budget day); `GET /posts?source=` filters on it.
+- Home: four toggles — **All · Earthbux · Charities · Individuals** — each source
+  fetched on its own so a quiet one still shows its older posts. News: the same
+  chips, plus `?initiative=` and `?author=` (clearable chips).
+
+## 8d. org.html · o.html — the organization experience (P2b framework, BUILT 2026-10-02)
+
+### ✅ THE FRAMEWORK — BUILT 2026-10-02
+
+Rudimentary pages on a complete API; the design pass comes later.
+
+- **Accounts (D28/D29).** `org_accounts` — a second account kind with its own
+  login (`POST /org/login`, token subject `org:<id>`), one organization each,
+  `admin | member`. Every benefactor route refuses that token with 403 (it is
+  refused in `auth.get_current_benefactor`, so no vote, wallet or benefactor
+  post can take it). The page keeps it under `ebx_org_token`, apart from the
+  benefactor login — one person may hold both.
+- **The claim.** The application (below) makes the organization if it is new,
+  a PENDING admin login and an `org_applications` row. Staff approve in
+  `admin.html` › *Org applications*; the login goes live and the organization is
+  **claimed** (= has an active login). A claimed organization cannot be claimed
+  again — its administrator creates further logins (Profile › Members).
+- **`/org` — the organization's own site.** Signed out: Sign in · Claim or
+  register (`#apply`, `#apply?org=<id>` preselects a page to claim). Signed in,
+  three tabs and one per campaign: **Home** (campaigns with rank · votes · tokens
+  · days left; what benefactors say about you; new posts on your campaigns, each
+  answerable; Earthbux updates) · **Initiatives** (open organization elections →
+  *Run for this* with a promise; initiative elections → *Suggest us* on an
+  initiative) · **Profile** (outward fields, updates, campaign tabs, members) ·
+  **a campaign tab** (`#c/<mission>`: the promise, the plan, the Q&A with answer
+  boxes, the live ballot, benefactors' budget items, receipts).
+- **`/o/<org>` — the public profile.** Claimed: logo, name, website, description,
+  verified, updates, discussion, campaigns, missions won, people. Unclaimed: the
+  title, the discussion, campaigns and the shared **UNCLAIMED** panel (D30,
+  `org_config.UNCLAIMED_PANEL`) with *Post about them* and *Claim this page*.
+  Every organization name in a post's target line now links here.
+- **`/o/<org>/<mission>` — the campaign page.** What they are promising · Live
+  ballot slate · Plan (the organization's plan posts, then benefactors' budget
+  items) · Receipts (missions won / completed, and the application's past
+  outcome) · Q&A (posts about the organization or on the mission, with the
+  organization's answers under each). The mission page's organization panel
+  links to it.
+- **Organization posts** are category `org_update`, author `org`, type
+  `update · plan · answer · suggestion` (`org_config.ORG_POST_KINDS`).
+
+### The application — stage 1 (`backend/app/org_config.py` is the source)
+
+✱ = required. Stage 1 is enough to be *electable* and contacted
+(`mission_model.md` §6); stage 2 is asked only of a winner.
+
+**The organization** — Who you are. If your organization is already on Earthbux (someone may have nominated it), pick it — you are claiming that page, not making a second one.
+- Legal name ✱
+- Name you go by, if different
+- What kind of organization is it? ✱
+- Country of registration ✱
+- Registration number (EIN or equivalent)
+- Year founded
+- Website
+- Public contact — an email or phone benefactors can use ✱
+- Your mission, in one sentence ✱
+- Which of the seven causes do you work in? ✱
+- Where do you work? ✱
+- Annual budget ✱
+- Paid staff ✱
+
+**You** — The person applying becomes the organization account's first administrator and creates everyone else's logins.
+- Your full name ✱
+- Your position ✱
+- How can we confirm you work there? ✱
+- Can you make commitments on the organization's behalf? ✱ *(Yes · No — I will name who can · Not sure)*
+- If not, who can? (name and position)
+
+**What you would do** — Credentials and a short statement — not a plan. The plan comes only if you win.
+- Which initiative or mission brings you here?
+- If benefactors chose you, what would you do with a week's pool? ✱
+- One past outcome you are proud of — with a number in it ✱
+- How do you report to donors today?
+
+**Integrity** — Answered privately, reviewed by Earthbux staff. A 'yes' is not a refusal — hiding one is.
+- Any relationship with Earthbux staff, or a plan to ask people to vote for you in exchange for anything? ✱ *(No · Yes — explained below)*
+- Any open investigations, sanctions or lawsuits? ✱ *(No · Yes — explained below)*
+- Does the organization campaign for or against political candidates? ✱ *(No · Yes — explained below)*
+- Anything you answered 'yes' to
+
+**What every campaign promises** — These are the terms of being on the ballot.
+- We will answer benefactors' questions on Earthbux. Silence is shown on our page. ✱
+- If we win, we will publish progress reports for the mission. ✱
+- We accept that Earthbux News supervises and reports on missions we run, including critical coverage. ✱
+- We understand no money moves until stage 2 (identity, payee, nonprofit status) is verified, and that a failed verification is published. ✱
+- Everything above is true, and I am applying for this organization with its knowledge. ✱
+**Stage 2 — payable (P6, listed on the form, not asked):**
+
+- Registration documents (certificate of incorporation, IRS determination letter or equivalent)
+- Registered address
+- The payee — the legal name a check is made out to, matched to the registration
+- Bank details for the payee (or a mailing address for a check)
+- The representative's authority to bind the organization (board letter or officer signature)
+- An executive and a representative named (the representative edits the mission, the executive holds the account)
+- A start estimate for the mission: the date you can begin, and what has to be true first
+- Most recent annual accounts or Form 990
 
 ## 9. admin.html — Data console
 *backlog*

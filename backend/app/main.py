@@ -28,6 +28,7 @@ from .routers import (
     votes,
     wallet,
 )
+from .routers import org as org_routes   # P2b · organization accounts (2026-10-02)
 
 settings = get_settings()
 
@@ -220,6 +221,7 @@ app.include_router(wallet.router)
 app.include_router(transactions.router)
 app.include_router(admin.router)
 app.include_router(contact.router)   # Contact us (2026-09-25)
+app.include_router(org_routes.router)   # P2b · organization experience (2026-10-02)
 
 try:  # 2026-09-26: say at boot which mail route the server sees
     from . import mailer as _mailer
@@ -244,9 +246,10 @@ def root_page() -> FileResponse:
     return _html("index")
 
 # index.html = public landing page (served at "/"); main.html = the home/missions app page.
-# Orgs have NO page of their own (restructure 2026-07-10): their public face is
-# the org panel on mission.html (?org=), their admin lives behind admin.html.
-_HTML_PAGES = ("index", "about", "main", "cause", "mission", "profile", "admin", "post")   # about: P2 (2026-09-25) · post: P3 (2026-09-29)
+# P2b (2026-10-02): organizations have pages again — org.html is the
+# organization account's own site (Home · Initiatives · Profile · a tab per
+# campaign), o.html the public profile (/o/<org>) and campaign page (/o/<org>/<mission>).
+_HTML_PAGES = ("index", "about", "main", "cause", "mission", "profile", "admin", "post", "org", "o")   # about: P2 (2026-09-25) · post: P3 (2026-09-29)
 
 
 def _make_handler(page: str):
@@ -269,6 +272,22 @@ def mission_root() -> FileResponse:
 @app.get("/m/{slug}", include_in_schema=False)
 def mission_slug(slug: str) -> FileResponse:
     return _html("mission")
+
+
+# P2b — the public organization pages. o.html carries <base href="/">.
+@app.get("/o/{org_id}", include_in_schema=False)
+def org_public(org_id: str) -> FileResponse:
+    return _html("o")
+
+
+@app.get("/o/{org_id}/{mission_id}", include_in_schema=False)
+def org_campaign(org_id: str, mission_id: str) -> FileResponse:
+    return _html("o")
+
+
+@app.get("/org", include_in_schema=False)
+def org_site() -> FileResponse:
+    return _html("org")
 
 
 for _page in _HTML_PAGES:

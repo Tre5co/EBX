@@ -42,6 +42,13 @@ bot, each with its own session).
     backfill       (staff) elect an organization in every past organization
                    election that never got one.
 
+    org            the ORGANIZATION bot (P2b, 2026-10-02). One organization
+                   account — by default Earthbux itself, which won Oceans 0,
+                   Forests 0 and Human Rights 0 — from `org_earthbux.json`:
+                   apply (claim), staff-approve (needs --staff-handle), sign
+                   in, then write the profile, an update, a promise and a plan
+                   per campaign, and answer listed questions. Idempotent.
+
 2026-09-17: `initiatives` votes in EVERY open initiative election — tokens in
 the upcoming one, a 0-token preference elsewhere — and `organizations` votes
 only in this week's race plus races whose initiative election the bot backed.
@@ -100,7 +107,7 @@ DEFAULT_ACCOUNTS = HERE / "bots.local.json"
 DEFAULT_PERSONAS = HERE / "personas.json"
 CT_PER_TOKEN = 100
 TASKS = ("initiatives", "organizations", "budget", "research", "exchange")
-ADMIN_TASKS = ("sync", "backfill")
+ADMIN_TASKS = ("sync", "backfill", "org")
 _print_lock = threading.Lock()
 
 
@@ -877,6 +884,107 @@ RUNNERS = {"initiatives": task_initiatives, "organizations": task_organizations,
            "budget": task_budget, "research": task_research, "exchange": task_exchange}
 
 
+# ---------------------------------------------------------------------------
+# The organization bot (P2b, 2026-10-02)
+# ---------------------------------------------------------------------------
+DEFAULT_ORG_CONTENT = HERE / "org_earthbux.json"
+
+
+def task_org(args, content) -> int:
+    """Claim, approve, sign in and run one organization account.
+
+    Organization tokens are refused by every benefactor route, so this bot can
+    only do what an organization can: no votes, no wallet."""
+    c = content or json.loads(DEFAULT_ORG_CONTENT.read_text())
+    handle, email = c["handle"], c["email"]
+    secrets_by_handle = json.loads(Path(args.accounts).read_text()) if Path(args.accounts).exists() else {}
+    if handle not in secrets_by_handle:
+        secrets_by_handle[handle] = secrets.token_urlsafe(18)
+        Path(args.accounts).write_text(json.dumps(secrets_by_handle, indent=2))
+        print(f"credentials written: {args.accounts}")
+    pw = secrets_by_handle[handle]
+    api = Api(args.base, dry_run=args.dry_run, bot_key=args.bot_key)
+    print(f"== org · {handle} · {args.base}" + (" · DRY RUN" if args.dry_run else ""))
+
+    def login():
+        return api._req("POST", "/org/login", form={"username": handle, "password": pw})
+
+    try:
+        tok = login()
+    except ApiError as e:
+        if e.code == 401:                                   # no such login yet: apply
+            org_id = c.get("org_id")
+            try:
+                api.get(f"/organizations/{org_id}")
+            except ApiError:
+                org_id = None                               # this site has no such org: register it
+            hdr = {"X-EBX-Bot-Key": api.bot_key} if api.bot_key else None
+            r = api._req("POST", "/org/apply", write=True, headers=hdr,
+                         body={"org_id": org_id, "answers": c["answers"], "email": email,
+                               "handle": handle, "password": pw})
+            say(handle, f"applied → {r}")
+        elif e.code != 403:                                 # 403 = pending approval
+            raise
+        if args.dry_run:
+            say(handle, "[dry-run] would wait for approval, then run")
+            return 0
+        if not args.staff_handle:
+            say(handle, "application pending — approve it in admin › Org applications, or pass --staff-handle")
+            return 0
+        staff = staff_session(args)
+        for a in staff.get("/org/applications", status="pending"):
+            if (a.get("account") or {}).get("handle") == handle:
+                staff.post(f"/org/applications/{a['id']}/approve", {"note": "organization bot"})
+                say(handle, f"approved application #{a['id']} ({a['org_name']})")
+        tok = login()
+    api.token = tok["access_token"]
+    me = api.get("/org/me")
+    org_id = me["org"]["id"]
+    say(handle, f"signed in as {me['account']['role']} of {me['org']['name']} ({org_id})")
+
+    if c.get("profile"):
+        api.put("/org/profile", c["profile"])
+        say(handle, "profile updated")
+    pub = api.get(f"/organizations/{org_id}/public")
+    titles = {(p.get("title") or "") for p in pub.get("updates") or []}
+    up = c.get("update")
+    if up and up.get("title") not in titles:
+        api.post("/org/posts", {"kind": "update", **up})
+        say(handle, f"posted update: {up['title']}")
+
+    camp_content = c.get("campaigns") or {}
+    for camp in api.get("/org/home")["campaigns"]:
+        mid = camp["id"]
+        cc = camp_content.get(mid) or camp_content.get("*") or {}
+        if camp.get("status") in ("lost", "withdrawn"):
+            continue                                        # a finished campaign keeps its words
+        if cc.get("promise") and cc["promise"] != camp.get("promise"):
+            api.put(f"/org/campaigns/{mid}", {"mission_statement": cc["promise"]})
+            say(handle, f"{mid}: promise set")
+        page = api.get(f"/organizations/{org_id}/campaigns/{mid}")
+        plan = cc.get("plan")
+        if plan and not any((p.get("title") or "") == plan["title"] for p in page["plan"]["org_plan"]):
+            api.post("/org/posts", {"kind": "plan", "mission_id": mid, **plan})
+            say(handle, f"{mid}: plan published")
+        for q in page["qa"]:
+            if q.get("org_answers"):
+                continue
+            text = (c.get("answers_by_post") or {}).get(q["id"]) or c.get("default_answer")
+            if text:
+                try:
+                    api.post("/org/posts", {"kind": "answer", "parent_id": q["id"], "body": text})
+                    say(handle, f"{mid}: answered {q['id']}")
+                except ApiError as e:
+                    say(handle, f"{mid}: could not answer {q['id']} — {e}")
+    # Proof of the rule: an organization cannot vote.
+    try:
+        api.get("/wallet")
+        say(handle, "WARNING — the wallet answered an organization token")
+    except ApiError as e:
+        say(handle, f"no wallet, as it should be ({e.code})")
+    return 0
+
+
 def run_bot(args, bot, task, week, content, seed):
     api = Api(args.base, dry_run=args.dry_run, bot_key=args.bot_key)
     rng = random.Random(None if seed is None else f"{seed}-{bot['handle']}")
@@ -947,6 +1055,8 @@ def main(argv=None) -> int:
         return task_sync(args, bots)
     if args.command == "backfill":
         return task_backfill(args, content)
+    if args.command == "org":
+        return task_org(args, content)
     print(f"== {args.command} · {len(bots)} bots at once · {args.base}"
           + (" · DRY RUN" if args.dry_run else ""))
     with ThreadPoolExecutor(max_workers=max(1, len(bots))) as pool:

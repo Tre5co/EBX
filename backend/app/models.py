@@ -891,3 +891,52 @@ class Transaction(Base):
     amount_ebx: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # used by both kinds
     note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+# ===========================================================================
+# P2b · Organization experience (2026-10-02) — D28/D29.
+# OrgAccount — an ORGANIZATION login, a second account kind. Never a mode of a
+# benefactor account; one person may hold both. Belongs to exactly one
+# organization. It has no wallet and no ballots: its JWT subject is
+# "org:<id>", which every benefactor route refuses (auth.get_current_benefactor).
+# The claimer becomes the first `admin` and creates the other members' logins.
+# ===========================================================================
+class OrgAccount(Base):
+    __tablename__ = "org_accounts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    handle: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    pass_hash: Mapped[str] = mapped_column(String, nullable=False)
+    display_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    position: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    role: Mapped[str] = mapped_column(String, default="member", nullable=False)  # admin | member
+    # False until staff approve the application that created it.
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_test: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, server_default="0")
+    created_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("org_accounts.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    org: Mapped["Organization"] = relationship()
+
+
+# OrgApplication — the claim. Answers to `org_config.APPLICATION_SECTIONS`,
+# kept whole (JSON) so the form can change without a migration.
+class OrgApplication(Base):
+    __tablename__ = "org_applications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    org_id: Mapped[str] = mapped_column(ForeignKey("organizations.id"), nullable=False, index=True)
+    account_id: Mapped[Optional[int]] = mapped_column(ForeignKey("org_accounts.id"), nullable=True)
+    answers: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    attestation_version: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(String, default="pending", nullable=False)  # pending|approved|rejected
+    created_org: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, server_default="0")
+    review_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reviewed_by_id: Mapped[Optional[int]] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    org: Mapped["Organization"] = relationship()
+    account: Mapped[Optional["OrgAccount"]] = relationship()

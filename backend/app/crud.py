@@ -3695,6 +3695,7 @@ def list_posts(
     tag: Optional[str] = None,
     target_kind: Optional[str] = None,
     target_id: Optional[str] = None,
+    source: Optional[str] = None,
 ) -> Sequence[models.Post]:
     """The post list every page reads.
 
@@ -3719,6 +3720,10 @@ def list_posts(
     db.commit()
 
     stmt = select(models.Post)
+    if source:
+        # Posting edits (2026-10-02): Home's toggles — Earthbux · Charities · Individuals.
+        kinds = [posting.AUTHOR_TYPES_OF[x] for x in str(source).split(",") if x in posting.AUTHOR_TYPES_OF]
+        stmt = stmt.where(models.Post.author_type.in_(kinds or ["-"]))
     if ben_author_id is not None:
         stmt = stmt.where(models.Post.ben_author_id == ben_author_id)
     if type:

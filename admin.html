@@ -85,6 +85,7 @@
       <div class="item special" data-view="accounts">Accounts · remove</div>
       <div class="item special" data-view="remove">Remove · posts, initiatives, orgs</div>
       <div class="item special" data-view="contact">Contact us · messages</div>
+      <div class="item special" data-view="orgapps">Org applications · approve</div>
     </div>
     <div id="org-nav" class="hidden">
       <div class="group">Your organizations</div>
@@ -760,6 +761,54 @@ async function runContact() {
   });
 }
 document.querySelector('[data-view="contact"]').onclick = selectContactView;
+
+// ---------- Org applications (P2b, 2026-10-02) ----------
+// The application IS the claim (backend/app/org_config.py). Approving makes
+// the applicant's ORGANIZATION login active — they become the organization's
+// administrator on /org. Integrity answers are shown here and nowhere else.
+async function selectOrgAppsView() {
+  current = { kind: "orgapps" };
+  setActive((i) => i.dataset.view === "orgapps");
+  $("#main").innerHTML = `
+    <div class="toolbar">
+      <span class="title mono">organization applications</span>
+      <select id="oa-status"><option value="pending" selected>pending</option><option value="approved">approved</option><option value="rejected">rejected</option><option value="">all</option></select>
+      <span class="count" id="rowcount"></span>
+    </div>
+    <div id="grid"><div class="msg">Loading…</div></div>`;
+  $("#oa-status").onchange = runOrgApps;
+  await runOrgApps();
+}
+async function runOrgApps() {
+  const st = $("#oa-status").value;
+  let rows;
+  try { rows = await api("/org/applications?status=" + encodeURIComponent(st)); }
+  catch (e) { $("#grid").innerHTML = `<div class="msg warn">${e.message}</div>`; return; }
+  $("#rowcount").textContent = rows.length + " applications";
+  if (!rows.length) { $("#grid").innerHTML = '<div class="msg">No applications.</div>'; return; }
+  const esc = (v) => String(v == null ? "" : v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const show = (v) => Array.isArray(v) ? v.join(", ") : (v === true ? "yes" : v === false ? "no" : v);
+  $("#grid").innerHTML = rows.map((r) => `
+    <div style="border:1px solid #444;border-radius:8px;padding:10px 12px;margin:10px 0;">
+      <div><b>#${r.id} · <a href="/o/${esc(r.org_id)}" target="_blank">${esc(r.org_name)}</a></b>
+        <span class="pill">${esc(r.status)}</span> ${r.created_org ? '<span class="pill">new org</span>' : '<span class="pill">claim</span>'}
+        ${r.account && r.account.is_test ? '<span class="pill">bot</span>' : ""}
+        <span class="mono" style="opacity:.7">${esc(String(r.created_at || "").slice(0, 16).replace("T", " "))}</span></div>
+      <div class="mono" style="margin:4px 0;">login: ${r.account ? esc(r.account.handle) + " · " + esc(r.account.email) : "—"}</div>
+      <details><summary>answers</summary><table><tbody>${Object.entries(r.answers || {}).map(([k, v]) =>
+        `<tr><td class="mono">${esc(k)}</td><td style="white-space:pre-wrap;max-width:640px;">${esc(show(v))}</td></tr>`).join("")}</tbody></table></details>
+      ${r.status === "pending" ? `<div style="margin-top:6px;"><input id="oa-note-${r.id}" placeholder="note (optional)" style="width:280px;">
+        <button class="primary" onclick="orgAppAct(${r.id},'approve')">Approve</button>
+        <button onclick="orgAppAct(${r.id},'reject')">Reject</button></div>` : (r.review_note ? `<div>note: ${esc(r.review_note)}</div>` : "")}
+    </div>`).join("");
+}
+window.orgAppAct = async function (id, action) {
+  const note = ($("#oa-note-" + id) || {}).value || null;
+  try { await api(`/org/applications/${id}/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note }) }); }
+  catch (e) { alert(e.message); }
+  runOrgApps();
+};
+document.querySelector('[data-view="orgapps"]').onclick = selectOrgAppsView;
 
 // ==========================================================================
 // ORG SIDE (org-experience restructure, 2026-07-10)

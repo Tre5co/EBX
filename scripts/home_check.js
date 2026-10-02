@@ -221,16 +221,21 @@ const route = u => {
   const cards = () => [...d.querySelectorAll('#hf-list .ep--card')];
   ok(cards().length === POSTS.length, 'the feed is every root post, as the shared card', String(cards().length));
   const card1 = cards()[0];
-  ok(card1 && card1.querySelector('.ep__main .ep__title') && card1.querySelector('.ep__side .ep__who') && card1.querySelector('.ep__side .ep__kind') &&
-     card1.querySelector('.ep__votes') && /Discussion/.test(txt(card1.querySelector('.ep__disc'))),
-     'title left · account-date and type right · votes and Discussion → along the foot');
+  // posting edits (2026-10-02): top bar (target · next decision · cause) /
+  // title · source · date · tag / contents …show more / votes · comments · reply
+  ok(card1 && card1.querySelector('.ep__bar .ep__bar-t') && card1.querySelector('.ep__bar .ep__bar-c') &&
+     card1.querySelector('.ep__head .ep__title') && card1.querySelector('.ep__head .ep__by') && card1.querySelector('.ep__head .ep__kind') &&
+     card1.querySelector('.ep__more') && card1.querySelector('.ep__foot2 .ep__votes') && card1.querySelector('[data-ep-reply]'),
+     'top bar · title, source, date, tag · show more · votes, comments, reply');
   const kindOf = id => txt(d.querySelector('.ep--card[data-post="' + id + '"] .ep__kind'));
   ok(/Background/i.test(kindOf('r1')) && /Investigation/i.test(kindOf('r2')) && /Analysis/i.test(kindOf('r3')), 'research says its type', [kindOf('r1'), kindOf('r2'), kindOf('r3')].join(' | '));
   ok(/example\.org/.test(txt(d.querySelector('.ep--card[data-post="r2"] .ep__src'))), 'a pulled-in news link shows its source');
   ok(!/\.hp--(news|research|budgeting)\b|border-left:\s*3px/.test(d.getElementById('ebx-post-css').textContent), 'no colour coding on the cards');
   ok(cards().every(c => c.querySelector('[data-ep-vote="helpful"]')), 'every card can be voted on from Home');
-  ok(!d.querySelector('.hn .hf-chip, .hn input, .hn select, .hn form, .hn [aria-pressed]:not(.ep__v)'), 'no filter, search or toggle on Home');
-  ok(cards().every(c => /^cause\.html\?thread=/.test(c.querySelector('.ep__disc').getAttribute('href'))), 'Discussion → opens its thread in News');
+  ok(!d.querySelector('.hn .hf-chip, .hn input, .hn select, .hn form'), 'no filter or search on Home');
+  ok([...d.querySelectorAll('#hf-src [data-src]')].map(b => b.textContent).join('|') === 'All|Earthbux|Charities|Individuals',
+     'the four source toggles: All · Earthbux · Charities · Individuals');
+  ok(cards().every(c => c.querySelector('[data-ep-extra]') && c.querySelector('[data-ep-extra]').hidden), 'every card starts collapsed, expandable in place');
   ok(/post\.html/.test((d.getElementById('hn-post') || {}).href || ''), "Home's + opens the composer (P3)");
   const news = fs.readFileSync(R('cause.html'), 'utf8');
   ok(/function readHandoff\(\)/.test(news) && /P\.get\('cat'\)/.test(news) && /P\.get\('thread'\)/.test(news), 'News reads ?cat ?thread');

@@ -261,6 +261,31 @@ the register below) are still due.*
 *(Added 2026-10-01; rebuilt the same day on Jax's answers to D26 and D28, and his
 notes on the public profile and the campaign page.)*
 
+**▶ Framework built 2026-10-02** (Jax: "build the framework and basic,
+rudimentary pages … build a bot org for Earthbux … draft the questions on the org
+application"). Spec of what exists: `structure.md` §8d. `org_check` 44/44,
+`posting_check` 66/66 on a db copy.
+- **Built:** organization accounts + their own login; every benefactor route
+  refuses an organization token; the application (= the claim) and its
+  questions (`org_config.py`, two stages); staff review in admin › *Org
+  applications*; `/org` with Home · Initiatives · Profile + a tab per campaign;
+  administrators create members' logins; Run for this; Suggest us (a post on the
+  initiative, read back as "you suggested the winner"); the public profile
+  claimed/UNCLAIMED; the campaign page's five sections; organization answers in
+  the Q&A; the organization bot (`ebx_bots.py org`, Earthbux).
+- **⚠ Migration `a7c4e2f9b1d3` (additive: two new tables).** The server
+  migrates to head on startup, so it applies on the next deploy. Nothing
+  existing is altered; `downgrade` drops only the two tables.
+- **Still open in P2b:** the `memberships` reshape and
+  `mission_candidacies.tiv_id` (both still proposed — Suggest us works without
+  them); the verification rule (spec check, `mission_model.md` §6); progress
+  reports beside EN's; framing showing the organization's input; a design
+  pass on both pages; and the four Done-when items not covered by an
+  automated suggestion→candidacy promotion.
+- **Note for the live site:** run the bot once there —
+  `python scripts/bots/ebx_bots.py --base https://earthbux.net org --staff-handle GameMaster`
+  (add `--bot-key` so the login is marked as a test account).
+
 **Goal.** Organizations get **their own accounts and their own experience**. An
 organization cannot vote; it cares about the missions it might run and the
 campaigns it is already in. Everyone else sees two public pages for it: its
@@ -429,6 +454,21 @@ for any posting purpose — every post displayable by every page on the platform
   mission's initiative election.
 
 **Still waiting**
+- Let's improve the posting experience, and prepare to build the news feed in the process. After this, we'll build out the org experience.
+- ✅ **Built 2026-10-02 (the items through "image … even in the small version" below)** — one card on Home, News and the mission page (`EBX.Post.collapsed`): top bar = target · the targeted mission's next decision and date (`next_decision` in `posting.serialize`) · cause, the whole bar linking to the mission; title · source · date · tag; the image even collapsed; …show more expands **in place** (citations, whether the author voted in the election, see more like this → News `?cause=` `?initiative=` `?author=` `?source=`, or `/o/<org>`; replies and a reply box); votes · comments · reply. Home's four toggles read `GET /posts?source=earthbux|charity|individual`; News has the same chips. There are no public benefactor profiles yet, so "from <user>" opens News filtered to that author. Checks updated: render, home (76), feed, landing (21).
+- The posts are going to look the same whether you're on news or home. Clicking on the post will expand into the full post, (where the text trails off in a ..., have a show more button). In the expanded post, it shows more info like - voted in this election or not, citations, see more like this (in <cause>, about <initiative>, from <user>) which links to news or a user profile in the user case.
+- The home page will have 3 toggles, basedon the source of the post, and a fourth "all" option. The 3 sources are Earthbux, Charities, and Individuals.
+ _____________________________________________________________________________
+|_*Target*___________________*Target <next_decision>: date*____________*Cause*|
+| Post title - source(handle/org_name/earthbux) - date -               tag    |
+|                                                                             |
+|    contents                                                                 |
+|                                                 ...show more                |
+|_votes_number-of-comments_reply______________________________________________|
+
+- Clicking anywhere in the top bar goes to the mission it's targeting.
+- If the post is an image, the image should be shown even in the small version.
+
 - **News's cards** — `cause.html` still draws its own card (`fd-card`) with its
   own reactions; it moves to `EBX.Post.collapsed` with the News rebuild (P3b).
 - **One post at a time as you scroll, centred** — the Instagram-like reader
@@ -652,6 +692,14 @@ lands, and the phase tab's copy is the same string Home shows.
 
 *Named, not queued. Reorganize freely during a pass; do not build.*
 
+- Create the weekly report. 
+- Website shouldn't even be required, someone can fill that in later. Or maybe they need a phone or an email..
+- The api is not updating the phases at the proper time... 
+- for some reason I'm only able to commit 4 tokens for the land election at the moment. Also, tokens should be granted as soon as the initiative election opens. 
+- In the mission navigator, instead of "which cause holds" and "Land x", display "x leading".
+- Images should show in all posts
+- The full post display should show on every surface, and clicking on the post should open a "post"... x opens a user page, reddit opens a comments/post page, linkedin doesn't open a new page, just expands. That's what I want. The difference between home and news is that on home, you don't get to filter the feed.
+
 **Future/Conceptual**
 - A bot console in admin for me to run them autonomously.
 - Have the posts kind of like the instagram thing, where as you scroll it shows you exactly 1 post at a time, centering it in your face.
@@ -675,12 +723,43 @@ lands, and the phase tab's copy is the same string Home shows.
 - I should also be able to retarget posts and change their tags.
 - The link to the admin page from profile should direct to admin.html. The version it goes to is outdated and can be deleted. 
 - Each accounts dashboard should be viewable by admin.
+- I need a mission-editor so I can put in locations.
+
+**Mobile** — *both built 2026-10-02: the cause tabs stick to the top on phones; the initiative and organization tables lost the Vote and Standing columns everywhere, a row tap puts an initiative on the ballot, and on phones the rows are titles only under "Select an initiative/organization to vote". The old phone rule had hidden the title column itself.*
+- ~~Causes can be always on the top of the screen when scrolling down on the missions page~~
+- ~~In the tiv and org tables, I'm not able to see the titles of the rows. On mobile, tell the user "select an initiative/organization to vote", and the title should be the only thing in the row. Also, on all versions, remove the standing column, and remove the 'vote' column, selecting it puts it into the ballot, where you commit your vote.~~
 
 **Posting**
 - *(Up/down votes, the card, voting from Home, the initiative-election badge — built 2026-10-01, P3.)*
+Maybe posts can only become research posts once they reach a certain level of popularity? - versions that build on each other. How does github do it? Github stars are the most similar analog. Github is honestly the most similar platform. 
+Maybe research posts (and weekly updates, i think), will open actual 'articles' wheras normal posts will simply be contained in the feed. There are numerous things.
+Maybe I should move the report to news and have a dedicated discussion on the misison page.
+So news is exclusively earthbux and organization posts, not user posts... User posts are not news. But research can be news.
+User posts can be discussions about news.
+
+- user posts
+- user research
+- org posts
+- org research????
+- Earthbux updates
+- Earthbux News
+
+The preview will include the photograph (if there is one)
+
+- Clicking anywhere on the post should take you to the expanded post in news
+- I think maybe instead of having a dedicated post option, there should be a post dialog within news that you get taken to... 
+*Home* POST - all purpose
+*Missions* Post about x (cause, initiative, )
+
+- The target is the most important part of a post. So posts that don't have targets are only shown to people with some connection to the account posting them. People need to be able to join communities around initiatives - initiatives are the CENTER of the platform. (they begin missions, so it's built right.) The thing the sit wants to know is WHAT SHOULD WE DO? (Facebook is *who are you*, linkedin is *what do you do*, reddit is *What do you want to learn*, x is *what are your opinions*). Every platform hits users with a feed as soon as they log on. I should do the same.. hit them with the weekly election. 
+
+- So 
 
 **Mission**
 - Each of the 7 causes will have an image 
+- instead of "discuss", have "post about x"
+- After nominating, suggetsing, and posting, the window should automatically collapse back to the page.
+- tivs should not be removed from the ballot after they have won.
 
 - The post-support ring (annulus layer 1) returns inside the **framing** and **exchange** phase panels — review 2026-09-24. `GET /missions/{id}/post-support` is unchanged. Move this to backlog - I haven't yet decided what to do in these 2 rings.
 - Mission gantt chart / annulus ring widget (deadlines, 7–12 steps).
@@ -688,12 +767,16 @@ lands, and the phase tab's copy is the same string Home shows.
 - Tune `resolution_value_bump` and its relation to the global coin value.
 
 **Home**
+- The two key decisions should be numbered 1 and 2.
+- When the screen is wide enough, we can put stuff beside the post feed. 
 
 - Real images for the five steps: each cause's vista and its three problems are drawn in `ebx_steps.js` › `PANOS`, as placeholders "until we report on real missions".
 - Will need a real image behind the left side of the hero. Just 1. I will find a good one.
 - *(Home pass 2026-10-01)* "I will probably want to have each of this week's races open even when the table is not collapsed" — collapsed now shows this week's two elections; open, the grid still glows them (`mc--now`). Revisit with the budget-day move (T+16, BACKLOG › Future).
 
 **News**
+- Post display is exactly the same as home
+- One post at a time type of view. 
 - With the news page, comes reporting. I'm going to need to create a plan for what the earthbux team actually does. These responsibilities won't be able to be undertaken until the website is running smoothly, and will be very difficult before there is cash flow, because organization won't want to join us before then. 
 - The corner annulus — News is the only page without the large one; the corner one reflects the status of the mission of the post being viewed.
 - Learn from: Meta, LinkedIn, Reddit, TikTok; fantasy sports, Polymarket, Strava, Duolingo, stock investing, GitHub.

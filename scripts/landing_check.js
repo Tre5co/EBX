@@ -68,7 +68,8 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   ok(!d.querySelector('.hn__tile'), 'no Network tiles (tweaks 2026-10-01)');
   const shown = d.querySelectorAll('#hf-list .ep--card').length;
   ok(shown === Math.min(12, roots.length), 'the feed is every post, newest first', shown + ' of ' + roots.length);
-  ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]:not(.ep__v)'), 'no toggles on Home');
+  // posting edits (2026-10-02): the only toggles on Home are the four sources
+  ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]:not(.ep__v):not(#hf-src [data-src])'), 'no toggles on Home but the four sources');
 
   console.log('\n=== about.html');
   const a = await page('about.html');

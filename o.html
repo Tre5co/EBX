@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <base href="/" />
+  <title>Organization — Earthbux</title>
+  <meta name="description" content="An organization on Earthbux: its profile, its campaigns, and what benefactors are saying about it." />
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
+  <link rel="stylesheet" href="resources/css/ebx_org.css?v=20261002a" />
+  <!--
+    o.html — P2b · the two PUBLIC organization pages (2026-10-02).
+      /o/<org>            the profile — claimed: name, logo, website,
+                          description, verified, updates, campaigns, missions
+                          won. Unclaimed: the title, the discussion, missions,
+                          and the shared UNCLAIMED panel (D30, org_config.py).
+      /o/<org>/<mission>  the campaign page — Promise · Live ballot slate ·
+                          Plan · Receipts · Q&A. "Benefactors will see what the
+                          organization plans to do / wants to do … both will see
+                          the progress and history and news."
+    Benefactor chrome (nav, footer, sign-in) comes from ebx_shared.js; posts are
+    drawn by EBX.Post.collapsed, so voting on them works as everywhere else.
+  -->
+</head>
+<body>
+  <main class="og-main" id="o-main" style="padding-top:70px"><p class="og-muted">Loading…</p></main>
+  <script src="resources/js/ebx_page.js"></script>
+  <script src="resources/js/ebx_shared.js?v=20261002b"></script>
+  <script>
+  (function () {
+    'use strict';
+    var esc = EBXPage.esc;
+    var main = document.getElementById('o-main');
+    var m = location.pathname.match(/^\/o\/([^/?#]+)(?:\/([^/?#]+))?/);
+    var orgId = m ? decodeURIComponent(m[1]) : (EBX.getParam('org') || '');
+    var missionId = m && m[2] ? decodeURIComponent(m[2]) : (EBX.getParam('mission') || null);
+
+    function when(iso) { return iso ? EBXPage.fmtShortDate(iso) : ''; }
+    function stageOf(c) {
+      if (c.status === 'lost') return 'Another organization won' + (c.winning_org ? ' (' + c.winning_org.name + ')' : '');
+      if (c.status === 'withdrawn') return 'Withdrawn';
+      return stageWord(c.stage);
+    }
+    function stageWord(s) {
+      return { initiative_election: 'Initiative election', organization_election: 'Organization election',
+               running: 'Mission running', resolved: 'Resolved', upcoming: 'Upcoming' }[s] || s;
+    }
+    function missionName(x) { return esc(x.cause) + ' ' + esc(x.cycle) + (x.initiative ? ' — ' + esc(x.initiative.title) : ''); }
+    function pill(st) {
+      var cls = st === 'won' ? 'og-pill--won' : (st === 'lost' || st === 'withdrawn') ? 'og-pill--warn' : 'og-pill--live';
+      return '<span class="og-pill ' + cls + '">' + esc(st) + '</span>';
+    }
+    function posts(rows, empty) {
+      if (!rows || !rows.length) return '<p class="og-empty">' + esc(empty) + '</p>';
+      return '<div class="og-list">' + rows.map(function (p) { return EBX.Post.collapsed(p); }).join('') + '</div>';
+    }
+    function logo(o) {
+      return o.logo_url ? '<img class="og-logo" src="' + esc(o.logo_url) + '" alt="">'
+        : '<span class="og-logo">' + esc((o.name || '?').charAt(0)) + '</span>';
+    }
+    function askHref(extra) {
+      return EBX.Post.composeUrl(Object.assign({ org: orgId }, extra || {}));
+    }
+    async function get(path) {
+      var r = await fetch(path); var d = null; try { d = await r.json(); } catch (e) {}
+      if (!r.ok) throw new Error((d && d.detail) || ('HTTP ' + r.status));
+      return d;
+    }
+
+    // ── the profile ─────────────────────────────────────────────────────────
+    async function profile() {
+      var d = await get('/organizations/' + encodeURIComponent(orgId) + '/public');
+      var o = d.org;
+      document.title = o.name + ' — Earthbux';
+      var head = '<div class="og-row" style="gap:16px;align-items:center">' + logo(o) + '<div>' +
+        '<div class="og-kicker">Organization</div><h1 class="og-h1" style="margin:2px 0">' + esc(o.name) + '</h1>' +
+        '<div class="og-row">' + (d.claimed ? '<span class="og-pill og-pill--won">claimed</span>' : '<span class="og-pill og-pill--warn">unclaimed</span>') +
+        (o.verified ? '<span class="og-pill og-pill--won">verified</span>' : '') +
+        (d.claimed && o.website_link ? '<a href="' + esc(o.website_link) + '" rel="noopener" target="_blank">' + esc(o.website_link.replace(/^https?:\/\//, '')) + '</a>' : '') +
+        (d.claimed && o.founded_year ? '<span class="og-meta">since ' + esc(o.founded_year) + '</span>' : '') + '</div></div></div>';
+      var panel = d.unclaimed_panel ? '<section class="og-unclaimed"><h2>' + esc(d.unclaimed_panel.title) + '</h2>' +
+        '<p class="og-muted" style="color:inherit">' + esc(d.unclaimed_panel.body) + '</p><ul>' +
+        d.unclaimed_panel.you_can.map(function (x) { return '<li class="og-muted" style="color:inherit">' + esc(x) + '</li>'; }).join('') + '</ul>' +
+        '<div class="og-row"><a class="og-btn" href="' + esc(askHref()) + '">Post about them</a>' +
+        '<a class="og-btn og-btn--ghost" href="/org#apply?org=' + encodeURIComponent(orgId) + '">I work here — claim this page</a></div></section>' : '';
+      main.innerHTML = head +
+        (d.claimed && o.description ? '<p style="max-width:720px;line-height:1.6;margin:14px 0 18px">' + esc(o.description) + '</p>' : '<div style="height:14px"></div>') +
+        panel +
+        '<div class="og-grid"><div>' +
+        (d.claimed ? '<section class="og-card"><h2 class="og-h2">Updates from ' + esc(o.name) + '</h2>' + posts(d.updates, 'No updates yet.') + '</section>' : '') +
+        '<section class="og-card"><div class="og-row" style="justify-content:space-between"><h2 class="og-h2">Discussion</h2>' +
+        '<a class="og-btn og-btn--sm" href="' + esc(askHref()) + '">Post about ' + esc(o.name) + '</a></div>' +
+        posts(d.discussion, 'Nobody has posted about this organization yet.') + '</section></div>' +
+        '<aside><section class="og-card"><h2 class="og-h2">Campaigns</h2>' +
+        (d.campaigns.length ? '<ul class="og-list">' + d.campaigns.map(function (c) {
+          return '<li class="og-item"><div class="og-row" style="justify-content:space-between"><a href="' + esc(c.campaign_href) + '"><b>' + missionName(c) + '</b></a>' + pill(c.status) + '</div>' +
+            '<div class="og-meta">' + esc(stageOf(c)) + (c.days_left != null ? ' · ' + c.days_left + ' days left' : '') + '</div></li>';
+        }).join('') + '</ul>' : '<p class="og-empty">Not running for any mission.</p>') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">Missions won</h2><span class="og-stat"><b>' + d.missions_won.length + '</b><span>won</span></span>' +
+        '<span class="og-stat"><b>' + d.missions_won.filter(function (c) { return c.phase === 'resolution'; }).length + '</b><span>completed</span></span>' +
+        (d.missions_won.length ? '<ul class="og-list" style="margin-top:8px">' + d.missions_won.map(function (c) {
+          return '<li><a href="' + esc(c.href) + '">' + missionName(c) + '</a></li>';
+        }).join('') + '</ul>' : '') + '</section>' +
+        (d.members.length ? '<section class="og-card"><h2 class="og-h2">People</h2><ul class="og-list">' + d.members.map(function (p) {
+          return '<li>' + esc(p.display_name) + (p.position ? ' <span class="og-meta">' + esc(p.position) + '</span>' : '') + '</li>';
+        }).join('') + '</ul></section>' : '') + '</aside></div>';
+      EBX.Post.bindVotes && EBX.Post.bindVotes(main);
+    }
+
+    // ── the campaign page ───────────────────────────────────────────────────
+    async function campaign() {
+      var d = await get('/organizations/' + encodeURIComponent(orgId) + '/campaigns/' + encodeURIComponent(missionId));
+      var o = d.org, ms = d.mission, sl = d.slate;
+      document.title = o.name + ' · ' + ms.cause + ' ' + ms.cycle + ' — Earthbux';
+      var qa = d.qa.length ? '<div class="og-list">' + d.qa.map(function (p) {
+        return '<div>' + EBX.Post.collapsed(p) + (p.org_answers || []).map(function (a) {
+          return '<div class="og-answer"><span class="og-meta">' + esc(o.name) + ' answered · ' + when(a.created_at) + '</span>' + esc(a.body) + '</div>';
+        }).join('') + '</div>';
+      }).join('') + '</div>' : '<p class="og-empty">No questions yet — ask one.</p>';
+      main.innerHTML =
+        '<div class="og-row" style="gap:16px;align-items:center">' + logo(o) + '<div>' +
+        '<div class="og-kicker">Campaign</div><h1 class="og-h1" style="margin:2px 0"><a href="/o/' + esc(o.id) + '" style="color:inherit;text-decoration:none">' + esc(o.name) + '</a></h1>' +
+        '<div class="og-row">' + pill(d.status) + '<span>for <a href="' + esc(ms.href) + '">' + missionName(ms) + '</a></span>' +
+        (o.claimed ? '' : '<span class="og-pill og-pill--warn">unclaimed</span>') + '</div></div></div>' +
+        '<div class="og-grid" style="margin-top:18px"><div>' +
+        '<section class="og-card"><div class="og-kicker">What they are promising</div>' +
+        '<p style="font-size:1.05rem;line-height:1.6;white-space:pre-wrap;margin:6px 0 0">' + esc(d.promise || 'No statement yet.') + '</p></section>' +
+        '<section class="og-card"><h2 class="og-h2">Plan</h2>' +
+        posts(d.plan.org_plan, o.claimed ? 'No plan published yet — the plan is due once a campaign wins.' : 'An unclaimed organization cannot publish a plan.') +
+        '<div class="og-section"><h3 class="og-h2" style="font-size:1rem">Budget items benefactors suggested</h3>' +
+        posts(d.plan.budget_items, ms.initiative ? 'None yet.' : 'Budget items arrive once an initiative is elected.') +
+        (d.plan.budget_total_usd ? '<p class="og-meta">Total suggested: $' + EBXPage.num0(d.plan.budget_total_usd) + '</p>' : '') + '</div></section>' +
+        '<section class="og-card"><div class="og-row" style="justify-content:space-between"><h2 class="og-h2">Q&amp;A</h2>' +
+        '<a class="og-btn og-btn--sm" href="' + esc(askHref({ tag: 'question' })) + '">Ask ' + esc(o.name) + '</a></div>' + qa + '</section>' +
+        '</div><aside>' +
+        '<section class="og-card"><h2 class="og-h2">Live ballot slate</h2>' +
+        (sl.open ? '<span class="og-stat"><b>' + (sl.rank ? '#' + sl.rank : '—') + '</b><span>of ' + sl.of + '</span></span>' +
+          '<span class="og-stat"><b>' + esc(sl.net_votes) + '</b><span>votes</span></span>' +
+          '<span class="og-stat"><b>' + esc(sl.voter_count) + '</b><span>backers</span></span>' +
+          '<p class="og-meta">' + EBXPage.num1(sl.ebx) + ' tokens behind them · ' + EBXPage.num1(sl.pool_ebx) + ' in the race · closes ' + when(sl.closes_at) +
+          ' (' + sl.days_left + ' days)</p><a class="og-btn og-btn--sm" href="' + esc(ms.href) + '">Vote on the mission page</a>'
+          : '<p class="og-muted">' + (d.status === 'won' ? esc(o.name) + ' won this election.' : 'This organization election is ' + esc(stageWord(ms.stage)).toLowerCase() + '.') + '</p>') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">Receipts</h2>' +
+        '<span class="og-stat"><b>' + d.receipts.missions_won + '</b><span>missions won</span></span>' +
+        '<span class="og-stat"><b>' + d.receipts.missions_completed + '</b><span>completed</span></span>' +
+        (d.receipts.first_receipt ? '<p class="og-muted" style="margin-top:8px"><b>Before Earthbux:</b> ' + esc(d.receipts.first_receipt) + '</p>' : '') +
+        (d.receipts.won.length ? '<ul class="og-list" style="margin-top:8px">' + d.receipts.won.map(function (c) {
+          return '<li><a href="' + esc(c.campaign_href) + '">' + missionName(c) + '</a></li>';
+        }).join('') + '</ul>' : '') + '</section></aside></div>';
+      EBX.Post.bindVotes && EBX.Post.bindVotes(main);
+    }
+
+    (async function () {
+      try { if (EBX.initPage) EBX.initPage(); } catch (e) {}
+      if (!orgId) { main.innerHTML = '<p class="og-msg og-msg--err">No organization in the address.</p>'; return; }
+      try { await (missionId ? campaign() : profile()); }
+      catch (err) { main.innerHTML = '<h1 class="og-h1">Not found</h1><p class="og-muted">' + esc(err.message) + '</p>'; }
+    })();
+  })();
+  </script>
+</body>
+</html>

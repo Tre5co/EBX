@@ -1058,6 +1058,16 @@ Three things landed on 2026-08-28 that change how two of those read:
   listed in `docs/INSTRUCTIONS.md` `## REMOVAL REGISTER` §B rather than deleted here, because deleting
   the generator does not remove the rows and the rows are what the pages are
   currently developed against. **What replaces it is the voting bots.**
+- **The organization bot** (`ebx_bots.py org`, P2b 2026-10-02). One
+  ORGANIZATION account — by default **Earthbux** itself (handle `EarthbuxOrg`),
+  which won Oceans 0, Forests 0 and Human Rights 0 — driven from
+  `scripts/bots/org_earthbux.json`: it applies (claims the `earthbux` page, or
+  registers it on a site without one), approves itself through the staff account
+  (`--staff-handle`), signs in, and writes the profile, one update, a promise and
+  a plan per campaign, and any answers listed in the file. Idempotent; its
+  password goes in `bots.local.json` beside the others; `is_test` with
+  `EBX_BOT_KEY`. It ends by proving it has no wallet (403).
+  `python scripts/bots/ebx_bots.py --base https://earthbux.net org --staff-handle GameMaster`
 - **Bots** (`scripts/bots/ebx_bots.py`, built 2026-09-16, rebuilt for build-seq
   §2). Three AI benefactors with personalities (`scripts/bots/personas.json`):
   **Jax3000** (aggressive forest-and-wildlife defender), **JJ420** (easygoing
@@ -1144,10 +1154,16 @@ backend/
     token_model.py     the money arithmetic (pure)
     wallet.py          the only module that lets the money touch the database
     post_config.py     post categories, types, limits, the flag classifier stub
-  alembic/versions/    migrations (head f7b2d9e41c63)
+    org_config.py      P2b — the organization application (both stages), the
+                       UNCLAIMED panel, the organization post kinds
+    crud_org.py        P2b — organization accounts, the claim, campaigns, and
+                       the two public pages; routers/org.py is its API
+  alembic/versions/    migrations (head a7c4e2f9b1d3 — organization accounts)
   seed/                pilot.py (v1 sample — RETIRED, see §10)
 frontend/             RETIRED 2026-09-16 — inert; REMOVAL REGISTER §A
 index.html  main.html  cause.html  mission.html  profile.html  admin.html
+org.html  o.html     P2b — the organization's own site (/org) and its public
+                     profile + campaign pages (/o/<org>, /o/<org>/<mission>)
 resources/js/
   ebx_shared.js      the shared engine, and its own source: edit it directly,
                      then bump the `?v=` on the pages' script tags.
@@ -1163,8 +1179,10 @@ resources/js/
   vendor/            d3-array + d3-geo (ISC) and Natural Earth 110m land
                      (public domain) for the globe — vendored, no CDN
   css/ebx_frontend.css   shared styles, incl. the five-tab site nav
+  css/ebx_org.css        the organization pages (org.html, o.html)
 scripts/             the check suite — see §14
-  bots/ebx_bots.py   the voting bots (§10)
+  bots/ebx_bots.py   the voting bots and the organization bot (§10)
+  org_check.py       P2b — organization accounts, end to end, on a db copy
 docs/
   README's seven-file doc map, listed at the top of this file:
   structure.md  INSTRUCTIONS.md  mission_model.md  money_model.md
@@ -1266,6 +1284,7 @@ PW_CHROME=/path/to/chrome node scripts/oe_check.js
 
 | Check | Browser | What it guards |
 |---|---|---|
+| **`org_check`** | none (TestClient) | P2b · organization accounts, on a throwaway copy of the db: the application form and its rules; a pending login refused until staff approve; an organization token refused by every vote, wallet and benefactor route; the three tabs; members (admin creates, member cannot); Run for this; the campaign page's five sections; Q&A answers; the public profile claimed and UNCLAIMED; no second claim. `python3 scripts/org_check.py`. 44 assertions. |
 | `render_check` | jsdom | Every page mounts, every expected element is present exactly once, no script errors. The smoke test — run it first. |
 | `landing_check` | jsdom | `index.html`: **2026-09-18** the phase wheel — five undated step toggles, the halves over them, a top card per step, six side cards, seven sectors, the now marker, the globe with land, a card click refocusing — then research band above budget band, runway vs `/stats`, the analytics beacon. 41 assertions. |
 | **`posts_box_check`** | jsdom | The discussion box: the phase tabs, the category tabs, what is open when. **2026-09-17: the box moved to `mission.html` and the check followed it — same assertions, same ids, a different page and a second mission for stage 4.** Its second half still drives `cause.html`'s hero. 82 assertions. |

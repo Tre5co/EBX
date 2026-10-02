@@ -45,12 +45,14 @@ def list_posts(
     tag: Optional[str] = None,
     target_kind: Optional[str] = None,
     target_id: Optional[str] = None,
+    source: Optional[str] = None,
     limit: int = 50,
     sort: str = "recent",
     db: Session = Depends(get_db),
 ):
     """The post feed. `sort` is any strategy in `GET /posts/strategies`
-    (`recent` = `latest`, `hot`, `trending`, `research`, `missions`)."""
+    (`recent` = `latest`, `hot`, `trending`, `research`, `missions`).
+    `source` = earthbux · charity · individual (comma-separated) — Home's toggles."""
     try:
         feed_rank.resolve(sort)
     except ValueError as e:
@@ -59,7 +61,7 @@ def list_posts(
                            category=category, parent_id=parent_id, roots_only=roots_only,
                            ben_author_id=ben_author_id, type=type, limit=min(max(limit, 1), 500),
                            sort=sort, org_id=org_id, tag=tag, target_kind=target_kind,
-                           target_id=target_id)
+                           target_id=target_id, source=source)
     return posting.serialize(db, list(rows), mission_ctx=mission_id)
 
 

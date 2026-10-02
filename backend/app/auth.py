@@ -16,6 +16,11 @@ settings = get_settings()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+# P2b (2026-10-02) — organization accounts sign tokens with subject "org:<id>".
+ORG_SUB_PREFIX = "org:"
+ORG_REFUSAL = ("Organization accounts cannot vote or use benefactor features — "
+               "sign in with your personal Earthbux account for that.")
+
 
 # ---------------------------------------------------------------------------
 # Password helpers
@@ -69,6 +74,12 @@ def get_current_benefactor(
     sub = decode_token(token)
     if sub is None:
         raise credentials_error
+    if sub.startswith(ORG_SUB_PREFIX):
+        # P2b (D26): an organization account cannot vote, hold a wallet or act
+        # as a benefactor. Every benefactor route depends on this function, so
+        # refusing here refuses them all — the server, not just the page.
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail=ORG_REFUSAL)
     try:
         user_id = int(sub)
     except ValueError:
@@ -86,10 +97,39 @@ def get_current_benefactor_optional(
     if not token:
         return None
     sub = decode_token(token)
-    if sub is None:
+    if sub is None or sub.startswith(ORG_SUB_PREFIX):
         return None
     try:
         user_id = int(sub)
     except ValueError:
         return None
     return db.get(models.BenefactorAccount, user_id)
+
+
+# ---------------------------------------------------------------------------
+# P2b — organization accounts (D28): their own token, their own dependency.
+# ---------------------------------------------------------------------------
+def create_org_token(account_id: int) -> str:
+    return create_access_token(f"{ORG_SUB_PREFIX}{account_id}")
+
+
+def get_current_org_account(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> "models.OrgAccount":
+    err = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Sign in with an organization account",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    sub = decode_token(token)
+    if not sub or not sub.startswith(ORG_SUB_PREFIX):
+        raise err
+    try:
+        acct_id = int(sub[len(ORG_SUB_PREFIX):])
+    except ValueError:
+        raise err
+    acct = db.get(models.OrgAccount, acct_id)
+    if acct is None or not acct.is_active:
+        raise err
+    return acct

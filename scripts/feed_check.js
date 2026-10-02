@@ -58,44 +58,42 @@ const CAUSE = process.argv[3] || 'atmosphere';
 
   // ── a · the feed, in the API's order ──
   section('a — the feed itself');
-  const cards = q('.fd-card');
+  const cards = q('article.ep--card');
   say('the feed paints cards', cards.length > 0, cards.length + ' cards');
   const api = await (await fetch(BASE + '/posts?sort=hot&roots_only=true&limit=120')).json();
   say('it asks the API for the HOT order', Array.isArray(api) && api.length > 0,
       (api || []).length + ' posts from /posts?sort=hot');
-  const shown = cards.map(c => c.dataset.id);
+  const shown = cards.map(c => c.dataset.post);
   say('and prints them in that order, unsorted by anything on the page',
       shown.every((id, i) => id === api[i].id), shown.slice(0, 3).join(' · '));
   const cats = new Set((api || []).slice(0, shown.length).map(p => p.category));
   say('ALL posts are included — every category the API returned is on the page',
       cats.size > 1, [...cats].join(' | '));
-  const missions = new Set(cards.map(c => (c.querySelector('.fd-card__mission') || {}).textContent || ''));
+  const missions = new Set(cards.map(c => (c.querySelector('a.ep__bar') || { getAttribute: () => '' }).getAttribute('href') || ''));
   say('…and NOT sorted by mission', missions.size > 1, missions.size + ' missions in the first page');
 
   // ── b · reactions, f · reply ──
   section('b · f — reactions and reply, per card');
   const first = cards[0];
-  const reacts = first ? [...first.querySelectorAll('.fd-react')] : [];
+  const reacts = first ? [...first.querySelectorAll('[data-ep-vote]')] : [];
   // How many depends on the TYPE — the API takes helpful only on a budgeting
   // suggestion and fair/unfair on a case, so a card offering three would be
   // offering two that 400. Asserted per type below; here: it has some, counted.
-  say('each card carries its reactions, with their counts',
-      reacts.length >= 1 && reacts.every(e => /\d/.test(e.textContent)),
-      reacts.map(e => e.textContent.trim()).join(' | '));
-  say('every reaction names the post it belongs to',
-      reacts.every(e => e.dataset.post === first.dataset.id));
-  say('each card has a reply affordance', !!first.querySelector('[data-toggle]'));
-  say('…and a way through to the mission it was written in',
-      !!first.querySelector('.fd-card__mission') || !!first.querySelector('a[href*="mission.html"]'));
+  say('each card carries its votes, with the count',
+      reacts.length >= 1 && /-?\d/.test((first.querySelector('.ep__n') || {}).textContent || ''),
+      reacts.map(e => e.title).join(' | '));
+  say('every vote button names the post it belongs to',
+      reacts.every(e => e.dataset.post === first.dataset.post));
+  say('each card has a reply affordance', !!first.querySelector('[data-ep-reply]'));
+  say('…and a way through to the mission it was written in (the top bar)',
+      cards.some(c => c.querySelector('a.ep__bar')));
 
   // replies open on the card, and ask the API for the thread
-  const withReplies = (api || []).find(p => p.id === first.dataset.id);
-  first.querySelector('[data-toggle]').dispatchEvent(new W.Event('click', { bubbles: true }));
-  await new Promise(r => setTimeout(r, 900));
-  const box = d.querySelector('[data-repliesfor="' + first.dataset.id + '"]');
-  say('opening a reply opens that card only, in place',
-      !!box && box.className.includes('fd-replies--open') &&
-      q('.fd-replies--open').length === 1, withReplies ? '' : '');
+  first.querySelector('[data-ep-reply]').dispatchEvent(new W.Event('click', { bubbles: true }));
+  await new Promise(r => setTimeout(r, 1200));
+  const box = first.querySelector('[data-ep-extra]');
+  say('opening a reply expands that card only, in place',
+      !!box && !box.hidden && first.classList.contains('ep--open') && q('article.ep--open').length === 1);
   say('a signed-out reader is told to sign in rather than shown a dead box',
       /sign in/i.test(box.textContent) || !!box.querySelector('textarea'));
 
@@ -106,7 +104,7 @@ const CAUSE = process.argv[3] || 'atmosphere';
     const chip = q('#fd-filters .fd-chip').find(c => c.dataset.cat === 'mission_support');
     chip.dispatchEvent(new W.Event('click', { bubbles: true }));
     await new Promise(r => setTimeout(r, 300));
-    const after = q('.fd-card').map(c => c.dataset.id);
+    const after = q('article.ep--card').map(c => c.dataset.post);
     const wantIds = (api || []).filter(p => p.category === 'mission_support').map(p => p.id);
     say('a category chip narrows the feed to that category',
         after.length > 0 && after.every(id => wantIds.includes(id)),
@@ -124,7 +122,7 @@ const CAUSE = process.argv[3] || 'atmosphere';
     s.value = needle;
     s.dispatchEvent(new W.Event('input', { bubbles: true }));
     await new Promise(r => setTimeout(r, 300));
-    const hits = q('.fd-card').length;
+    const hits = q('article.ep--card').length;
     const want = (api || []).filter(p => ((p.title || '') + ' ' + (p.body || '')).toLowerCase().includes(needle)).length;
     say('the search box filters the feed', hits > 0 && hits <= want,
         '"' + needle + '" → ' + hits + ' of ' + want);
@@ -156,13 +154,13 @@ const CAUSE = process.argv[3] || 'atmosphere';
   });
   await new Promise(r => setTimeout(r, 4000));
   const d2 = dom2.window, doc2 = dom2.window.document;
-  const card2 = doc2.querySelector('.fd-card');
-  const btn = card2 && card2.querySelector('.fd-react[data-react="helpful"]');
-  const n0 = btn ? parseInt(btn.textContent.replace(/\D/g, ''), 10) : NaN;
+  const card2 = doc2.querySelector('article.ep--card');
+  const btn = card2 && card2.querySelector('[data-ep-vote="helpful"]');
+  const n0 = btn ? parseInt(card2.querySelector('.ep__n').textContent, 10) : NaN;
   if (btn) {
     btn.dispatchEvent(new d2.Event('click', { bubbles: true }));
     await new Promise(r => setTimeout(r, 1200));
-    const n1 = parseInt(doc2.querySelector('.fd-card .fd-react[data-react="helpful"]').textContent.replace(/\D/g, ''), 10);
+    const n1 = parseInt(card2.querySelector('.ep__n').textContent, 10);
     say('a reaction goes to the API and the count comes back changed', n1 === n0 + 1, n0 + ' → ' + n1);
   } else {
     say('the first card offers a helpful reaction', false);
@@ -171,39 +169,39 @@ const CAUSE = process.argv[3] || 'atmosphere';
   // card must not offer them.
   const budget = (api || []).find(p => ['service', 'supply', 'support'].includes(p.type));
   if (budget) {
-    const bcard = [...doc2.querySelectorAll('.fd-card')].find(c => c.dataset.id === budget.id);
+    const bcard = [...doc2.querySelectorAll('article.ep--card')].find(c => c.dataset.post === budget.id);
     if (bcard) {
       say('a budgeting suggestion offers only an Upvote',
-          bcard.querySelectorAll('.fd-react').length === 1,
-          [...bcard.querySelectorAll('.fd-react')].map(e => e.title).join(' | '));
+          bcard.querySelectorAll('[data-ep-vote]').length === 1,
+          [...bcard.querySelectorAll('[data-ep-vote]')].map(e => e.title).join(' | '));
     } else { say('(the budgeting post is below the first page)', true); }
   } else { say('(no budgeting posts in this database)', true); }
   // P3 (2026-09-29): the Review lane is gone — a case is a general post
   // tagged `case`, upvote-only like every general post.
-  const genCard = [...doc2.querySelectorAll('.fd-card')]
-    .find(c => { const p = (api || []).find(x => x.id === c.dataset.id); return p && p.type === 'general'; });
+  const genCard = [...doc2.querySelectorAll('article.ep--card')]
+    .find(c => { const p = (api || []).find(x => x.id === c.dataset.post); return p && p.type === 'general'; });
   if (genCard) {
-    const gp = (api || []).find(x => x.id === genCard.dataset.id);
-    say('a general post offers one Upvote',
-        genCard.querySelectorAll('.fd-react').length === 1 && /Upvote/.test(genCard.querySelector('.fd-react').title),
-        [...genCard.querySelectorAll('.fd-react')].map(e => e.title).join(' | '));
+    const gp = (api || []).find(x => x.id === genCard.dataset.post);
+    say('a general post is voted up and down, like on Home',
+        genCard.querySelectorAll('[data-ep-vote]').length === 2,
+        [...genCard.querySelectorAll('[data-ep-vote]')].map(e => e.title).join(' | '));
     const tag = (gp.tags || []).find(t => t.indexOf(':') < 0);
-    if (tag) say('…and reads as its tag, not as "general"', new RegExp(tag, 'i').test(genCard.querySelector('.fd-kind').textContent),
-        genCard.querySelector('.fd-kind').textContent);
-    if (gp.target_kind && gp.target_kind !== 'none') say('…and says what it is about', !!genCard.querySelector('.ep__target'),
+    if (tag) say('…and reads as its tag, not as "general"', new RegExp(tag.replace(/_/g, ' '), 'i').test(genCard.querySelector('.ep__kind').textContent),
+        genCard.querySelector('.ep__kind').textContent);
+    if (gp.target_kind && gp.target_kind !== 'none') say('…and says what it is about', !!(genCard.querySelector('.ep__bar-t') || {}).textContent,
         gp.target_kind);
   } else { say('(no general posts on the first page)', true); }
-  say('every card has a Full view and a Respond-in-a-post link',
-      [...doc2.querySelectorAll('.fd-card')].every(c => c.querySelector('[data-full]') && c.querySelector('a[href*="tag=response"]')));
+  say('every card has show more, which expands it in place',
+      [...doc2.querySelectorAll('article.ep--card')].every(c => c.querySelector('[data-ep-more]') && c.querySelector('[data-ep-extra]')));
   say('the order select offers the feed framework\'s strategies',
       ['hot', 'recent', 'trending', 'research', 'missions'].every(v => !!doc2.querySelector('#fd-sort option[value="' + v + '"]')));
-  const eCard = [...doc2.querySelectorAll('.fd-card')]
-    .find(c => { const p = (api || []).find(x => x.id === c.dataset.id); return p && p.category === 'editorial'; });
+  const eCard = [...doc2.querySelectorAll('article.ep--card')]
+    .find(c => { const p = (api || []).find(x => x.id === c.dataset.post); return p && p.category === 'editorial'; });
   if (eCard) {
-    eCard.querySelector('[data-toggle]').dispatchEvent(new d2.Event('click', { bubbles: true }));
-    await new Promise(r => setTimeout(r, 900));
+    eCard.querySelector('[data-ep-reply]').dispatchEvent(new d2.Event('click', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 1200));
     say("an Earthbux post takes replies too (P3: everyone can reply)",
-        !!doc2.querySelector('[data-repliesfor="' + eCard.dataset.id + '"] textarea'));
+        !!eCard.querySelector('[data-ep-extra] textarea'));
   }
   dom2.window.close();
 

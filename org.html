@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earthbux for organizations</title>
+  <meta name="description" content="The organization side of Earthbux: your campaigns, the missions you could run, and your public profile." />
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
+  <link rel="stylesheet" href="resources/css/ebx_org.css?v=20261002a" />
+  <!--
+    org.html — P2b · Organization experience (2026-10-02). The ORGANIZATION
+    account's own site (D26): "Home will be where they stay connected with
+    Earthbux and navigate through their active campaigns. Initiatives will be
+    where they find potential missions … profile will be where they create
+    general content, and create an outward facing profile. 3 tabs, and a
+    campaign-specific tab for each campaign accessible from profile."
+
+    Signed out it is the door: sign in, or apply (the application IS the claim,
+    backend/app/org_config.py). Its token lives under its own key
+    (`ebx_org_token`), apart from the benefactor login (D28 — one person may
+    hold both). Routes are the hash: #home · #initiatives · #profile ·
+    #c/<mission_id> · #apply[?org=<id>].
+  -->
+</head>
+<body>
+  <header class="og-top">
+    <a class="og-brand" href="/org">Earth<em>bux</em><small>for organizations</small></a>
+    <nav class="og-nav" id="og-nav" aria-label="Organization"></nav>
+    <span class="og-who" id="og-who"></span>
+  </header>
+  <main class="og-main" id="og-main"><p class="og-muted">Loading…</p></main>
+
+  <script src="resources/js/ebx_page.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    var esc = EBXPage.esc;
+    var TOKEN = 'ebx_org_token';
+    var S = { me: null, home: null };
+    var main = document.getElementById('og-main');
+
+    function tok() { try { return localStorage.getItem(TOKEN); } catch (e) { return null; } }
+    function setTok(t) { try { if (t) localStorage.setItem(TOKEN, t); else localStorage.removeItem(TOKEN); } catch (e) {} }
+    async function api(path, opts) {
+      opts = opts || {};
+      var h = Object.assign({}, opts.headers || {});
+      if (tok()) h['Authorization'] = 'Bearer ' + tok();
+      if (opts.json !== undefined) { h['Content-Type'] = 'application/json'; opts.body = JSON.stringify(opts.json); }
+      var r = await fetch(path, { method: opts.method || 'GET', headers: h, body: opts.body });
+      var d = null; try { d = await r.json(); } catch (e) {}
+      if (!r.ok) {
+        var det = d && d.detail;
+        var text = Array.isArray(det) ? det.map(function (x) { return x.msg || x; }).join(' · ') : (det || ('HTTP ' + r.status));
+        var err = new Error(text); err.status = r.status; throw err;
+      }
+      return d;
+    }
+    function val(f, n) { var el = f.querySelector('[name="' + n + '"]'); return el ? el.value : ''; }
+    function setVal(f, n, v) { var el = f.querySelector('[name="' + n + '"]'); if (el) el.value = v; }
+    function when(iso) { return iso ? EBXPage.fmtShortDate(iso) : ''; }
+    function stageOf(c) {
+      if (c.status === 'lost') return 'Another organization won' + (c.winning_org ? ' (' + c.winning_org.name + ')' : '');
+      if (c.status === 'withdrawn') return 'Withdrawn';
+      return stageWord(c.stage);
+    }
+    function stageWord(s) {
+      return { initiative_election: 'Initiative election', organization_election: 'Organization election',
+               running: 'Mission running', resolved: 'Resolved', upcoming: 'Upcoming' }[s] || s;
+    }
+    function statusPill(st) {
+      var cls = st === 'won' ? 'og-pill--won' : (st === 'lost' || st === 'withdrawn') ? 'og-pill--warn' : 'og-pill--live';
+      return '<span class="og-pill ' + cls + '">' + esc(st) + '</span>';
+    }
+    function missionName(m) {
+      return esc(m.cause) + ' ' + esc(m.cycle) + (m.initiative ? ' — ' + esc(m.initiative.title) : '');
+    }
+    function postRow(p, extra) {
+      return '<li class="og-item"><div class="og-meta">' + esc(p.author_name || 'Benefactor') + ' · ' + when(p.created_at) +
+        (p.target_label ? ' · on ' + esc(p.target_label) : '') + '</div>' +
+        (p.title ? '<h4>' + esc(p.title) + '</h4>' : '') +
+        '<p>' + esc(String(p.body || '').slice(0, 600)) + '</p>' + (extra || '') + '</li>';
+    }
+    function list(rows, draw, empty) {
+      return rows && rows.length ? '<ul class="og-list">' + rows.map(function (r) { return draw(r); }).join('') + '</ul>'
+        : '<p class="og-empty">' + esc(empty) + '</p>';
+    }
+    function msg(el, text, ok) {
+      if (!el) return;
+      el.textContent = text || '';
+      el.className = 'og-msg ' + (text ? (ok ? 'og-msg--ok' : 'og-msg--err') : '');
+    }
+    function route() {
+      var h = (location.hash || '').replace(/^#/, '');
+      var q = {}; var i = h.indexOf('?');
+      if (i >= 0) { new URLSearchParams(h.slice(i + 1)).forEach(function (v, k) { q[k] = v; }); h = h.slice(0, i); }
+      var parts = h.split('/');
+      return { view: parts[0] || '', arg: parts[1] ? decodeURIComponent(parts[1]) : null, q: q };
+    }
+
+    // ── chrome ──────────────────────────────────────────────────────────────
+    function drawNav(r) {
+      var nav = document.getElementById('og-nav'), who = document.getElementById('og-who');
+      if (!S.me) {
+        nav.innerHTML = '<a class="og-tab' + (r.view !== 'apply' ? ' og-tab--on' : '') + '" href="#">Sign in</a>' +
+          '<a class="og-tab' + (r.view === 'apply' ? ' og-tab--on' : '') + '" href="#apply">Claim or register</a>';
+        who.innerHTML = '<a href="index.html">Benefactor site &rarr;</a>';
+        return;
+      }
+      var tabs = [['home', 'Home'], ['initiatives', 'Initiatives'], ['profile', 'Profile']];
+      var html = tabs.map(function (t) {
+        var on = r.view === t[0] || (t[0] === 'home' && !r.view);
+        return '<a class="og-tab' + (on ? ' og-tab--on' : '') + '" href="#' + t[0] + '">' + t[1] + '</a>';
+      }).join('');
+      // A campaign-specific tab for each campaign (D26).
+      (S.home ? S.home.campaigns : []).forEach(function (c) {
+        html += '<a class="og-tab og-tab--camp' + (r.view === 'c' && r.arg === c.id ? ' og-tab--on' : '') +
+          '" href="#c/' + esc(c.id) + '" title="Campaign tab">' + esc(c.cause) + ' ' + esc(c.cycle) + '</a>';
+      });
+      nav.innerHTML = html;
+      who.innerHTML = esc(S.me.org.name) + ' · ' + esc(S.me.account.display_name || S.me.account.handle) +
+        ' (' + esc(S.me.account.role) + ') <button type="button" id="og-out">Sign out</button>';
+      document.getElementById('og-out').onclick = function () { setTok(null); S.me = S.home = null; location.hash = ''; render(); };
+    }
+
+    // ── signed out: sign in ─────────────────────────────────────────────────
+    function viewSignIn() {
+      main.innerHTML =
+        '<div class="og-grid2">' +
+        '<section class="og-card"><div class="og-kicker">Organization account</div><h1 class="og-h1">Sign in</h1>' +
+        '<p class="og-muted">This is your organization\'s login — separate from any personal Earthbux account you vote with.</p>' +
+        '<form id="og-login"><label class="og-lab">Email or handle</label><input class="og-in" name="u" autocomplete="username" required>' +
+        '<label class="og-lab">Password</label><input class="og-in" name="p" type="password" autocomplete="current-password" required>' +
+        '<div class="og-row" style="margin-top:14px"><button class="og-btn">Sign in</button></div><div class="og-msg" id="og-lmsg"></div></form></section>' +
+        '<section class="og-card"><div class="og-kicker">New here</div><h2 class="og-h2">Claim or register your organization</h2>' +
+        '<p class="og-muted">Benefactors may already be talking about you — every organization nominated on Earthbux has a page. ' +
+        'Claim it to answer them, run for missions, and publish your plan. The application takes about ten minutes; ' +
+        'Earthbux staff approve it, and you become your organization\'s administrator.</p>' +
+        '<p class="og-muted">Organizations cannot vote. Your campaigns are decided by benefactors.</p>' +
+        '<a class="og-btn" href="#apply">Start the application</a></section></div>';
+      document.getElementById('og-login').onsubmit = async function (e) {
+        e.preventDefault();
+        var f = e.target, m = document.getElementById('og-lmsg');
+        try {
+          var d = await api('/org/login', { method: 'POST',
+            body: new URLSearchParams({ username: val(f, 'u'), password: val(f, 'p') }),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+          setTok(d.access_token); location.hash = '#home'; boot();
+        } catch (err) { msg(m, err.message); }
+      };
+    }
+
+    // ── signed out: the application (org_config.APPLICATION_SECTIONS) ───────
+    function field(q) {
+      var name = 'a_' + q.key, req = q.required ? ' <b>*</b>' : '';
+      var help = q.help ? '<span class="og-help">' + esc(q.help) + '</span>' : '';
+      if (q.kind === 'checkbox') {
+        return '<label class="og-check"><input type="checkbox" name="' + name + '"> <span>' + esc(q.label) + req + '</span></label>';
+      }
+      var lab = '<label class="og-lab" for="' + name + '">' + esc(q.label) + req + '</label>';
+      if (q.kind === 'textarea') {
+        return lab + '<textarea class="og-text" id="' + name + '" name="' + name + '"' + (q.max ? ' maxlength="' + q.max + '"' : '') + '></textarea>' + help;
+      }
+      if (q.kind === 'select') {
+        return lab + '<select class="og-sel" id="' + name + '" name="' + name + '"><option value="">Choose…</option>' +
+          q.options.map(function (o) { return '<option>' + esc(o) + '</option>'; }).join('') + '</select>' + help;
+      }
+      if (q.kind === 'multiselect') {
+        return lab + '<div class="og-multi">' + q.options.map(function (o) {
+          return '<label><input type="checkbox" name="' + name + '" value="' + esc(o) + '"> ' + esc(o) + '</label>';
+        }).join('') + '</div>' + help;
+      }
+      var type = { email: 'email', url: 'url', tel: 'tel', number: 'number' }[q.kind] || 'text';
+      return lab + '<input class="og-in" id="' + name + '" name="' + name + '" type="' + type + '"' + (q.max ? ' maxlength="' + q.max + '"' : '') + '>' + help;
+    }
+    async function viewApply(r) {
+      main.innerHTML = '<p class="og-muted">Loading the application…</p>';
+      var form = await api('/org/application');
+      var orgs = []; try { orgs = await api('/organizations'); } catch (e) {}
+      var pre = r.q.org ? orgs.find(function (o) { return o.id === r.q.org; }) : null;
+      main.innerHTML =
+        '<div class="og-grid"><form class="og-card" id="og-apply" novalidate>' +
+        '<div class="og-kicker">Application · stage 1 of 2</div><h1 class="og-h1">Claim or register your organization</h1>' +
+        '<p class="og-muted">Credentials and a short statement — not a plan. Nothing here is public until Earthbux approves it, ' +
+        'and your integrity answers are never public.</p>' +
+        '<div class="og-section"><h2 class="og-h2">Is your organization already on Earthbux?</h2>' +
+        '<input class="og-in" id="og-find" placeholder="Search by name…" value="' + esc(pre ? pre.name : '') + '">' +
+        '<input type="hidden" name="org_id" value="' + esc(pre ? pre.id : '') + '">' +
+        '<div id="og-found" class="og-muted" style="margin-top:6px">' +
+        (pre ? 'Claiming <b>' + esc(pre.name) + '</b>. <a href="#" data-new>Not us — register a new organization</a>'
+             : 'Leave blank to register a new organization.') + '</div></div>' +
+        form.sections.map(function (s) {
+          return '<div class="og-section"><h2 class="og-h2">' + esc(s.title) + '</h2><p class="og-muted">' + esc(s.intro) + '</p>' +
+            s.questions.map(field).join('') + '</div>';
+        }).join('') +
+        '<div class="og-section"><h2 class="og-h2">Your organization login</h2>' +
+        '<p class="og-muted">You become the administrator and create everyone else\'s logins. Use a work email.</p>' +
+        '<label class="og-lab">Email <b>*</b></label><input class="og-in" name="email" type="email">' +
+        '<label class="og-lab">Handle <b>*</b></label><input class="og-in" name="handle" maxlength="40">' +
+        '<label class="og-lab">Password (8+ characters) <b>*</b></label><input class="og-in" name="password" type="password"></div>' +
+        '<div class="og-row" style="margin-top:16px"><button class="og-btn">Submit the application</button></div>' +
+        '<div class="og-msg" id="og-amsg"></div></form>' +
+        '<aside><div class="og-card"><div class="og-kicker">Stage 2 — only if you win</div><h2 class="og-h2">Before any money moves</h2>' +
+        '<p class="og-muted">We ask these only of an organization benefactors elect:</p><ul class="og-muted">' +
+        form.payable_later.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div></aside></div>';
+
+      var find = document.getElementById('og-find'), found = document.getElementById('og-found'),
+          f = document.getElementById('og-apply');
+      find.oninput = function () {
+        var t = find.value.trim().toLowerCase();
+        setVal(f, 'org_id', '');
+        if (t.length < 2) { found.innerHTML = 'Leave blank to register a new organization.'; return; }
+        var hits = orgs.filter(function (o) { return (o.name || '').toLowerCase().indexOf(t) >= 0; }).slice(0, 6);
+        found.innerHTML = hits.length ? 'Is it one of these? ' + hits.map(function (o) {
+          return '<a href="#" data-pick="' + esc(o.id) + '">' + esc(o.name) + '</a>';
+        }).join(' · ') + ' — or keep typing to register a new one.' : 'No match — this will register a new organization.';
+      };
+      found.onclick = function (e) {
+        var a = e.target.closest('[data-pick],[data-new]'); if (!a) return; e.preventDefault();
+        if (a.hasAttribute('data-new')) { setVal(f, 'org_id', ''); find.value = ''; found.textContent = 'Registering a new organization.'; return; }
+        var o = orgs.find(function (x) { return x.id === a.dataset.pick; });
+        setVal(f, 'org_id', o.id); find.value = o.name;
+        found.innerHTML = 'Claiming <b>' + esc(o.name) + '</b>. <a href="#" data-new>Not us — register a new organization</a>';
+      };
+      f.onsubmit = async function (e) {
+        e.preventDefault();
+        var answers = {}, m = document.getElementById('og-amsg');
+        form.sections.forEach(function (s) { s.questions.forEach(function (q) {
+          var n = 'a_' + q.key;
+          if (q.kind === 'checkbox') answers[q.key] = !!f.querySelector('[name="' + n + '"]').checked;
+          else if (q.kind === 'multiselect') answers[q.key] = Array.prototype.filter.call(
+            f.querySelectorAll('[name="' + n + '"]'), function (x) { return x.checked; }).map(function (x) { return x.value; });
+          else if (q.kind === 'number') { var v = f.querySelector('[name="' + n + '"]').value; answers[q.key] = v ? Number(v) : null; }
+          else answers[q.key] = f.querySelector('[name="' + n + '"]').value.trim();
+        }); });
+        try {
+          var d = await api('/org/apply', { method: 'POST', json: { org_id: val(f, 'org_id') || null, answers: answers,
+            email: val(f, 'email'), handle: val(f, 'handle'), password: val(f, 'password') } });
+          main.innerHTML = '<section class="og-card"><div class="og-kicker">Application received</div>' +
+            '<h1 class="og-h1">Thank you.</h1><p class="og-muted">Earthbux staff review every application by hand. ' +
+            'When it is approved you can sign in here with <b>' + esc(val(f, 'handle')) + '</b>. ' +
+            'Your public page: <a href="/o/' + esc(d.org_id) + '">/o/' + esc(d.org_id) + '</a></p></section>';
+          window.scrollTo(0, 0);
+        } catch (err) { msg(m, err.message); }
+      };
+    }
+
+    // ── shared: answering a benefactor's post ───────────────────────────────
+    function answerBox(p) {
+      return '<details style="margin-top:6px"><summary class="og-meta" style="cursor:pointer">Answer as ' + esc(S.me.org.name) + '</summary>' +
+        '<textarea class="og-text" data-answer-body="' + esc(p.id) + '"></textarea>' +
+        '<button class="og-btn og-btn--sm" type="button" data-answer="' + esc(p.id) + '">Post answer</button>' +
+        '<span class="og-msg" data-answer-msg="' + esc(p.id) + '"></span></details>';
+    }
+    async function onAnswerClick(e) {
+      var b = e.target.closest('[data-answer]'); if (!b) return false;
+      var id = b.dataset.answer, ta = main.querySelector('[data-answer-body="' + id + '"]'),
+          m = main.querySelector('[data-answer-msg="' + id + '"]');
+      try {
+        await api('/org/posts', { method: 'POST', json: { kind: 'answer', parent_id: id, body: ta.value } });
+        msg(m, 'Answered — it shows on your campaign page.', true); ta.value = '';
+      } catch (err) { msg(m, err.message); }
+      return true;
+    }
+
+    // ── Home ────────────────────────────────────────────────────────────────
+    function campaignCard(c) {
+      var st = c.standing;
+      return '<li class="og-item"><div class="og-row" style="justify-content:space-between">' +
+        '<h4>' + missionName(c) + '</h4>' + statusPill(c.status) + '</div>' +
+        '<div class="og-meta">' + esc(stageOf(c)) + (c.days_left != null ? ' · ' + c.days_left + ' days left' : '') + '</div>' +
+        (st ? '<div style="margin-top:8px"><span class="og-stat"><b>' + (st.rank ? '#' + st.rank : '—') + '</b><span>of ' + st.of + '</span></span>' +
+          '<span class="og-stat"><b>' + esc(st.net_votes) + '</b><span>votes</span></span>' +
+          '<span class="og-stat"><b>' + EBXPage.num1(st.ebx) + '</b><span>tokens behind you</span></span></div>' : '') +
+        '<div class="og-row" style="margin-top:8px"><a class="og-btn og-btn--sm" href="#c/' + esc(c.id) + '">Campaign tab</a>' +
+        '<a class="og-btn og-btn--sm og-btn--ghost" href="' + esc(c.campaign_href) + '">Public campaign page</a>' +
+        '<a class="og-btn og-btn--sm og-btn--ghost" href="' + esc(c.href) + '">Mission page</a></div></li>';
+    }
+    function viewHome() {
+      var h = S.home;
+      main.innerHTML =
+        '<div class="og-kicker">Home</div><h1 class="og-h1">' + esc(h.org.name) + '</h1>' +
+        '<div class="og-grid"><div>' +
+        '<section class="og-card"><h2 class="og-h2">Your campaigns</h2>' +
+        list(h.campaigns, campaignCard, 'No campaigns yet — find a mission to run for in Initiatives.') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">What benefactors are saying about you</h2>' +
+        list(h.about_you, function (p) { return postRow(p, answerBox(p)); }, 'Nothing yet.') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">New on your campaigns</h2>' +
+        list(h.activity, function (p) { return postRow(p, answerBox(p)); }, 'Nothing new.') + '</section>' +
+        '</div><aside><section class="og-card"><h2 class="og-h2">From Earthbux</h2>' +
+        list(h.earthbux, function (p) { return postRow(p); }, 'No updates yet.') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">How it works for you</h2><p class="og-muted">' +
+        'Benefactors elect an initiative, then an organization to run it. You cannot vote — you campaign: ' +
+        'a short promise, answers to questions, and (once you win) a plan and progress reports. ' +
+        'Earthbux News reports alongside you.</p></section></aside></div>';
+      main.onclick = onAnswerClick;
+    }
+
+    // ── Initiatives (mission steps 2–3) ─────────────────────────────────────
+    function runBox(mid) {
+      return '<details style="margin-top:6px"><summary class="og-btn og-btn--sm" style="display:inline-block">Run for this</summary>' +
+        '<label class="og-lab">What you promise to do with this mission (benefactors vote on this)</label>' +
+        '<textarea class="og-text" data-run-body="' + esc(mid) + '"></textarea>' +
+        '<button type="button" class="og-btn og-btn--sm" data-run="' + esc(mid) + '">Submit candidacy</button>' +
+        '<span class="og-msg" data-run-msg="' + esc(mid) + '"></span>' +
+        '<span class="og-help">Earthbux staff approve each candidacy before it is on the ballot.</span></details>';
+    }
+    async function viewInitiatives() {
+      main.innerHTML = '<p class="og-muted">Loading…</p>';
+      var d = await api('/org/initiatives');
+      main.innerHTML =
+        '<div class="og-kicker">Initiatives</div><h1 class="og-h1">Missions you could run</h1>' +
+        '<p class="og-muted">Step 2: benefactors elect an initiative. Step 3: they elect the organization that runs it. ' +
+        'Run for an open organization election, or suggest yourself for an initiative that has not been decided yet.</p>' +
+        '<section class="og-card"><h2 class="og-h2">Open organization elections</h2>' +
+        list(d.organization_elections, function (m) {
+          return '<li class="og-item"><div class="og-row" style="justify-content:space-between"><h4>' + missionName(m) + '</h4>' +
+            '<span class="og-meta">closes ' + when(m.closes_at) + ' · ' + m.days_left + ' days · <a href="' + esc(m.href) + '">mission page</a></span></div>' +
+            (m.you_suggested_winner ? '<p class="og-msg og-msg--ok">You suggested this initiative before it won — run for it now.</p>' : '') +
+            '<div class="og-meta" style="margin-top:4px">Candidates: ' + (m.candidates.length ? m.candidates.map(function (c) {
+              return '<a href="' + esc(c.campaign_href) + '">' + esc(c.name) + '</a> (' + esc(c.net_votes) + ')';
+            }).join(' · ') : 'none yet') + '</div>' +
+            (m.running ? '<p class="og-meta">You are running. <a href="#c/' + esc(m.id) + '">Open your campaign tab</a></p>' : runBox(m.id)) + '</li>';
+        }, 'No organization election is open right now.') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">Initiative elections</h2>' +
+        list(d.initiative_elections, function (m) {
+          return '<li class="og-item"><div class="og-row" style="justify-content:space-between"><h4>' + esc(m.cause) + ' ' + esc(m.cycle) + '</h4>' +
+            '<span class="og-meta">closes ' + when(m.closes_at) + ' · ' + m.days_left + ' days · <a href="' + esc(m.href) + '">mission page</a></span></div>' +
+            list(m.initiatives, function (t) {
+              return '<li class="og-row" style="justify-content:space-between;align-items:flex-start"><span>' + esc(t.title) + '</span>' +
+                (t.suggested_us ? '<span class="og-pill og-pill--won">suggested</span>' :
+                  '<details><summary class="og-meta" style="cursor:pointer">Suggest us</summary>' +
+                  '<textarea class="og-text" data-sug-body="' + esc(t.id) + '" placeholder="Why your organization should run this, in a few lines"></textarea>' +
+                  '<button type="button" class="og-btn og-btn--sm" data-sug="' + esc(t.id) + '">Suggest us</button>' +
+                  '<span class="og-msg" data-sug-msg="' + esc(t.id) + '"></span></details>') + '</li>';
+            }, 'No initiatives proposed yet.') + '</li>';
+        }, 'No initiative election is open right now.') + '</section>';
+      main.onclick = async function (e) {
+        var b = e.target.closest('[data-run],[data-sug]'); if (!b) return;
+        if (b.dataset.run) {
+          var mid = b.dataset.run, ta = main.querySelector('[data-run-body="' + mid + '"]'),
+              m = main.querySelector('[data-run-msg="' + mid + '"]');
+          try {
+            await api('/org/candidacies', { method: 'POST', json: { mission_id: mid, mission_statement: ta.value } });
+            S.home = await api('/org/home'); location.hash = '#c/' + mid;
+          } catch (err) { msg(m, err.message); }
+        } else {
+          var tid = b.dataset.sug, ta2 = main.querySelector('[data-sug-body="' + tid + '"]'),
+              m2 = main.querySelector('[data-sug-msg="' + tid + '"]');
+          try {
+            await api('/org/posts', { method: 'POST', json: { kind: 'suggestion', tiv_id: tid, body: ta2.value } });
+            msg(m2, 'Suggested — benefactors see it on the initiative.', true); b.disabled = true;
+          } catch (err) { msg(m2, err.message); }
+        }
+      };
+    }
+
+    // ── Profile ─────────────────────────────────────────────────────────────
+    async function viewProfile() {
+      var o = S.me.org, admin = S.me.account.role === 'admin';
+      var pub = await api('/organizations/' + encodeURIComponent(o.id) + '/public');
+      var members = await api('/org/members');
+      main.innerHTML =
+        '<div class="og-kicker">Profile</div><h1 class="og-h1">' + esc(o.name) + '</h1>' +
+        '<p class="og-muted">What benefactors see: <a href="/o/' + esc(o.id) + '">/o/' + esc(o.id) + '</a> · ' +
+        (o.verified ? '<span class="og-pill og-pill--won">verified</span>' : '<span class="og-pill">not verified</span>') + '</p>' +
+        '<div class="og-grid"><div>' +
+        '<form class="og-card" id="og-prof"><h2 class="og-h2">Outward-facing profile</h2>' +
+        '<label class="og-lab">Name</label><input class="og-in" name="name" value="' + esc(o.name) + '">' +
+        '<label class="og-lab">Description</label><textarea class="og-text" name="description">' + esc(o.description || '') + '</textarea>' +
+        '<label class="og-lab">Website</label><input class="og-in" name="website_link" value="' + esc(o.website_link || '') + '">' +
+        '<label class="og-lab">Logo URL</label><input class="og-in" name="logo_url" value="' + esc(o.logo_url || '') + '">' +
+        '<label class="og-lab">Year founded</label><input class="og-in" name="founded_year" type="number" value="' + esc(o.founded_year || '') + '">' +
+        '<div class="og-row" style="margin-top:12px"><button class="og-btn">Save profile</button></div><div class="og-msg" id="og-pmsg"></div></form>' +
+        '<form class="og-card" id="og-upd"><h2 class="og-h2">Post an update</h2>' +
+        '<p class="og-muted">General content — it shows on your profile and in benefactors\' feeds.</p>' +
+        '<label class="og-lab">Title</label><input class="og-in" name="title">' +
+        '<label class="og-lab">Update</label><textarea class="og-text" name="body"></textarea>' +
+        '<div class="og-row" style="margin-top:12px"><button class="og-btn">Post</button></div><div class="og-msg" id="og-umsg"></div></form>' +
+        '<section class="og-card"><h2 class="og-h2">Your updates</h2>' + list(pub.updates, function (p) { return postRow(p); }, 'No updates yet.') + '</section>' +
+        '</div><aside>' +
+        '<section class="og-card"><h2 class="og-h2">Campaign tabs</h2>' + list(S.home.campaigns, function (c) {
+          return '<li class="og-row" style="justify-content:space-between"><a href="#c/' + esc(c.id) + '">' + missionName(c) + '</a>' + statusPill(c.status) + '</li>';
+        }, 'Run for a mission from Initiatives and its tab appears here.') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">Members</h2>' + list(members, function (a) {
+          return '<li class="og-item"><b>' + esc(a.display_name || a.handle) + '</b> <span class="og-meta">@' + esc(a.handle) + ' · ' + esc(a.role) +
+            (a.position ? ' · ' + esc(a.position) : '') + (a.is_active ? '' : ' · pending') + '</span></li>';
+        }, 'No members.') +
+        (admin ? '<form id="og-mem" class="og-section"><h3 class="og-h2" style="font-size:1rem">Create a login</h3>' +
+          '<input class="og-in" name="display_name" placeholder="Name"><input class="og-in" name="position" placeholder="Position" style="margin-top:6px">' +
+          '<input class="og-in" name="email" type="email" placeholder="Work email" style="margin-top:6px">' +
+          '<input class="og-in" name="handle" placeholder="Handle" style="margin-top:6px">' +
+          '<input class="og-in" name="password" type="password" placeholder="Temporary password (8+)" style="margin-top:6px">' +
+          '<select class="og-sel" name="role" style="margin-top:6px"><option value="member">member</option><option value="admin">admin</option></select>' +
+          '<button class="og-btn og-btn--sm" style="margin-top:8px">Create login</button><div class="og-msg" id="og-mmsg"></div></form>'
+          : '<p class="og-help">Only an administrator creates logins.</p>') + '</section></aside></div>';
+      document.getElementById('og-prof').onsubmit = async function (e) {
+        e.preventDefault(); var f = e.target, m = document.getElementById('og-pmsg');
+        try {
+          var d = await api('/org/profile', { method: 'PUT', json: { name: val(f, 'name'),
+            description: val(f, 'description'), website_link: val(f, 'website_link'), logo_url: val(f, 'logo_url'),
+            founded_year: val(f, 'founded_year') ? Number(val(f, 'founded_year')) : null } });
+          S.me.org = d; msg(m, 'Saved.', true); drawNav(route());
+        } catch (err) { msg(m, err.message); }
+      };
+      document.getElementById('og-upd').onsubmit = async function (e) {
+        e.preventDefault(); var f = e.target, m = document.getElementById('og-umsg');
+        try { await api('/org/posts', { method: 'POST', json: { kind: 'update', title: val(f, 'title'), body: val(f, 'body') } }); viewProfile(); }
+        catch (err) { msg(m, err.message); }
+      };
+      var mem = document.getElementById('og-mem');
+      if (mem) mem.onsubmit = async function (e) {
+        e.preventDefault(); var f = e.target, m = document.getElementById('og-mmsg');
+        try {
+          await api('/org/members', { method: 'POST', json: { display_name: val(f, 'display_name') || null,
+            position: val(f, 'position') || null, email: val(f, 'email'), handle: val(f, 'handle'),
+            password: val(f, 'password'), role: val(f, 'role') } });
+          viewProfile();
+        } catch (err) { msg(m, err.message); }
+      };
+    }
+
+    // ── a campaign tab ──────────────────────────────────────────────────────
+    async function viewCampaign(mid) {
+      main.innerHTML = '<p class="og-muted">Loading…</p>';
+      var d;
+      try { d = await api('/organizations/' + encodeURIComponent(S.me.org.id) + '/campaigns/' + encodeURIComponent(mid)); }
+      catch (err) { main.innerHTML = '<p class="og-msg og-msg--err">' + esc(err.message) + '</p>'; return; }
+      var m = d.mission, sl = d.slate;
+      main.innerHTML =
+        '<div class="og-kicker">Campaign tab</div><h1 class="og-h1">' + missionName(m) + '</h1>' +
+        '<div class="og-row">' + statusPill(d.status) + '<span class="og-meta">' + esc(stageWord(m.stage)) +
+        (m.days_left != null ? ' · ' + m.days_left + ' days left' : '') + '</span>' +
+        '<a href="/o/' + esc(d.org.id) + '/' + esc(m.id) + '">Public campaign page &rarr;</a>' +
+        '<a href="' + esc(m.href) + '">Mission page &rarr;</a></div>' +
+        '<div class="og-grid" style="margin-top:16px"><div>' +
+        '<form class="og-card" id="og-prom"><h2 class="og-h2">What you are promising</h2>' +
+        '<p class="og-muted">Your mission statement for <i>this</i> mission — not your boilerplate. Benefactors vote on it.</p>' +
+        '<textarea class="og-text" name="s">' + esc(d.promise || '') + '</textarea>' +
+        '<button class="og-btn og-btn--sm" style="margin-top:8px">Save promise</button><div class="og-msg" id="og-prmsg"></div></form>' +
+        '<form class="og-card" id="og-plan"><h2 class="og-h2">The plan</h2>' +
+        '<p class="og-muted">Budget, timeline, milestones. Optional during the election — expected once you win.</p>' +
+        list(d.plan.org_plan, function (p) { return postRow(p); }, 'No plan posted yet.') +
+        '<label class="og-lab">Title</label><input class="og-in" name="title" placeholder="e.g. Plan v1 — first 8 weeks">' +
+        '<label class="og-lab">Plan</label><textarea class="og-text" name="body"></textarea>' +
+        '<button class="og-btn og-btn--sm" style="margin-top:8px">Publish plan</button><div class="og-msg" id="og-plmsg"></div></form>' +
+        '<section class="og-card"><h2 class="og-h2">Q&amp;A — what benefactors want from you</h2>' +
+        list(d.qa, function (p) {
+          var ans = (p.org_answers || []).map(function (a) {
+            return '<div class="og-answer"><span class="og-meta">Your answer · ' + when(a.created_at) + '</span>' + esc(a.body) + '</div>';
+          }).join('');
+          return postRow(p, ans + answerBox(p));
+        }, 'No questions yet.') + '</section></div>' +
+        '<aside><section class="og-card"><h2 class="og-h2">Live ballot</h2>' +
+        (sl.open ? '<span class="og-stat"><b>' + (sl.rank ? '#' + sl.rank : '—') + '</b><span>of ' + sl.of + '</span></span>' +
+          '<span class="og-stat"><b>' + esc(sl.net_votes) + '</b><span>votes</span></span>' +
+          '<span class="og-stat"><b>' + esc(sl.voter_count) + '</b><span>backers</span></span>' +
+          '<p class="og-meta">' + EBXPage.num1(sl.ebx) + ' tokens behind you of ' + EBXPage.num1(sl.pool_ebx) +
+          ' in the race · closes ' + when(sl.closes_at) + '</p>'
+          : '<p class="og-muted">' + (d.status === 'won' ? 'You won this election.' : 'The organization election is not open.') + '</p>') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">Benefactors\' budget items</h2><p class="og-muted">What benefactors want the money spent on.</p>' +
+        list(d.plan.budget_items, function (p) {
+          return '<li class="og-item"><h4>' + esc(p.title || p.type) + '</h4><div class="og-meta">$' + EBXPage.num0(p.est_cost_usd) +
+            ' · ' + esc(p.est_setup_days || 0) + ' days · &#9650; ' + esc(p.helpful_count || 0) + '</div></li>';
+        }, m.initiative ? 'None yet.' : 'Budget items arrive once an initiative is elected.') +
+        (d.plan.budget_total_usd ? '<p class="og-meta">Total suggested: $' + EBXPage.num0(d.plan.budget_total_usd) + '</p>' : '') + '</section>' +
+        '<section class="og-card"><h2 class="og-h2">Receipts</h2><span class="og-stat"><b>' + d.receipts.missions_won +
+        '</b><span>missions won</span></span><span class="og-stat"><b>' + d.receipts.missions_completed + '</b><span>completed</span></span>' +
+        (d.receipts.first_receipt ? '<p class="og-muted">' + esc(d.receipts.first_receipt) + '</p>' : '') + '</section></aside></div>';
+      document.getElementById('og-prom').onsubmit = async function (e) {
+        e.preventDefault(); var mm = document.getElementById('og-prmsg');
+        try { await api('/org/campaigns/' + encodeURIComponent(mid), { method: 'PUT', json: { mission_statement: val(e.target, 's') } }); msg(mm, 'Saved.', true); }
+        catch (err) { msg(mm, err.message); }
+      };
+      document.getElementById('og-plan').onsubmit = async function (e) {
+        e.preventDefault(); var f = e.target, mm = document.getElementById('og-plmsg');
+        try { await api('/org/posts', { method: 'POST', json: { kind: 'plan', mission_id: mid, title: val(f, 'title'), body: val(f, 'body') } }); viewCampaign(mid); }
+        catch (err) { msg(mm, err.message); }
+      };
+      main.onclick = onAnswerClick;
+    }
+
+    // ── boot ────────────────────────────────────────────────────────────────
+    async function render() {
+      var r = route();
+      drawNav(r);
+      main.onclick = null;
+      try {
+        if (!S.me) return r.view === 'apply' ? await viewApply(r) : viewSignIn();
+        if (r.view === 'initiatives') return await viewInitiatives();
+        if (r.view === 'profile') return await viewProfile();
+        if (r.view === 'c' && r.arg) return await viewCampaign(r.arg);
+        return viewHome();
+      } catch (err) {
+        if (err.status === 401) { setTok(null); S.me = null; return render(); }
+        main.innerHTML = '<p class="og-msg og-msg--err">' + esc(err.message) + '</p>';
+      }
+    }
+    async function boot() {
+      if (tok()) {
+        try { S.me = await api('/org/me'); S.home = await api('/org/home'); }
+        catch (e) { setTok(null); S.me = S.home = null; }
+      }
+      render();
+    }
+    window.addEventListener('hashchange', async function () {
+      if (S.me && (route().view === 'home' || !route().view)) { try { S.home = await api('/org/home'); } catch (e) {} }
+      render();
+    });
+    boot();
+  })();
+  </script>
+</body>
+</html>

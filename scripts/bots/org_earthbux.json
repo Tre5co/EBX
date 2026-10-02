@@ -1,0 +1,67 @@
+{
+  "_about": "The Earthbux bot organization (P2b, 2026-10-02). Run: python scripts/bots/ebx_bots.py --base <site> org --content scripts/bots/org_earthbux.json --staff-handle GameMaster. It claims the existing 'earthbux' organization (registers it if the site has none), is approved by the staff account, then writes the profile, one update, a promise and a plan for every campaign it has, and answers the questions listed under 'answers' (or every unanswered one with 'default_answer', if set). Its login is a TEST account (is_test) when EBX_BOT_KEY is given. The password is generated into bots.local.json under the handle.",
+  "org_id": "earthbux",
+  "handle": "EarthbuxOrg",
+  "email": "org@bots.earthbux.net",
+  "answers": {
+    "legal_name": "Earthbux",
+    "public_name": "Earthbux",
+    "legal_form": "Not sure",
+    "country": "United States (nonprofit status pending)",
+    "registration_number": "",
+    "founded_year": 2026,
+    "website": "https://earthbux.net",
+    "public_contact": "jax@earthbux.net",
+    "one_line": "A weekly charity pool elected by its community, with Earthbux News supervising, publicizing and helping organize every mission.",
+    "causes": ["Atmosphere", "Oceans", "Land", "Forests", "Wildlife", "Human Rights", "Human Progress"],
+    "regions": "Online, worldwide; missions wherever benefactors elect them",
+    "budget_band": "Under $50k",
+    "staff_band": "None (volunteer-run)",
+    "full_name": "Earthbux (bot account)",
+    "position": "Organization account — automated test",
+    "proof_of_role": "This is the platform's own test organization account, driven by scripts/bots/ebx_bots.py and approved by the staff account.",
+    "authority": "Yes",
+    "authority_name": "",
+    "brought_by": "Earthbux won the organization elections for Oceans 0, Forests 0 and Human Rights 0.",
+    "pitch": "When benefactors elect Earthbux to run a mission, we do not keep the money for ourselves: Earthbux News investigates the problem, finds and vets the organizations already working on it, publishes what it finds, and deploys the pool to them in the order the budget sets — reporting every step on the mission page.",
+    "receipt": "None yet — Earthbux is new, and the missions above are our first. Every number we report will come from them.",
+    "reporting_today": "Everything is on the platform: the ledger, the mission pages, and Earthbux News.",
+    "conflicts": "Yes — explained below",
+    "legal_issues": "No",
+    "partisan": "No",
+    "integrity_notes": "Earthbux runs the platform. That is a conflict by definition: a mission Earthbux wins is supervised by Earthbux News, so its reports should be read with that in mind, and benefactor posts on those missions carry extra weight.",
+    "will_answer": true,
+    "will_report": true,
+    "accept_coverage": true,
+    "accept_vetting": true,
+    "attest": true
+  },
+  "profile": {
+    "description": "Earthbux is a weekly charity pool elected by its community. Earthbux News, its media agency, uses a share of the donations to supervise, publicize and help organize the missions. When benefactors elect Earthbux itself to run a mission, Earthbux News investigates the problem and deploys the pool to the vetted organizations already doing the work.",
+    "website_link": "https://earthbux.net",
+    "founded_year": 2026
+  },
+  "update": {
+    "title": "Earthbux has an organization account",
+    "body": "This is Earthbux's own organization page. Benefactors elected Earthbux to run three missions (Oceans 0, Forests 0 and Human Rights 0). For each one we will publish a promise, a plan, and progress reports here, and answer your questions on each campaign page. Earthbux runs the platform, so read our reports on our own missions with that in mind, and ask hard questions."
+  },
+  "campaigns": {
+    "oce0": {
+      "promise": "Garbage Patch Analysis: Earthbux News will commission and publish an independent analysis of the North Pacific garbage patch: what it is made of, where it comes from, and which interventions actually reduce it. The pool funds that research and the organizations it identifies as most effective, in budget order.",
+      "plan": {"title": "Plan v1 — Garbage Patch Analysis", "body": "1. Background review: publish what is already known, with sources.\n2. Shortlist the research groups and cleanup organizations working on the patch; contact each.\n3. Benefactors' budget items set the order of spending.\n4. Fund the analysis; publish it in full.\n5. Deploy the remainder to the organizations the analysis supports, with a report for each payment."}
+    },
+    "for0": {
+      "promise": "Preserve Historic Trees: Earthbux will identify historic and heritage trees at risk, find the local arborists, land trusts and municipalities protecting them, and fund protection work — surveys, care, and legal protection — reporting each tree by name and place.",
+      "plan": {"title": "Plan v1 — Preserve Historic Trees", "body": "1. Ask benefactors to nominate trees (post on the mission with a location and photo).\n2. Earthbux News verifies each nomination and its threat.\n3. Contact the local body responsible for each tree.\n4. Fund care and protection in the order the budget sets.\n5. Report every tree funded, with before and after."}
+    },
+    "hmr0": {
+      "promise": "Improve healthcare: Earthbux will narrow this to one measurable problem chosen with benefactors in the first weeks of framing, then fund the organizations already delivering care for it, and report outcomes per dollar.",
+      "plan": {"title": "Plan v1 — Improve healthcare", "body": "1. Framing: benefactors post the specific problems they want solved; we publish a shortlist.\n2. Pick one problem by a benefactor vote on the shortlist.\n3. Vet the organizations delivering care for it.\n4. Fund them in budget order.\n5. Publish outcomes per dollar for each grant."}
+    },
+    "*": {
+      "promise": "Earthbux will investigate this initiative, publish what it finds, and deploy the pool to the vetted organizations already doing the work, in the order the budget sets — reporting every payment."
+    }
+  },
+  "answers_by_post": {},
+  "default_answer": ""
+}

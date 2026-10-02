@@ -509,6 +509,11 @@ class PostRead(PostBase):
     # Posting pass (2026-10-01): did the author vote in the initiative election
     # of the mission the post belongs to? None when it belongs to none.
     author_in_me: Optional[bool] = None
+    # Posting edits (2026-10-02): who it comes from — earthbux · charity ·
+    # individual (Home's toggles) — and the targeted mission's next decision,
+    # {label, date}, for the card's top bar.
+    source: Optional[str] = None
+    next_decision: Optional[dict] = None
 
 
 class PostDetail(PostRead):

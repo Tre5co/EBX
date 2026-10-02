@@ -65,6 +65,26 @@ def budget_day(m: models.Mission) -> datetime:
 
 _CLOSE = {"me_close": me_close, "oe_close": oe_close, "budget_day": budget_day}
 
+# Posting edits (2026-10-02): the card's top bar names the targeted mission's
+# NEXT decision — "Target <next decision>: date".
+SOURCE_OF = {"earthbux": "earthbux", "org": "charity", "ben": "individual"}
+SOURCES = ("earthbux", "charity", "individual")
+AUTHOR_TYPES_OF = {v: k for k, v in SOURCE_OF.items()}
+
+
+def next_decision(m: Optional[models.Mission], now: Optional[datetime] = None) -> Optional[dict]:
+    """The next thing benefactors decide for mission `m`, and when."""
+    if m is None:
+        return None
+    now = now or datetime.utcnow()
+    steps = [("Initiative election", me_close(m), not m.winning_tiv_id),
+             ("Organization election", oe_close(m), not m.winning_org_id),
+             ("Budget day", budget_day(m), m.current_phase not in ("resolution",))]
+    for label, when, pending in steps:
+        if pending and when >= now - WEEK:     # a close a few days stale still reads as next
+            return {"label": label, "date": when.isoformat()}
+    return None
+
 
 def pin_time(post_type: Optional[str], m: models.Mission) -> Optional[datetime]:
     """When `m` fixes the version of a post of this type, or None."""
@@ -796,9 +816,17 @@ def serialize(db: Session, posts: list[models.Post], mission_ctx: Optional[str] 
         voted = set(db.execute(select(models.VoteP1.ben_id, models.VoteP1.mission_id).where(
             models.VoteP1.ben_id.in_({a for a, _ in pairs}),
             models.VoteP1.mission_id.in_({m for _, m in pairs}))).all())
+    mission_rows = {m.id: m for m in db.scalars(select(models.Mission).where(
+        models.Mission.id.in_({p.mission_id for p in posts if p.mission_id} or {""}))).all()}
+    now = datetime.utcnow()
     out = []
     for p in posts:
         d = {c.key: getattr(p, c.key) for c in models.Post.__table__.columns}
+        m = mission_rows.get(p.mission_id) if p.mission_id else None
+        d["source"] = SOURCE_OF.get(p.author_type, "individual")
+        d["next_decision"] = next_decision(m, now)
+        if not d.get("cause_id") and m is not None:
+            d["cause_id"] = m.cause_id
         d["author_name"] = ("Earthbux News" if p.author_type == "earthbux" else
                             org_names.get(p.org_author_id) or p.org_author_id if p.author_type == "org" else
                             handles.get(p.ben_author_id) or (f"Benefactor #{p.ben_author_id}" if p.ben_author_id else "Benefactor"))

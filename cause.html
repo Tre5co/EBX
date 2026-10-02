@@ -1274,14 +1274,14 @@
       background: var(--cause-color); color: #10161a; font-weight: 600;
     }
     .fd-filters { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-    .fd-chip {
+    .fd-chip, .fd-src {
       font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.04em;
       padding: 4px 9px; border-radius: 999px; cursor: pointer;
       background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
       color: rgba(245,240,232,0.72);
     }
-    .fd-chip:hover { color: var(--clr-parchment); }
-    .fd-chip--on { border-color: var(--cause-color); color: var(--cause-color); background: color-mix(in srgb, var(--cause-color) 14%, transparent); }
+    .fd-chip:hover, .fd-src:hover { color: var(--clr-parchment); }
+    .fd-chip--on, .fd-src--on { border-color: var(--cause-color); color: var(--cause-color); background: color-mix(in srgb, var(--cause-color) 14%, transparent); }
     .fd-list { display: flex; flex-direction: column; gap: 10px; }
     .fd-empty { font-family: var(--font-mono); font-size: 0.72rem; opacity: 0.6; padding: var(--sp-lg) 0; text-align: center; }
     .fd-card {
@@ -1290,7 +1290,7 @@
       border-radius: var(--radius-sm); padding: 12px 14px;
     }
     .fd-card--red { border-color: rgba(200,80,70,0.45); }
-    .fd-card--handed { border-color: var(--clr-honey, #e8a84c); box-shadow: 0 0 0 1px var(--clr-honey, #e8a84c); } /* P2: the thread Home opened */
+    .fd-card--handed, article.ep--card.fd-card--handed { border-color: var(--clr-honey, #e8a84c); box-shadow: 0 0 0 1px var(--clr-honey, #e8a84c); } /* P2: the thread Home opened */
     .fd-card__main { min-width: 0; }
     .fd-card__meta {
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
@@ -1479,7 +1479,7 @@
   <!-- §2 (2026-08-05): the Propose and Nominate dialogs come from EBX.Dialogs
        (resources/js/ebx_shared.js) — the same ones the Context page mounts. -->
 
-  <script src="resources/js/ebx_shared.js?v=20261001b"></script>
+  <script src="resources/js/ebx_shared.js?v=20261002b"></script>
   <!-- §7b (2026-08-10) — see the identical note on main.html. `missionDates`
        lives in a separately cached file; a stale copy threw
        "EBX.Cycle.missionDates is not a function" and blanked the page. The
@@ -3155,7 +3155,9 @@
     const PAGE = 15;
 
     const st = { sort: 'hot', q: '', cat: '', cause: '', limit: PAGE, posts: [], cause_obj: null,
-                 open: {}, replies: {}, msg: {} };
+                 open: {}, replies: {}, msg: {},
+                 // posting edits (2026-10-02): who it is from, and the card's "see more like this"
+                 source: '', tiv: '', author: '' };
 
     const esc = s => String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -3197,6 +3199,9 @@
 
     async function load() {
       const qs = new URLSearchParams({ sort: st.sort, roots_only: 'true', limit: '120' });
+      if (st.source) qs.set('source', st.source);
+      if (st.tiv) qs.set('tiv_id', st.tiv);
+      if (st.author) qs.set('ben_author_id', st.author);
       let posts = [];
       try {
         const r = await fetch((EBX.config.apiBase || '') + '/posts?' + qs.toString());
@@ -3218,6 +3223,9 @@
       if (cat && CATS.some(c => c[0] === cat)) st.cat = cat;
       if (P.get('cause') && !P.get('id')) st.cause = P.get('cause');
       st.thread = P.get('thread') || '';
+      st.source = P.get('source') || '';
+      st.tiv = P.get('initiative') || '';
+      st.author = P.get('author') || '';
       const s = $('fd-search');
       if (s && st.q) s.value = st.q;
     }
@@ -3243,9 +3251,10 @@
       // Clear anything that would hide it, and page far enough to show it.
       if (visible().findIndex(p => p.id === id) < 0) { st.q = ''; st.cat = ''; st.cause = ''; }
       st.limit = Math.max(st.limit, visible().findIndex(p => p.id === id) + 1);
-      await toggleReplies(id);
-      const el = document.querySelector('.fd-card[data-id="' + id.replace(/"/g, '') + '"]');
-      if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('fd-card--handed'); }
+      paint();
+      // posting edits (2026-10-02): the handed post opens expanded, in place
+      const el = document.querySelector('article.ep--card[data-post="' + id.replace(/"/g, '') + '"]');
+      if (el) { EBX.Post.expand(el, true); el.scrollIntoView({ block: 'center' }); el.classList.add('fd-card--handed'); }
     }
 
     function visible() {
@@ -3258,7 +3267,13 @@
       });
     }
 
+    // posting edits (2026-10-02): "The posts are going to look the same
+    // whether you're on news or home" — News draws the shared card.
     function card(p) {
+      if (window.EBX && EBX.Post && EBX.Post.collapsed) return EBX.Post.collapsed(p, { chars: 600 });
+      return oldCard(p);
+    }
+    function oldCard(p) {
       const mid = p.mission_id;
       const mname = missionName(mid);
       const cname = causeName(p.cause_id);
@@ -3321,7 +3336,12 @@
           ? '<button class="fd-chip' + (st.cause ? ' fd-chip--on' : '') + '" type="button" data-cause="' +
             esc(cid) + '">Only ' + esc(cobj.name || cid) + '</button>'
           : '';
-        f.innerHTML = chips + causeChip;
+        const SRC = [['', 'Everyone'], ['earthbux', 'Earthbux'], ['charity', 'Charities'], ['individual', 'Individuals']];
+        const srcChips = SRC.map(([v, lab]) => '<button class="fd-src' + (st.source === v ? ' fd-src--on' : '') +
+          '" type="button" data-src="' + v + '">' + lab + '</button>').join('');
+        const like = (st.tiv ? '<button class="fd-src fd-src--on" type="button" data-clear="tiv" title="Clear">About this initiative &times;</button>' : '') +
+          (st.author ? '<button class="fd-src fd-src--on" type="button" data-clear="author" title="Clear">From this author &times;</button>' : '');
+        f.innerHTML = srcChips + '<span style="width:12px;display:inline-block"></span>' + chips + causeChip + like;
       }
       const list = $('fd-list');
       if (!list) return;
@@ -3331,6 +3351,7 @@
         : '<div class="fd-empty">' + (st.posts.length ? 'Nothing matches those filters.' : 'No posts yet.') + '</div>';
       const more = $('fd-more');
       if (more) more.style.display = rows.length > st.limit ? '' : 'none';
+      if (window.EBX && EBX.Post && EBX.Post.bindVotes) EBX.Post.bindVotes(list);
     }
 
     async function toggleReplies(id) {
@@ -3391,8 +3412,10 @@
       const more = $('fd-more');
       if (more) more.onclick = () => { st.limit += PAGE; paint(); };
       document.addEventListener('click', ev => {
-        const t = ev.target.closest ? ev.target.closest('[data-cat],[data-cause],[data-react],[data-toggle],[data-send],[data-full]') : null;
+        const t = ev.target.closest ? ev.target.closest('[data-src],[data-clear],[data-cat],[data-cause],[data-react],[data-toggle],[data-send],[data-full]') : null;
         if (!t) return;
+        if (t.dataset.src !== undefined) { st.source = t.dataset.src; st.limit = PAGE; return load(); }
+        if (t.dataset.clear) { st[t.dataset.clear] = ''; st.limit = PAGE; return load(); }
         if (t.dataset.full) return EBX.Post.open(t.dataset.full, { onChange: () => load() });
         if (t.dataset.cat !== undefined) { st.cat = t.dataset.cat; st.limit = PAGE; return paint(); }
         if (t.dataset.cause !== undefined) { st.cause = st.cause ? '' : t.dataset.cause; st.limit = PAGE; return paint(); }

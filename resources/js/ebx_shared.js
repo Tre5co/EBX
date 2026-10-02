@@ -2422,7 +2422,9 @@
     const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
       (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
     const TYPE = { general: "Post", context: "Background", investigation: "Investigation", analysis: "Analysis",
-      service: "Service", supply: "Supply", support: "Support" };
+      service: "Service", supply: "Supply", support: "Support",
+      // P2b — organization posts (org_config.ORG_POST_KINDS)
+      update: "Organization update", plan: "Campaign plan", answer: "Organization answer", suggestion: "Suggests itself" };
     const CAT_WORD = { editorial: "News", headline: "News", mission_update: "Mission update",
       org_update: "Organization update", testimonial: "Testimonial", resolution: "Resolved" };
     const TARGET_WORD = { cause: "cause", initiative: "initiative", organization: "organization",
@@ -2473,25 +2475,51 @@
       .ep-prev { font-size:0.8rem; line-height:1.5; color:rgba(245,240,232,0.78); border-left:2px solid var(--clr-honey,#e8a84c); padding:4px 0 4px 10px; margin:6px 0; }
       .ep-prev a { color:var(--clr-honey,#e8a84c); text-decoration:none; }
       .ep-suggest { margin-top:8px; font-size:0.82rem; }
-      /* the post card (posting pass, 2026-10-01) — monochrome */
-      .ep--card { display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,190px); grid-template-areas:"main side" "votes disc";
-        gap:8px 18px; padding:14px 16px 10px; border-radius:12px; border:1px solid rgba(245,240,232,0.12); background:rgba(245,240,232,0.025); }
+      /* the post card — posting edits 2026-10-02. One card on every surface:
+         top bar (target · next decision · cause, the whole bar links to the
+         mission) / title · source · date · tag / image / contents …show more /
+         votes · comments · reply. Show more expands IN PLACE (LinkedIn). */
+      .ep--card { display:block; padding:0; border-radius:12px; border:1px solid rgba(245,240,232,0.12); background:rgba(245,240,232,0.025); overflow:hidden; }
       .ep--card:hover { border-color:rgba(245,240,232,0.28); }
-      .ep--card .ep__main { grid-area:main; min-width:0; }
+      .ep__bar { display:flex; gap:10px; align-items:baseline; padding:7px 14px; font-size:0.72rem; color:rgba(245,240,232,0.62);
+        background:rgba(245,240,232,0.04); border-bottom:1px solid rgba(245,240,232,0.08); text-decoration:none; }
+      a.ep__bar:hover { color:var(--clr-parchment,#f5f0e8); background:rgba(232,168,76,0.08); }
+      .ep__bar-t { font-weight:700; color:rgba(245,240,232,0.85); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      .ep__bar-d { flex:1; text-align:center; white-space:nowrap; }
+      .ep__bar-c { white-space:nowrap; font-family:var(--font-mono,monospace); font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; }
+      .ep__bar-c i { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+      .ep__in { padding:10px 14px 8px; }
+      .ep__head { display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline; }
       .ep--card .ep__title { font-family:var(--font-display,serif); font-weight:800; font-size:1.05rem; line-height:1.3; margin:0; color:var(--clr-parchment,#f5f0e8); }
-      .ep--card .ep__body { font-size:0.88rem; line-height:1.55; color:rgba(245,240,232,0.74); margin:6px 0 0; white-space:normal;
+      .ep__by { font-size:0.78rem; color:rgba(245,240,232,0.55); }
+      .ep__by a { color:var(--clr-parchment,#f5f0e8); font-weight:600; text-decoration:none; }
+      .ep__by a:hover { text-decoration:underline; }
+      .ep__head .ep__kind { margin-left:auto; font-family:var(--font-mono,monospace); font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase;
+        color:rgba(245,240,232,0.6); border:1px solid rgba(245,240,232,0.18); border-radius:999px; padding:1px 8px; }
+      .ep--card .ep__img { max-width:100%; max-height:340px; object-fit:cover; border-radius:10px; margin-top:8px; display:block; }
+      .ep--open .ep__img { max-height:none; object-fit:contain; }
+      .ep--card .ep__body { font-size:0.88rem; line-height:1.55; color:rgba(245,240,232,0.78); margin:6px 0 0; white-space:pre-wrap;
         display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
-      .ep--card .ep__target, .ep--card .ep__target a { color:rgba(245,240,232,0.6); }
-      .ep--card .ep__target a { text-decoration:underline; text-underline-offset:2px; }
-      .ep--card .ep__side { grid-area:side; display:flex; flex-direction:column; align-items:flex-end; text-align:right; gap:3px; min-width:0; }
-      .ep--card .ep__who { font-size:0.8rem; font-weight:600; color:var(--clr-parchment,#f5f0e8); }
-      .ep--card .ep__when { font-weight:400; color:rgba(245,240,232,0.5); }
-      .ep--card .ep__kind { font-family:var(--font-mono,monospace); font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(245,240,232,0.6); }
-      .ep--card .ep__cause { font-size:0.74rem; color:rgba(245,240,232,0.6); }
-      .ep__me { font-size:0.66rem; line-height:1.3; color:rgba(245,240,232,0.55); max-width:190px; }
+      .ep--open .ep__body { display:block; -webkit-line-clamp:unset; overflow:visible; }
+      .ep__more { font:inherit; font-size:0.8rem; background:none; border:0; padding:2px 0; margin-top:2px; cursor:pointer; color:var(--clr-honey,#e8a84c);
+        display:block; margin-left:auto; }
+      .ep__extra { margin-top:10px; border-top:1px solid rgba(245,240,232,0.1); padding-top:10px; font-size:0.84rem; }
+      .ep__extra[hidden] { display:none; }
+      .ep__xrow { margin:0 0 8px; color:rgba(245,240,232,0.75); }
+      .ep__xrow b { font-family:var(--font-mono,monospace); font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(245,240,232,0.5); margin-right:6px; font-weight:400; }
+      .ep__xrow a { color:var(--clr-honey,#e8a84c); }
+      .ep__xrow ul { margin:4px 0 0; padding-left:18px; line-height:1.6; }
+      .ep__like a { margin-right:12px; }
+      .ep__replies { display:flex; flex-direction:column; gap:6px; margin:6px 0; }
+      .ep__replybox { display:flex; gap:8px; margin-top:6px; }
+      .ep__replybox textarea { flex:1; font:inherit; font-size:0.84rem; color:inherit; background:rgba(0,0,0,0.25); border:1px solid rgba(245,240,232,0.16); border-radius:10px; padding:7px 10px; min-height:44px; }
+      .ep__foot2 { display:flex; align-items:center; gap:14px; padding:6px 14px 9px; font-size:0.8rem; color:rgba(245,240,232,0.7); }
+      .ep__foot2 .ep__votes { display:flex; align-items:center; gap:6px; }
+      .ep__fbtn { font:inherit; font-size:0.8rem; background:none; border:0; cursor:pointer; color:rgba(245,240,232,0.7); padding:2px 0; }
+      .ep__fbtn:hover { color:var(--clr-parchment,#f5f0e8); }
+      .ep__me { font-size:0.7rem; color:rgba(245,240,232,0.55); }
       .ep__me--yes { color:rgba(245,240,232,0.85); }
       .ep__src { font-size:0.7rem; color:rgba(245,240,232,0.6); }
-      .ep__votes { grid-area:votes; display:flex; align-items:center; gap:6px; font-size:0.8rem; color:rgba(245,240,232,0.75); }
       .ep__votes.busy { opacity:0.55; }
       .ep__v { font:inherit; font-size:0.72rem; line-height:1; cursor:pointer; width:28px; height:26px; border-radius:7px; background:none;
         color:rgba(245,240,232,0.6); border:1px solid rgba(245,240,232,0.18); }
@@ -2499,10 +2527,12 @@
       .ep__v.on { color:#0f1a14; background:var(--clr-parchment,#f5f0e8); border-color:var(--clr-parchment,#f5f0e8); }
       .ep__n { min-width:1.6em; text-align:center; font-weight:700; color:var(--clr-parchment,#f5f0e8); }
       .ep__r { margin-left:8px; color:rgba(245,240,232,0.5); }
-      .ep__disc { grid-area:disc; justify-self:end; align-self:center; font-size:0.82rem; font-weight:700; text-decoration:none; color:var(--clr-parchment,#f5f0e8); }
-      .ep__disc:hover { text-decoration:underline; }
-      @media (max-width:520px) { .ep--card { grid-template-columns:1fr; grid-template-areas:"side" "main" "votes" "disc"; }
-        .ep--card .ep__side { align-items:flex-start; text-align:left; } .ep__disc { justify-self:start; } }
+      .ep-src { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
+      .ep-src button { font:inherit; font-size:0.82rem; font-weight:600; cursor:pointer; padding:6px 14px; border-radius:999px; background:none;
+        color:rgba(245,240,232,0.78); border:1px solid rgba(245,240,232,0.22); }
+      .ep-src button[aria-pressed="true"] { background:var(--clr-parchment,#f5f0e8); color:#0f1a14; border-color:var(--clr-parchment,#f5f0e8); }
+      .ep-src small { font-weight:400; opacity:0.7; margin-left:4px; }
+      @media (max-width:520px) { .ep__bar { flex-wrap:wrap; } .ep__bar-d { text-align:left; flex-basis:100%; order:3; } .ep__head .ep__kind { margin-left:0; } }
       .ep-suggest a { color:var(--clr-honey,#e8a84c); font-weight:700; }
       `;
       document.head.appendChild(s);
@@ -2550,7 +2580,8 @@
       if (!id) return null;
       if (k === "mission") return missionHref(id);
       if (k === "initiative") return p.mission_id ? missionHref(p.mission_id) : null;
-      if (k === "organization") return "mission.html?org=" + encodeURIComponent(id);
+      // P2b (2026-10-02): every organization name links to its public profile.
+      if (k === "organization") return "/o/" + encodeURIComponent(id);
       if (k === "cause") return "cause.html?cause=" + encodeURIComponent(id);
       if (k === "post" || k === "budget") return threadHref(id);
       return null;
@@ -2613,32 +2644,137 @@
         (p.reply_count ? '<span class="ep__r" title="Replies">&#8617; ' + p.reply_count + "</span>" : "") +
       "</div>";
     }
+    // ── Posting edits (2026-10-02) — the card ─────────────────────────────
+    //  ____________________________________________________________________
+    // |_Target_______________Target <next decision>: date_____________Cause_|
+    // | Post title - source (handle / org name / Earthbux) - date -    tag  |
+    // |   [image, if there is one — even in the small version]              |
+    // |   contents                                                          |
+    // |                                                    ...show more     |
+    // |_votes_number-of-comments_reply______________________________________|
+    // The whole top bar goes to the mission it targets. Show more (or a click
+    // anywhere on the card) expands it in place: the full text, whether the
+    // author voted in the election, citations, "see more like this", and the
+    // replies with a reply box. `bindVotes(root)` wires all of it.
+    const SOURCE_WORD = { earthbux: "Earthbux", charity: "Charities", individual: "Individuals" };
+    function causeObj(p) { return (config.causes || []).find((x) => x.id === p.cause_id) || null; }
+    function shortDate(iso) {
+      const d = new Date(iso);
+      return isNaN(d) ? "" : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    }
+    function barHref(p) {
+      if (p.mission_id) return missionHref(p.mission_id);
+      return targetHref(p);
+    }
+    function sourceLink(p) {
+      const name = esc(p.author_name || (p.source === "earthbux" ? "Earthbux" : "Benefactor"));
+      if (p.author_type === "org" && p.org_author_id) return '<a href="/o/' + encodeURIComponent(p.org_author_id) + '">' + name + "</a>";
+      if (p.author_type === "earthbux") return '<a href="cause.html?source=earthbux">' + name + "</a>";
+      if (p.ben_author_id) return '<a href="cause.html?author=' + encodeURIComponent(p.ben_author_id) + '" title="More from ' + name + '">' + name + "</a>";
+      return name;
+    }
+    function topBar(p) {
+      const c = causeObj(p);
+      const lab = p.target_kind && p.target_kind !== "none" && p.target_id
+        ? (p.target_label || p.target_id) : (p.mission_label || "");
+      const nd = p.next_decision;
+      const inner =
+        '<span class="ep__bar-t">' + (lab ? esc(lab) : "General") + "</span>" +
+        '<span class="ep__bar-d">' + (nd ? esc((lab ? lab + " · " : "") + nd.label) + ": " + esc(shortDate(nd.date)) : "") + "</span>" +
+        '<span class="ep__bar-c">' + (c ? '<i style="background:' + esc(c.color || "#999") + '"></i>' + esc(c.name) : "") + "</span>";
+      const href = barHref(p);
+      return href ? '<a class="ep__bar" href="' + esc(href) + '" title="Go to the mission">' + inner + "</a>"
+        : '<div class="ep__bar">' + inner + "</div>";
+    }
     function collapsed(p, opts) {
       css();
       opts = opts || {};
       const body = String(p.body || "");
-      const cut = opts.chars || 280;
-      const disc = opts.href === false ? threadHref(p.id) : (opts.href || threadHref(p.id));
       const title = p.title || (body.length > 90 ? body.slice(0, 90).replace(/\s+\S*$/, "") + "…" : body);
-      const preview = p.title ? body : (body.length > 90 ? body : "");
-      const cause = causeName(p);
+      const text = p.title ? body : (body.length > 90 ? body : "");
       const tags = (p.tags || []).filter((t) => t.indexOf(":") < 0);
-      const kinds = [kind(p)].concat(tags.slice(p.type === "general" ? 1 : 0).map((t) => t.replace(/_/g, " ")));
-      return '<article class="ep ep--card' + (opts.click ? " ep--click" : "") + '" data-post="' + esc(p.id) + '">' +
-        '<div class="ep__main">' +
-          '<h3 class="ep__title">' + esc(title || "Untitled") + "</h3>" +
-          targetLine(p) +
-          (preview ? '<p class="ep__body">' + esc(preview.length > cut ? preview.slice(0, cut).trim() + "…" : preview) + "</p>" : "") +
+      const tag = p.type && p.type !== "general" ? kind(p) : (tags[0] ? tags[0].replace(/_/g, " ") : kind(p));
+      const mine = (opts.myVotes || _mine)[p.id];
+      const up = mine === "helpful", down = mine === "harmful";
+      const mattr = p.mission_id ? ' data-mission="' + esc(p.mission_id) + '"' : "";
+      const n = p.reply_count || 0;
+      return '<article class="ep ep--card' + (opts.expanded ? " ep--open" : "") + '" data-post="' + esc(p.id) + '"' +
+        (opts.expanded ? ' data-ep-autoexpand="1"' : "") + ">" +
+        topBar(p) +
+        '<div class="ep__in">' +
+          '<div class="ep__head"><h3 class="ep__title">' + esc(title || "Untitled") + "</h3>" +
+            '<span class="ep__by">&mdash; ' + sourceLink(p) + " &middot; " + esc(when(p.created_at)) +
+            (p.version > 1 ? ' &middot; v' + (p.version_shown || p.version) : "") + "</span>" +
+            '<span class="ep__kind">' + esc(tag) + "</span></div>" +
+          (p.image_url ? '<img class="ep__img" src="' + esc(p.image_url) + '" alt="" loading="lazy" />' : "") +
+          (text ? '<p class="ep__body">' + esc(text) + "</p>" : "") +
+          '<button type="button" class="ep__more" data-ep-more>' + (opts.expanded ? "show less" : "…show more") + "</button>" +
+          '<div class="ep__extra" data-ep-extra' + (opts.expanded ? "" : " hidden") + "></div>" +
         "</div>" +
-        '<div class="ep__side">' +
-          '<span class="ep__who">' + esc(p.author_name || "Benefactor") + ' <span class="ep__when">' + when(p.created_at) + "</span></span>" +
-          '<span class="ep__kind">' + esc(kinds.join(" · ")) + (p.version > 1 ? ' <span class="ep__ver">v' + (p.version_shown || p.version) + "</span>" : "") + "</span>" +
-          (cause ? '<span class="ep__cause">' + esc(cause) + "</span>" : "") +
-          meBadge(p) + source(p) +
+        '<div class="ep__foot2">' +
+          '<span class="ep__votes" data-ep-votes="' + esc(p.id) + '">' +
+            '<button type="button" class="ep__v ep__v--up' + (up ? " on" : "") + '" data-ep-vote="helpful" data-post="' + esc(p.id) + '"' + mattr +
+              ' aria-pressed="' + up + '" title="' + esc(p.vote_name || "Upvote") + '">&#9650;</button>' +
+            '<span class="ep__n" data-ep-n="' + esc(p.id) + '">' + votes(p) + "</span>" +
+            (UP_ONLY[p.type] ? "" : '<button type="button" class="ep__v ep__v--down' + (down ? " on" : "") + '" data-ep-vote="harmful" data-post="' + esc(p.id) + '"' + mattr +
+              ' aria-pressed="' + down + '" title="Downvote">&#9660;</button>') +
+          "</span>" +
+          '<button type="button" class="ep__fbtn" data-ep-more title="Comments">&#128172; ' + n + " comment" + (n === 1 ? "" : "s") + "</button>" +
+          '<button type="button" class="ep__fbtn" data-ep-reply>&#8617; Reply</button>' +
+          source(p) +
         "</div>" +
-        voteBar(p, (opts.myVotes || _mine)[p.id]) +
-        '<a class="ep__disc" href="' + esc(disc) + '">Discussion &rarr;</a>' +
       "</article>";
+    }
+
+    // The expanded part, filled on first open: who voted, citations, "see
+    // more like this", replies and a reply box.
+    const _detail = {};
+    async function fillExtra(card) {
+      const id = card.dataset.post, box = card.querySelector("[data-ep-extra]");
+      if (!box || box.dataset.filled) return;
+      box.dataset.filled = "1";
+      box.innerHTML = '<p class="ep__xrow">Loading…</p>';
+      let d = _detail[id], replies = [];
+      try {
+        const [dr, rr] = await Promise.all([
+          d ? null : fetch((config.apiBase || "") + "/posts/" + encodeURIComponent(id)),
+          fetch((config.apiBase || "") + "/posts/" + encodeURIComponent(id) + "/comments"),
+        ]);
+        if (dr && dr.ok) d = _detail[id] = await dr.json();
+        replies = rr.ok ? await rr.json() : [];
+      } catch (e) {}
+      d = d || { id };
+      const c = causeObj(d);
+      const refs = d.references || [];
+      const like = [];
+      if (c) like.push('<a href="cause.html?cause=' + encodeURIComponent(c.id) + '">in ' + esc(c.name) + "</a>");
+      if (d.tiv_id) like.push('<a href="cause.html?initiative=' + encodeURIComponent(d.tiv_id) + '">about ' +
+        esc(d.target_kind === "initiative" ? (d.target_label || d.tiv_id) : (d.mission_label || d.tiv_id)) + "</a>");
+      if (d.author_type === "org" && d.org_author_id) like.push('<a href="/o/' + encodeURIComponent(d.org_author_id) + '">from ' + esc(d.author_name || d.org_author_id) + "</a>");
+      else if (d.author_type === "earthbux") like.push('<a href="cause.html?source=earthbux">from Earthbux</a>');
+      else if (d.ben_author_id) like.push('<a href="cause.html?author=' + encodeURIComponent(d.ben_author_id) + '">from ' + esc(d.author_name || "this author") + "</a>");
+      const voted = d.author_in_me == null ? "" : '<p class="ep__xrow">' + meBadge(d) + "</p>";
+      box.innerHTML =
+        voted +
+        (refs.length ? '<div class="ep__xrow"><b>Citations</b><ul>' + refs.map(refItem).join("") + "</ul></div>" : "") +
+        (like.length ? '<p class="ep__xrow ep__like"><b>See more like this</b>' + like.join("") + "</p>" : "") +
+        '<div class="ep__xrow"><b>' + replies.length + " repl" + (replies.length === 1 ? "y" : "ies") + "</b>" +
+          '<div class="ep__replies">' + replies.map((r) =>
+            '<div class="ep-reply"><b>' + esc(r.author_name || "Benefactor") + '</b> <span class="ep__ver">&middot; ' + when(r.created_at) + "</span>" +
+            '<div class="ep__body" style="display:block">' + esc(r.body || "") + "</div></div>").join("") + "</div>" +
+          '<div class="ep__replybox"><textarea data-ep-replyin placeholder="Write a reply…"></textarea>' +
+          '<button type="button" class="ep-btn" data-ep-send>Reply</button></div><div class="ep-msg" data-ep-msg></div></div>';
+      box._post = d;
+    }
+    function expand(card, open) {
+      if (!card) return;
+      const on = open === undefined ? !card.classList.contains("ep--open") : !!open;
+      card.classList.toggle("ep--open", on);
+      const box = card.querySelector("[data-ep-extra]");
+      if (box) box.hidden = !on;
+      const more = card.querySelector(".ep__more");
+      if (more) more.textContent = on ? "show less" : "…show more";
+      if (on) return fillExtra(card);
     }
 
     // The viewer's own votes, so a card can light its arrow — loaded once per
@@ -2657,6 +2793,36 @@
       if (!root || root._epVotes) return;
       root._epVotes = true;
       opts = opts || {};
+      // Posting edits (2026-10-02): the card expands in place.
+      root.querySelectorAll("[data-ep-autoexpand]").forEach((c) => fillExtra(c));
+      root.addEventListener("click", async (e) => {
+        const card = e.target.closest("article.ep--card");
+        if (!card || !root.contains(card) || e.target.closest("[data-ep-vote]")) return;
+        if (e.target.closest("[data-ep-send]")) {
+          e.preventDefault();
+          if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) { if (Auth && Auth.openModal) Auth.openModal("login"); return; }
+          const box = card.querySelector("[data-ep-extra]"), ta = card.querySelector("[data-ep-replyin]"),
+            msg = card.querySelector("[data-ep-msg]"), d = (box && box._post) || {};
+          const body = ta ? ta.value.trim() : "";
+          if (!body) { if (msg) msg.textContent = "Write something first."; return; }
+          const r = await Auth.fetchAuthed("/posts", { method: "POST", body: JSON.stringify({
+            id: "rp-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), body, author_type: "ben",
+            parent_id: card.dataset.post, category: d.category || "general", type: d.type || "general" }) });
+          const out = await r.json().catch(() => ({}));
+          if (!r.ok) { if (msg) msg.textContent = out.detail || "Refused."; return; }
+          delete box.dataset.filled; return fillExtra(card);
+        }
+        if (e.target.closest("[data-ep-reply]")) {
+          e.preventDefault();
+          await expand(card, true);
+          const ta = card.querySelector("[data-ep-replyin]"); if (ta) ta.focus();
+          return;
+        }
+        if (e.target.closest("[data-ep-more]")) { e.preventDefault(); return expand(card); }
+        if (e.target.closest("a, button, textarea, input, select, [data-ep-extra]")) return;
+        if (window.getSelection && String(window.getSelection()).length) return;   // selecting text is not a click
+        expand(card);
+      });
       root.addEventListener("click", async (e) => {
         const b = e.target.closest("[data-ep-vote]");
         if (!b || !root.contains(b)) return;
@@ -2806,7 +2972,7 @@
         esc(composeUrl({ [key]: id, tag: "justification" })) + '">post a Justification for ' + esc(label || "it") + " &rarr;</a></div>";
     }
 
-    return { guide, composeUrl, kind, collapsed, full, open, preview, suggest, targetLine, css, threadHref, missionHref, bindVotes, loadMine };
+    return { guide, composeUrl, kind, collapsed, expand, full, open, preview, suggest, targetLine, css, threadHref, missionHref, bindVotes, bind: bindVotes, loadMine, SOURCE_WORD };
   })();
 
   var EBX = {

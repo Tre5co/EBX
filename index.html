@@ -373,6 +373,7 @@
         <a class="hn__post" id="hn-post" href="post.html?back=%2F" title="Make a post — general, research or a budget item">+ Post</a>
       </div>
       <div class="hf">
+        <div class="ep-src" id="hf-src" role="group" aria-label="Who the posts come from"></div>
         <div class="hf__state" id="hf-state" aria-live="polite"></div>
         <div class="hf__list" id="hf-list"><div class="hf__empty">Loading the feed&hellip;</div></div>
         <a class="hf__all" id="hf-all" href="cause.html">Search, filter and reply in News &rarr;</a>
@@ -382,7 +383,7 @@
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20261001b"></script>
+  <script src="resources/js/ebx_shared.js?v=20261002b"></script>
   <!-- the globe in the first step: d3-geo + Natural Earth land, vendored -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -706,7 +707,7 @@
     const RESEARCH = { context: ['B', 'Background'], investigation: ['I', 'Investigation'], analysis: ['A', 'Analysis'] };
     const BUDGET = { service: 'Service', supply: 'Supply', support: 'Support' };
     const WEEK = 7 * 864e5;
-    const st = { posts: [] };
+    const st = { posts: [], source: '', bySource: {} };
     const $ = id => document.getElementById(id);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
       c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -782,14 +783,40 @@
     // (EBX.Post.collapsed) — title left, account · date / type / cause right,
     // ▲ votes ▼ and Discussion → along the foot, no colour coding — and "You
     // should be able to vote on posts from home" (EBX.Post.bindVotes).
+    // Posting edits (2026-10-02): "The home page will have 3 toggles, based on
+    // the source of the post, and a fourth 'all' option. The 3 sources are
+    // Earthbux, Charities, and Individuals." A source is fetched on its own
+    // (GET /posts?source=), so a quiet one still shows its older posts.
+    const SOURCES = [['', 'All'], ['earthbux', 'Earthbux'], ['charity', 'Charities'], ['individual', 'Individuals']];
+    function paintSources() {
+      const el = $('hf-src'); if (!el) return;
+      el.innerHTML = SOURCES.map(([k, lab]) =>
+        '<button type="button" data-src="' + k + '" aria-pressed="' + (st.source === k) + '">' + lab + '</button>').join('');
+      el.onclick = async e => {
+        const b = e.target.closest('[data-src]'); if (!b) return;
+        st.source = b.dataset.src;
+        if (st.source && !st.bySource[st.source]) {
+          $('hf-list').innerHTML = '<div class="hf__empty">Loading&hellip;</div>';
+          try {
+            const r = await fetch((cfg().apiBase || '') + '/posts?roots_only=true&limit=40&sort=recent&source=' + st.source);
+            st.bySource[st.source] = r.ok ? await r.json() : [];
+          } catch (err) { st.bySource[st.source] = []; }
+          try { if (window.EBX && EBX.Post && EBX.Post.loadMine) await EBX.Post.loadMine(st.bySource[st.source].slice(0, 12).map(p => p.id)); } catch (err) {}
+        }
+        paint();
+      };
+    }
     function paint() {
       row();
-      $('hf-state').innerHTML = 'Showing <b>all posts</b> &middot; newest first';
+      paintSources();
+      const src = SOURCES.find(s => s[0] === st.source);
+      const empty = { earthbux: 'Earthbux has not posted yet.', charity: 'No charity has posted yet — organizations post once they claim their page.', individual: 'No posts from individuals yet.' };
+      $('hf-state').innerHTML = 'Showing <b>' + (st.source ? 'posts from ' + src[1] : 'all posts') + '</b> &middot; newest first';
       const P = window.EBX && EBX.Post;
-      const list = st.posts.slice(0, 12);
+      const list = (st.source ? (st.bySource[st.source] || []) : st.posts).slice(0, 12);
       $('hf-list').innerHTML = list.length
         ? list.map(p => P ? P.collapsed(p, { chars: 320 }) : card(p)).join('')
-        : '<div class="hf__empty">No posts yet.</div>';
+        : '<div class="hf__empty">' + (empty[st.source] || 'No posts yet.') + '</div>';
       if (P) P.bindVotes($('hf-list'));
     }
 

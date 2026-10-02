@@ -1226,7 +1226,28 @@
     /* §2 (2026-08-05): the .propose-modal / .org-register CSS went with the
        dialogs themselves — EBX.Dialogs injects its own styles once, so both
        pages get the same chrome. */
-    @media (max-width:640px) { .init-table th:nth-child(3), .init-table td:nth-child(3) { display:none; } }
+    /* Mobile backlog (2026-10-02). (1) "Causes can be always on the top of the
+       screen when scrolling down on the missions page." (2) "In the tiv and org
+       tables, I'm not able to see the titles of the rows. On mobile, tell the
+       user 'select an initiative/organization to vote', and the title should be
+       the only thing in the row." — the old rule here hid column 3, which is
+       the title. */
+    .init-table__hint { display: none; font-size: 0.84rem; color: rgba(245,240,232,0.75); padding: 9px 12px;
+      border-bottom: 1px solid rgba(245,240,232,0.1); background: rgba(232,168,76,0.06); }
+    .init-table__onballot { font-size: 0.68rem; color: var(--clr-honey, #e8a84c); margin-left: 6px; white-space: nowrap; }
+    @media (max-width: 640px) {
+      .hero__causetabs { position: sticky; top: 0; z-index: 150; background: #0f1a14;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.35); }
+      .init-table--titles thead { display: none; }
+      .init-table--titles tr[data-kind="tiv"] > td:not(.init-table__namecell),
+      .init-table--titles tr[data-kind="org"] > td:not(.init-table__namecell) { display: none; }
+      .init-table--titles, .init-table--titles tbody, .init-table--titles tbody tr { display: block; width: 100%; }
+      .init-table--titles tbody tr > td.init-table__namecell, .init-table--titles tbody tr > td[colspan] {
+        display: block; width: 100%; max-width: none; box-sizing: border-box; }
+      .init-table--titles tr[data-kind] > td.init-table__namecell { padding-top: 12px; padding-bottom: 12px; }
+      .init-table--titles tr.propose-row > td.col-watch { display: none; }
+      .init-table__hint:not(:empty) { display: block; }
+    }
 
     /* §2 (2026-08-27): the tabs left the top bar for the hero — they are a
        control for the page below them, not navigation, and up here they read
@@ -2918,6 +2939,7 @@
       <div class="fx-view" id="fx-view" hidden></div>
 
       <div class="init-table-wrap">
+        <div class="init-table__hint" id="init-table-hint" aria-live="polite"></div>
         <div class="init-table-scroll">
           <table class="init-table">
             <!-- The table IS the leaderboard. My vote is the first data column
@@ -3193,7 +3215,7 @@
        the date/number formatters, and the watchlist. See its header for why it
        is not part of ebx_shared.js. -->
   <script src="resources/js/ebx_page.js?v=20260908"></script>
-  <script src="resources/js/ebx_shared.js?v=20261001b"></script>
+  <script src="resources/js/ebx_shared.js?v=20261002b"></script>
   <!-- build-seq P1: the globe inside the annulus -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -4420,7 +4442,7 @@
 
       const body = (slate.length
           ? '<div class="votebar__rows">' + rows + uncRow + '</div>'
-          : '<div class="votebar__empty">Press <b>Vote</b> on any initiative below to put it here, then slide ' +
+          : '<div class="votebar__empty">Select any initiative below to put it here, then slide ' +
             'a share of your tokens onto it &mdash; up to ' + MAX_SPLIT + ' initiatives. What you leave unallocated stays yours.</div>' +
             (uncRow ? '<div class="votebar__rows">' + uncRow + '</div>' : ''));
 
@@ -7142,6 +7164,12 @@
     // window. Make rows smaller and add 'weeks won' column."
     const _tbl = document.querySelector('.init-table');
     if (_tbl) _tbl.classList.toggle('init-table--dense', mode === 'cause' || _tableTab === 'ce');
+    // Mobile backlog (2026-10-02): title-only rows and a hint, for the two
+    // tables a benefactor votes from.
+    const _titles = !(mode === 'cause' || _tableTab === 'ce') && (mode === 'tiv' || _oeScope === 'race');
+    if (_tbl) _tbl.classList.toggle('init-table--titles', _titles);
+    const _hint = document.getElementById('init-table-hint');
+    if (_hint) _hint.textContent = !_titles ? '' : (mode === 'tiv' ? 'Select an initiative to vote' : 'Select an organization to vote');
     if (mode === 'cause' || _tableTab === 'ce') {
       thead.innerHTML = `<tr>
         <th class="col-watch" aria-label=""></th>
@@ -7162,8 +7190,9 @@
         ${_th('mine', 'My commitment', 'Sort by my allocation')}
         ${_th('name', 'Initiative', 'Sort by name')}
         ${_th('total', 'Total tokens', 'Sort by the total pool')}
-        ${_th('vote', 'Vote', 'Sort my slate to the top')}
       </tr>`;
+      // Mobile backlog (2026-10-02): "remove the 'vote' column, selecting it
+      // puts it into the ballot, where you commit your vote".
     } else {
       // State 2 — the in-mission row type (structure.md): mission id, current
       // phase, start date, current votes, links to Mission / Discussion.
@@ -7192,8 +7221,8 @@
           ${_th('mine', 'My vote', 'Sort the organization I have voted for to the top')}
           ${_th('name', 'Organization', 'Sort by name')}
           ${_th('total', 'Tokens behind it', 'Sort by the tokens standing behind each organization')}
-          ${_th('started', 'Standing', 'Sort by registration standing')}
         </tr>`;
+        // Mobile backlog (2026-10-02): "on all versions, remove the standing column".
         return;
       }
       thead.innerHTML = `<tr>
@@ -7444,6 +7473,10 @@
         if (org) idxSelectOrg(JSON.stringify(org));
       } else {
         const init = (_allInits || []).find(i => String(i.id) === String(id));
+        // Mobile backlog (2026-10-02): selecting an initiative puts it in the
+        // ballot, where the vote is committed — the Vote column is gone.
+        if (init && typeof window.inSlate === 'function' && !window.inSlate(init.id)
+            && typeof window.toggleSlate === 'function') window.toggleSlate(init.id);
         if (init) idxSelectInit(JSON.stringify(init));
         // (2026-10-01) the preview is inside the ballot's expansion now, not under the row
       }
@@ -7840,7 +7873,7 @@
     } catch (e) {}
 
     if (!mission) {
-      tbody.innerHTML = '<tr><td colspan="5" class="init-table__empty">' +
+      tbody.innerHTML = '<tr><td colspan="4" class="init-table__empty">' +
         'No organization election is open for this cause yet — it opens when its initiative is elected.' +
         '</td></tr>';
       return;
@@ -7849,7 +7882,7 @@
     // The caption row: which race these candidates are running in. The table's
     // own head names columns, not the contest, and a table of five organizations
     // with no contest named is five names in a vacuum.
-    const capRow = '<tr class="init-table__row init-table__row--cap"><td colspan="5">' +
+    const capRow = '<tr class="init-table__row init-table__row--cap"><td colspan="4">' +
       '<div class="oet-cap">' +
         '<span class="oet-cap__k">Running to lead</span>' +
         '<b class="oet-cap__tiv">' + esc(tivName) + '</b>' +
@@ -7869,19 +7902,18 @@
         '<td class="init-table__myvote">' + (r.mine
           ? '<b>✓ my vote</b>'
           : '<span class="mv-none">—</span>') + '</td>' +
-        '<td><div class="init-table__name"><span>' + esc(r.name) + '</span></div>' +
+        '<td class="init-table__namecell"><div class="init-table__name"><span>' + esc(r.name) + '</span></div>' +
           '<div class="vb-row__sub">' + r.net_votes + ' vote' + (r.net_votes === 1 ? '' : 's') +
             ' &middot; ' + r.voter_count + ' benefactor' + (r.voter_count === 1 ? '' : 's') + '</div></td>' +
         '<td class="init-table__ebx">' + (r.ebx > 0 ? Math.round(r.ebx).toLocaleString() + ' tokens' : '—') + '</td>' +
-        '<td class="init-table__date">' + esc(r.status) + '</td>' +
       '</tr>';
     }).join('')
-      : '<tr><td colspan="5" class="init-table__empty">' +
+      : '<tr><td colspan="4" class="init-table__empty">' +
         'No organization has registered for ' + esc(tivName) + ' yet &mdash; nominate the first one below.' +
         '</td></tr>';
 
     // "There should be an option to nominate an organization to run x."
-    const nomRow = '<tr class="init-table__row init-table__row--nom"><td colspan="5">' +
+    const nomRow = '<tr class="init-table__row init-table__row--nom"><td colspan="4">' +
       '<button class="rf-btn" onclick="event.stopPropagation();openOrgRegisterModal()">' +
         '+ Nominate an organization to run ' + esc(tivName) + '</button>' +
       '<span class="oet-nom__note">Anyone can put a name forward. Verification comes later, ' +
@@ -8046,7 +8078,7 @@
     _mountVoteBar();
     _mountOeActions();          // clears it: the action row is OE-only
     if (!inits.length) {
-      tbody.innerHTML = bar + '<tr><td colspan="5" class="init-table__empty">No initiatives found.</td></tr>';
+      tbody.innerHTML = bar + '<tr><td colspan="4" class="init-table__empty">No initiatives found.</td></tr>';
       return;
     }
     tbody.innerHTML = bar + inits.map(init => {
@@ -8072,11 +8104,8 @@
       return `<tr data-id="${init.id}" data-kind="tiv" class="init-table__row">
         <td class="col-watch"><button class="init-watch-btn ${isWatched ? 'watched' : ''}" data-watch-id="${init.id}" data-watch-kind="tiv" aria-label="${isWatched ? 'Unwatch' : 'Watch'} initiative" title="${isWatched ? 'Unwatch' : 'Watch'}">${star}</button></td>
         ${myVoteCell}
-        <td><div class="init-table__name">${emoji ? emoji + ' ' : ''}<span>${((typeof window._titleAndCase === 'function') ? window._titleAndCase(init).title : (init.title || '')) || 'Untitled'}</span></div></td>
+        <td class="init-table__namecell"><div class="init-table__name">${emoji ? emoji + ' ' : ''}<span>${((typeof window._titleAndCase === 'function') ? window._titleAndCase(init).title : (init.title || '')) || 'Untitled'}</span>${inS ? ' <span class="init-table__onballot" title="On your ballot">✓ on ballot</span>' : ''}</div></td>
         <td class="init-table__ebx">${totalEbx > 0 ? Math.round(totalEbx).toLocaleString() : '—'}</td>
-        <td class="col-vote"><button class="init-table__votebtn${inS ? ' on' : ''}"
-               onclick="event.stopPropagation();toggleSlate('${init.id}')"
-               title="${inS ? 'Remove from the vote row above' : 'Put this initiative in the vote row above'}">${inS ? '✓ Voting' : 'Vote'}</button></td>
       </tr>`;
     }).join('') + proposeRow();
   }
@@ -8087,7 +8116,7 @@
   function proposeRow() {
     return `<tr class="propose-row" onclick="onProposePrimary()" title="Propose an initiative">
       <td class="col-watch"></td>
-      <td colspan="4"><span class="propose-row__plus">+</span>
+      <td colspan="3"><span class="propose-row__plus">+</span>
         <span class="propose-row__text">Propose an initiative</span></td>
     </tr>`;
   }
@@ -9185,7 +9214,11 @@
         (members ? '<div class="mh-orgpanel__sect">Members<br/>' + members + '</div>' : '') +
         (posts ? '<div class="mh-orgpanel__sect">Updates from this organization' + posts + '</div>'
                : '<div class="mh-orgpanel__sect" style="opacity:0.6;">No updates yet — progress reports land during the mission.</div>') +
-        '<div class="mh-orgpanel__sect"><a href="admin.html?org=' + encodeURIComponent(orgId) + (MID ? '&mission=' + MID : '') + '" style="color:var(--mp-accent);font-weight:600;font-size:0.78rem;">Is this your organization? Org admin →</a></div>' +
+        // P2b (2026-10-02): the organization's public pages, and the claim door (/org).
+        '<div class="mh-orgpanel__sect" style="display:flex;gap:14px;flex-wrap:wrap;font-size:0.78rem;font-weight:600;">' +
+          (MID && (d.candidacies || []).some(c => c.mission_id === MID) ? '<a href="/o/' + encodeURIComponent(orgId) + '/' + encodeURIComponent(MID) + '" style="color:var(--mp-accent);">Campaign page →</a>' : '') +
+          '<a href="/o/' + encodeURIComponent(orgId) + '" style="color:var(--mp-accent);">Profile →</a>' +
+          '<a href="/org#apply?org=' + encodeURIComponent(orgId) + '" style="color:var(--mp-accent);">Is this your organization? Claim it →</a></div>' +
       '</div>';
     }
 
@@ -9897,11 +9930,7 @@
           (list(budget) || '<p class="ti-p ti-p--none">No budget items yet.</p>') +
           '<p class="ti-acts"><a class="ti-btn ti-btn--ghost" href="' + esc(url({ type: 'service' })) + '">Suggest a budget item</a>' +
           '<button type="button" class="ti-btn ti-btn--ghost" onclick="window.nominateOrgFor&&nominateOrgFor(\'' + esc(t.id) + '\')">Nominate an organization for it</button></p>');
-      // posting pass (2026-10-01): a card's ▲ ▼ and links act on their own; the rest of the card opens the post
-      el.querySelectorAll('article[data-post]').forEach(n => n.addEventListener('click', e => {
-        if (e.target.closest('button, a')) return;
-        EBX.Post.open(n.dataset.post, { mission: m && m.id });
-      }));
+      // posting edits (2026-10-02): a card expands in place (EBX.Post.bindVotes) — no dialog
       if (EBX.Post.bindVotes) EBX.Post.bindVotes(el, { mission: m && m.id });
     }
 
@@ -10020,10 +10049,6 @@
       list.innerHTML = rows.length
         ? rows.map(p => (EBX.Post && EBX.Post.collapsed) ? EBX.Post.collapsed(p, { chars: 220, click: true, href: false }) : '').join('')
         : '<p class="mx-pre__empty">Nothing posted yet. Use <b>+ post</b> in the ballot to start the discussion.</p>';
-      list.querySelectorAll('article[data-post]').forEach(a => a.addEventListener('click', e => {
-        if (!(EBX.Post && EBX.Post.open) || e.target.closest('button, a')) return;
-        e.preventDefault(); EBX.Post.open(a.getAttribute('data-post'));
-      }));
       if (EBX.Post && EBX.Post.bindVotes) EBX.Post.bindVotes(list);
     }
 
