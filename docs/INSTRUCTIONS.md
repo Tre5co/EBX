@@ -23,6 +23,7 @@ never carries a second copy of a spec.*
 - [1. THE PLAN](#1-the-plan)
   - [What this is all for](#what-this-is-all-for)
   - [Pass order, and why](#pass-order-and-why)
+  - [Proposed re-order (2026-10-05) — awaiting D33](#proposed-re-order-2026-10-05--awaiting-d33)
   - [The build clock](#the-build-clock)
 - [2. DECIDE](#2-decide)
 - [3. BUILD SEQUENCE](#3-build-sequence)
@@ -58,6 +59,7 @@ never carries a second copy of a spec.*
   - [Added 2026-10-01c (Home tweaks)](#added-2026-10-01c-home-tweaks)
   - [Added 2026-10-01 (mission pass)](#added-2026-10-01-mission-pass)
 - [ARCHIVE](#archive)
+  - [2026-10-05 — About reshape · P1 mission items · P2 Home items · the re-order proposal](#2026-10-05--about-reshape--p1-mission-items--p2-home-items--the-re-order-proposal)
   - [2026-10-01d — P3 · the posting display pass](#2026-10-01d--p3--the-posting-display-pass)
   - [2026-10-01c — Home tweaks · HR2 backfilled · admin removal · Posting and Footer re-sorted](#2026-10-01c--home-tweaks--hr2-backfilled--admin-removal--posting-and-footer-re-sorted)
   - [2026-10-01b — P2 · Home pass (the four doors) · P2b rebuilt on D26/D28](#2026-10-01b--p2--home-pass-the-four-doors--p2b-rebuilt-on-d26d28)
@@ -147,6 +149,39 @@ token model (G2). Split across surfaces, they drift.
 and by having real activity to administer (G4, G5), so they sit behind the
 surfaces — but their *enquiries* start now and are already on the clock.
 
+### Proposed re-order (2026-10-05) — awaiting D33
+
+*Read against the queue as it stood on 2026-10-05 and the whole BACKLOG. Nothing
+below is queued until Jax answers D33; when he does, `## BUILD SEQUENCE` is
+re-sorted to match and this section folds into "Pass order, and why".*
+
+**Done this pass, and so off the front of the queue:** P1's five items (three
+built, D31 and D32 filed), P2 · Home's six items, and the About reshape, which
+was most of P8.
+
+| # | Pass | What it combines | Why here |
+|---|---|---|---|
+| **A** | **P2b · Organization experience — finish** | P2b's open items (memberships reshape — migration proposed; suggestion → candidacy; verification rule; progress reports; framing shows the org's input) **+ Jax's org dev review** (org page → mission page logs you out; sign-up: no cause, Q&A split from admin questions, one agreement, website optional / phone-or-email, political candidates and corporations under integrity) **+ P6's "Org registration + claim" and "Initiative coins on the organization home"** (already P2b in practice) | Still the critical path on the clock, half-built, and the org-review bugs are live defects (a logout on navigation). Finishing it before News means News carries organization posts from organizations that can actually log in. |
+| **B** | **P7a · Admin tools** *(pulled forward, split from P7)* | Edit any part of a mission (P7 Includes) · retarget posts and change tags · each account's dashboard viewable · fix Profile's admin link (BACKLOG › Admin) · pull live data to local (BACKLOG › Admin) · the bot console + bot task split + vote spread (**F6**) · D17 backfill tooling for **F11** · the relist-past-winners one-off (below) | Small (≈3 days), and every later pass needs Jax to be able to *fix data without a migration* — F11, F20, F24 and the stale `current_phase` all wait on it. Bots that spread votes make every later check meaningful. |
+| **C** | **P3b · News + the weekly edition** | P3b as written **+** P4's leftovers (weekly edition on Home and in News, "a phase opens" events, the reports queue in admin) **+** P3's "Still waiting" (News cards → `EBX.Post.collapsed`, the cause-coloured top row linking to the *mission*, not News) **+** BACKLOG › Posting "Create the weekly report … with the date of the week" **+** BACKLOG › Admin "Google preview" and Future "share on social media" (= P3b's OG / sitemap / robots) **+** the Framing → **Prep** rename in copy (D27) | One pass over everything a reader *reads*. The weekly edition is the habit loop P4 built the back half of; News is where it lives. Fixes **F25**. |
+| **D** | **Mission hygiene** *(P1 follow-ups, renamed)* | **F19** (phone width), **F22** (oe_check), **F24** (`meMission` skips missions past T; stale `current_phase`) · after-nominate the window collapses (BACKLOG › Mission) · bot cases on the mission page · retroactive posts for recent elections (clock `posts`) | Short and mechanical; best done right after C so the mission page and News agree on posts. |
+| **E** | **Design direction** *(new, 1–2 days, decision first)* | BACKLOG › Future "simple, clean, monochrome, interlocking panels, calming white background" + "monochrome on things that aren't cause-related" + light/dark setting · **D32** (annulus as cause picker / profile navigator) · real images (BACKLOG › Home) · the instructional screen-recording (P2 · Home's first line) | Every pass so far re-polished the dark theme by hand. If the site is going light/monochrome, decide it **before** P5 rebuilds Profile — otherwise Profile is built twice. The screen-recording waits until the UI stops moving. |
+| **F** | **P5 · Money made visible + the wallet** | P5 as written **+** BACKLOG › Profile "add funds first … every action relies on the wallet — create this asap" **+** the Profile reshape (two side panels, coins as "Donated", full dashboard, choice-card fixes **F7**) **+** **D31** (grant timing) **+** **F15 / F20 / F26** (legacy stakes — after B's read-only production counts) | The wallet-first model *is* "money made visible"; building it as a separate Profile pass would read the token model twice. Blocked on D11, D22–D25, D31 — answer them during A–E. **Decide BACKLOG › Future "budget day → T+16" and "scrap the initiative election?" here too**: both rewrite `money_model.md`. |
+| **G** | **P6 · Counterparty** | P6 minus what A took: M1–M3 messages, vetting gates, beneficiary voice, mail transport (unblocks self-serve password reset, BACKLOG › Infra), check flow and payee | Still gated by D11, D12 and the bank/nonprofit enquiries — external clocks, not engineering. |
+| **H** | **P7b · Trust** | New-account vote-buying gate · moderation, IP/spam, the real classifier · Rules page (Footer "soon") · kids accounts after legal review · commit-history record | Needs real activity to tune against, which C–G create. |
+| **I** | **P8b · About & static pages** | What is left of P8 (the Posting/Earthbuck copy lives in How it works already) · Footer's "soon" pages: White paper (Jax's document), Help Center, Safety, Privacy, Terms, Accessibility · Jax's bio and photo on Our team | Copy-heavy and waiting on Jax's documents and the legal review, so it goes last; each page can ship the day its copy exists. |
+
+**Pushed back (not queued):** the one-post-at-a-time reader (after C proves the
+feed), the animated process diagram (`s4` — after E), the Mission "read-only +
+News as the contribution hub" idea (revisit after C: News may already be that),
+Locations and the globe, mission trips/travel (still deliberately off the chart),
+the Apache stack, spending EBX on merch/travel (after G).
+
+**Combined, so they stop appearing twice:** Profile appears in BACKLOG › Profile,
+P5 and P2b's out-of-scope — now F. Admin appears in P7, BACKLOG › Admin and
+BACKLOG › Bots — now B (tools) and H (trust). The weekly update appears in P3,
+P4 and BACKLOG › Posting — now C.
+
 ### The build clock
 
 Anchored at **Monday 2026-09-21** (W0). Durations are working estimates for one
@@ -186,8 +221,9 @@ gantt
     Footer + Contact us (F9)                  :done, foot, 2026-09-25, 1d
     P3 Posting (post.html, gates off)         :done, p3, 2026-09-29, 1d
     P3b News (the feed of everything, RSS, OG) :p3b, after p2b, 4d
-    P4 Event log + Inbox                      :p4, after p3b, 5d
-    P8 About (tabbed, phase copy + How to post) :p8, after p4, 3d
+    P4 Event log + Inbox                      :done, p4, 2026-10-04, 1d
+    P8 About reshape (tabs: story, goals, how, team) :done, p8, 2026-10-05, 1d
+    P1 + P2 items (x leading, post about x, hub)  :done, p1x, 2026-10-05, 1d
     Animated process diagram                  :s4, after p4, 7d
 
     section Money model
@@ -238,28 +274,30 @@ questions are cleared: each answer now lives in the pass or doc it shaped.*
 | **D23** | Who checks a budget item, and how is a wrong one caught? | price — evidence attached · feasible — the organization · legal/honest — Earthbux News; a challenge with evidence, not a downvote | P5 |
 | **D24** | What does budget day hand over? | the reporting, not the control; vetting finished before it | P5 |
 | **D25** | Move budget day back (framing 8 or 10 weeks)? | the overlap is the rotation, not framing's length — separate ballots per benefactor instead | P5 |
+| **D31** | *(P1, 2026-10-05)* "Tokens should be granted as soon as the initiative election opens." Today a grant exists only in its week and may enter only the ME/OE that **closes** that week (`money_model.md` §0.7, §4; `crud.replace_p1_shares` → `granted_allowed = mission.cause_id == active_cause_id()`). That is why only **4 tokens** (purchased) could go into the Land election: Land is not this week's door, so granted ct is refused there. Change the rule? | (a) keep the rule and say so on the ballot ("your 10 granted tokens open on <date>; purchased tokens can go in now"); or (b) a grant may enter **any initiative election that is open** in its week (still one grant per week, still non-transferable) — a one-line change to `granted_allowed`, plus §0.7/§4 rewritten. Money-moving: proposed, not applied. | P5 (or a small money pass before it) |
+| **D32** | *(P1, 2026-10-05)* "I really should think about replacing the cause toggle with the rotating annulus." | Not yet — decide with the design-direction call (D33's step E): the annulus is already the mission page's centre, and a second, rotating one as the cause picker is the BACKLOG › Profile idea ("navigate using the annulus") too. Prototype once, use on both. | — (design) |
+| **D33** | Adopt the re-ordered build sequence in `## THE PLAN` › *Proposed re-order (2026-10-05)*? | yes | the next pass |
 
 ## 3. BUILD SEQUENCE
 
 ### P1. Mission
-*The mission pass (Jax's 17 items) shipped 2026-10-01 — see `## ARCHIVE` ›
-2026-10-01, where his list is kept. Unified elections shipped 2026-09-29, the
-compact page 2026-09-28. The progress-report item moved to **P2b** (it needs
-organization accounts). The follow-ups on the build clock (dead top-card code,
-the register below) are still due.*
-
-- ~~Human Rights 2 backfill~~ — **done on the live site 2026-10-01**: hmr1
-  elected *Environmental Defender Emergency Fund* (the local winner, proposed by
-  the staff account first). Its organization election runs to Nov 3.
-- ~~Description conversion~~ — **done on the live site 2026-10-01** after the
-  deploy: 68 initiative descriptions → 62 Mission statements + 6
-  Justifications, all authored by GameMaster (the live site never recorded
-  proposers before today). A few were junk one-liners ("a", "ex", ".") — delete
-  them from admin › Remove › Posts if you like.
+*Pass 2026-10-05 — see `## ARCHIVE` › 2026-10-05.*
+- ✅ In the mission navigator, instead of "which cause holds" and "Land x", display "x leading". — the cause card reads "<cause> leading · the window of <date>", an open initiative election "<initiative> leading", an organization election "<org> leading" in its sub-line.
+- ⏸ for some reason I'm only able to commit 4 tokens for the land election at the moment. Also, tokens should be granted as soon as the initiative election opens. — **not a bug: the rule.** A granted token may only enter the election that closes in its grant week (Land isn't this week's), so only your 4 purchased tokens could go in. Changing it is money-moving → **D31**.
+- ⏸ I really should think about replacing the cause toggle with the rotating annulus. — a design call → **D32**.
+- ✅ instead of "discuss", have "post about x" — every ballot bar's Discuss → **Post about <initiative / Cause n / cause>**, opening the composer on that target.
+- ✅ tivs should not be removed from the ballot after they have won. — `crud._relist_winner`: when an initiative wins, a fresh candidacy of it (`<id>-r<next cycle>`, no votes) is listed in the cause's next initiative election beside the re-listed losers. Forward-going only; winners elected before today are not copied (a one-off for P7a).
 
 ### P2b · Organization experience
 *(Added 2026-10-01; rebuilt the same day on Jax's answers to D26 and D28, and his
 notes on the public profile and the campaign page.)*
+
+*Org dev review*
+- The Q&A needs to be integrated into the mission, not seperate. - It's not seperate, it is appearing in both places, like it should. 
+- ✅ *(built 2026-10-04)* "For charities" needs to direct you to an "Organization login" page. It's not actually on admin.html, it just looks similar. Also my org login did not work. — **For charities → `/org`**, whose sign-in is now drawn in admin.html's palette and card; a claimed profile (`/o/<org>`) links to it. The login "did not work" because an application's login stays **pending** until staff approve it: the sign-in now says so (pending · not approved · switched off, with the application number), and when the same browser is signed in as staff it offers **Approve it now**. The old `admin.html?register=1` doors (Home, Profile, Mission, the org dialog) now go to `/org#apply`.
+- Signup - don't need to select which cause. - public contact information can also be a benefactor profile? - The short answer questions should be seperate from the administrative questions. - the integrity section is interesting. Add political candidates or corporations. - the 5 agreements can be made into one agreement.
+- Website shouldn't even be required, someone can fill that in later. Or maybe they need a phone or an email..
+- Going to the mission page from the org page logs you out.
 
 **▶ Framework built 2026-10-02** (Jax: "build the framework and basic,
 rudimentary pages … build a bot org for Earthbux … draft the questions on the org
@@ -399,8 +437,14 @@ benefactor profile ("still shoddy") — BACKLOG › Profile.
 ---
 
 ### P2 · Home
-*Home pass and its tweaks shipped 2026-10-01 — see `## ARCHIVE` › 2026-10-01b and
-› 2026-10-01c, where Jax's text is kept. Nothing open here.*
+*Pass 2026-10-05 — see `## ARCHIVE` › 2026-10-05. Everything but the first line is built.*
+- ⏸ The instructional video can go along with (or be replaceb by) instructional screen-recording of how to use the platform. — needs the recording; proposed for step E of the re-order, once the UI stops moving.
+- ✅ In the missions hub, conserve space the same way we did in the descriptions - we don't need a full border and can have shared borders. Also, it needs to say "Leading: initiative". Right now it looks like the initiative count is the thing that's leading which is not accurate. The "closes x" line should be in the same line that shows the phase, so "Initiative election - closes oct 18" should be across the top row. The bottom row should show "cause - started x". No need for the "week x". Also, since causes are now in the boxes, no need for the row labels. Also, no need for the column labels (cause election, newest mission, ...)
+- ✅ The collapsed version can remove the phase labels from inside the cards and have an all-time header for the 2 cards. Instead of "Missions", say "This Week's Decisions". There can be all time column headers that say Initiative Election and Organization Election, and the cards should be titled "Leading initiative/organization: x" with vote/commit count and have the runners up below.
+- ✅ The 5 steps (to the right of the animation) should be labeled 1. - 5.
+- ✅ The two key decisions should be numbered 1 and 2.
+- ✅ Remove "The Network" and "What the network made this week", Put the toggle options in the same row as +Post
+
 
 ### Footer
 *Built 2026-09-25 — see `## ARCHIVE` › 2026-09-25c, where the sorting table is
@@ -469,6 +513,11 @@ for any posting purpose — every post displayable by every page on the platform
 - Clicking anywhere in the top bar goes to the mission it's targeting.
 - If the post is an image, the image should be shown even in the small version.
 
+
+**MORE**
+The top row should have the color of the cause and be more inviting for users to check it out.
+The top row "Oceans" directs to the news. Should direct tot he oceans mission page.
+
 - **News's cards** — `cause.html` still draws its own card (`fd-card`) with its
   own reactions; it moves to `EBX.Post.collapsed` with the News rebuild (P3b).
 - **One post at a time as you scroll, centred** — the Instagram-like reader
@@ -519,12 +568,37 @@ filter, search, the thread address); an `og_check` fetches `/p/<id>`,
 
 ### P4 · Event log + Inbox
 
+**▶ Built 2026-10-04** (Jax: "Build the inbox step"). `inbox_check` **65/65**;
+`org_check` 44/44, `posting_check` 66/66 on db copies. Spec: `structure.md` §1 › Inbox.
+- **Built:** `events` (the one log: kind, actor, post/mission/initiative/org, week, a
+  `dedupe` key so a thing happens once) and `notifications` (per-benefactor fan-out,
+  read / unread) — `backend/app/events.py`; hooks after the action commits, through
+  `events.safe` (a failure to notify never undoes the vote/post/election): reply (incl.
+  an organization's answer) · reaction thresholds 1·5·10·25·50·100·250·500·1000 ·
+  cited_update · org_nominated (benefactor nomination, Run for this, Suggest us → the
+  initiative's proposer and watchers) · tiv_elected / org_elected (voters read *before*
+  the close moves stakes: won · lost · followed the winner, + what comes next) ·
+  weekly_update (assembled from the clock and the log: new initiative + leading
+  Background, new organization + leading Investigation, entered exchange + leading
+  Analysis, prep, next week; published once a week by `scheduler.run_due`, staff can
+  preview/publish at `/inbox/weekly/preview|publish`; `/inbox/weekly/latest` is
+  public for Home/News). Messages: `message_threads` · `messages` ·
+  `message_reports` — only between members of a shared mission (both voted in it),
+  one thread per pair, report → staff `GET/POST /inbox/reports` hides it.
+  `inbox.html`; the nav's Inbox tab is live with an unread badge.
+- **⚠ Migration `b8d2f6a4c1e9` (additive: five new tables).** Applies on the next
+  deploy (the server migrates to head on startup); `downgrade` drops only those.
+- **Still open in P4:** the weekly edition on Home and in News (the endpoint exists);
+  the reports queue in admin.html (API only); "a phase opens" events; organization
+  accounts have no inbox (their Home carries what changed).
+
 **Goal.** Give a benefactor a reason to come back that is about *them*. The
 four loops: inbox · your stake changed · the weekly ritual · status and rewards.
 
 **Includes**
 
 - Start by messaging users when someone replies to their post, or when it gets a like. Also send out the weekly report.
+- Also, orgs nominated for your initiative, like thresholds on your post
 - Message threads vs. notifications - toggle.
 
 - A **backend event log** — the single source for notifications, the weekly update, and later the admin audit trail.
@@ -620,6 +694,20 @@ a record of commit history.
 
 ### P8 · About
 
+**▶ Reshaped 2026-10-05** (BACKLOG › ABOUT PAGE RESHAPE, executed on Jax's
+instruction). `about.html` has its own tab bar — **← Earthbux Home · Our story ·
+Our goals · How it works · Our team** — and no site nav and no hero. Every old
+anchor still lands (`#why` → Our story; `#grant` → Our goals; `#what`,
+`#earthbuck`, `#posting`, `#ab-phases` → How it works). How it works has one
+section per phase, its copy read from `EBX.Wheel.COPY` (the one source), each
+with "the network here" (Background in 2, Investigation in 3, budget items and
+Analysis in 4, the newsroom in 5), then the Earthbuck, How to post and **How we
+compare**. Our team is a frame: Jax (photo and bio to fill), the open roles, Join
+us and Contact us. New copy (Our story, Our goals › optimism, How we compare) is
+drawn from `pitch/deck.md` and `RESEARCH.md` §2 — Jax to edit freely.
+`landing_check` 39/39. What is left of P8 is the static pages — step I of the
+proposed re-order.
+
 **Goal.** One About page with a tab for each thing a newcomer has to understand,
 so the working pages can stay compact (G3).
 
@@ -692,22 +780,14 @@ lands, and the phase tab's copy is the same string Home shows.
 
 *Named, not queued. Reorganize freely during a pass; do not build.*
 
-- Create the weekly report. 
-- Website shouldn't even be required, someone can fill that in later. Or maybe they need a phone or an email..
-- The api is not updating the phases at the proper time... 
-- for some reason I'm only able to commit 4 tokens for the land election at the moment. Also, tokens should be granted as soon as the initiative election opens. 
-- In the mission navigator, instead of "which cause holds" and "Land x", display "x leading".
-- Images should show in all posts
-- The full post display should show on every surface, and clicking on the post should open a "post"... x opens a user page, reddit opens a comments/post page, linkedin doesn't open a new page, just expands. That's what I want. The difference between home and news is that on home, you don't get to filter the feed.
+- ~~*ABOUT PAGE RESHAPE*~~ — built 2026-10-05 (P8 › Reshaped; `## ARCHIVE` › 2026-10-05).
 
 **Future/Conceptual**
-- A bot console in admin for me to run them autonomously.
-- Have the posts kind of like the instagram thing, where as you scroll it shows you exactly 1 post at a time, centering it in your face.
+- Thinking about maybe scrapping the initiative election - we can have initiatives reach funding goals, and then once they hit their goal we move on to the 'election' where we vote on an organization. The issue with that is that it messes up the weekly-rotating nature of things. We could even remove the whole 'cause rotation' or maybe we just don't make it so you are forced to donate to something you didn't fund. issue with that is that you don't get the chance to donate if your thing never gets funded. Well, maybe you can have donations on the spot, and you always have the ability to move your donation to another source. 
 - Make the UI more similar to other charity platforms - simple, clean, monochrome, interlocking panels, calming white background.
 - Monochrome on things that aren't cause-related
   - The 4 home page descriptors
 - Move budget day to T + 16
-- Create email addresses like inquiries@earthbux.net or admin or purchasing or hr or operations
 - Phase 6 - rewards and travel
 - Framing → **Prep** — decided (D27, 2026-09-29: "I'm calling it 'prep'"); the phase tab, header line, About and the docs still say Framing.
 - The grant can only be used on initiatives.
@@ -718,18 +798,28 @@ lands, and the phase tab's copy is the same string Home shows.
 - *(inbox 2026-09-29)* **`MissionStep` is out of date** (`models.py`): it still carries `guaranteed_ebx` / `potential_ebx` per step from the pre-2026-09-16 pool model, and nothing on the page writes steps. It needs reshaping around the mission clock (`mission_model.md`) and the organization's tasklist (P6; see the Jira/Canvas research note above) before anything builds on it.
 
 **Admin**
+- Create email addresses like inquiries@earthbux.net or admin or purchasing or hr or operations
+- Maybe I can have a command to pull in the data from the online api to my local one so they match and I don't have to keep up with 2.
+- A bot console in admin for me to run them autonomously.
+- Can I get a google preview? I want it to come up if people search "earthbux" in their search engine.
 - ~~Admin needs to be able to remove initiatives, organizations, and posts.~~ Built 2026-10-01 (P7 › Done).
 - Edit any part of a mission from admin → P7 › Includes.
 - I should also be able to retarget posts and change their tags.
 - The link to the admin page from profile should direct to admin.html. The version it goes to is outdated and can be deleted. 
 - Each accounts dashboard should be viewable by admin.
 - I need a mission-editor so I can put in locations.
+- Earthbux posting will come from the admin console - including approvals for the weekly updates and automatic posts.
 
 **Mobile** — *both built 2026-10-02: the cause tabs stick to the top on phones; the initiative and organization tables lost the Vote and Standing columns everywhere, a row tap puts an initiative on the ballot, and on phones the rows are titles only under "Select an initiative/organization to vote". The old phone rule had hidden the title column itself.*
 - ~~Causes can be always on the top of the screen when scrolling down on the missions page~~
 - ~~In the tiv and org tables, I'm not able to see the titles of the rows. On mobile, tell the user "select an initiative/organization to vote", and the title should be the only thing in the row. Also, on all versions, remove the standing column, and remove the 'vote' column, selecting it puts it into the ballot, where you commit your vote.~~
 
 **Posting**
+- Have the posts kind of like the instagram thing, where as you scroll it shows you exactly 1 post at a time, centering it in your face.
+- Create the weekly report. - Build display as we create the report - each updates each week - This is the first earthbux post - after that I can begin with updates. 
+- Mission statements should be limited in length, justifications should not. There should be multiple options of what to post when you suggest an initiative or organization.
+- Initiative proposal flow should include a few short questions - how does it apply to the cause? Admin approval
+- Weekly update should have the date of the week.
 - *(Up/down votes, the card, voting from Home, the initiative-election badge — built 2026-10-01, P3.)*
 Maybe posts can only become research posts once they reach a certain level of popularity? - versions that build on each other. How does github do it? Github stars are the most similar analog. Github is honestly the most similar platform. 
 Maybe research posts (and weekly updates, i think), will open actual 'articles' wheras normal posts will simply be contained in the feed. There are numerous things.
@@ -756,20 +846,18 @@ The preview will include the photograph (if there is one)
 - So 
 
 **Mission**
+- After nominating, suggetsing, or posting, the window should automatically collapse back to the page.
+- We can probably change the mission page to more of a read-only type of experience, and the news page can contain the whole contribution-hub for each mission.
+- When the page opens up, it should be an animation that looks like the page is emerging out of the annulus.
 - Each of the 7 causes will have an image 
-- instead of "discuss", have "post about x"
-- After nominating, suggetsing, and posting, the window should automatically collapse back to the page.
-- tivs should not be removed from the ballot after they have won.
-
 - The post-support ring (annulus layer 1) returns inside the **framing** and **exchange** phase panels — review 2026-09-24. `GET /missions/{id}/post-support` is unchanged. Move this to backlog - I haven't yet decided what to do in these 2 rings.
 - Mission gantt chart / annulus ring widget (deadlines, 7–12 steps).
 - Tune step guaranteed/potential pool ratios + early-resolution bonus size.
 - Tune `resolution_value_bump` and its relation to the global coin value.
 
 **Home**
-- The two key decisions should be numbered 1 and 2.
-- When the screen is wide enough, we can put stuff beside the post feed. 
 
+- When the screen is wide enough, we can put stuff beside the post feed.
 - Real images for the five steps: each cause's vista and its three problems are drawn in `ebx_steps.js` › `PANOS`, as placeholders "until we report on real missions".
 - Will need a real image behind the left side of the hero. Just 1. I will find a good one.
 - *(Home pass 2026-10-01)* "I will probably want to have each of this week's races open even when the table is not collapsed" — collapsed now shows this week's two elections; open, the grid still glows them (`mc--now`). Revisit with the budget-day move (T+16, BACKLOG › Future).
@@ -786,6 +874,11 @@ The preview will include the photograph (if there is one)
 - (Budget items with the organization's input → P2b.)
 
 **Profile**
+- I want people to be able to navigate using the annulus. - Maybe on the profile page, they can rotate it with their touch and the center (or a box below it) shows all their commitments for that cause. It will be like 'Cause: oceans - starting x - my vote and leading + committed, started '
+- The profile page is going to adopt a similar no-side-card but 2-side-panel approach to the mission page. RHS will include mission memberships (count) and settings and allocations. LHS will include all the credit coins. Down-scrollable like the mission navigator. Clicking on one will bring up a users individual contributions to that mission. The allocations are:
+Committed (OE or ME)
+Uncommitted (Grant or purchased)
+And the header for the coins is "Donated".
 - "The benefactor profile is still shoddy" (from ORG EXPERIENCE, 2026-10-01).
 - In the profile, the choice cards need work. The organization choices don't say which initiative they're choosing, and it seems like one is choosing a related initiative + organization.
 - Messageing should be about *Creating your fund* - choosing is important, but so is donating. 
@@ -807,6 +900,7 @@ The preview will include the photograph (if there is one)
 - Legal review: COPPA/GDPR-K, minimum age 12, regional definitions.
 
 **Infra**
+
 - *(P3)* File storage for post media — images move out of `posts.image_url`, video becomes possible (F23).
 - Self-serve password reset (needs mail transport).
 - Working-tree corruption: avoid concurrent writers; commit often.
@@ -824,7 +918,11 @@ The preview will include the photograph (if there is one)
 *Cause*
 If the same cause wins 6 weeks in a row, it replaces the old initiative for all future missions.
 
-**Bots** *(2026-09-25 — gathered here from where the notes had scattered: the
+**Bots** 
+- The api is not updating the phases at the proper time... backend issue and only affects bots.
+- Have AIs respond to replies on their posts and also reply to each other. 
+
+*(2026-09-25 — gathered here from where the notes had scattered: the
 build clock (`bots`, `bots2`), P7's "bot task split", F6, the two lines that were
 under Unrelated items, "Other" in Home feedback 1, README §10,
 `scripts/bots/personas.json` and `scripts/bots/ebx_bots.py`. Nothing older was
@@ -1152,6 +1250,41 @@ guards on a mount that no longer exists, so it paints nothing.
 - The `tiv:<id>`-tagged Justification as the link between a suggested organization and an initiative — replaced in P2b by `mission_candidacies.tiv_id`.
 
 ## ARCHIVE
+
+### 2026-10-05 — About reshape · P1 mission items · P2 Home items · the re-order proposal
+
+*Jax: "Execute the about page reshape as described in backlog. Also, execute the
+changes in the build sequence home and mission steps … and suggest an updated
+build sequence order."*
+
+**About** (`about.html`, `ebx_shared.js`): see P8 › Reshaped. The site nav is
+switched off by `<body data-ebx-nav="off">` (`initNav` honours it); the footer's
+About column is Our story · Our goals · How it works · What an Earthbuck is · Our team.
+
+**Mission** (`mission.html`, `backend/app/crud.py`): navigator cards say "x
+leading"; the ballot bar's Discuss is "Post about x" (composer, target preset);
+`_relist_winner` lists a winning initiative again in the next cycle (no votes
+move; idempotent id `<id>-r<n>`). The 4-token report is the grant rule working
+as written → D31. The annulus-as-toggle idea → D32.
+
+**Home** (`index.html`): collapsed hub titled **This Week's Decisions**, standing
+column heads (Initiative Election · Organization Election), each card "Leading
+initiative/organization" with its EBX committed or votes, runners-up below, no
+phase label inside; open grid on one hairline grid (no full borders, no row or
+column labels), each card "phase · closes x" / title / "Leading: x" / "cause ·
+started x", no "Week x"; the five steps numbered 1.–5.; the two decisions an
+ordered list; "The Network" heading gone, the source toggles on the + Post row.
+
+**Checks.** `landing_check` 39/39 (About section rewritten; hub row count reads
+the grid), `home_check` 80/80 (hub, steps, decisions and feed head updated),
+`mission_layout_check` 131/131 (its stale "Inbox is a stub" line updated for P4),
+`ce_check` updated for "Post about" (needs Playwright; not run this pass). Pages
+rendered at 1280 and 390 px with no script errors and no horizontal scroll.
+
+**Not done / filed.** D31, D32, D33 in DECIDE; the instructional recording (P2
+line 1); winners elected before today are not re-listed (one-off, P7a);
+`structure.md` §4 (Home) and the About page entry still describe the old
+layouts — 999(b) for the next pass.
 
 *Finished pass reports. Nothing here is executed.*
 

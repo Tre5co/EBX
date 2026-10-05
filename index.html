@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux News — you donate, we follow</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261004a" />
   <style>
     /* ── HOME (P2 · Home mods, 2026-09-30) ─────────────────────────────────
        Top to bottom: THE HERO, left-aligned, with THE FIVE STEPS to its right
@@ -85,7 +85,8 @@
     .hk__h { margin: 0; font-family: var(--font-display, serif); font-weight: 800;
       font-size: clamp(1.15rem, 1.7vw, 1.35rem); line-height: 1.2; color: var(--clr-parchment, #f5f0e8); }
     .hk__p, .hk__list { margin: 0; font-size: 0.98rem; line-height: 1.6; color: rgba(245,240,232,0.78); }
-    .hk__list { padding-left: 1.1em; display: flex; flex-direction: column; gap: 8px; }
+    .hk__list { padding-left: 1.4em; display: flex; flex-direction: column; gap: 8px; }
+    .hk__list li::marker { font-family: var(--font-mono, monospace); font-weight: 700; color: var(--kc); }
     .hk__list b { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
     .hk__go { margin-top: auto; align-self: flex-start; font-size: 0.95rem; font-weight: 700; text-decoration: none; color: var(--kc); }
     .hk__go:hover { text-decoration: underline; }
@@ -149,8 +150,14 @@
     .mh__btn:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
     .mh__toggle { margin-left: 8px; font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
     .mh__body { margin-top: 14px; }
-    /* collapsed: this week's two elections, each with its top three */
-    .mh__week { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    /* collapsed: this week's two elections, each with its top three.
+       P2 · Home (2026-10-05): "This Week's Decisions", a standing column head
+       over each card (Initiative Election · Organization Election), and no
+       phase label inside the cards. */
+    .mh__week { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+    .mh__wcol { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+    .mh__wh { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(245,240,232,0.5); padding: 0 2px; }
     .mh__week[hidden] { display: none; }
     @media (max-width: 760px) { .mh__week { grid-template-columns: 1fr; } }
     .mw { --c: #e8a84c; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; padding: 14px 16px 12px;
@@ -170,9 +177,16 @@
     .mw__lead b { font-family: var(--font-mono, monospace); font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
     .mw__lead li:first-child span { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
     .mw__lab { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.5); margin-top: 2px; }
+    .mw__t small { display: block; margin-top: 3px; font-family: var(--font-mono, monospace); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
+    .mw__t em { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.6rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.55); display: block; margin-bottom: 2px; }
     .mw__none { font-size: 0.8rem; color: rgba(245,240,232,0.5); font-style: italic; }
     .mh__body[hidden] { display: none; }
-    .mh__grid { display: grid; gap: 8px 10px; align-items: stretch; }
+    /* P2 · Home (2026-10-05): "conserve space the same way we did in the
+       descriptions — we don't need a full border and can have shared borders."
+       One hairline grid, like the four doors; each card keeps its cause stripe. */
+    .mh__grid { display: grid; gap: 0; align-items: stretch;
+      border-top: 1px solid rgba(245,240,232,0.12); border-left: 1px solid rgba(245,240,232,0.12); }
+    .mh__grid > * { border-right: 1px solid rgba(245,240,232,0.12); border-bottom: 1px solid rgba(245,240,232,0.12); }
     .mh__colhead { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase;
       color: rgba(245,240,232,0.4); padding: 0 2px 2px; align-self: end; }
     .mh__rowhead { display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0;
@@ -180,42 +194,42 @@
     .mh__rowhead i { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); }
     .mh__rowhead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .mh__rowhead:hover span { text-decoration: underline; }
-    .mc { --c: #e8a84c; position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; min-height: 92px;
-      text-decoration: none; color: inherit; padding: 10px 12px 9px; border-radius: 11px;
-      background: rgba(245,240,232,0.028); border: 1px solid rgba(245,240,232,0.1); border-top: 3px solid var(--c);
-      transition: border-color .15s, background .15s, transform .15s; }
-    .mc:hover { background: rgba(245,240,232,0.055); border-color: rgba(245,240,232,0.28); border-top-color: var(--c); transform: translateY(-1px); }
+    .mc { --c: #e8a84c; position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; min-height: 86px;
+      text-decoration: none; color: inherit; padding: 10px 12px 9px;
+      background: transparent; box-shadow: inset 0 3px 0 var(--c);
+      transition: background .15s; }
+    .mc:hover { background: rgba(245,240,232,0.055); }
     .mc:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
     .mc__k { font-family: var(--font-mono, monospace); font-size: 0.54rem; letter-spacing: 0.13em; text-transform: uppercase;
-      color: color-mix(in srgb, var(--c) 75%, #f5f0e8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      color: color-mix(in srgb, var(--c) 75%, #f5f0e8); line-height: 1.45; }   /* wraps: "phase · closes x" is read whole (2026-10-05) */
     .mc__t { font-family: var(--font-display, serif); font-weight: 800; font-size: 0.9rem; line-height: 1.22; color: var(--clr-parchment, #f5f0e8);
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .mc__l { font-size: 0.72rem; color: rgba(245,240,232,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .mc__f { margin-top: auto; padding-top: 4px; display: flex; gap: 8px; align-items: baseline;
       font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(245,240,232,0.48); }
-    .mc__wk { flex: 0 0 auto; white-space: nowrap; font-weight: 700; color: #0f1a14; background: color-mix(in srgb, var(--c) 80%, #f5f0e8); padding: 1px 6px; border-radius: 999px; }
-    .mc__f span:last-child { margin-left: auto; text-align: right; }
-    .mc--ce { background: rgba(245,240,232,0.015); border-style: dashed; border-top-style: solid; }
+    .mc__f span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mc__f b { font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
+    .mc--ce { background: rgba(245,240,232,0.015); }
     .mc--stalled { opacity: 0.62; }
     /* decided this week — the glow */
-    .mc--now { border-color: color-mix(in srgb, var(--c) 70%, transparent);
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), 0 0 22px -2px color-mix(in srgb, var(--c) 55%, transparent);
-      animation: mcGlow 2.6s ease-in-out infinite alternate; }
-    .mc--now .mc__f span:last-child { color: var(--clr-honey, #e8a84c); font-weight: 700; }
-    @keyframes mcGlow { from { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent), 0 0 12px -4px color-mix(in srgb, var(--c) 45%, transparent); }
-                        to { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 60%, transparent), 0 0 26px 0 color-mix(in srgb, var(--c) 60%, transparent); } }
+    .mc--now { animation: mcGlow 2.6s ease-in-out infinite alternate; }
+    .mc--now .mc__k { color: var(--clr-honey, #e8a84c); }
+    @keyframes mcGlow { from { box-shadow: inset 0 3px 0 var(--c), inset 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent), inset 0 0 14px -4px color-mix(in srgb, var(--c) 45%, transparent); }
+                        to { box-shadow: inset 0 3px 0 var(--c), inset 0 0 0 1px color-mix(in srgb, var(--c) 65%, transparent), inset 0 0 22px 0 color-mix(in srgb, var(--c) 50%, transparent); } }
+    .mw.mc--now { animation: none; }
     @media (prefers-reduced-motion: reduce) { .mc--now { animation: none; } }
-    .mc--empty { border: 1px dashed rgba(245,240,232,0.07); background: none; min-height: 92px; border-radius: 11px; }
+    .mc--empty { background: none; min-height: 86px; }
     .mh__loading { padding: 26px; text-align: center; font-size: 0.84rem; color: rgba(245,240,232,0.5); }
-    @media (max-width: 560px) { .mh__rowhead span { display: none; } .mh__nav .mh__btn--page { display: none; } }
+    @media (max-width: 560px) { .mh__nav .mh__btn--page { display: none; } }
 
     /* ══ THE NETWORK + THE FEED — no toggles on Home (2026-09-30) ═══════════
        The three tiles say what the network makes and link into News, filtered;
        the feed is every post, newest first. Filters, search and threads are
        News's. */
     .hn { margin-top: 54px; }
-    .hn__head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    .hn__head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
       border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px; margin-bottom: 14px; }
+    .hn__head .ep-src { margin: 0; }
     .hn__title { font-family: var(--font-display, serif); font-weight: 800; margin: 0;
       font-size: clamp(1.2rem, 2.6vw, 1.6rem); color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em; }
     .hn__sub { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
@@ -299,15 +313,15 @@
         <!-- Painted by `EBX.Steps` (resources/js/ebx_steps.js). -->
         <div class="ld-steps" id="ebx-steps"></div>
         <ol class="ld-flow" id="ld-flow" aria-label="The five steps">
-          <li><button type="button" class="ld-flow__i" data-flow="0">Cause</button></li>
+          <li><button type="button" class="ld-flow__i" data-flow="0">1. Cause</button></li>
           <li class="ld-flow__arr" aria-hidden="true">&darr;</li>
-          <li><button type="button" class="ld-flow__i" data-flow="1">Initiative</button></li>
+          <li><button type="button" class="ld-flow__i" data-flow="1">2. Initiative</button></li>
           <li class="ld-flow__arr" aria-hidden="true">&darr;</li>
-          <li><button type="button" class="ld-flow__i" data-flow="2">Organization</button></li>
+          <li><button type="button" class="ld-flow__i" data-flow="2">3. Organization</button></li>
           <li class="ld-flow__arr" aria-hidden="true">&darr;</li>
-          <li><button type="button" class="ld-flow__i" data-flow="3">Network</button></li>
+          <li><button type="button" class="ld-flow__i" data-flow="3">4. Network</button></li>
           <li class="ld-flow__arr" aria-hidden="true">&darr;</li>
-          <li><button type="button" class="ld-flow__i" data-flow="4">Reporting</button></li>
+          <li><button type="button" class="ld-flow__i" data-flow="4">5. Reporting</button></li>
         </ol>
       </div>
     </section>
@@ -318,10 +332,10 @@
     <nav class="hk" id="hk" aria-label="What you can do on Earthbux">
       <section class="hk__card hk__card--decide">
         <h2 class="hk__h">Two key decisions</h2>
-        <ul class="hk__list">
+        <ol class="hk__list">
           <li><b>What mission to fund.</b> We grant $1 to everybody each week to make this decision.</li>
           <li><b>Which organization leads it.</b> To win money, a charity agrees to put it towards the elected mission.</li>
-        </ul>
+        </ol>
         <a class="hk__go" href="mission.html">Decide what gets funded &rarr;</a>
       </section>
       <section class="hk__card hk__card--voice">
@@ -338,7 +352,7 @@
         <h2 class="hk__h">Make your impact</h2>
         <div class="hk__links">
           <a class="hk__go hk__go--btn" id="hk-me" href="profile.html">Sign in</a>
-          <a class="hk__go hk__go--btn hk__go--ghost" href="admin.html?register=1" title="Register or claim your organization">For charities</a>
+          <a class="hk__go hk__go--btn hk__go--ghost" href="/org" title="Organization sign-in — or claim or register your organization">For charities</a>
         </div>
       </section>
     </nav>
@@ -346,8 +360,7 @@
     <!-- ══ THE MISSION HUB (2026-09-30) ═════════════════════════════════════ -->
     <section class="mh" id="mh" aria-labelledby="mh-title">
       <div class="mh__head">
-        <h2 class="mh__title" id="mh-title">Missions</h2>
-        <span class="mh__sub" id="mh-sub">This week&rsquo;s elections</span>
+        <h2 class="mh__title" id="mh-title">This Week&rsquo;s Decisions</h2>
         <div class="mh__nav" id="mh-nav">
           <button type="button" class="mh__btn mh__btn--page" data-mh="-page" aria-label="Back one page">&laquo;</button>
           <button type="button" class="mh__btn" data-mh="-1" aria-label="Back one column">&lsaquo;</button>
@@ -366,14 +379,14 @@
     <!-- ══ THE NETWORK + THE FEED ════════════════════════════════════════════
          Nothing on Home toggles: the tiles open News filtered, a post opens its
          thread in News. -->
-    <section class="hn" aria-labelledby="hn-title">
+    <section class="hn" aria-label="Posts">
+      <!-- P2 · Home (2026-10-05): "Remove 'The Network' and 'What the network
+           made this week'; put the toggle options in the same row as +Post." -->
       <div class="hn__head">
-        <h2 class="hn__title" id="hn-title">The Network</h2>
-        <span class="hn__sub">what the network made this week</span>
+        <div class="ep-src" id="hf-src" role="group" aria-label="Who the posts come from"></div>
         <a class="hn__post" id="hn-post" href="post.html?back=%2F" title="Make a post — general, research or a budget item">+ Post</a>
       </div>
       <div class="hf">
-        <div class="ep-src" id="hf-src" role="group" aria-label="Who the posts come from"></div>
         <div class="hf__state" id="hf-state" aria-live="polite"></div>
         <div class="hf__list" id="hf-list"><div class="hf__empty">Loading the feed&hellip;</div></div>
         <a class="hf__all" id="hf-all" href="cause.html">Search, filter and reply in News &rarr;</a>
@@ -383,7 +396,7 @@
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20261002b"></script>
+  <script src="resources/js/ebx_shared.js?v=20261004a"></script>
   <!-- the globe in the first step: d3-geo + Natural Earth land, vendored -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -505,7 +518,9 @@
       const s = stageOf(m), n = c.name + ' ' + ((m.cycle_num || 0) + 1);
       const K = { me: 'Initiative election', oe: 'Organization election', fr: 'Framing', ex: 'Exchange',
                   'no-tiv': 'Initiative election · closed', 'no-org': 'Organization election · closed' }[s.key];
-      let title, line, foot;
+      // P2 · Home (2026-10-05): top row "phase · closes x"; then the title, a
+      // "Leading: x" line; bottom row "cause · started x". No "Week x".
+      let title, line, when = '';
       if (s.key === 'me') {
         const ins = (cfg().initiatives || []).filter(i => i.mission_id === m.id)
           .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
@@ -513,36 +528,37 @@
         const lead = ins[0];
         // "The initiative elections in the missions hub should say Leading to
         // indicate that it isn't final yet."
-        title = lead ? lead.title : 'Open for proposals';
-        line = ins.length ? (lead ? 'Leading' + (pool ? ' · ' + Math.round((lead.committed_ebx || 0) / pool * 100) + '%' : '') + ' · ' : '') +
-          ins.length + ' initiative' + (ins.length === 1 ? '' : 's') : 'no initiatives yet';
-        foot = 'closes ' + fmt(s.T);
+        title = n;
+        line = lead ? 'Leading: ' + lead.title + (pool ? ' · ' + Math.round((lead.committed_ebx || 0) / pool * 100) + '%' : '') +
+          ' · ' + ins.length + ' initiative' + (ins.length === 1 ? '' : 's') : 'No initiatives yet';
+        when = 'closes ' + fmt(s.T);
       } else if (s.key === 'no-tiv') {
-        title = n; line = 'No initiative was elected'; foot = 'closed ' + fmt(s.T);
+        title = n; line = 'No initiative was elected'; when = 'closed ' + fmt(s.T);
       } else {
         title = tivTitle(m.winning_tiv_id);
         if (s.key === 'oe') {
           const t = Wh() && Wh().p2Tally ? Wh().p2Tally(m.id) : null;
           const es = ((t && t.entries) || []).slice().sort((a, b) => (b.net_votes || 0) - (a.net_votes || 0));
           const cands = Wh() && Wh().candidacies ? Wh().candidacies(m.id).length : 0;
-          line = es.length ? 'leading: ' + orgName(es[0].org_id) : (cands ? cands + ' nominated' : 'no organizations yet');
-          foot = 'closes ' + fmt(s.o8);
+          line = es.length ? 'Leading: ' + orgName(es[0].org_id) : (cands ? cands + ' nominated' : 'No organizations yet');
+          when = 'closes ' + fmt(s.o8);
         } else if (s.key === 'no-org') {
-          line = 'No organization was elected'; foot = 'closed ' + fmt(s.o8);
+          line = 'No organization was elected'; when = 'closed ' + fmt(s.o8);
         } else if (s.key === 'fr') {
-          line = orgName(m.winning_org_id); foot = 'budget day ' + fmt(s.b15);
+          line = orgName(m.winning_org_id); when = 'budget day ' + fmt(s.b15);
         } else {
-          line = orgName(m.winning_org_id); foot = 'coin ' + (Number(m.credit_value) || 1).toFixed(2);
+          line = orgName(m.winning_org_id); when = 'coin ' + (Number(m.credit_value) || 1).toFixed(2);
         }
       }
       const now = !!(s.when && thisWeek(s.when));
-      if (now) foot = (s.key === 'fr' ? 'budget day ' : 'decides ') + fmt(s.when);
+      if (now) when = (s.key === 'fr' ? 'budget day ' : 'decides ') + fmt(s.when);
+      const started = EBX.Cycle.missionDates(m).startedAt;
       return { now, html: '<a class="mc mc--' + s.key + (now ? ' mc--now' : '') + (/^no-/.test(s.key) ? ' mc--stalled' : '') +
         '" style="--c:' + esc(c.color) + '" href="' + esc(hrefOf(m)) + '" data-mission="' + esc(m.id) + '" title="' + esc(n + (now ? ' — decided this week' : '')) + '">' +
-        '<span class="mc__k">' + esc(K) + '</span>' +
+        '<span class="mc__k">' + esc(K + (when ? ' · ' + when : '')) + '</span>' +
         '<span class="mc__t">' + esc(title) + '</span>' +
         '<span class="mc__l">' + esc(line) + '</span>' +
-        '<span class="mc__f">' + (s.wk != null ? '<span class="mc__wk">Week ' + s.wk + '</span>' : '') + '<span>' + esc(foot) + '</span></span></a>' };
+        '<span class="mc__f"><span><b>' + esc(c.name) + '</b> · started ' + esc(fmt(started)) + '</span></span></a>' };
     }
 
     // Home pass (2026-10-01): "Say '<cause><number>', not 'holds'." A window
@@ -558,16 +574,16 @@
       const sl = st.slate, slot = sl ? (sl.slots || []).find(s => s.votable && s.incumbent_id === c.id) : null;
       const byId = id => (cfg().causes || []).find(x => x.id === id);
       if (!slot) return { now: false, html: '<a class="mc mc--ce" style="--c:' + esc(c.color) + '" href="mission.html?state=ce&amp;cause=' + encodeURIComponent(c.id) + '">' +
-        '<span class="mc__k">Cause election</span><span class="mc__t">' + esc(c.name) + '</span><span class="mc__l">no window open</span><span class="mc__f"><span></span></span></a>' };
+        '<span class="mc__k">Cause election</span><span class="mc__t">' + esc(c.name) + '</span><span class="mc__l">no window open</span><span class="mc__f"><span><b>' + esc(c.name) + '</b></span></span></a>' };
       const ch = slot.challenger_id ? byId(slot.challenger_id) : null;
       const wait = slot.weeks_out - (sl.first_open_slot || slot.weeks_out);
       const now = wait === 0;
       return { now, html: '<a class="mc mc--ce' + (now ? ' mc--now' : '') + '" style="--c:' + esc(c.color) + '" href="mission.html?slot=' + slot.slot + '" data-slot="' + slot.slot + '"' +
         (now ? ' title="Decided this week"' : '') + '>' +
-        '<span class="mc__k">Cause election · ' + slot.weeks_out + ' wks out</span>' +
+        '<span class="mc__k">Cause election · ' + (now ? 'confirmed this week' : 'confirms in ' + wait + ' wk' + (wait === 1 ? '' : 's')) + '</span>' +
         '<span class="mc__t">' + esc(windowName(c, slot)) + '</span>' +
         '<span class="mc__l">' + (ch ? esc(ch.name) + ' challenging · ' + (slot.streak || 0) + '/' + (slot.weeks_required || 6) : 'no challenger') + '</span>' +
-        '<span class="mc__f"><span>' + (now ? 'confirmed this week' : 'confirms in ' + wait + ' wk' + (wait === 1 ? '' : 's')) + '</span></span></a>' };
+        '<span class="mc__f"><span><b>' + esc(c.name) + '</b> · ' + slot.weeks_out + ' wks out</span></span></a>' };
     }
 
     // Home pass (2026-10-01): "The current cause with a mission in week 0 should
@@ -598,14 +614,14 @@
           .sort((a, b) => a.s.when - b.s.when);
         return xs.find(x => thisWeek(x.s.when)) || xs[0] || null;
       };
-      return [pick('me'), pick('oe')].filter(Boolean);
+      return [pick('me'), pick('oe')];
     }
     function leaders(x) {
       if (x.s.key === 'me') {
         const ins = (cfg().initiatives || []).filter(i => i.mission_id === x.m.id)
           .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
         const pool = ins.reduce((a, i) => a + (i.committed_ebx || 0), 0);
-        return ins.slice(0, 3).map(i => ({ name: i.title, val: pool ? Math.round((i.committed_ebx || 0) / pool * 100) + '%' : '—' }));
+        return ins.slice(0, 3).map(i => ({ name: i.title, val: Math.round(i.committed_ebx || 0) + ' EBX committed' + (pool ? ' · ' + Math.round((i.committed_ebx || 0) / pool * 100) + '%' : '') }));
       }
       const t = Wh() && Wh().p2Tally ? Wh().p2Tally(x.m.id) : null;
       const es = ((t && t.entries) || []).slice().sort((a, b) => (b.net_votes || 0) - (a.net_votes || 0) || (b.ebx || 0) - (a.ebx || 0));
@@ -617,19 +633,28 @@
       const el = $('mh-week');
       el.hidden = st.open;
       if (st.open) return;
+      // P2 · Home (2026-10-05): a standing column head over each card; the card
+      // is titled "Leading initiative/organization: x" with its count, and the
+      // runners-up below.
+      const HEAD = { me: 'Initiative Election', oe: 'Organization Election' };
+      const LEAD = { me: 'Leading initiative', oe: 'Leading organization' };
       const pair = weekPair();
-      el.innerHTML = pair.length ? pair.map(x => {
-        const ls = leaders(x), now = thisWeek(x.s.when);
-        const K = x.s.key === 'me' ? 'Initiative election' : 'Organization election';
-        const title = x.s.key === 'me' ? (x.c.name + ' ' + ((x.m.cycle_num || 0) + 1)) : tivTitle(x.m.winning_tiv_id);
-        const sub = x.s.key === 'me' ? '' : ' &middot; ' + esc(x.c.name + ' ' + ((x.m.cycle_num || 0) + 1));
-        return '<a class="mw mw--' + x.s.key + (now ? ' mc--now' : '') + '" style="--c:' + esc(x.c.color) + '" href="' + esc(hrefOf(x.m)) + '" data-mission="' + esc(x.m.id) + '">' +
-          '<span class="mw__top"><span class="mw__k">' + K + sub + '</span><span class="mw__d">' + (now ? 'decides ' : 'closes ') + fmt(x.s.when) + '</span></span>' +
-          '<span class="mw__t">' + esc(title) + '</span>' +
-          (ls.length ? '<span class="mw__lab">Leading</span><ol class="mw__lead">' + ls.map((l, k) => '<li><i>' + (k + 1) + '</i><span>' + esc(l.name) + '</span><b>' + esc(l.val) + '</b></li>').join('') + '</ol>'
-                     : '<span class="mw__none">' + (x.s.key === 'me' ? 'No initiatives yet' : 'No organizations nominated yet') + '</span>') +
-        '</a>';
-      }).join('') : '<div class="mh__loading">No election decides this week.</div>';
+      el.innerHTML = ['me', 'oe'].map((key, i) => {
+        const x = pair[i];
+        let card;
+        if (!x) card = '<div class="mh__loading">No ' + HEAD[key].toLowerCase() + ' is open.</div>';
+        else {
+          const ls = leaders(x), now = thisWeek(x.s.when), top = ls[0], rest = ls.slice(1);
+          const what = x.c.name + ' ' + ((x.m.cycle_num || 0) + 1) + (key === 'oe' ? ' · ' + tivTitle(x.m.winning_tiv_id) : '');
+          card = '<a class="mw mw--' + key + (now ? ' mc--now' : '') + '" style="--c:' + esc(x.c.color) + '" href="' + esc(hrefOf(x.m)) + '" data-mission="' + esc(x.m.id) + '">' +
+            '<span class="mw__top"><span class="mw__k">' + esc(what) + '</span><span class="mw__d">' + (now ? 'decides ' : 'closes ') + fmt(x.s.when) + '</span></span>' +
+            (top ? '<span class="mw__t"><em>' + LEAD[key] + '</em>' + esc(top.name) + '<small>' + esc(top.val) + '</small></span>' +
+                   (rest.length ? '<span class="mw__lab">Runners-up</span><ol class="mw__lead" start="2">' + rest.map((l, k) => '<li><i>' + (k + 2) + '</i><span>' + esc(l.name) + '</span><b>' + esc(l.val) + '</b></li>').join('') + '</ol>' : '')
+                 : '<span class="mw__t"><em>' + LEAD[key] + '</em>&mdash;</span><span class="mw__none">' + (key === 'me' ? 'No initiatives yet' : 'No organizations nominated yet') + '</span>') +
+          '</a>';
+        }
+        return '<div class="mh__wcol"><div class="mh__wh">' + HEAD[key] + '</div>' + card + '</div>';
+      }).join('');
     }
 
     function paint() {
@@ -640,13 +665,13 @@
       $('mh-toggle').textContent = st.open ? 'Collapse missions' : 'Show all missions';
       $('mh-toggle').setAttribute('aria-expanded', String(st.open));
       const n = st.rows.reduce((a, r) => a + r.cells.filter(x => x.now).length, 0);
-      // "Instead of '4 decided this week' say This week's elections when
-      // collapsed and All missions when expanded."
-      $('mh-sub').textContent = st.open ? 'All missions' : 'This week\u2019s elections';
+      // P2 · Home (2026-10-05): "Instead of 'Missions', say 'This Week's
+      // Decisions'" (collapsed); open, it is every mission.
+      $('mh-title').textContent = st.open ? 'All missions' : 'This Week\u2019s Decisions';
       void n;
       const w = body.clientWidth || $('mh').clientWidth || 1000;
-      const lab = w < 560 ? 22 : 128;
-      st.vis = Math.max(1, Math.min(st.cols, Math.floor((w - lab + 10) / 206)));
+      const lab = 0;   // no row labels: the cause is in every card (2026-10-05)
+      st.vis = Math.max(1, Math.min(st.cols, Math.floor((w - lab + 10) / 196)));
       st.off = Math.max(0, Math.min(st.off, st.cols - st.vis));
       document.querySelectorAll('#mh-nav [data-mh]').forEach(b => {
         const d = b.dataset.mh, back = d.charAt(0) === '-';
@@ -655,12 +680,10 @@
       });
       if (!st.open) return;
       const cols = Array.from({ length: st.vis }, (_, k) => st.off + k);
-      const head = k => k === 0 ? 'Cause election' : k === 1 ? 'Newest mission' : (k - 1) + ' earlier';
-      let html = '<div class="mh__grid" style="grid-template-columns:' + lab + 'px repeat(' + st.vis + ', minmax(0, 1fr))">' +
-        '<span></span>' + cols.map(k => '<span class="mh__colhead">' + head(k) + '</span>').join('');
+      // No row or column labels (2026-10-05): the cause is in every card.
+      let html = '<div class="mh__grid" style="grid-template-columns:repeat(' + st.vis + ', minmax(0, 1fr))">';
       st.rows.forEach(r => {
-        html += '<a class="mh__rowhead" style="--c:' + esc(r.c.color) + '" href="mission.html?cause=' + encodeURIComponent(r.c.id) + '" title="' + esc(r.c.name) + '"><i></i><span>' + esc(r.c.name) + '</span></a>' +
-          cols.map(k => r.cells[k] ? r.cells[k].html : '<span class="mc--empty" aria-hidden="true"></span>').join('');
+        html += cols.map(k => r.cells[k] ? r.cells[k].html : '<span class="mc--empty" aria-hidden="true"></span>').join('');
       });
       body.innerHTML = html + '</div>';
     }

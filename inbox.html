@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inbox — Earthbux</title>
+  <meta name="description" content="Your Earthbux inbox: replies, votes on your posts, election results, messages from your missions, and your weekly update." />
+  <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261004a" />
+  <style>
+    /* ── inbox.html — P4 · Event log + Inbox (2026-10-04) ──────────────────
+       Three views behind one toggle (INSTRUCTIONS › P4: "Message threads vs.
+       notifications — toggle"): Notifications (the event log's fan-out, read /
+       unread) · Messages (threads between members of the same mission, D10) ·
+       Weekly update (the edition, and YOUR part of it). Every word of a
+       notification is written by the server (`events.describe`), so this page
+       and any other that lists them say the same thing. */
+    body { background: #0f1a14; color: var(--clr-parchment, #f5f0e8); min-height: 100vh; display: flex; flex-direction: column; }
+    [hidden] { display: none !important; }
+    .ib-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 26px; border-bottom: 1px solid rgba(245,240,232,0.08); }
+    .ib-brand { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.3rem; color: var(--clr-parchment, #f5f0e8); text-decoration: none; white-space: nowrap; }
+    .ib-brand em { color: var(--clr-honey, #e8a84c); font-style: normal; }
+    .ebx-home-mark { display: none !important; }
+    .ib { flex: 1; width: min(1100px, 100%); margin: 0 auto; padding: 22px 16px 60px; box-sizing: border-box; }
+    .ib-kicker { font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); }
+    .ib-h1 { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.7rem; margin: 4px 0 14px; color: var(--clr-parchment, #f5f0e8); }
+    .ib-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .ib-toggle { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; border: 1px solid rgba(245,240,232,0.14); background: rgba(0,0,0,0.2); margin-bottom: 16px; }
+    .ib-toggle button { font: inherit; font-size: 0.86rem; font-weight: 700; padding: 7px 16px; border-radius: 999px; border: 0; cursor: pointer;
+      background: none; color: rgba(245,240,232,0.7); display: inline-flex; align-items: center; gap: 7px; }
+    .ib-toggle button[aria-pressed="true"] { background: var(--clr-honey, #e8a84c); color: #0f1a14; }
+    .ib-count { font-size: 0.66rem; min-width: 18px; height: 18px; border-radius: 999px; padding: 0 5px; box-sizing: border-box;
+      display: inline-flex; align-items: center; justify-content: center; background: rgba(232,168,76,0.2); color: var(--clr-honey, #e8a84c); }
+    .ib-toggle button[aria-pressed="true"] .ib-count { background: rgba(15,26,20,0.2); color: #0f1a14; }
+    .ib-card { border: 1px solid rgba(245,240,232,0.14); border-radius: 16px; background: #13211a; padding: 16px 18px; min-width: 0; }
+    .ib-muted { color: rgba(245,240,232,0.6); font-size: 0.86rem; line-height: 1.55; }
+    .ib-btn { font: inherit; font-weight: 700; font-size: 0.82rem; cursor: pointer; padding: 7px 16px; border-radius: 999px;
+      background: var(--clr-honey, #e8a84c); color: #0f1a14; border: 0; text-decoration: none; display: inline-block; }
+    .ib-btn--ghost { background: none; color: rgba(245,240,232,0.85); border: 1px solid rgba(245,240,232,0.25); }
+    .ib-btn--sm { font-size: 0.74rem; padding: 5px 12px; }
+    .ib-btn:disabled { opacity: 0.45; cursor: default; }
+    .ib-in, .ib-text { font: inherit; color: inherit; background: rgba(0,0,0,0.25); border: 1px solid rgba(245,240,232,0.16);
+      border-radius: 10px; padding: 9px 12px; width: 100%; box-sizing: border-box; }
+    .ib-text { min-height: 70px; resize: vertical; line-height: 1.5; }
+
+    /* notifications */
+    .ib-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .ib-chip { font: inherit; font-size: 0.76rem; padding: 5px 12px; border-radius: 999px; cursor: pointer; background: none;
+      color: rgba(245,240,232,0.75); border: 1px solid rgba(245,240,232,0.2); }
+    .ib-chip[aria-pressed="true"] { border-color: var(--clr-honey, #e8a84c); color: var(--clr-honey, #e8a84c); background: rgba(232,168,76,0.1); }
+    .ib-bar .ib-btn { margin-left: auto; }
+    .ib-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+    .ib-note { display: grid; grid-template-columns: 12px 1fr auto; gap: 12px; padding: 13px 6px; border-bottom: 1px solid rgba(245,240,232,0.07);
+      cursor: pointer; border-radius: 8px; }
+    .ib-note:hover { background: rgba(245,240,232,0.03); }
+    .ib-note:last-child { border-bottom: 0; }
+    .ib-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; background: transparent; }
+    .ib-note--unread .ib-dot { background: var(--clr-honey, #e8a84c); box-shadow: 0 0 6px rgba(232,168,76,0.6); }
+    .ib-note h3 { margin: 0; font-size: 0.95rem; font-weight: 600; color: rgba(245,240,232,0.78); line-height: 1.4; }
+    .ib-note--unread h3 { color: var(--clr-parchment, #f5f0e8); font-weight: 700; }
+    .ib-note p { margin: 3px 0 0; font-size: 0.84rem; color: rgba(245,240,232,0.6); line-height: 1.5; }
+    .ib-kind { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.45); margin-bottom: 3px; }
+    .ib-when { font-size: 0.72rem; color: rgba(245,240,232,0.45); white-space: nowrap; }
+    .ib-out { display: inline-block; font-size: 0.66rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; margin-left: 6px; vertical-align: 2px; }
+    .ib-out--won { color: #8fce9d; border: 1px solid rgba(143,206,157,0.5); }
+    .ib-out--lost { color: #f08a6a; border: 1px solid rgba(240,138,106,0.5); }
+    .ib-out--followed, .ib-out--proposed { color: var(--clr-honey, #e8a84c); border: 1px solid rgba(232,168,76,0.5); }
+    .ib-empty { text-align: center; padding: 40px 16px; color: rgba(245,240,232,0.55); font-size: 0.9rem; }
+    .ib-more { text-align: center; margin-top: 12px; }
+
+    /* messages */
+    .ib-msgs { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+    @media (max-width: 820px) { .ib-msgs { grid-template-columns: 1fr; } .ib-msgs--open .ib-threads { display: none; } }
+    .ib-threads { padding: 12px; }
+    .ib-thread { display: block; width: 100%; text-align: left; font: inherit; color: inherit; background: none; border: 0; cursor: pointer;
+      padding: 10px; border-radius: 10px; border-bottom: 1px solid rgba(245,240,232,0.06); }
+    .ib-thread:hover { background: rgba(245,240,232,0.04); }
+    .ib-thread[aria-current="true"] { background: rgba(232,168,76,0.1); }
+    .ib-thread b { font-size: 0.9rem; }
+    .ib-thread small { display: block; font-size: 0.72rem; color: rgba(245,240,232,0.5); margin-top: 2px; }
+    .ib-thread span { display: block; font-size: 0.8rem; color: rgba(245,240,232,0.62); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ib-thread--unread b::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-left: 7px; background: var(--clr-honey, #e8a84c); vertical-align: 2px; }
+    .ib-rule { font-size: 0.78rem; line-height: 1.5; padding: 9px 12px; border-radius: 10px; margin-bottom: 12px;
+      background: rgba(232,168,76,0.07); border: 1px solid rgba(232,168,76,0.25); color: rgba(245,240,232,0.75); }
+    .ib-conv-head { display: flex; align-items: center; gap: 10px; justify-content: space-between; margin-bottom: 10px; }
+    .ib-conv-head h2 { font-family: var(--font-display, serif); font-size: 1.15rem; margin: 0; }
+    .ib-back { display: none; }
+    @media (max-width: 820px) { .ib-back { display: inline-block; } }
+    .ib-bubbles { display: flex; flex-direction: column; gap: 8px; max-height: 52vh; overflow-y: auto; padding: 4px 2px 10px; }
+    .ib-bubble { max-width: 78%; padding: 9px 12px; border-radius: 14px; font-size: 0.88rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;
+      background: rgba(245,240,232,0.06); border: 1px solid rgba(245,240,232,0.1); align-self: flex-start; }
+    .ib-bubble--mine { align-self: flex-end; background: rgba(232,168,76,0.14); border-color: rgba(232,168,76,0.3); }
+    .ib-bubble--hidden { font-style: italic; opacity: 0.6; }
+    .ib-bubble footer { font-size: 0.66rem; color: rgba(245,240,232,0.45); margin-top: 4px; display: flex; gap: 10px; }
+    .ib-bubble footer button { font: inherit; background: none; border: 0; padding: 0; color: rgba(245,240,232,0.5); cursor: pointer; text-decoration: underline; }
+    .ib-send { display: flex; gap: 8px; align-items: flex-end; margin-top: 8px; }
+    .ib-people { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 260px; overflow-y: auto; }
+    .ib-person { display: flex; justify-content: space-between; gap: 8px; align-items: center; font-size: 0.84rem; padding: 6px 8px; border-radius: 8px; background: rgba(245,240,232,0.03); }
+    .ib-person small { color: rgba(245,240,232,0.5); display: block; font-size: 0.7rem; }
+
+    /* weekly */
+    .ib-week-nav { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .ib-week h2 { font-family: var(--font-display, serif); font-size: 1.35rem; margin: 2px 0 6px; }
+    .ib-sec { margin-top: 18px; }
+    .ib-sec h3 { font-family: var(--font-mono, monospace); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clr-honey, #e8a84c); margin: 0 0 8px; }
+    .ib-row { padding: 9px 0; border-bottom: 1px solid rgba(245,240,232,0.07); font-size: 0.88rem; line-height: 1.5; }
+    .ib-row:last-child { border-bottom: 0; }
+    .ib-row a { color: var(--clr-honey, #e8a84c); }
+    .ib-you { border-color: rgba(232,168,76,0.35); background: linear-gradient(180deg, rgba(232,168,76,0.07), rgba(232,168,76,0.02)); margin-bottom: 16px; }
+    .ib-stats { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 6px; }
+    .ib-stat b { display: block; font-family: var(--font-display, serif); font-size: 1.4rem; }
+    .ib-stat span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(245,240,232,0.55); }
+    .ib-msg { font-size: 0.8rem; margin-top: 6px; min-height: 1em; }
+    .ib-msg--err { color: #f08a6a; } .ib-msg--ok { color: #8fce9d; }
+  </style>
+</head>
+<body>
+  <div class="ib-top">
+    <a class="ib-brand" href="index.html">Earth<em>bux</em></a>
+    <div id="ebx-nav-mount"></div>
+    <div id="ebx-user-badge-mount"></div>
+  </div>
+
+  <main class="ib">
+    <div class="ib-head">
+      <div>
+        <div class="ib-kicker">Inbox</div>
+        <h1 class="ib-h1">Your inbox</h1>
+      </div>
+      <div class="ib-toggle" role="tablist" aria-label="Inbox view">
+        <button type="button" data-view="notes" aria-pressed="true">Notifications <span class="ib-count" id="ib-c-notes" hidden></span></button>
+        <button type="button" data-view="msgs" aria-pressed="false">Messages <span class="ib-count" id="ib-c-msgs" hidden></span></button>
+        <button type="button" data-view="weekly" aria-pressed="false">Weekly update</button>
+      </div>
+    </div>
+
+    <section id="ib-signedout" class="ib-card" hidden>
+      <p class="ib-muted" style="margin:0 0 12px">Sign in to see replies to your posts, how your elections turned out, messages from your missions, and your weekly update.</p>
+      <button type="button" class="ib-btn" id="ib-signin">Sign in</button>
+    </section>
+
+    <!-- Notifications -->
+    <section id="v-notes" hidden>
+      <div class="ib-bar" id="ib-filters"></div>
+      <div class="ib-card"><ul class="ib-list" id="ib-notes"></ul><div class="ib-more" id="ib-notes-more"></div></div>
+    </section>
+
+    <!-- Messages -->
+    <section id="v-msgs" hidden>
+      <div class="ib-msgs" id="ib-msgs">
+        <aside class="ib-card ib-threads">
+          <input class="ib-in" id="ib-tq" type="search" placeholder="Search by name or mission…" aria-label="Search threads" />
+          <div style="margin:10px 0 6px"><button type="button" class="ib-btn ib-btn--sm" id="ib-new">New message</button></div>
+          <div id="ib-newbox" hidden>
+            <input class="ib-in" id="ib-pq" type="search" placeholder="Find a member of your missions…" aria-label="Find a person" />
+            <div class="ib-people" id="ib-people"></div>
+          </div>
+          <div id="ib-threads"></div>
+        </aside>
+        <section class="ib-card" id="ib-conv">
+          <p class="ib-muted" style="margin:0">Pick a conversation, or start one with someone from a mission you are in.</p>
+        </section>
+      </div>
+    </section>
+
+    <!-- Weekly update -->
+    <section id="v-weekly" hidden>
+      <div class="ib-week-nav">
+        <button type="button" class="ib-btn ib-btn--ghost ib-btn--sm" id="ib-wprev">&larr; Earlier week</button>
+        <button type="button" class="ib-btn ib-btn--ghost ib-btn--sm" id="ib-wnext">Later week &rarr;</button>
+        <span class="ib-muted" id="ib-wlabel"></span>
+      </div>
+      <div id="ib-weekly"></div>
+    </section>
+  </main>
+
+  <script src="resources/js/ebx_page.js"></script>
+  <script src="resources/js/ebx_shared.js?v=20261004a"></script>
+  <script>
+  (function () {
+    'use strict';
+    const esc = EBXPage.esc;
+    const Auth = EBX.Auth;
+    const $ = (id) => document.getElementById(id);
+    const S = { view: 'notes', filter: 'all', kinds: {}, notes: [], more: false, threads: [], thread: null, week: null, latest: null, me: null };
+
+    async function api(path, init) {
+      const r = await Auth.fetchAuthed(path, init || {});
+      let d = null; try { d = await r.json(); } catch (e) {}
+      if (!r.ok) { const e = new Error((d && d.detail) || ('HTTP ' + r.status)); e.status = r.status; throw e; }
+      return d;
+    }
+    function ago(iso) { try { return EBX.timeAgo(iso); } catch (e) { return ''; } }
+    function day(iso) { return iso ? EBXPage.fmtShortDate(iso) : ''; }
+    function missionHref(id) { try { return EBX.Post.missionHref(id); } catch (e) { return '/m/' + encodeURIComponent(id); } }
+
+    // ── the toggle (hash-remembered: #notes · #msgs · #weekly[/<week>] · #t/<thread>)
+    function setView(v, push) {
+      S.view = v;
+      document.querySelectorAll('.ib-toggle button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === v)));
+      ['notes', 'msgs', 'weekly'].forEach((k) => { $('v-' + k).hidden = k !== v; });
+      if (push !== false && location.hash.replace('#', '').split('/')[0] !== v) history.replaceState(null, '', '#' + v);
+      if (v === 'notes') loadNotes(true);
+      if (v === 'msgs') loadThreads();
+      if (v === 'weekly') loadWeekly(S.week);
+    }
+    document.querySelectorAll('.ib-toggle button').forEach((b) => b.onclick = () => setView(b.dataset.view));
+
+    async function refreshCounts() {
+      try {
+        const s = await api('/inbox/summary');
+        const a = $('ib-c-notes'), b = $('ib-c-msgs');
+        a.textContent = s.unread_notifications; a.hidden = !s.unread_notifications;
+        b.textContent = s.unread_threads; b.hidden = !s.unread_threads;
+        if (EBX.refreshInboxBadge) EBX.refreshInboxBadge(s);
+      } catch (e) {}
+    }
+
+    // ── Notifications ───────────────────────────────────────────────────────
+    function drawFilters() {
+      const chips = [['all', 'All'], ['unread', 'Unread']].concat(Object.entries(S.kinds));
+      $('ib-filters').innerHTML = chips.map(([k, l]) =>
+        '<button type="button" class="ib-chip" data-f="' + esc(k) + '" aria-pressed="' + (S.filter === k) + '">' + esc(l) + '</button>').join('') +
+        '<button type="button" class="ib-btn ib-btn--ghost ib-btn--sm" id="ib-allread">Mark all read</button>';
+      $('ib-filters').querySelectorAll('[data-f]').forEach((b) => b.onclick = () => { S.filter = b.dataset.f; drawFilters(); loadNotes(true); });
+      $('ib-allread').onclick = async () => {
+        await api('/inbox/notifications/read', { method: 'POST', body: JSON.stringify({ all: true }) });
+        S.notes.forEach((n) => n.read = true); drawNotes(); refreshCounts();
+      };
+    }
+    async function loadNotes(reset) {
+      const q = new URLSearchParams({ limit: '30' });
+      if (S.filter === 'unread') q.set('unread', '1');
+      else if (S.filter !== 'all') q.set('kind', S.filter);
+      if (!reset && S.notes.length) q.set('before', S.notes[S.notes.length - 1].id);
+      try {
+        const d = await api('/inbox/notifications?' + q);
+        if (!Object.keys(S.kinds).length) { S.kinds = d.kinds || {}; drawFilters(); }
+        S.notes = reset ? d.items : S.notes.concat(d.items);
+        S.more = d.items.length === 30;
+        drawNotes();
+      } catch (e) { $('ib-notes').innerHTML = '<li class="ib-empty">' + esc(e.message) + '</li>'; }
+    }
+    function outcome(n) {
+      const o = n.detail && n.detail.outcome;
+      if (!o) return '';
+      const w = { won: 'You won', lost: 'You lost', followed: 'Followed the winner', proposed: 'You proposed it' }[o] || o;
+      return '<span class="ib-out ib-out--' + esc(o) + '">' + esc(w) + '</span>';
+    }
+    function drawNotes() {
+      const ul = $('ib-notes');
+      if (!S.notes.length) {
+        ul.innerHTML = '<li class="ib-empty">' + (S.filter === 'unread' ? 'Nothing unread. You are all caught up.'
+          : 'Nothing here yet. Replies to your posts, votes on them, and the results of the elections you vote in will land here.') + '</li>';
+        $('ib-notes-more').innerHTML = '';
+        return;
+      }
+      ul.innerHTML = S.notes.map((n, i) =>
+        '<li class="ib-note' + (n.read ? '' : ' ib-note--unread') + '" data-i="' + i + '" tabindex="0">' +
+        '<span class="ib-dot" aria-hidden="true"></span>' +
+        '<div><div class="ib-kind">' + esc(S.kinds[n.kind] || n.kind) + '</div><h3>' + esc(n.title) + outcome(n) + '</h3>' +
+        (n.body ? '<p>' + esc(n.body) + '</p>' : '') + '</div>' +
+        '<span class="ib-when">' + esc(ago(n.created_at)) + '</span></li>').join('');
+      ul.querySelectorAll('.ib-note').forEach((li) => {
+        const go = () => openNote(S.notes[+li.dataset.i]);
+        li.onclick = go;
+        li.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+      });
+      $('ib-notes-more').innerHTML = S.more ? '<button type="button" class="ib-btn ib-btn--ghost ib-btn--sm" id="ib-more">Older</button>' : '';
+      if (S.more) $('ib-more').onclick = () => loadNotes(false);
+    }
+    async function openNote(n) {
+      if (!n.read) {
+        n.read = true; drawNotes();
+        api('/inbox/notifications/read', { method: 'POST', body: JSON.stringify({ ids: [n.id] }) }).then(refreshCounts).catch(() => {});
+      }
+      const l = n.link || {};
+      if (l.post) { try { await EBX.Post.open(l.post, {}); } catch (e) {} return; }
+      if (l.weekly !== undefined && l.weekly !== null) { S.week = l.weekly; return setView('weekly'); }
+      if (l.org && l.mission) { location.href = '/o/' + encodeURIComponent(l.org) + '/' + encodeURIComponent(l.mission); return; }
+      if (l.mission) { location.href = missionHref(l.mission); return; }
+    }
+
+    // ── Messages ────────────────────────────────────────────────────────────
+    let tqTimer = null, pqTimer = null;
+    $('ib-tq').oninput = () => { clearTimeout(tqTimer); tqTimer = setTimeout(loadThreads, 200); };
+    $('ib-new').onclick = () => { const b = $('ib-newbox'); b.hidden = !b.hidden; if (!b.hidden) { $('ib-pq').focus(); loadPeople(); } };
+    $('ib-pq').oninput = () => { clearTimeout(pqTimer); pqTimer = setTimeout(loadPeople, 200); };
+
+    async function loadThreads() {
+      try {
+        const d = await api('/inbox/threads' + ($('ib-tq').value.trim() ? '?q=' + encodeURIComponent($('ib-tq').value.trim()) : ''));
+        S.rule = d.rule; S.threads = d.items;
+        drawThreads();
+      } catch (e) { $('ib-threads').innerHTML = '<p class="ib-muted">' + esc(e.message) + '</p>'; }
+    }
+    function drawThreads() {
+      const box = $('ib-threads');
+      if (!S.threads.length) {
+        box.innerHTML = '<p class="ib-muted" style="padding:8px 4px">' + ($('ib-tq').value.trim() ? 'No conversation matches.'
+          : 'No conversations yet. You can message anyone who votes in a mission you vote in.') + '</p>';
+        return;
+      }
+      box.innerHTML = S.threads.map((t) =>
+        '<button type="button" class="ib-thread' + (t.unread ? ' ib-thread--unread' : '') + '" data-t="' + t.id + '"' +
+        (S.thread && S.thread.id === t.id ? ' aria-current="true"' : '') + '>' +
+        '<b>' + esc(t.other.handle) + '</b>' + (t.mission ? '<small>' + esc(t.mission) + '</small>' : '') +
+        '<span>' + (t.last ? (t.last.mine ? 'You: ' : '') + esc(t.last.body) : 'No messages yet') + '</span></button>').join('');
+      box.querySelectorAll('[data-t]').forEach((b) => b.onclick = () => openThread(+b.dataset.t));
+    }
+    async function loadPeople() {
+      const box = $('ib-people');
+      try {
+        const q = $('ib-pq').value.trim();
+        const rows = await api('/inbox/people' + (q ? '?q=' + encodeURIComponent(q) : ''));
+        if (!rows.length) {
+          box.innerHTML = '<p class="ib-muted">' + (q ? 'Nobody by that name in your missions.'
+            : 'Nobody to message yet — vote in a mission, and its other members appear here.') + '</p>';
+          return;
+        }
+        box.innerHTML = rows.map((p) => '<div class="ib-person"><div>' + esc(p.handle) + '<small>' +
+          esc(p.missions.map((m) => m.label).join(' · ')) + '</small></div>' +
+          '<button type="button" class="ib-btn ib-btn--sm" data-p="' + p.id + '" data-m="' + esc((p.missions[0] || {}).id || '') + '">Message</button></div>').join('');
+        box.querySelectorAll('[data-p]').forEach((b) => b.onclick = async () => {
+          try {
+            const t = await api('/inbox/threads', { method: 'POST', body: JSON.stringify({ to_id: +b.dataset.p, mission_id: b.dataset.m || null }) });
+            $('ib-newbox').hidden = true; $('ib-pq').value = '';
+            await loadThreads(); openThread(t.id);
+          } catch (e) { box.insertAdjacentHTML('afterbegin', '<p class="ib-msg ib-msg--err">' + esc(e.message) + '</p>'); }
+        });
+      } catch (e) { box.innerHTML = '<p class="ib-muted">' + esc(e.message) + '</p>'; }
+    }
+    async function openThread(id) {
+      const conv = $('ib-conv');
+      try {
+        const t = await api('/inbox/threads/' + id);
+        S.thread = t;
+        history.replaceState(null, '', '#t/' + id);
+        $('ib-msgs').classList.add('ib-msgs--open');
+        conv.innerHTML =
+          '<div class="ib-conv-head"><div><button type="button" class="ib-btn ib-btn--ghost ib-btn--sm ib-back" id="ib-back">&larr; All</button> ' +
+          '<h2 style="display:inline">' + esc(t.other.handle) + '</h2>' +
+          (t.mission ? '<div class="ib-muted" style="font-size:0.78rem">Started in <a href="' + esc(missionHref(t.mission_id)) + '">' + esc(t.mission) + '</a></div>' : '') +
+          '</div></div>' +
+          '<div class="ib-rule">' + esc(t.rule) + '</div>' +
+          '<div class="ib-bubbles" id="ib-bubbles">' + (t.messages.length ? t.messages.map(bubble).join('')
+            : '<p class="ib-muted">Say hello — and what you are working on in the mission.</p>') + '</div>' +
+          '<div class="ib-send"><textarea class="ib-text" id="ib-body" maxlength="2000" placeholder="Write a message…"></textarea>' +
+          '<button type="button" class="ib-btn" id="ib-sendbtn">Send</button></div><div class="ib-msg" id="ib-smsg"></div>';
+        const bub = $('ib-bubbles'); bub.scrollTop = bub.scrollHeight;
+        $('ib-back').onclick = () => { $('ib-msgs').classList.remove('ib-msgs--open'); history.replaceState(null, '', '#msgs'); };
+        bindBubbles();
+        $('ib-sendbtn').onclick = send;
+        $('ib-body').onkeydown = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(); };
+        const row = S.threads.find((x) => x.id === id); if (row) row.unread = false;
+        drawThreads(); refreshCounts();
+      } catch (e) { conv.innerHTML = '<p class="ib-muted">' + esc(e.message) + '</p>'; }
+    }
+    function bubble(m) {
+      return '<div class="ib-bubble' + (m.mine ? ' ib-bubble--mine' : '') + (m.hidden ? ' ib-bubble--hidden' : '') + '">' + esc(m.body) +
+        '<footer><span>' + esc(ago(m.at)) + '</span>' +
+        (!m.mine && !m.hidden ? '<button type="button" data-report="' + m.id + '">Report</button>' : '') + '</footer></div>';
+    }
+    function bindBubbles() {
+      // Report: an inline "why?" box (no browser dialogs), then one call.
+      document.querySelectorAll('[data-report]').forEach((b) => b.onclick = () => {
+        const id = b.dataset.report;
+        const f = document.createElement('span');
+        f.style.cssText = 'display:inline-flex;gap:6px;align-items:center';
+        f.innerHTML = '<input class="ib-in" style="padding:3px 8px;font-size:0.72rem;width:170px" placeholder="Why? (optional)" maxlength="300">' +
+          '<button type="button">Send report</button>';
+        b.replaceWith(f);
+        f.querySelector('input').focus();
+        f.querySelector('button').onclick = async () => {
+          try {
+            await api('/inbox/messages/' + id + '/report', { method: 'POST',
+              body: JSON.stringify({ reason: f.querySelector('input').value.trim() || null }) });
+            f.textContent = 'Reported — Earthbux staff will look at it';
+          } catch (e) { f.textContent = e.message; }
+        };
+      });
+    }
+    async function send() {
+      const ta = $('ib-body'), body = ta.value.trim(), m = $('ib-smsg');
+      if (!body || !S.thread) return;
+      $('ib-sendbtn').disabled = true;
+      try {
+        const msg = await api('/inbox/threads/' + S.thread.id + '/messages', { method: 'POST', body: JSON.stringify({ body }) });
+        ta.value = ''; m.textContent = '';
+        const bub = $('ib-bubbles');
+        if (!S.thread.messages.length) bub.innerHTML = '';
+        S.thread.messages.push(msg);
+        bub.insertAdjacentHTML('beforeend', bubble(msg)); bub.scrollTop = bub.scrollHeight;
+        loadThreads();
+      } catch (e) { m.className = 'ib-msg ib-msg--err'; m.textContent = e.message; }
+      $('ib-sendbtn').disabled = false;
+    }
+
+    // ── Weekly update ───────────────────────────────────────────────────────
+    function postLink(p) {
+      if (!p) return '<span class="ib-muted">no winning post yet</span>';
+      return '<a href="#" data-post="' + esc(p.id) + '">' + esc(p.title) + '</a>' + (p.author ? ' <span class="ib-muted">by ' + esc(p.author) + '</span>' : '');
+    }
+    function mLink(x) { return '<a href="' + esc(missionHref(x.mission_id)) + '">' + esc(x.mission) + '</a>'; }
+    function sec(title, rows, draw, empty) {
+      return '<div class="ib-sec"><h3>' + esc(title) + '</h3>' +
+        (rows && rows.length ? rows.map((r) => '<div class="ib-row">' + draw(r) + '</div>').join('') : '<div class="ib-row ib-muted">' + esc(empty) + '</div>') + '</div>';
+    }
+    async function loadWeekly(week) {
+      const box = $('ib-weekly');
+      box.innerHTML = '<p class="ib-muted">Loading…</p>';
+      let d = null;
+      if (S.latest === null) {
+        try { const l = await api('/inbox/weekly/latest'); S.latest = l ? l.week : -1; } catch (e) { S.latest = -1; }
+      }
+      try {
+        d = await api('/inbox/weekly' + (week !== null && week !== undefined ? '?week=' + week : ''));
+      } catch (e) { box.innerHTML = '<p class="ib-muted">' + esc(e.message) + '</p>'; return; }
+      if (!d) {
+        box.innerHTML = '<div class="ib-card"><p class="ib-muted" style="margin:0">' + (week !== null && week !== undefined
+          ? 'Week ' + esc(week) + ' has no edition.' : 'The first weekly update has not been published yet. It goes out when each week closes.') + '</p></div>';
+        $('ib-wlabel').textContent = week !== null && week !== undefined ? 'Week ' + week : '';
+        if (week !== null && week !== undefined) S.week = week;
+        $('ib-wnext').disabled = !(S.week < S.latest);
+        $('ib-wprev').disabled = S.latest < 0 || !(S.week > 0);
+        return;
+      }
+      S.week = d.week;
+      S.latest = Math.max(S.latest, d.week);
+      history.replaceState(null, '', '#weekly/' + d.week);
+      $('ib-wlabel').textContent = 'Week ' + d.week + ' · ' + day(d.starts) + ' – ' + day(d.ends);
+      $('ib-wnext').disabled = d.week >= S.latest;
+      $('ib-wprev').disabled = d.week <= 0;
+      const you = d.you;
+      const c = (you && you.counts) || {};
+      const youHtml = you ? '<div class="ib-card ib-you"><div class="ib-kicker">Your week</div>' +
+        '<div class="ib-stats">' +
+        '<div class="ib-stat"><b>' + (you.posts_written || 0) + '</b><span>posts written</span></div>' +
+        '<div class="ib-stat"><b>' + (c.reply || 0) + '</b><span>replies to you</span></div>' +
+        '<div class="ib-stat"><b>' + (c.reaction || 0) + '</b><span>vote milestones</span></div>' +
+        '<div class="ib-stat"><b>' + (you.missions || []).length + '</b><span>missions you are in</span></div></div>' +
+        (you.results && you.results.length ? '<div style="margin-top:10px">' + you.results.map((r) =>
+          '<div class="ib-row">' + esc(r.what) + ' — ' + esc(r.mission || '') +
+          '<span class="ib-out ib-out--' + esc(r.outcome) + '">' + esc({ won: 'You won', lost: 'You lost', followed: 'Followed the winner', proposed: 'You proposed it' }[r.outcome] || r.outcome) + '</span></div>').join('') + '</div>'
+          : '<p class="ib-muted" style="margin:10px 0 0">None of your elections closed this week.</p>') + '</div>' : '';
+      box.innerHTML = youHtml + '<article class="ib-card ib-week"><div class="ib-kicker">Earthbux weekly · week ' + esc(d.week) + '</div>' +
+        '<h2>' + esc(d.headline) + '</h2>' +
+        sec('New initiatives', d.new_initiatives, (x) => '<b>' + esc(x.initiative) + '</b> — ' + mLink(x) +
+          '<br><span class="ib-muted">Winning ' + esc(x.post_kind) + ':</span> ' + postLink(x.winning_post), 'No initiative election closed this week.') +
+        sec('New organizations', d.new_organizations, (x) => '<b><a href="/o/' + esc(encodeURIComponent(x.org_id)) + '">' + esc(x.org) + '</a></b> will run ' + mLink(x) +
+          '<br><span class="ib-muted">Winning ' + esc(x.post_kind) + ':</span> ' + postLink(x.winning_post), 'No organization election closed this week.') +
+        sec('Entered exchange', d.entered_exchange, (x) => mLink(x) + (x.org ? ' (' + esc(x.org) + ')' : '') +
+          ' — its tokens are released and free to trade.' +
+          '<br><span class="ib-muted">Winning Analysis:</span> ' + postLink(x.winning_post) +
+          '<br><span class="ib-muted">' + esc(x.research_prize) + '</span>', 'No mission reached budget day this week.') +
+        sec('In prep', d.prep, (x) => mLink(x) + (x.org ? ' with ' + esc(x.org) : '') + ' — budget day ' + esc(day(x.budget_day)) +
+          ' (' + esc(x.days_to_budget) + ' days) · ' + esc(x.budget_items) + ' budget item' + (x.budget_items === 1 ? '' : 's') + ' suggested', 'No mission is in prep.') +
+        sec('Next week', d.next_week, (x) => '<b>' + esc(x.what) + '</b> — ' + mLink(x) + ' · ' + esc(day(x.date)), 'Nothing closes next week.') +
+        '</article>';
+      box.querySelectorAll('[data-post]').forEach((a) => a.onclick = (e) => { e.preventDefault(); EBX.Post.open(a.dataset.post, {}); });
+    }
+    $('ib-wprev').onclick = () => { if (S.week > 0) loadWeekly(S.week - 1); };
+    $('ib-wnext').onclick = () => { if (S.latest === null || S.week < S.latest) loadWeekly(S.week + 1); };
+
+    // ── boot ────────────────────────────────────────────────────────────────
+    async function boot() {
+      if (!Auth.isLoggedIn()) {
+        $('ib-signedout').hidden = false;
+        $('ib-signin').onclick = () => Auth.openModal('login');
+        document.querySelector('.ib-toggle').hidden = true;
+        return;
+      }
+      refreshCounts();
+      const h = location.hash.replace('#', '');
+      if (h.indexOf('t/') === 0) { setView('msgs', false); openThread(+h.slice(2)); return; }
+      if (h.indexOf('weekly') === 0) { const w = h.split('/')[1]; S.week = w ? +w : null; setView('weekly', false); return; }
+      setView(h === 'msgs' ? 'msgs' : 'notes', false);
+    }
+    document.addEventListener('DOMContentLoaded', boot);
+    window.InboxPage = { state: S };
+  })();
+  </script>
+</body>
+</html>

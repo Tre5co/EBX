@@ -29,6 +29,7 @@ from .routers import (
     wallet,
 )
 from .routers import org as org_routes   # P2b · organization accounts (2026-10-02)
+from .routers import inbox as inbox_routes   # P4 · event log + inbox (2026-10-04)
 
 settings = get_settings()
 
@@ -222,6 +223,7 @@ app.include_router(transactions.router)
 app.include_router(admin.router)
 app.include_router(contact.router)   # Contact us (2026-09-25)
 app.include_router(org_routes.router)   # P2b · organization experience (2026-10-02)
+app.include_router(inbox_routes.router)   # P4 · event log + inbox (2026-10-04)
 
 try:  # 2026-09-26: say at boot which mail route the server sees
     from . import mailer as _mailer
@@ -249,7 +251,7 @@ def root_page() -> FileResponse:
 # P2b (2026-10-02): organizations have pages again — org.html is the
 # organization account's own site (Home · Initiatives · Profile · a tab per
 # campaign), o.html the public profile (/o/<org>) and campaign page (/o/<org>/<mission>).
-_HTML_PAGES = ("index", "about", "main", "cause", "mission", "profile", "admin", "post", "org", "o")   # about: P2 (2026-09-25) · post: P3 (2026-09-29)
+_HTML_PAGES = ("index", "about", "main", "cause", "mission", "profile", "admin", "post", "org", "o", "inbox")   # about: P2 (2026-09-25) · post: P3 (2026-09-29)
 
 
 def _make_handler(page: str):

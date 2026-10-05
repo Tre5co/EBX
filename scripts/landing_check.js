@@ -58,7 +58,8 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   // Home pass (2026-10-01): collapsed by default — open it to count
   ok(d.getElementById('mh-body').hidden && d.querySelectorAll('#mh-week .mw').length >= 1, 'collapsed by default, with this week\'s elections');
   d.getElementById('mh-toggle').click();
-  ok(d.querySelectorAll('#mh .mh__rowhead').length === 7, 'seven rows');
+  // P2 · Home (2026-10-05): no row or column labels — seven rows of cards
+  ok(!d.querySelector('#mh .mh__rowhead, #mh .mh__colhead') && d.querySelectorAll('#mh .mh__grid > *').length % 7 === 0, 'seven rows, no labels');
   const hub = d.defaultView.HomeHub;
   const cells = hub ? hub.state.rows.reduce((a, r) => a + r.cells.length, 0) : 0;
   ok(cells === missions.length + 7, 'every mission, plus a cause election a row', cells + ' = ' + missions.length + ' + 7');
@@ -71,16 +72,34 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   // posting edits (2026-10-02): the only toggles on Home are the four sources
   ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]:not(.ep__v):not(#hf-src [data-src])'), 'no toggles on Home but the four sources');
 
-  console.log('\n=== about.html');
+  console.log('\n=== about.html (the About reshape, 2026-10-05)');
   const a = await page('about.html');
   ok(!a.errors.length, 'no script errors', a.errors.join(' | '));
-  const at = txt(a.d.body);
-  const order = ['social network for charities', 'A dollar a week', 'How it Works', 'What an Earthbuck is',
-                 'Research the mission', 'bring you the news', 'public forum', 'save it'].map(s => at.indexOf(s));
-  ok(order.every(i => i >= 0) && order.every((v, i) => !i || v > order[i - 1]), 'the copy spine, in order', order.join(','));
-  ok(/Investigation/.test(at) && !/>Organization</.test(a.d.body.innerHTML), 'research reads Background · Investigation · Analysis (P3)');
-  ok(/\d+\s*weeks? of grants/.test(txt(a.d.getElementById('ld-runway'))), 'the runway paints from /stats');
-  ok(a.d.querySelectorAll('#ab-phases li').length === 5, 'the five phases');
+  const ad = a.d, AW = ad.defaultView;
+  ok(!ad.querySelector('.ld-wordmark') && !ad.querySelector('.ebx-nav'), 'no hero, no site nav');
+  const tabs = [...ad.querySelectorAll('.ab-tab')].map(txt);
+  ok(tabs.join(' | ') === '← Earthbux Home | Our story | Our goals | How it works | Our team', 'its own tabs', tabs.join(' | '));
+  ok(/index\.html$/.test(ad.querySelector('.ab-tab--home').getAttribute('href')), '← Home goes home');
+  const on = () => (ad.querySelector('.ab-panel.is-on') || {}).id;
+  ok(on() === 'story', 'opens on Our story');
+  for (const [hash, tab] of [['story', 'story'], ['goals', 'goals'], ['how', 'how'], ['team', 'team'],
+       ['why', 'story'], ['grant', 'goals'], ['what', 'how'], ['earthbuck', 'how'], ['posting', 'how'], ['ab-phases', 'how']]) {
+    AW.AboutTabs.show(hash);
+    ok(on() === tab && txt(ad.getElementById(tab)).length > 200, '#' + hash + ' lands on ' + tab);
+  }
+  const at = txt(ad.body);
+  ok(/Nobody follows the money/.test(at) && /What if giving were an election/.test(at) && /Attention moved to the feed/.test(at) && /save it/.test(at), 'Our story: the gap, the idea, the moment, the verse');
+  ok(/Give donors control/.test(at) && /Hold charities accountable/.test(at) && /more optimistic/.test(at), 'Our goals: the three');
+  ok(/\d+\s*weeks? of grants/.test(txt(ad.getElementById('ld-runway'))), 'the runway paints from /stats');
+  ok(ad.querySelectorAll('#ab-phases .ab-phase').length === 5 && ad.querySelectorAll('#ab-phases .ab-net').length === 5, 'five phases, each with its network');
+  const C = AW.EBX && AW.EBX.Wheel && AW.EBX.Wheel.COPY;
+  const norm = h => { const t = ad.createElement('div'); t.innerHTML = h; return t.innerHTML; };
+  ok(C && ['cause', 'tiv', 'org', 'frame', 'ex'].every(k => ['kicker', 'title', 'what', 'why'].every(f =>
+       ad.querySelector('.ab-phase[data-phase="' + k + '"] [data-copy="' + f + '"]').innerHTML === norm(C[k][f]))),
+     'the phase copy is the string Home reads (EBX.Wheel.COPY)');
+  ok(/Investigation/.test(at) && /Service/.test(at) && /Analysis/.test(at), 'research and budgeting sit in their phases');
+  ok(ad.querySelectorAll('#compare tbody tr').length >= 5 && ad.querySelector('#compare tr.is-us'), 'how we compare');
+  ok(ad.querySelector('#team [data-ebx-contact="join"]') && ad.querySelector('#team [data-ebx-contact]:not([data-ebx-contact="join"])'), 'Our team: Join us + Contact us');
 
   console.log('\n' + (bad ? 'FAILED ' + bad + '/' + n : 'all ' + n + ' checks passed'));
   process.exit(bad ? 1 : 0);

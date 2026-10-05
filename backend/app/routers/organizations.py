@@ -10,7 +10,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from .. import crud, schemas
+from .. import crud, events, schemas
 from ..auth import get_current_benefactor
 from ..config import get_settings
 from ..database import get_db
@@ -45,10 +45,18 @@ def register_org(
     (kind='nomination', no membership). Returns fuzzy matches instead of
     creating when near-duplicates exist (override with force=true)."""
     try:
-        return crud.register_org(db, data, user, dup_threshold=settings.org_dup_threshold)
+        out = crud.register_org(db, data, user, dup_threshold=settings.org_dup_threshold)
     except ValueError as e:
         msg = str(e)
         raise HTTPException(status_code=404 if "not found" in msg.lower() else 400, detail=msg)
+    cand = out.get("candidacy") if isinstance(out, dict) else None
+    if cand is not None:    # P4: an organization put forward for a mission's initiative
+        events.safe(events.on_org_nominated, db, org_id=cand.org_id, mission_id=cand.mission_id,
+                    how="nominated", actor_ben_id=user.id)
+        for k in ("org", "membership", "candidacy"):
+            if out.get(k) is not None:
+                db.refresh(out[k])
+    return out
 
 
 @router.get("/{org_id}", response_model=schemas.OrganizationRead)

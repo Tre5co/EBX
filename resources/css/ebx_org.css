@@ -74,3 +74,45 @@ a { color: var(--clr-honey, #e8a84c); }
   background: rgba(232,168,76,0.05); border-radius: 0 10px 10px 0; font-size: 0.86rem; white-space: pre-wrap; }
 .og-answer .og-meta { display: block; margin-bottom: 3px; }
 .og-empty { font-size: 0.86rem; color: rgba(245,240,232,0.5); font-style: italic; }
+
+/* ── The organization sign-in (2026-10-04) ────────────────────────────────
+   Jax: "'For charities' needs to direct you to an 'Organization login' page.
+   It's not actually on admin.html, it just looks similar." So it looks like
+   admin.html — the same slate palette, header and 320px card as the admin
+   console's sign-in — while living on the organization's own site (/org).
+   `body.og-console` is set by org.html only while the sign-in screen shows. */
+body.og-console {
+  --oc-bg: #0f1419; --oc-panel: #1a212b; --oc-panel2: #131a22; --oc-line: #2a3441;
+  --oc-txt: #e6edf3; --oc-dim: #8b98a8; --oc-accent: #6baed6; --oc-warn: #e67a3c;
+  background: var(--oc-bg); color: var(--oc-txt);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+body.og-console a { color: var(--oc-accent); }
+body.og-console .og-top { background: var(--oc-panel2); border-bottom: 1px solid var(--oc-line); padding: 12px 18px; gap: 14px; }
+body.og-console .og-brand { font: 600 15px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: .3px; color: var(--oc-txt); }
+body.og-console .og-brand em { color: var(--oc-txt); }
+body.og-console .og-brand small { font: 400 12px/1.2 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; letter-spacing: 0; text-transform: none; color: var(--oc-dim); margin-left: 6px; }
+body.og-console .og-brand small::before { content: "· "; }
+body.og-console .og-console-sub { color: var(--oc-dim); font-size: 12px; }
+body.og-console .og-who, body.og-console .og-who a { font-size: 12px; color: var(--oc-dim); }
+.og-login-wrap { min-height: calc(100vh - 160px); display: flex; align-items: center; justify-content: center; padding: 24px 0; }
+.og-login { background: var(--oc-panel, #1a212b); border: 1px solid var(--oc-line, #2a3441); border-radius: 10px;
+  padding: 26px 28px; width: 320px; max-width: 100%; box-sizing: border-box; color: var(--oc-txt, #e6edf3); }
+.og-login h2 { margin: 0 0 4px; font: 600 16px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--oc-txt, #e6edf3); }
+.og-login p { margin: 0 0 16px; color: var(--oc-dim, #8b98a8); font-size: 12px; }
+.og-login label { display: block; font-size: 12px; color: var(--oc-dim, #8b98a8); margin: 10px 0 4px; }
+.og-login input { font: inherit; width: 100%; box-sizing: border-box; background: var(--oc-panel2, #131a22); color: var(--oc-txt, #e6edf3);
+  border: 1px solid var(--oc-line, #2a3441); border-radius: 6px; padding: 6px 9px; }
+.og-login button { font: inherit; cursor: pointer; width: 100%; margin-top: 18px; border: 1px solid var(--oc-line, #2a3441);
+  background: var(--oc-panel, #1a212b); color: var(--oc-txt, #e6edf3); padding: 6px 12px; border-radius: 6px; }
+.og-login button.primary { background: var(--oc-accent, #6baed6); color: #06121c; border-color: var(--oc-accent, #6baed6); font-weight: 600; }
+.og-login button:hover { border-color: var(--oc-accent, #6baed6); }
+.og-login button:disabled { opacity: .6; cursor: default; }
+.og-login .err { color: var(--oc-warn, #e67a3c); font-size: 12px; margin-top: 10px; min-height: 16px; }
+.og-login-wait { margin-top: 6px; padding: 10px 12px; border: 1px solid var(--oc-line, #2a3441); border-radius: 8px; background: var(--oc-panel2, #131a22); font-size: 12px; }
+.og-login-wait b { display: block; font-size: 13px; color: var(--oc-warn, #e67a3c); }
+.og-login-wait span { display: block; color: var(--oc-dim, #8b98a8); margin-top: 2px; }
+.og-login-wait p { margin: 6px 0 0; }
+.og-login-wait small { display: block; color: var(--oc-dim, #8b98a8); margin-top: 6px; font-size: 11px; }
+.og-login-wait button { margin-top: 10px; }
+.og-login-foot { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--oc-line, #2a3441); font-size: 12px; color: var(--oc-dim, #8b98a8); line-height: 1.6; }

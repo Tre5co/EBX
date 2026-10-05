@@ -668,6 +668,11 @@ em { font-style: italic; }
 /* build-seq P1 (2026-09-24): Inbox is drawn but not live until P4. */
 .ebx-nav__tab--soon { opacity: 0.38; cursor: default; }
 .ebx-nav__tab--soon:hover { color: inherit; background: none; }
+/* P4 (2026-10-04): the Inbox tab's unread count. */
+.ebx-nav__badge { margin-left: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  background: var(--clr-honey); color: #0f1a14; font-size: 0.58rem; font-weight: 700; letter-spacing: 0;
+  display: inline-flex; align-items: center; justify-content: center; line-height: 1; box-sizing: border-box; }
+.ebx-nav__badge[hidden] { display: none; }
 
 /* build-seq P2 (2026-09-25) — phones: the five tabs pin to the bottom and
    slide away while scrolling down (`body.ebx-nav--hide`, ebx_shared.js). */

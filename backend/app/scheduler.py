@@ -83,6 +83,13 @@ def run_due(db: Session, now: datetime | None = None) -> list[str]:
         if m.current_phase == "budget" and now >= m.started_at + RESOLVE_OFFSET:
             crud.distribute_mission(db, m.id)
             log.append(f"{m.id}: distributed")
+
+    # (c) P4 (2026-10-04): the weekly update — last week's edition, once,
+    # after the phases above have advanced so it reads this week's results.
+    from . import events
+    ev = events.safe(events.publish_due, db, now)
+    if ev is not None:
+        log.append(f"weekly update: week {ev.week} published")
     return log
 
 

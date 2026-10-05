@@ -28,7 +28,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from .. import crud_org, org_config
+from .. import crud_org, events, models, org_config
 from ..auth import create_org_token, get_current_org_account
 from ..config import get_settings
 from ..database import get_db
@@ -117,6 +117,12 @@ def apply(data: ApplyIn, db: Session = Depends(get_db),
 def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     try:
         acct = crud_org.authenticate(db, form.username, form.password)
+    except crud_org.LoginWaiting as e:
+        # 2026-10-04: say WHY, with the application — the sign-in page shows
+        # "under review" (and, to a signed-in staff member, Approve it now).
+        raise HTTPException(status_code=403, detail={
+            "message": str(e), "status": e.status, "application_id": e.application_id,
+            "org_name": e.org_name, "note": e.note})
     except (LookupError, PermissionError) as e:
         _refuse(e)
     return {"access_token": create_org_token(acct.id), "token_type": "bearer"}
@@ -169,20 +175,27 @@ def update_profile(data: ProfileIn, acct: OrgAccount = Depends(get_current_org_a
 def create_post(data: OrgPostIn, acct: OrgAccount = Depends(get_current_org_account),
                 db: Session = Depends(get_db)):
     try:
-        return crud_org.create_org_post(db, acct, **data.model_dump())
+        out = crud_org.create_org_post(db, acct, **data.model_dump())
     except (ValueError, PermissionError) as e:
         db.rollback()
         _refuse(e)
+    p = db.get(models.Post, out["id"])
+    if p is not None:       # P4: an answer notifies the asker; Suggest us, the initiative's people
+        events.safe(events.on_post_created, db, p)
+    return out
 
 
 @router.post("/org/candidacies", status_code=201)
 def run_for(data: RunIn, acct: OrgAccount = Depends(get_current_org_account),
             db: Session = Depends(get_db)):
     try:
-        return crud_org.run_for(db, acct, data.mission_id, data.mission_statement)
+        out = crud_org.run_for(db, acct, data.mission_id, data.mission_statement)
     except ValueError as e:
         db.rollback()
         _refuse(e)
+    events.safe(events.on_org_nominated, db, org_id=acct.org_id, mission_id=data.mission_id,
+                how="running", actor_org_id=acct.org_id)
+    return out
 
 
 @router.put("/org/campaigns/{mission_id}")

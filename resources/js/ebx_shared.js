@@ -663,10 +663,11 @@
           <div class="ebx-footer__col">
             <h4>About</h4>
             <ul>
-              ${link("about.html#why", "Why Earthbux")}
-              ${link("about.html#what", "What we do")}
+              ${link("about.html#story", "Our story")}
+              ${link("about.html#goals", "Our goals")}
               ${link("about.html#how", "How it works")}
               ${link("about.html#earthbuck", "What an Earthbuck is")}
+              ${link("about.html#team", "Our team")}
               ${soon("White paper")}
               ${soon("Rules")}
             </ul>
@@ -745,7 +746,8 @@
     { label: "Home", href: "index.html", match: ["index.html", ""] },
     { label: "Missions", href: "mission.html", match: ["mission.html", "mission.html", "m"] },
     { label: "News", href: "cause.html", match: ["cause.html"] },
-    { label: "Inbox", href: null, match: [], soon: "Your inbox arrives with the event log (P4)." },
+    // P4 (2026-10-04): the stub is real — notifications, messages, the weekly update.
+    { label: "Inbox", href: "inbox.html", match: ["inbox.html", "inbox"], badge: true },
     { label: "Profile", href: "profile.html", match: ["profile.html"] }
   ];
   function currentPageFile() {
@@ -763,8 +765,9 @@
       }
       const on = t.match.indexOf(here) !== -1;
       return '<a class="ebx-nav__tab' + (on ? " ebx-nav__tab--on" : "") +
-        '" href="' + t.href + '"' + (on ? ' aria-current="page"' : "") + ">" +
-        t.label + "</a>";
+        '" href="' + t.href + '"' + (on ? ' aria-current="page"' : "") +
+        (t.badge ? ' data-ebx-inbox-tab' : "") + ">" +
+        t.label + (t.badge ? '<span class="ebx-nav__badge" data-ebx-inbox-badge hidden></span>' : "") + "</a>";
     }).join("") + "</nav>";
   }
   // build-seq P2 (2026-09-25) — "Mobile: the five tabs pin to the bottom,
@@ -785,14 +788,34 @@
     }, { passive: true });
   }
   function initNav() {
+    // About reshape (2026-10-05): about.html carries its own tabs and opts out
+    // of the site nav with <body data-ebx-nav="off">.
+    if (document.body && document.body.getAttribute("data-ebx-nav") === "off") return;
     bindNavScroll();
     const mount = document.getElementById("ebx-nav-mount");
-    if (mount) { mount.innerHTML = navTabs(); return; }
+    if (mount) { mount.innerHTML = navTabs(); refreshInboxBadge(); return; }
     if (document.querySelector(".ebx-nav")) return;
     const wrap = document.createElement("div");
     wrap.className = "ebx-nav-float";
     wrap.innerHTML = navTabs();
     document.body.insertBefore(wrap, document.body.firstChild);
+    refreshInboxBadge();
+  }
+  // P4 (2026-10-04) — the Inbox tab carries the unread count: notifications
+  // plus threads with a message you have not read. `inbox.html` calls this
+  // again after it marks things read.
+  async function refreshInboxBadge(known) {
+    const badges = document.querySelectorAll("[data-ebx-inbox-badge]");
+    if (!badges.length) return;
+    let n = 0;
+    try {
+      if (known) n = (known.unread_notifications || 0) + (known.unread_threads || 0);
+      else if (Auth.isLoggedIn()) {
+        const r = await Auth.fetchAuthed("/inbox/summary");
+        if (r.ok) { const s = await r.json(); n = (s.unread_notifications || 0) + (s.unread_threads || 0); }
+      }
+    } catch (e) {}
+    badges.forEach((b) => { b.textContent = n > 99 ? "99+" : String(n); b.hidden = !n; });
   }
   async function initPage() {
     initFooter();
@@ -2273,11 +2296,11 @@
       const msg = bg.querySelector("#ebx-dlg-org-msg");
       let pickedId = null, force = false;
       bg.querySelector('[data-act=cancel]').onclick = () => Dialogs.close("ebx-dlg-orgreg");
-      // Registration is an ORG act and lives behind the admin door
-      // (org-experience restructure 2026-07-10); nomination is a community act
-      // and happens right here.
+      // Registration is an ORG act and lives on the organization site's
+      // application (/org#apply — P2b, 2026-10-02; the admin door retired
+      // 2026-10-04); nomination is a community act and happens right here.
       bg.querySelector('[data-kind=registration]').onclick = () => {
-        location.href = "admin.html?register=1" + (missionId ? "&mission=" + missionId : "");
+        location.href = "/org#apply";
       };
       bg.querySelector('[data-kind=nomination]').onclick = () => {};
       const submit = async () => {
@@ -3037,7 +3060,8 @@
     Dialogs,
     openP1Mission,
     Post,
-    Auth
+    Auth,
+    refreshInboxBadge
   };
   window.EBX = EBX;
   document.addEventListener("DOMContentLoaded", () => {

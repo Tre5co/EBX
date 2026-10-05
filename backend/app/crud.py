@@ -1375,6 +1375,8 @@ def remove_account(db: Session, ben_id: int, staff: models.BenefactorAccount) ->
         t.ben_id = None
         t.note = ((t.note + " · ") if t.note else "") + f"account #{ben_id} removed by staff"
 
+    from . import events as _events   # P4: their inbox goes with them
+    _events.forget_benefactor(db, ben_id)
     db.delete(ben)
     db.commit()
 
@@ -3065,6 +3067,36 @@ def _relist_losers(db: Session, mission: models.Mission, losers: list[models.Ini
         tiv.status = "suggested"   # re-listed as a fresh candidate next cycle
 
 
+def _relist_winner(db: Session, mission: models.Mission, winner: models.Initiative) -> Optional[models.Initiative]:
+    """P1 (2026-10-05): "tivs should not be removed from the ballot after they
+    have won." The winner stays with the mission it won (its row is the
+    mission's `winning_tiv_id`), so a FRESH candidacy of the same initiative —
+    same title, case, emoji, logo and proposer, no votes — is listed in the
+    cause's next-cycle election, beside the re-listed losers.
+
+    No money moves: the copy starts at zero, like any proposal. Idempotent: the
+    copy's id is `<winner id>-r<next cycle>`, and an existing one is left alone.
+    """
+    from . import bootstrap  # local import avoids a module-load cycle
+
+    next_cycle = (mission.cycle_num or 0) + 1
+    next_mid = bootstrap.mission_id(mission.cause_id, next_cycle)
+    if db.get(models.Mission, next_mid) is None:
+        bootstrap.ensure_mission(db, mission.cause_id, next_cycle)
+    base = winner.id.rsplit("-r", 1)[0] if re.search(r"-r\d+$", winner.id) else winner.id
+    new_id = f"{base}-r{next_cycle}"
+    if db.get(models.Initiative, new_id) is not None:
+        return None
+    copy = models.Initiative(
+        id=new_id, title=winner.title, description=winner.description, emoji=winner.emoji,
+        cause_id=winner.cause_id, mission_id=next_mid,
+        proposer_ben_id=winner.proposer_ben_id, proposer_org_id=winner.proposer_org_id,
+        logo_url=winner.logo_url, approved=winner.approved, status="suggested",
+    )
+    db.add(copy)
+    return copy
+
+
 def _open_oe_stakes(db: Session, mission: models.Mission, winner_id: str) -> int:
     """Carry every phase-1 backer into this mission's organization election —
     and split them the two ways rule 4 splits them.
@@ -3211,10 +3243,22 @@ def _elect_tiv(db: Session, mission: models.Mission, winner_id: str) -> str:
     # Money first, then the re-listing: `_open_oe_stakes` reads the vote rows as
     # they stand at the close, and the old order (relist first) is what used to
     # move them out from under it.
+    # P4 (2026-10-04): who voted for what, read BEFORE the stakes move — a
+    # read only; the notification is written after the commit and can never
+    # undo or refuse the election.
+    from . import events as _events
+    _voters = _events.peek(_events.p1_voters, db, mission_id) or {}
     _open_oe_stakes(db, mission, winner_id)
     if losers:
         _relist_losers(db, mission, losers)
+    rerun = _relist_winner(db, mission, winner) if winner is not None else None
     db.commit()
+    if rerun is not None:
+        try:
+            ensure_slug(db, rerun)
+        except Exception:
+            pass
+    _events.safe(_events.on_tiv_elected, db, mission_id, winner_id, _voters)
     return winner_id
 
 
@@ -3315,6 +3359,10 @@ def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
     if winner_entry is None:
         return None
     winner_org = winner_entry["org_id"]
+    # P4 (2026-10-04): who backed whom, read before settlement names the winner
+    # on unnamed stakes. A read only — see `events.on_org_elected` below.
+    from . import events as _events
+    _voters = _events.peek(_events.p2_voters, db, mission_id) or {}
     mission.winning_org_id = winner_org
     mission.current_phase = "budget"
     for cand in cands.values():
@@ -3330,6 +3378,7 @@ def finalize_p2(db: Session, mission_id: str) -> Optional[str]:
     # mission identity) and not the coin.
     mint_mission_coins(db, mission_id)
     db.commit()
+    _events.safe(_events.on_org_elected, db, mission_id, winner_org, _voters)
     return winner_org
 
 

@@ -185,6 +185,19 @@ def review_application(db: Session, app_id: int, staff: models.BenefactorAccount
 
 
 # ── signing in ──────────────────────────────────────────────────────────────
+class LoginWaiting(PermissionError):
+    """The password is right but the login is not live yet (2026-10-04, Jax:
+    "my org login did not work"): the application that made it is still
+    pending — or was rejected. Carries the application, so the sign-in page can
+    say which, and staff can approve it from there."""
+    def __init__(self, message: str, application: Optional[models.OrgApplication], org_name: Optional[str]):
+        super().__init__(message)
+        self.application_id = application.id if application else None
+        self.status = application.status if application else "inactive"
+        self.org_name = org_name
+        self.note = application.review_note if application else None
+
+
 def authenticate(db: Session, username: str, password: str) -> models.OrgAccount:
     u = (username or "").strip().lower()
     acct = db.scalar(select(models.OrgAccount).where(or_(
@@ -192,7 +205,16 @@ def authenticate(db: Session, username: str, password: str) -> models.OrgAccount
     if acct is None or not verify_password(password, acct.pass_hash):
         raise LookupError("Invalid credentials")
     if not acct.is_active:
-        raise PermissionError("This organization login is waiting for Earthbux to approve the application")
+        app = db.scalars(select(models.OrgApplication).where(models.OrgApplication.account_id == acct.id)
+                         .order_by(models.OrgApplication.id.desc())).first()
+        org = db.get(models.Organization, acct.org_id)
+        if app is not None and app.status == "rejected":
+            msg = "Earthbux did not approve this organization's application"
+        elif app is not None and app.status == "pending":
+            msg = "This organization login is waiting for Earthbux to approve the application"
+        else:
+            msg = "This organization login has been switched off — ask your organization's administrator"
+        raise LoginWaiting(msg, app, org.name if org else None)
     return acct
 
 

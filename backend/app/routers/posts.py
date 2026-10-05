@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import crud, feed_rank, models, post_config as pcfg, posting, schemas
+from .. import crud, events, feed_rank, models, post_config as pcfg, posting, schemas
 from ..auth import get_current_benefactor
 from ..config import get_settings
 from ..database import get_db
@@ -152,6 +152,7 @@ def create_post(
     except (PermissionError, ValueError) as e:
         db.rollback()
         _refuse(e)
+    events.safe(events.on_post_created, db, p)      # P4: a reply notifies
     return posting.serialize(db, [p])[0]
 
 
@@ -169,6 +170,7 @@ def update_post(
     except (PermissionError, ValueError) as e:
         db.rollback()
         _refuse(e)
+    events.safe(events.on_post_versioned, db, p)    # P4: whoever cites it hears
     return posting.serialize(db, [p])[0]
 
 
@@ -242,4 +244,6 @@ def react(
         p = crud.react_to_post(db, post_id, user.id, data.value, mission_id=data.mission_id)
     except ValueError as e:
         raise HTTPException(status_code=404 if "not found" in str(e).lower() else 400, detail=str(e))
+    if data.value == "helpful":
+        events.safe(events.on_reaction, db, p, user.id)   # P4: like thresholds
     return posting.serialize(db, [p], mission_ctx=data.mission_id)[0]

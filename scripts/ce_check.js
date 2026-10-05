@@ -113,8 +113,8 @@ const section = t => console.log('\n=== ' + t);
   ok(ceBtns.length === 2 && /Commit/.test(ceBtns[0].t) && /Cancel/.test(ceBtns[1].t),
      'Commit and Cancel lead its action bar', ceBtns.map(b => b.t).join(' | '));
   const bar = await page.$eval('.ce-panel .bb', e => e.textContent.replace(/\s+/g, ' '));
-  ok(/Discuss/.test(bar) && /\+ post/.test(bar) && !/Nominate/.test(bar),
-     '…then Discuss · + post (Nominate moved beside the click-through)', bar);
+  ok(/Post about /.test(bar) && /\+ post/.test(bar) && !/Nominate/.test(bar),
+     '…then Post about <cause> · + post (P1 2026-10-05: was Discuss)', bar);
   ok(ceBtns.every(b => b.off), '…and both are dead until something is dialled');
   // It persists across the page states — that is the point of moving it here.
   const slotME = await page.$eval('.ce-panel', e => e.dataset.slot);

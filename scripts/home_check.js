@@ -137,21 +137,26 @@ const route = u => {
   // Home pass (2026-10-01): collapsed by default — this week's two elections
   ok(d.getElementById('mh-body').hidden && !d.getElementById('mh-week').hidden, 'collapsed by default: the grid hidden, this week\'s elections shown');
   ok(txt(d.getElementById('mh-toggle')) === 'Show all missions', '"Show all missions"', txt(d.getElementById('mh-toggle')));
-  ok(txt(d.getElementById('mh-sub')) === 'This week\u2019s elections', 'the head says "This week\u2019s elections" collapsed', txt(d.getElementById('mh-sub')));
-  ok([...d.querySelectorAll('#mh-week .mw')].every(w => !w.querySelector('.mw__lead') || /Leading/.test(txt(w.querySelector('.mw__lab')))), '…its leaders labelled Leading');
+  // P2 · Home (2026-10-05): "This Week's Decisions"; standing column heads; the
+  // cards titled "Leading initiative/organization: x", runners-up below.
+  ok(txt(d.getElementById('mh-title')) === 'This Week\u2019s Decisions' && !d.getElementById('mh-sub'), 'the head says "This Week\u2019s Decisions" collapsed', txt(d.getElementById('mh-title')));
+  ok([...d.querySelectorAll('#mh-week .mh__wh')].map(txt).join(' | ') === 'Initiative Election | Organization Election', 'column heads: Initiative Election · Organization Election');
+  ok([...d.querySelectorAll('#mh-week .mw')].every(w => /^Leading (initiative|organization)/.test(txt(w.querySelector('.mw__t'))) && !/election/i.test(txt(w.querySelector('.mw__k')))),
+     '…cards titled "Leading initiative/organization", no phase label inside');
+  ok([...d.querySelectorAll('#mh-week .mw .mw__t small')].every(x => /EBX committed|vote/.test(txt(x))), '…with the commit or vote count');
   const wk = [...d.querySelectorAll('#mh-week .mw')];
   ok(wk.length === 2 && wk[0].classList.contains('mw--me') && wk[1].classList.contains('mw--oe'),
      'two cards: the initiative election, then the organization election', wk.map(w => w.className).join(' | '));
-  ok(wk.every(w => w.querySelectorAll('.mw__lead li').length <= 3) && wk.some(w => w.querySelectorAll('.mw__lead li').length >= 1),
-     '…each with its top three at most', wk.map(w => w.querySelectorAll('.mw__lead li').length).join(','));
+  const shown = w => (w.querySelector('.mw__t small') ? 1 : 0) + w.querySelectorAll('.mw__lead li').length;
+  ok(wk.every(w => shown(w) <= 3) && wk.some(w => shown(w) >= 1),
+     '…each with its top three at most (the leader in the title, the runners-up below)', wk.map(shown).join(','));
   click(d.getElementById('mh-toggle'));
   ok(!d.getElementById('mh-body').hidden && d.getElementById('mh-week').hidden && txt(d.getElementById('mh-toggle')) === 'Collapse missions',
      '"Show all missions" opens the grid; the button says "Collapse missions"');
-  ok(txt(d.getElementById('mh-sub')) === 'All missions', '…and the head says "All missions"');
+  ok(txt(d.getElementById('mh-title')) === 'All missions', '…and the head says "All missions"');
   ok(/Leading/.test(win.HomeHub.state.rows.flatMap(r => r.cells.map(c => c.html)).filter(h => /mc--me/.test(h)).join('')),
      'an initiative-election card says Leading');
-  const heads = [...hub.querySelectorAll('.mh__rowhead')];
-  ok(heads.length === 7, 'seven rows, one per cause');
+  ok(!hub.querySelector('.mh__rowhead, .mh__colhead') && win.HomeHub.state.rows.length === 7, 'seven rows, one per cause, with no row or column labels');
   // the whole grid, whatever the width: open every column
   win.HomeHub.state.vis = 99;
   const row = cid => win.HomeHub.state.rows.find(r => r.c.id === cid).cells.map(c => c.html);
@@ -161,16 +166,17 @@ const route = u => {
   ok(ids.join(',') === 'oce4,oce3,oce2,oce1,oce0', 'then its missions, newest first', ids.join(','));
   const kind = h => (h.match(/class="mc mc--([a-z-]+)/) || [])[1];
   ok(oce.slice(1).map(kind).join(',') === 'me,no-tiv,oe,fr,ex', 'each mission\'s stage from its dates', oce.slice(1).map(kind).join(','));
-  ok(!/Week \d/.test(oce[1]), 'no "Week x" before the initiative election closes');
-  ok(/Week 2</.test(oce[3]) && /Week 10</.test(oce[4]) && /Week 20</.test(oce[5]), '"Week x" on every post-ME mission');
-  ok(/Coral Restoration Alliance/.test(oce[1]) && /Leading · 75% · 2 initiatives/.test(oce[1]), 'an initiative election shows its leader');
-  ok(/leading: Reef Keepers/.test(oce[3]) && /Blue Coast Fund/.test(oce[4]), 'later stages show the organization');
+  ok(oce.every(h => !/Week \d/.test(h)), 'no "Week x" anywhere (2026-10-05)');
+  ok(/mc__k">Initiative election · closes /.test(oce[1]) && /mc__k">Organization election · closes /.test(oce[3]), 'the top row is "phase · closes x"');
+  ok(oce.slice(1).every(h => /mc__f"><span><b>oceans<\/b> · started /.test(h)), 'the bottom row is "cause · started x"');
+  ok(/Leading: Coral Restoration Alliance · 75% · 2 initiatives/.test(oce[1]), 'an initiative election says "Leading: <initiative>"');
+  ok(/Leading: Reef Keepers|2 nominated|1 nominated/.test(oce[3]) && /Blue Coast Fund/.test(oce[4]), 'later stages show the organization');
   ok(/mc--now/.test(oce[0]) && /mc--now/.test(row('land')[1]), 'this week\'s decisions glow (a cause election, a closing initiative election)');
   ok(!/mc--now/.test(oce[1]) && !/mc--now/.test(oce[5]), '…and nothing else does');
   ok(/forests challenging · 2\/6/.test(row('land')[0]), 'a challenger shows its streak');
   // paging: three columns at a time
   const S2 = win.HomeHub.state;
-  Object.defineProperty(d.getElementById('mh-body'), 'clientWidth', { configurable: true, get: () => 128 + 3 * 206 });
+  Object.defineProperty(d.getElementById('mh-body'), 'clientWidth', { configurable: true, get: () => 3 * 196 });
   S2.off = 0; click(d.querySelector('[data-mh="1"]'));
   ok(S2.vis === 3 && S2.off === 1, '› moves one column', S2.vis + '/' + S2.off);
   click(d.querySelector('[data-mh="page"]'));
@@ -195,10 +201,10 @@ const route = u => {
   ok(!d.querySelector('.ld-claim') && !/Social Network for Charities/i.test(txt(d.querySelector('.hx'))), '"The social network for charities" is gone');
   ok(!/Vote now/.test(txt(d.querySelector('.hx'))), 'no "Vote now"');
   const flow = [...d.querySelectorAll('#ld-flow .ld-flow__i')].map(txt);
-  ok(flow.join(' · ') === 'Cause · Initiative · Organization · Network · Reporting' && d.querySelectorAll('#ld-flow .ld-flow__arr').length === 4,
+  ok(flow.join(' · ') === '1. Cause · 2. Initiative · 3. Organization · 4. Network · 5. Reporting' && d.querySelectorAll('#ld-flow .ld-flow__arr').length === 4,
      'beside the visual: the five steps stacked, arrows down', flow.join(' · '));
   win.EBX.Steps._at(3, 0);
-  ok(d.querySelectorAll('#ld-flow .ld-flow__i.on').length === 1 && txt(d.querySelector('#ld-flow .ld-flow__i.on')) === 'Network',
+  ok(d.querySelectorAll('#ld-flow .ld-flow__i.on').length === 1 && txt(d.querySelector('#ld-flow .ld-flow__i.on')) === '4. Network',
      '…the step being shown glows');
   click(d.querySelector('#ld-flow [data-flow="1"]'));
   ok(txt(d.querySelector('#ebx-steps .sx__msg')) === MSG[1], '…and clicking one shows its page');
@@ -206,17 +212,19 @@ const route = u => {
   ok(doors.length === 4 && hx.compareDocumentPosition(d.getElementById('hk')) & 4 && d.getElementById('hk').compareDocumentPosition(hub) & 4,
      'four doors between the hero and the mission hub');
   const hrefs = doors.map(c => [...c.querySelectorAll('a')].map(a => a.getAttribute('href')).join(' '));
-  ok(/mission\.html/.test(hrefs[0]) && /about\.html/.test(hrefs[1]) && /cause\.html/.test(hrefs[2]) && /profile\.html/.test(hrefs[3]) && /register/.test(hrefs[3]),
+  ok(/mission\.html/.test(hrefs[0]) && /about\.html/.test(hrefs[1]) && /cause\.html/.test(hrefs[2]) && /profile\.html/.test(hrefs[3]) && /\/org/.test(hrefs[3]),
      'Decide what gets funded → Missions · Who are we? → About · Go to the discussion → News · sign in / profile + For charities', hrefs.join(' | '));
   ok(/\$1/.test(txt(doors[0])) && /charity agrees/.test(txt(doors[0])), 'the two key decisions, as written');
-  ok(!d.querySelector('.hk__n') && /can be as impactful/.test(txt(doors[1])), 'not numbered; "can be as impactful" (no "just")');
+  ok(d.querySelectorAll('#hk ol.hk__list > li').length === 2 && /can be as impactful/.test(txt(doors[1])), 'the two key decisions numbered 1 and 2 (2026-10-05); "can be as impactful"');
 
   console.log('\n=== the Network + the feed — no toggles on Home');
   // tweaks (2026-10-01): "News research and budgeting tabs … should be gone."
   ok(!d.getElementById('hn-row') && !d.querySelector('.hn__tile'), 'no News · Research · Budgeting tiles');
   ok(/grid-template-columns:\s*minmax\(0, 1fr\);/.test(d.querySelector('style').textContent.match(/\.hf__list\s*\{[^}]*\}/)[0]), 'one column of posts');
-  ok(/journalists, scientists and auditors/.test(fs.readFileSync(R('about.html'), 'utf8')) && /id="ab-net"/.test(fs.readFileSync(R('about.html'), 'utf8')),
-     'their descriptions are on About');
+  ok(/Journalists/.test(fs.readFileSync(R('about.html'), 'utf8')) && /id="news"/.test(fs.readFileSync(R('about.html'), 'utf8')),
+     'their descriptions are on About (Our goals › the newsroom)');
+  ok(!d.getElementById('hn-title') && !/what the network made/i.test(txt(d.querySelector('.hn'))) &&
+     d.querySelector('.hn__head #hf-src') && d.querySelector('.hn__head #hn-post'), 'no "The Network" heading; the source toggles share the row with + Post');
   // Posting pass (2026-10-01): the shared card, EBX.Post.collapsed
   const cards = () => [...d.querySelectorAll('#hf-list .ep--card')];
   ok(cards().length === POSTS.length, 'the feed is every root post, as the shared card', String(cards().length));

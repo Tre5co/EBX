@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from .. import crud, schemas
+from .. import crud, events, schemas
 from ..auth import get_current_benefactor
 from ..database import get_db
 from ._deps import get_current_staff
@@ -20,10 +20,14 @@ def create_candidacy(
     user: BenefactorAccount = Depends(get_current_benefactor),
 ):
     try:
-        return crud.create_candidacy(db, data, submitted_by_id=user.id)
+        c = crud.create_candidacy(db, data, submitted_by_id=user.id)
     except ValueError as e:
         msg = str(e)
         raise HTTPException(status_code=404 if "not found" in msg.lower() else 409, detail=msg)
+    events.safe(events.on_org_nominated, db, org_id=c.org_id, mission_id=c.mission_id,
+                how="nominated", actor_ben_id=user.id)
+    db.refresh(c)
+    return c
 
 
 @router.get("/candidacies", response_model=list[schemas.MissionCandidacyRead])

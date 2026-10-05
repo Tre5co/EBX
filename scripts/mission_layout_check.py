@@ -54,7 +54,7 @@ ok(len(main.splitlines()) < 30 and "location.replace('mission.html' + location.s
 nav = re.search(r'var NAV_TABS = \[(.*?)\];', shared, re.S).group(1)
 labels = re.findall(r'label: "([^"]+)"', nav)
 ok(labels == ['Home', 'Missions', 'News', 'Inbox', 'Profile'], 'Home · Missions · News · Inbox · Profile', ' · '.join(labels))
-ok('href: null' in nav and 'ebx-nav__tab--soon' in shared and 'ebx-nav__tab--soon' in css, 'Inbox is drawn, not linked (a stub until P4)')
+ok('href: "inbox.html"' in nav and 'data-ebx-inbox-badge' in shared, 'Inbox is linked, with its unread badge (P4, 2026-10-04)')
 ok('"Elect"' not in nav, 'no Elect tab')
 
 print('\n=== the ballots (kept from election_layout_check)')

@@ -8,7 +8,7 @@
   <base href="/" />
   <title>Earthbux — Missions</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261004a" />
   <style>
     /* ── Top bar (3-up: tagline · top-card-header · user badge) ── */
     .ebx-topbar {
@@ -3074,7 +3074,7 @@
         <div class="mp-eyebrow">Competing organizations</div>
         <div class="mission-actions">
           <button class="btn-claim" id="btn-open-claim" onclick="startClaim()">Claim this mission</button>
-          <a class="btn-claim secondary" id="link-register-org" href="admin.html?register=1">Register your organization →</a>
+          <a class="btn-claim secondary" id="link-register-org" href="/org#apply">Register your organization →</a>
         </div>
         <div class="mp-pool__sub" id="mp-rate-line" style="margin-bottom:8px;"></div>
         <div id="mh-candidates"><span style="font-size:0.84rem;opacity:0.6;">Loading…</span></div>
@@ -3215,7 +3215,7 @@
        the date/number formatters, and the watchlist. See its header for why it
        is not part of ebx_shared.js. -->
   <script src="resources/js/ebx_page.js?v=20260908"></script>
-  <script src="resources/js/ebx_shared.js?v=20261002b"></script>
+  <script src="resources/js/ebx_shared.js?v=20261004a"></script>
   <!-- build-seq P1: the globe inside the annulus -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
@@ -3262,18 +3262,37 @@
   // one frame: a header line ("<what> is finalized on <date> — n d left",
   // the cause on the right), the ballot, and one bar along the bottom:
   //
-  //   Commit | Cancel ___ <the phase's own acts> ___ Discuss ______ Post a <type>
+  //   Commit | Cancel ___ <the phase's own acts> ___ Post about x ______ + post
   //
-  // `o`: { commit, cancel (html), acts: [html], causeId (Discuss → News),
+  // `o`: { commit, cancel (html), acts: [html], causeId (Post about x → the composer),
   //        step (cause|tiv|org|frame|ex → the post button), note }.
   window._ballotBar = function (o) {
     o = o || {};
     const POST = { cause: 'Post a Background', tiv: 'Post a Background', org: 'Post an Investigation',
                    frame: 'Post an Analysis', ex: 'Suggest a budget item' };
     const left = (o.commit || '') + (o.cancel || '');
-    const discuss = o.causeId
-      ? '<a class="vb-btn vb-btn--ghost bb__link" href="cause.html?cause=' + encodeURIComponent(o.causeId) +
-        '" onclick="event.stopPropagation()" title="The discussion, in News">Discuss &rarr;</a>' : '';
+    // P1 (2026-10-05): "instead of 'discuss', have 'post about x'" — x is the
+    // mission on screen (its initiative, or "<Cause> n" before one is elected),
+    // or the cause in the cause election. It opens the composer on that target.
+    const about = (function () {
+      if (!o.causeId) return null;
+      const cfg = (window.EBX && EBX.config) || {};
+      const c = (cfg.causes || []).find(x => x.id === o.causeId) || { id: o.causeId, name: o.causeId };
+      const m = window.MX && MX.state && MX.state.mission;
+      const url = q => (window.EBX && EBX.Post && EBX.Post.composeUrl) ? EBX.Post.composeUrl(q)
+        : 'post.html?' + new URLSearchParams(Object.assign({ back: location.pathname + location.search }, q)).toString();
+      if (o.step !== 'cause' && m && !m.virtual && m.cause_id === o.causeId) {
+        const t = (cfg.initiatives || []).find(i => i.id === m.winning_tiv_id);
+        const name = t ? t.title : c.name + ' ' + ((m.cycle_num || 0) + 1);
+        return { label: name, href: url({ type: 'general', mission: m.id }) };
+      }
+      return { label: c.name, href: url({ type: 'general', cause: c.id }) };
+    })();
+    const short = s => s.length > 34 ? s.slice(0, 32) + '\u2026' : s;
+    const discuss = about
+      ? '<a class="vb-btn vb-btn--ghost bb__link" href="' + about.href.replace(/"/g, '&quot;') +
+        '" onclick="event.stopPropagation()" title="Post about ' + about.label.replace(/[<>"&]/g, '') + '">Post about ' +
+        short(about.label).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])) + '</a>' : '';
     // Mission pass (2026-10-01): "instead of 'post a <type>' just have the
     // '+ post' icon". The type is still what the button opens (and its title).
     const post = (o.step && POST[o.step])
@@ -8961,7 +8980,7 @@
     // ── competing organizations + the claim gate ─────────────────────────
     function renderCandidates() {
       const regLink = document.getElementById('link-register-org');
-      if (regLink) regLink.href = 'admin.html?register=1' + (MID ? '&mission=' + MID : '');
+      if (regLink) regLink.href = '/org#apply';   // 2026-10-04: the organization site's application
       const rate = (mission && mission.guaranteed_pool_rate != null) ? mission.guaranteed_pool_rate : 0.20;
       const rl = document.getElementById('mp-rate-line');
       if (rl) rl.innerHTML = !mission ? '' : claims.length
@@ -9483,16 +9502,28 @@
       const on = S.mission && S.mission.id === m.id;
       const close = closeOf(m);
       let title, sub;
+      // P1 (2026-10-05): "In the mission navigator, instead of 'which cause
+      // holds' and 'Land x', display 'x leading'." A card names what is ahead
+      // in the election it is in: the cause, the initiative, the organization.
       if (m.virtual) {
         const ch = m.challenger_id ? causeById(m.challenger_id) : null;
-        title = 'Which cause holds the window of ' + fmt(m.opens) + '?';
-        sub = esc(c.name) + (ch ? ' · challenged by ' + esc(ch.name) : ' holds it');
+        title = (ch || c).name + ' leading';
+        sub = 'the window of ' + esc(fmt(m.opens)) + (ch ? ' · ' + m.streak + ' of ' + m.need + ' weeks to replace ' + esc(c.name) : '');
       } else {
         const t = tivById(m.winning_tiv_id);
-        title = t ? tivLabel(t) : c.name + ' ' + ((m.cycle_num || 0) + 1);
         const o = m.winning_org_id ? orgById(m.winning_org_id) : null;
-        sub = o ? 'run by ' + esc(o.name) : (t ? 'choosing its organization'
-          : ((EBX.config.initiatives || []).filter(i => i.mission_id === m.id).length) + ' initiatives on the ballot');
+        const ins = (EBX.config.initiatives || []).filter(i => i.mission_id === m.id);
+        const amt = i => i.committed_ebx || i.ebx_committed || 0;
+        const leadT = !t ? ins.slice().sort((a, b) => amt(b) - amt(a)).find(i => amt(i) > 0) : null;
+        title = t ? tivLabel(t) : leadT ? tivLabel(leadT) + ' leading' : c.name + ' ' + ((m.cycle_num || 0) + 1);
+        let leadO = null;
+        if (t && !o) {
+          const tl = W().p2Tally ? W().p2Tally(m.id) : null;
+          const es = ((tl && tl.entries) || []).slice().sort((a, b) => (b.net_votes || 0) - (a.net_votes || 0));
+          leadO = es.length && (es[0].net_votes || 0) > 0 ? orgById(es[0].org_id) : null;
+        }
+        sub = o ? 'run by ' + esc(o.name) : (t ? (leadO ? esc(leadO.name) + ' leading' : 'choosing its organization')
+          : ins.length + ' initiative' + (ins.length === 1 ? '' : 's') + ' on the ballot');
       }
       const when = st === 'ex' ? 'exchanging' : (close ? (st === 'cause' ? 'opens ' : '') + fmt(close) + ' · ' + daysTo(close) + ' d' : '');
       return '<a class="mx-card' + (on ? ' mx-card--on' : '') + '" style="--c:' + c.color + '" href="' + hrefFor(m) + '" data-mid="' + esc(m.id) + '">' +

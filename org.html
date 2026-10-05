@@ -6,8 +6,8 @@
   <title>Earthbux for organizations</title>
   <meta name="description" content="The organization side of Earthbux: your campaigns, the missions you could run, and your public profile." />
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
-  <link rel="stylesheet" href="resources/css/ebx_org.css?v=20261002a" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261004a" />
+  <link rel="stylesheet" href="resources/css/ebx_org.css?v=20261004a" />
   <!--
     org.html — P2b · Organization experience (2026-10-02). The ORGANIZATION
     account's own site (D26): "Home will be where they stay connected with
@@ -52,7 +52,8 @@
       if (!r.ok) {
         var det = d && d.detail;
         var text = Array.isArray(det) ? det.map(function (x) { return x.msg || x; }).join(' · ') : (det || ('HTTP ' + r.status));
-        var err = new Error(text); err.status = r.status; throw err;
+        var err = new Error(typeof text === 'string' ? text : (det && det.message) || ('HTTP ' + r.status));
+        err.status = r.status; err.detail = det; throw err;
       }
       return d;
     }
@@ -101,9 +102,18 @@
     // ── chrome ──────────────────────────────────────────────────────────────
     function drawNav(r) {
       var nav = document.getElementById('og-nav'), who = document.getElementById('og-who');
+      document.body.classList.toggle('og-console', !S.me && r.view !== 'apply');
       if (!S.me) {
-        nav.innerHTML = '<a class="og-tab' + (r.view !== 'apply' ? ' og-tab--on' : '') + '" href="#">Sign in</a>' +
-          '<a class="og-tab' + (r.view === 'apply' ? ' og-tab--on' : '') + '" href="#apply">Claim or register</a>';
+        if (r.view !== 'apply') {
+          // 2026-10-04 (Jax: "For charities needs to direct you to an
+          // Organization login page … it just looks similar [to admin.html]"):
+          // the sign-in screen IS the admin console's sign-in, in its palette.
+          nav.innerHTML = '<span class="og-console-sub">sign-in for organization accounts · campaigns, profile &amp; members</span>';
+          who.innerHTML = '<a href="index.html">Benefactor site &rarr;</a>';
+          return;
+        }
+        nav.innerHTML = '<a class="og-tab" href="#">Sign in</a>' +
+          '<a class="og-tab og-tab--on" href="#apply">Claim or register</a>';
         who.innerHTML = '<a href="index.html">Benefactor site &rarr;</a>';
         return;
       }
@@ -124,29 +134,81 @@
     }
 
     // ── signed out: sign in ─────────────────────────────────────────────────
-    function viewSignIn() {
+    function viewSignIn(waiting) {
       main.innerHTML =
-        '<div class="og-grid2">' +
-        '<section class="og-card"><div class="og-kicker">Organization account</div><h1 class="og-h1">Sign in</h1>' +
-        '<p class="og-muted">This is your organization\'s login — separate from any personal Earthbux account you vote with.</p>' +
-        '<form id="og-login"><label class="og-lab">Email or handle</label><input class="og-in" name="u" autocomplete="username" required>' +
-        '<label class="og-lab">Password</label><input class="og-in" name="p" type="password" autocomplete="current-password" required>' +
-        '<div class="og-row" style="margin-top:14px"><button class="og-btn">Sign in</button></div><div class="og-msg" id="og-lmsg"></div></form></section>' +
-        '<section class="og-card"><div class="og-kicker">New here</div><h2 class="og-h2">Claim or register your organization</h2>' +
-        '<p class="og-muted">Benefactors may already be talking about you — every organization nominated on Earthbux has a page. ' +
-        'Claim it to answer them, run for missions, and publish your plan. The application takes about ten minutes; ' +
-        'Earthbux staff approve it, and you become your organization\'s administrator.</p>' +
-        '<p class="og-muted">Organizations cannot vote. Your campaigns are decided by benefactors.</p>' +
-        '<a class="og-btn" href="#apply">Start the application</a></section></div>';
-      document.getElementById('og-login').onsubmit = async function (e) {
+        '<div class="og-login-wrap"><form class="og-login" id="og-login" autocomplete="on">' +
+        '<h2>Organization sign in</h2>' +
+        '<p>Your organization\'s login — separate from any personal Earthbux account you vote with. ' +
+        'Administrators create the logins for everyone else in the organization.</p>' +
+        '<label for="og-u">Email or handle</label><input id="og-u" name="u" type="text" autocomplete="username" required>' +
+        '<label for="og-p">Password</label><input id="og-p" name="p" type="password" autocomplete="current-password" required>' +
+        '<button class="primary" type="submit">Sign in</button>' +
+        '<div class="err" id="og-lmsg"></div>' +
+        '<div id="og-wait"></div>' +
+        '<div class="og-login-foot">New here? <a href="#apply">Claim or register your organization</a><br>' +
+        'Organizations cannot vote — benefactors decide your campaigns.</div>' +
+        '</form></div>';
+      var f = document.getElementById('og-login');
+      f.querySelector('#og-u').focus();
+      f.onsubmit = async function (e) {
         e.preventDefault();
-        var f = e.target, m = document.getElementById('og-lmsg');
+        var m = document.getElementById('og-lmsg');
+        m.textContent = ''; document.getElementById('og-wait').innerHTML = '';
+        var creds = { username: f.querySelector('#og-u').value.trim(), password: f.querySelector('#og-p').value };
         try {
-          var d = await api('/org/login', { method: 'POST',
-            body: new URLSearchParams({ username: val(f, 'u'), password: val(f, 'p') }),
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-          setTok(d.access_token); location.hash = '#home'; boot();
-        } catch (err) { msg(m, err.message); }
+          await signIn(creds);
+        } catch (err) {
+          if (err.status === 403 && err.detail && err.detail.status) return showWaiting(err.detail, creds);
+          m.textContent = err.status === 401 ? 'Invalid email/handle or password' : err.message;
+        }
+      };
+    }
+    async function signIn(creds) {
+      var d = await api('/org/login', { method: 'POST',
+        body: new URLSearchParams(creds),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      setTok(d.access_token); location.hash = '#home'; boot();
+    }
+    // A right password on a login that is not live yet: say why. If this
+    // browser is also signed in as Earthbux staff (the benefactor site or the
+    // admin console), the application can be approved right here.
+    async function showWaiting(w, creds) {
+      var box = document.getElementById('og-wait');
+      var head = w.status === 'pending' ? 'Application under review'
+        : w.status === 'rejected' ? 'Application not approved' : 'Login switched off';
+      box.innerHTML = '<div class="og-login-wait"><b>' + esc(head) + '</b>' +
+        (w.org_name ? '<span>' + esc(w.org_name) + (w.application_id ? ' · application #' + esc(w.application_id) : '') + '</span>' : '') +
+        '<p>' + esc(w.message) + '.' + (w.status === 'pending'
+          ? ' Earthbux staff review applications in the admin console (Org applications). You can sign in as soon as it is approved.' : '') +
+        (w.note ? ' Note from Earthbux: ' + esc(w.note) : '') + '</p><div id="og-staff"></div></div>';
+      if (w.status !== 'pending' || !w.application_id) return;
+      var staffTok = null, staff = null;
+      var tokens = ['ebx_auth_token', 'ebx_admin_token'].map(function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } })
+        .filter(Boolean);
+      for (var i = 0; i < tokens.length && !staff; i++) {
+        try {
+          var r = await fetch('/auth/me', { headers: { Authorization: 'Bearer ' + tokens[i] } });
+          if (r.ok) { var me = await r.json(); if (me.role === 'employee' || me.role === 'admin') { staff = me; staffTok = tokens[i]; } }
+        } catch (e) {}
+      }
+      var sb = document.getElementById('og-staff');
+      if (!staff) {
+        sb.innerHTML = '<button type="button" class="og-login-retry">Try again</button>';
+        sb.firstChild.onclick = function () { document.getElementById('og-login').requestSubmit(); };
+        return;
+      }
+      sb.innerHTML = '<button type="button" class="primary">Approve it now</button>' +
+        '<small>You are signed in as Earthbux staff (' + esc(staff.handle) + ').</small>';
+      sb.querySelector('button').onclick = async function () {
+        var b = this; b.disabled = true; b.textContent = 'Approving…';
+        try {
+          var r = await fetch('/org/applications/' + encodeURIComponent(w.application_id) + '/approve', {
+            method: 'POST', headers: { Authorization: 'Bearer ' + staffTok, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note: 'Approved from the organization sign-in' }) });
+          if (!r.ok) { var d = {}; try { d = await r.json(); } catch (e) {} throw new Error(d.detail || ('HTTP ' + r.status)); }
+          b.textContent = 'Approved — signing in…';
+          await signIn(creds);
+        } catch (err) { b.disabled = false; b.textContent = 'Approve it now'; document.getElementById('og-lmsg').textContent = err.message; }
       };
     }
 

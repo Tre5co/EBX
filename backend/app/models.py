@@ -940,3 +940,87 @@ class OrgApplication(Base):
 
     org: Mapped["Organization"] = relationship()
     account: Mapped[Optional["OrgAccount"]] = relationship()
+
+
+# ===========================================================================
+# P4 · Event log + Inbox (2026-10-04).
+#
+# `events` is the ONE source for notifications, the weekly update, and later
+# the admin audit trail: something happened, once, with who did it and what it
+# was about. `notifications` is the per-benefactor fan-out of an event (D9:
+# many notifications are inbox-only). Messages are their own thing — threads
+# between two benefactors who share a mission (D10: no friendships).
+# ===========================================================================
+class Event(Base):
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    # reply · reaction · cited_update · org_nominated · tiv_elected ·
+    # org_elected · weekly_update · message_report (events.KINDS)
+    kind: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    actor_ben_id: Mapped[Optional[int]] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=True)
+    actor_org_id: Mapped[Optional[str]] = mapped_column(ForeignKey("organizations.id"), nullable=True)
+    post_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    mission_id: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    tiv_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    org_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    week: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    # A key that makes the event happen once: "reaction:<post>:<n>",
+    # "tiv_elected:<mission>", "weekly:<week>". NULL = may repeat.
+    dedupe: Mapped[Optional[str]] = mapped_column(String, nullable=True, unique=True)
+    data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    __table_args__ = (UniqueConstraint("ben_id", "event_id", name="uq_notification_ben_event"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ben_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False, index=True)
+    event_id: Mapped[int] = mapped_column(ForeignKey("events.id"), nullable=False, index=True)
+    # What this event means for THIS person — e.g. {"outcome": "won"}.
+    detail: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    event: Mapped["Event"] = relationship()
+
+
+class MessageThread(Base):
+    """A conversation between two benefactors (a_id < b_id), started inside a
+    mission they both belong to. One thread per pair."""
+    __tablename__ = "message_threads"
+    __table_args__ = (UniqueConstraint("a_id", "b_id", name="uq_thread_pair"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    a_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False, index=True)
+    b_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False, index=True)
+    mission_id: Mapped[Optional[str]] = mapped_column(ForeignKey("missions.id"), nullable=True)
+    a_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    b_read_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    last_message_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    thread_id: Mapped[int] = mapped_column(ForeignKey("message_threads.id"), nullable=False, index=True)
+    sender_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class MessageReport(Base):
+    """The report button — staff read these (admin), the sender is not told."""
+    __tablename__ = "message_reports"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("messages.id"), nullable=False, index=True)
+    reporter_id: Mapped[int] = mapped_column(ForeignKey("benefactor_accounts.id"), nullable=False)
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String, default="open", nullable=False)  # open | upheld | dismissed
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

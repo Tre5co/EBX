@@ -7,8 +7,8 @@
   <title>Organization — Earthbux</title>
   <meta name="description" content="An organization on Earthbux: its profile, its campaigns, and what benefactors are saying about it." />
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20260925b" />
-  <link rel="stylesheet" href="resources/css/ebx_org.css?v=20261002a" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261004a" />
+  <link rel="stylesheet" href="resources/css/ebx_org.css?v=20261004a" />
   <!--
     o.html — P2b · the two PUBLIC organization pages (2026-10-02).
       /o/<org>            the profile — claimed: name, logo, website,
@@ -26,7 +26,7 @@
 <body>
   <main class="og-main" id="o-main" style="padding-top:70px"><p class="og-muted">Loading…</p></main>
   <script src="resources/js/ebx_page.js"></script>
-  <script src="resources/js/ebx_shared.js?v=20261002b"></script>
+  <script src="resources/js/ebx_shared.js?v=20261004a"></script>
   <script>
   (function () {
     'use strict';
@@ -78,7 +78,10 @@
         '<div class="og-row">' + (d.claimed ? '<span class="og-pill og-pill--won">claimed</span>' : '<span class="og-pill og-pill--warn">unclaimed</span>') +
         (o.verified ? '<span class="og-pill og-pill--won">verified</span>' : '') +
         (d.claimed && o.website_link ? '<a href="' + esc(o.website_link) + '" rel="noopener" target="_blank">' + esc(o.website_link.replace(/^https?:\/\//, '')) + '</a>' : '') +
-        (d.claimed && o.founded_year ? '<span class="og-meta">since ' + esc(o.founded_year) + '</span>' : '') + '</div></div></div>';
+        (d.claimed && o.founded_year ? '<span class="og-meta">since ' + esc(o.founded_year) + '</span>' : '') +
+        // 2026-10-04: the organization's own way in starts from its profile.
+        (d.claimed ? '<a class="og-meta" href="/org" title="Organization sign-in">Your organization? Sign in &rarr;</a>' : '') +
+        '</div></div></div>';
       var panel = d.unclaimed_panel ? '<section class="og-unclaimed"><h2>' + esc(d.unclaimed_panel.title) + '</h2>' +
         '<p class="og-muted" style="color:inherit">' + esc(d.unclaimed_panel.body) + '</p><ul>' +
         d.unclaimed_panel.you_can.map(function (x) { return '<li class="og-muted" style="color:inherit">' + esc(x) + '</li>'; }).join('') + '</ul>' +
