@@ -64,6 +64,15 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     mail_from: str = "Earthbux <contact@send.earthbux.net>"
 
+    # -- The wallet: adding funds (2026-10-07, build-seq Profile) --------------
+    # No payment processor is connected yet (D12: banking and custody). Until
+    # one is, "Add funds" runs in TEST mode: the tokens are credited at once and
+    # every deposit is written to the ledger as a test deposit, so it can be
+    # found and reversed before real money is used. "off" refuses deposits.
+    ebx_funds_mode: str = "test"          # test | off
+    funds_max_deposit_cents: int = 10000  # $100 per deposit
+    funds_max_test_cents: int = 50000     # $500 of test deposits per account
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

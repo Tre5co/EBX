@@ -2162,9 +2162,9 @@ def replace_p1_shares(
     election is, and EBX cannot predate its mission — so unlike the OE side this
     one stays revisable right up to the close, and no week roll hardens it.
 
-    Granted ct may only enter the initiative election of the cause it was
-    granted against; purchased ct may enter any. Committed rows are still
-    immutable, and every change is logged.
+    2026-10-09 (ruling 19): every initiative election carries ten granted
+    tokens for every benefactor, spent first; purchased ct pays for anything
+    above them. Committed rows are still immutable, and every change is logged.
     """
     from . import wallet as wallet_mod
     from . import token_model as tm
@@ -2227,28 +2227,27 @@ def replace_p1_shares(
 
     held = sum(max(0, int(getattr(r, "stake_ct", 0) or 0)) for r in existing.values())
 
-    # Which door this ct comes through. A granted token may only be spent in the
-    # elections closing on its grant WEEK (2026-09-16: grants carry a week, not
-    # a cause) — for the initiative election that is the week's active cause; a
-    # purchased one may go anywhere.
-    door_cause = wallet_mod.active_cause_id()
-    granted_allowed = (mission.cause_id == door_cause)
+    # Where this ct comes from. 2026-10-09 (ruling 19, replacing D31's weekly
+    # door): "if it is an initiative election, there should be exactly 10
+    # granted tokens available, no matter what." EVERY initiative election
+    # carries its own ten for this benefactor, and they go in first — so of a
+    # commit C, `min(C, 10)` is the grant and only `C − 10` is purchased money
+    # from the wallet. Lowering hands the purchased part back first (last in,
+    # first out); the grant never leaves its election, because it was never in
+    # the wallet. `ensure_grant` only retires a D31 weekly pile if one is left.
+    wallet_mod.ensure_grant(db, ben_id)
+    db.refresh(ben)
     free = int(ben.free_ct or 0)
     purchased = min(int(ben.purchased_ct or 0), free)
-    granted = max(0, free - purchased)
-    ceiling = held + (free if granted_allowed else purchased)
-    commit_ct = min(commit_ct, ceiling)
+    commit_ct = min(commit_ct, tm.me_ceiling_ct(held, purchased))
 
-    delta = commit_ct - held
-    if delta > 0:
-        from_granted = min(delta, granted) if granted_allowed else 0
-        ben.free_ct = free - delta
-        ben.purchased_ct = max(0, purchased - (delta - from_granted))
-    elif delta < 0:
-        back = -delta
-        ben.free_ct = free + back
-        if not granted_allowed:
-            ben.purchased_ct = purchased + back
+    delta_p = tm.me_purchased_delta(held, commit_ct)
+    if delta_p > 0:
+        ben.free_ct = free - delta_p
+        ben.purchased_ct = purchased - delta_p
+    elif delta_p < 0:
+        ben.free_ct = free - delta_p
+        ben.purchased_ct = purchased - delta_p
 
     per_row = tm.split_ct(commit_ct, cleaned) if cleaned else {}
 

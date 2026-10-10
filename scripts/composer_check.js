@@ -13,6 +13,12 @@
 // Posting goes through POST /posts, so its rules still apply: the account first
 // commits a stake in this week's initiative election (the membership the gate
 // asks for; P3 lifts the gates). Replaces posts_box_check.js.
+//
+// 10/9 Reshuffle (2026-10-09): the report, its thread and its reply composer
+// moved to NEWS (cause.html?mission=<id>, `EBX.MissionReport` in
+// resources/js/ebx_report.js) — "When News is filtered to a mission, that
+// mission's report sits above its posts." The mission page keeps a pointer to
+// it (#mb-news), and `MB.compose('research')` goes there.
 const { chromium } = require('playwright');
 const fs = require('fs');
 function chromeExe() {
@@ -58,7 +64,7 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
   // Mission pass (2026-10-01): "Before the report appears, show posts below the
   // table … For initiative election, show posts targeting any initiative."
   section('before the initiative is elected: posts, not the report (mission pass 2026-10-01)');
-  ok(await page.$eval('#mb-report', e => e.hidden), 'the report waits for the initiative election');
+  ok(await page.$eval('#mb-news', e => e.hidden), 'the way to the report waits for the initiative election');
   ok(/initiatives running in/i.test(await page.textContent('#mx-pre-title')), 'the posts on its initiatives stand in for it',
      (await page.textContent('#mx-pre-title')).trim());
   ok((await page.$$('#mp-cattabs, #mb-post, #mp-disc, #pb, #ps-ring, #mp-log, #mb-budget-add')).length === 0,
@@ -71,19 +77,25 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
   ok(u1.searchParams.get('type') === 'background' && u1.searchParams.get('cause') === mission.cause_id,
      '…which opens post.html on Background, the cause preselected', u1.search);
 
-  section('the report, once the initiative is elected; the budget buttons in the plan');
+  section('the report, once the initiative is elected — in News, above the mission\'s posts; the budget buttons in the plan');
   const elected = (await J('/missions')).find(m => m.winning_tiv_id);
   if (elected) {
     await page.goto(BASE + '/m/' + elected.id, { waitUntil: 'networkidle' });
-    await page.waitForSelector('#mb-report .mb-report__sec', { timeout: 20000 });
+    await page.waitForSelector('#mb-news:not([hidden])', { timeout: 20000 });
+    const href = await page.$eval('#mb-news', e => e.getAttribute('href'));
+    ok(href === 'cause.html?mission=' + encodeURIComponent(elected.id) + '#mr', 'the mission page points to its report in News', href);
+    await page.goto(BASE + '/cause.html?mission=' + encodeURIComponent(elected.id) + '#mr', { waitUntil: 'networkidle' });
+    await page.waitForSelector('#mr .mb-report__sec', { timeout: 20000 });
     await page.waitForTimeout(500);
-    const heads = await page.$$eval('#mb-report .mb-report__sec h4', els => els.map(e => e.childNodes[0].textContent.trim()));
+    ok(await page.evaluate(() => { const r = document.getElementById('mr'), l = document.getElementById('fd-list');
+      return !!(r && l && (r.compareDocumentPosition(l) & Node.DOCUMENT_POSITION_FOLLOWING)); }), 'News shows the report above the mission\'s posts');
+    const heads = await page.$$eval('#mr .mb-report__sec h4', els => els.map(e => e.childNodes[0].textContent.trim()));
     ok(JSON.stringify(heads) === '["Mission statement","Plan","Background","Investigation","Analysis"]',
        'mission statement · plan · background · investigation · analysis', heads.join(' · '));
-    ok(JSON.stringify(await page.$$eval('#mb-report .mb-report__top .mb-budget__add--plan .mb-budget__btn b', els => els.map(e => e.textContent))) === '["Service","Supply","Support"]',
+    ok(JSON.stringify(await page.$$eval('#mr .mb-report__top .mb-budget__add--plan .mb-budget__btn b', els => els.map(e => e.textContent))) === '["Service","Supply","Support"]',
        'Suggest: Service · Supply · Support sits in the plan');
-    ok(!/Budget items are how this mission gets planned/.test(await page.textContent('#mb-report')), '…and the budget description is gone (it lives on the post page)');
-    await Promise.all([page.waitForURL(/post\.html/, { timeout: 15000 }), page.click('#mb-report .mb-budget__btn[data-budget="supply"]')]);
+    ok(!/Budget items are how this mission gets planned/.test(await page.textContent('#mr')), '…and the budget description is gone (it lives on the post page)');
+    await Promise.all([page.waitForURL(/post\.html/, { timeout: 15000 }), page.click('#mr .mb-budget__btn[data-budget="supply"]')]);
     await page.waitForSelector('#pc-item', { timeout: 10000 });
     ok(new URL(page.url()).searchParams.get('initiative') === elected.winning_tiv_id, 'the button opens post.html on Supply, the initiative preselected');
     ok((await page.$$('#pc-item, #pc-supplier, #pc-cost')).length === 3, 'supply asks for an item, a supplier and a cost');
@@ -92,8 +104,12 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
   await page.waitForSelector('#mx-pre:not([hidden])', { timeout: 20000 });
   await page.waitForTimeout(500);
 
-  section('the mission\'s thread (behind the report; before it, MB.compose opens it)');
-  await page.evaluate(() => window.MB.compose('research')); await page.waitForTimeout(700);
+  section('the mission\'s thread (behind the report, in News; the mission page\'s MB.compose goes there)');
+  await Promise.all([page.waitForURL(/cause\.html\?mission=/, { timeout: 15000 }), page.evaluate(() => window.MB.compose('research'))]);
+  ok(new URL(page.url()).searchParams.get('mission') === mission.id, 'MB.compose(\'research\') opens News on this mission', page.url().replace(BASE, ''));
+  await page.waitForSelector('#mr .mb-report__head', { timeout: 20000 });
+  await page.waitForTimeout(500);
+  await page.click('#mr .mb-report__head'); await page.waitForTimeout(700);
   const box = await page.$eval('#mxt-bg .mxc', e => { const r = e.getBoundingClientRect(); return { w: r.width, h: r.height }; });
   ok(!(await page.$eval('#mxt-bg', e => e.hidden)) && box.w > 700, 'a full-screen thread', box.w + '×' + box.h);
   ok(JSON.stringify(await page.$$eval('#mxt-tabs .mxc__type', els => els.map(e => e.childNodes[0].textContent.trim()))) ===
@@ -106,9 +122,10 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
   await page.click('#pc-send'); await page.waitForTimeout(1500);
   ok(/Posted/.test(await page.textContent('#pc-msg')), 'it posts', (await page.textContent('#pc-msg')).slice(0, 160));
   const posted = await page.evaluate(() => window.PostPage.last);
-  await page.goto(BASE + '/m/' + ((posted && posted.mission_id) || mission.id), { waitUntil: 'networkidle' });
-  await page.waitForTimeout(1500);
-  await page.evaluate(() => window.MB.compose('research')); await page.waitForTimeout(900);
+  await page.goto(BASE + '/cause.html?mission=' + encodeURIComponent((posted && posted.mission_id) || mission.id), { waitUntil: 'networkidle' });
+  await page.waitForSelector('#mr .mb-report__head', { timeout: 20000 });
+  await page.waitForTimeout(800);
+  await page.evaluate(() => EBX.MissionReport.openThread()); await page.waitForTimeout(900);
   ok(/What the survey measured/.test(await page.textContent('#mxt-body')), 'the thread of the mission it landed in shows it');
 
   section('rate it, reply to it');
@@ -121,9 +138,11 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
   await page.fill('#mxc-in-body', 'A reply from composer_check.');
   await page.click('#mxc-send'); await page.waitForTimeout(1500);
   ok(/Posted/.test(await page.textContent('#mxc-msg')), 'the reply posts');
-  await page.waitForTimeout(700);
-  await page.click('#mxt-body [data-tshow]'); await page.waitForTimeout(900);
-  ok(/A reply from composer_check/.test(await page.textContent('#mxt-body')), 'and the thread shows it under the post');
+  // 10/9 Reshuffle: a reply opens its post's replies by itself (ebx_report.js)
+  await page.waitForTimeout(1200);
+  let thr = await page.textContent('#mxt-body');
+  if (!/A reply from composer_check/.test(thr)) { await page.click('#mxt-body [data-tshow]'); await page.waitForTimeout(900); thr = await page.textContent('#mxt-body'); }
+  ok(/A reply from composer_check/.test(thr), 'and the thread shows it under the post');
 
   section('no script errors');
   ok(errors.length === 0, 'none', errors.slice(0, 3).join(' || '));

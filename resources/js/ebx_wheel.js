@@ -51,7 +51,7 @@
     { key: 'cause', n: 1, label: 'Confirm Cause', half: 'you', elect: 'ce' },
     { key: 'tiv', n: 2, label: 'Elect Initiative', half: 'you', elect: 'me' },
     { key: 'org', n: 3, label: 'Elect Philanthropy', half: 'you', elect: 'oe' },
-    { key: 'frame', n: 4, label: 'Frame Mission', half: 'us', elect: 'fr' },
+    { key: 'frame', n: 4, label: 'Mission Prep', half: 'us', elect: 'fr' },   // 10/9 Reshuffle: Framing → Prep
     { key: 'ex', n: 5, label: 'Exchange Resources', half: 'us', elect: 'ex' },
   ];
 
@@ -72,7 +72,8 @@
     cause: { title: 'Cause Election', blurb: 'Keep this week&rsquo;s cause, or back a challenger. It takes a majority six weeks in a row to replace one.', go: 'Vote' },
     tiv: { title: 'Initiative Election', blurb: 'Donate to this week&rsquo;s cause by funding what you want the mission to be.', go: 'Vote' },
     org: { title: 'Organization Election', blurb: 'After the mission is decided, your tokens can be put towards its philanthropy.', go: 'Vote' },
-    frame: { title: 'Mission Framing', blurb: 'Earthbux orients the organization and its benefactors <b>(you)</b>, and the community builds the budget.', go: 'Frame' },
+    // 10/9 Reshuffle (2026-10-09): "Framing needs to be switched to 'Prep'."
+    frame: { title: 'Mission Prep', blurb: 'Earthbux orients the organization and its benefactors <b>(you)</b>, and the community builds the budget.', go: 'Prep' },
     ex: { title: 'Exchange', blurb: 'Hold on, or exchange for a different mission. Our newsroom keeps you updated.', go: 'Trade' },
   };
   const ROWS = [
@@ -441,7 +442,7 @@
           '</div>' +
           '<div class="lw-note"><b>Wk ' + cur.w + '</b> · ' + esc(cur.t) + ' · ' + fmt(cur.due) + '</div>';
       } else {
-        body = '<div class="lw-empty">Nothing in framing.' +
+        body = '<div class="lw-empty">Nothing in prep.' +
           (r.next ? ' Next: ' + esc(tivName(r.next.winning_tiv_id)) + ', once its organization election ' +
             (dates(r.next).phlElected.getTime() > Date.now() ? 'closes on ' : 'is decided (it was due ') +
             fmt(dates(r.next).phlElected) + (dates(r.next).phlElected.getTime() > Date.now() ? '.' : ').') : '') + '</div>';
@@ -497,7 +498,7 @@
         slices: [
           { label: 'Research rewards · 3/32', value: 3, color: '#8fce9d' },
           { label: 'Advances · 4/32', value: 4, color: '#e8a84c' },
-          { label: 'Framing release · 8/32', value: 8, color: c.color },
+          { label: 'Prep release · 8/32', value: 8, color: c.color },
           { label: 'Flexible · 17/32', value: 17, color: 'rgba(245,240,232,0.55)' },
         ],
       };
@@ -701,7 +702,7 @@
         L('Candidates', r.cands.length + ' nominated');
     }
     if (step === 'frame') {
-      if (!r.mission) return L('Framing', esc(c.name) + ' has no mission in framing');
+      if (!r.mission) return L('Prep', esc(c.name) + ' has no mission in prep');
       const items = frameChecklist(r.mission);
       const done = items.filter(x => x.st === 'done').length;
       return L('Mission', esc(tivName(r.mission.winning_tiv_id))) +
@@ -732,7 +733,7 @@
         '<h3 class="lw-top__title"><i class="lw-top__dot" style="background:' + c.color + '"></i>' + esc(c.name) + '</h3>' +
         '<div class="lw-live">' + liveLine(S.step, c) + '</div>' +
         '<a class="lw-top__go" href="' + electHref(S.step, c) + '">' +
-          (S.step === 'frame' ? 'Open the framing ballot' : S.step === 'ex' ? 'See the exchange' : 'Vote in this election') +
+          (S.step === 'frame' ? 'Open the prep ballot' : S.step === 'ex' ? 'See the exchange' : 'Vote in this election') +
           ' &rarr;</a>' +
       '</div>' +
       '<div class="lw-top__live">' + cardHTML(S.step, c, { focus: true, active: true }) + '</div>' +

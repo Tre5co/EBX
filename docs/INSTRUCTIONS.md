@@ -23,22 +23,24 @@ never carries a second copy of a spec.*
 - [1. THE PLAN](#1-the-plan)
   - [What this is all for](#what-this-is-all-for)
   - [Pass order, and why](#pass-order-and-why)
-  - [Proposed re-order (2026-10-05) — awaiting D33](#proposed-re-order-2026-10-05--awaiting-d33)
+  - [The order — adopted 2026-10-07 (D33), upgraded for participation](#the-order--adopted-2026-10-07-d33-upgraded-for-participation)
   - [The build clock](#the-build-clock)
 - [2. DECIDE](#2-decide)
 - [3. BUILD SEQUENCE](#3-build-sequence)
-  - [P1. Mission](#p1-mission)
-  - [P2b · Organization experience](#p2b--organization-experience)
-  - [P2 · Home](#p2--home)
-  - [Footer](#footer)
-  - [P3 · Posting](#p3--posting)
-  - [P3b · News](#p3b--news)
-  - [P4 · Event log + Inbox](#p4--event-log--inbox)
-  - [P5 · Money made visible](#p5--money-made-visible)
-  - [P6 · Counterparty](#p6--counterparty)
-  - [P7 · Admin & trust](#p7--admin--trust)
-  - [P8 · About](#p8--about)
+  - [✅ 10/9 Reshuffle — built 2026-10-09](#109-reshuffle--built-2026-10-09)
+  - [✅ Profile + wallet — built 2026-10-07](#profile--wallet--built-2026-10-07)
+  - [1 · Participation kit](#1--participation-kit)
+  - [2 · P2b · Organization experience — finish](#2--p2b--organization-experience--finish)
+  - [3 · P7a · Admin tools](#3--p7a--admin-tools)
+  - [4 · P3b · News + the weekly edition](#4--p3b--news--the-weekly-edition)
+  - [5 · Mission hygiene](#5--mission-hygiene)
+  - [6 · Design direction](#6--design-direction)
+  - [7 · P5 · Money made visible](#7--p5--money-made-visible)
+  - [8 · P6 · Counterparty](#8--p6--counterparty)
+  - [9 · P7b · Trust (and what step 3 left of P7)](#9--p7b--trust-and-what-step-3-left-of-p7)
+  - [10 · P8b · About & static pages](#10--p8b--about--static-pages)
   - [999 · Housekeeping — ends every pass](#999--housekeeping--ends-every-pass)
+  - [Built — reference](#built--reference)
 - [4. OPEN DEFECTS](#4-open-defects)
 - [5. BACKLOG](#5-backlog)
 - [REMOVAL REGISTER](#removal-register)
@@ -58,7 +60,11 @@ never carries a second copy of a spec.*
   - [Added 2026-09-30 (P2 · Home mods)](#added-2026-09-30-p2--home-mods)
   - [Added 2026-10-01c (Home tweaks)](#added-2026-10-01c-home-tweaks)
   - [Added 2026-10-01 (mission pass)](#added-2026-10-01-mission-pass)
+  - [Added 2026-10-07 (Profile + wallet)](#added-2026-10-07-profile--wallet)
+  - [Added 2026-10-09 (the 10/9 Reshuffle)](#added-2026-10-09-the-109-reshuffle)
 - [ARCHIVE](#archive)
+  - [2026-10-09 — the 10/9 Reshuffle · rulings 19–20 · Framing → Prep](#2026-10-09--the-109-reshuffle--rulings-1920--framing--prep)
+  - [2026-10-07 — Profile + wallet · D31 · the order adopted and upgraded](#2026-10-07--profile--wallet--d31--the-order-adopted-and-upgraded)
   - [2026-10-05 — About reshape · P1 mission items · P2 Home items · the re-order proposal](#2026-10-05--about-reshape--p1-mission-items--p2-home-items--the-re-order-proposal)
   - [2026-10-01d — P3 · the posting display pass](#2026-10-01d--p3--the-posting-display-pass)
   - [2026-10-01c — Home tweaks · HR2 backfilled · admin removal · Posting and Footer re-sorted](#2026-10-01c--home-tweaks--hr2-backfilled--admin-removal--posting-and-footer-re-sorted)
@@ -117,6 +123,9 @@ for whether a new idea belongs in the queue at all.
 
 ### Pass order, and why
 
+*Historical (the order through 2026-10-05). The order that runs now is the next
+section.*
+
 **P1 The Merge** comes first because every other surface points at a mission,
 and right now a mission lives in two places. Merging is also the cheapest
 moment to delete the annulus leftovers — the code is already half-dead.
@@ -149,38 +158,40 @@ token model (G2). Split across surfaces, they drift.
 and by having real activity to administer (G4, G5), so they sit behind the
 surfaces — but their *enquiries* start now and are already on the clock.
 
-### Proposed re-order (2026-10-05) — awaiting D33
+### The order — adopted 2026-10-07 (D33), upgraded for participation
 
-*Read against the queue as it stood on 2026-10-05 and the whole BACKLOG. Nothing
-below is queued until Jax answers D33; when he does, `## BUILD SEQUENCE` is
-re-sorted to match and this section folds into "Pass order, and why".*
+*D33 answered yes; the 2026-10-05 proposal (steps A–I) is the queue now, and the
+wallet half of its step F was built first on Jax's instruction (BUILD SEQUENCE ›
+✅ Profile + wallet). The upgrade below re-sorts it around one goal Jax set on
+2026-10-07: **get people participating in the votes and discussions as quickly
+as possible.** The original proposal is kept in `## ARCHIVE` › 2026-10-05, at its top.*
 
-**Done this pass, and so off the front of the queue:** P1's five items (three
-built, D31 and D32 filed), P2 · Home's six items, and the About reshape, which
-was most of P8.
+**What changed in the order, and why.** Everything needed for someone to *vote*
+now exists — the grant, the ballots, the wallet, add funds — and everything
+needed to *post* exists too. What is missing is the path from "a stranger hears
+about Earthbux" to "they voted and said something", and a reason to come back
+next week. So a short **participation kit** goes first, built mostly out of
+pieces that were scattered across C, B and P4's leftovers; organizations come
+straight after because every organization that claims itself brings its own
+supporters to vote for it (the cheapest growth lever on the board); and the
+rest keeps the D33 order.
 
 | # | Pass | What it combines | Why here |
 |---|---|---|---|
-| **A** | **P2b · Organization experience — finish** | P2b's open items (memberships reshape — migration proposed; suggestion → candidacy; verification rule; progress reports; framing shows the org's input) **+ Jax's org dev review** (org page → mission page logs you out; sign-up: no cause, Q&A split from admin questions, one agreement, website optional / phone-or-email, political candidates and corporations under integrity) **+ P6's "Org registration + claim" and "Initiative coins on the organization home"** (already P2b in practice) | Still the critical path on the clock, half-built, and the org-review bugs are live defects (a logout on navigation). Finishing it before News means News carries organization posts from organizations that can actually log in. |
-| **B** | **P7a · Admin tools** *(pulled forward, split from P7)* | Edit any part of a mission (P7 Includes) · retarget posts and change tags · each account's dashboard viewable · fix Profile's admin link (BACKLOG › Admin) · pull live data to local (BACKLOG › Admin) · the bot console + bot task split + vote spread (**F6**) · D17 backfill tooling for **F11** · the relist-past-winners one-off (below) | Small (≈3 days), and every later pass needs Jax to be able to *fix data without a migration* — F11, F20, F24 and the stale `current_phase` all wait on it. Bots that spread votes make every later check meaningful. |
-| **C** | **P3b · News + the weekly edition** | P3b as written **+** P4's leftovers (weekly edition on Home and in News, "a phase opens" events, the reports queue in admin) **+** P3's "Still waiting" (News cards → `EBX.Post.collapsed`, the cause-coloured top row linking to the *mission*, not News) **+** BACKLOG › Posting "Create the weekly report … with the date of the week" **+** BACKLOG › Admin "Google preview" and Future "share on social media" (= P3b's OG / sitemap / robots) **+** the Framing → **Prep** rename in copy (D27) | One pass over everything a reader *reads*. The weekly edition is the habit loop P4 built the back half of; News is where it lives. Fixes **F25**. |
-| **D** | **Mission hygiene** *(P1 follow-ups, renamed)* | **F19** (phone width), **F22** (oe_check), **F24** (`meMission` skips missions past T; stale `current_phase`) · after-nominate the window collapses (BACKLOG › Mission) · bot cases on the mission page · retroactive posts for recent elections (clock `posts`) | Short and mechanical; best done right after C so the mission page and News agree on posts. |
-| **E** | **Design direction** *(new, 1–2 days, decision first)* | BACKLOG › Future "simple, clean, monochrome, interlocking panels, calming white background" + "monochrome on things that aren't cause-related" + light/dark setting · **D32** (annulus as cause picker / profile navigator) · real images (BACKLOG › Home) · the instructional screen-recording (P2 · Home's first line) | Every pass so far re-polished the dark theme by hand. If the site is going light/monochrome, decide it **before** P5 rebuilds Profile — otherwise Profile is built twice. The screen-recording waits until the UI stops moving. |
-| **F** | **P5 · Money made visible + the wallet** | P5 as written **+** BACKLOG › Profile "add funds first … every action relies on the wallet — create this asap" **+** the Profile reshape (two side panels, coins as "Donated", full dashboard, choice-card fixes **F7**) **+** **D31** (grant timing) **+** **F15 / F20 / F26** (legacy stakes — after B's read-only production counts) | The wallet-first model *is* "money made visible"; building it as a separate Profile pass would read the token model twice. Blocked on D11, D22–D25, D31 — answer them during A–E. **Decide BACKLOG › Future "budget day → T+16" and "scrap the initiative election?" here too**: both rewrite `money_model.md`. |
-| **G** | **P6 · Counterparty** | P6 minus what A took: M1–M3 messages, vetting gates, beneficiary voice, mail transport (unblocks self-serve password reset, BACKLOG › Infra), check flow and payee | Still gated by D11, D12 and the bank/nonprofit enquiries — external clocks, not engineering. |
-| **H** | **P7b · Trust** | New-account vote-buying gate · moderation, IP/spam, the real classifier · Rules page (Footer "soon") · kids accounts after legal review · commit-history record | Needs real activity to tune against, which C–G create. |
-| **I** | **P8b · About & static pages** | What is left of P8 (the Posting/Earthbuck copy lives in How it works already) · Footer's "soon" pages: White paper (Jax's document), Help Center, Safety, Privacy, Terms, Accessibility · Jax's bio and photo on Our team | Copy-heavy and waiting on Jax's documents and the legal review, so it goes last; each page can ship the day its copy exists. |
+| **1** | **Participation kit** *(new, ~1 week)* | **Vote before you sign up** — a ballot works signed out; the slate is kept in the browser and committed the moment the account exists (sign-up inline on the ballot, not a page away) · **"Use your 10 tokens"** on Home: the week's grant and its one election, one tap to the ballot · **the weekly edition** on Home and as an **email** (the endpoint exists — P4; Resend is already wired for Contact us) · **share links + social previews** for a mission, an initiative and a post (P3b's OG work, pulled forward) · **bots spread their votes** (F6) and **seed one Background per open election**, so no ballot or discussion is empty on someone's first visit · a **first-vote / first-post** nudge in the inbox | Every later pass is better with people on the site, and none of these needs a decision. The weekly email is the habit loop; signed-out voting and share previews are the front door. |
+| **2** | **P2b · Organization experience — finish** *(was A)* | as written below — the live logout bug, sign-up simplification, suggestion → candidacy, verification, progress reports, framing shows the organization's input **+** a **"Share your campaign"** link on every campaign page | Organizations recruit voters. A claimed organization with a campaign link is a participation engine; the logout bug is a live defect. |
+| **3** | **P7a · Admin tools** *(was B)* | edit any part of a mission · retarget posts / change tags · each account's dashboard · pull live data to local · the bot console + task split · D17 tooling for F11 · relist past winners · **reverse test deposits** (F27) | Jax must be able to fix data without a migration before real people pile in. |
+| **4** | **P3b · News + the weekly edition** *(was C)* | as written below, minus what step 1 took (OG previews, the weekly edition's first version) | One pass over everything a reader reads. |
+| **5** | **Mission hygiene** *(was D)* | F19 · F22 · F24 · after-nominate collapse · bot cases · retroactive posts | Short and mechanical. |
+| **6** | **Design direction** *(was E)* | light/monochrome decision · **D32: the same annulus everywhere, click to rotate, the 7th section becomes the election panel** (Jax, 2026-10-07) — the profile's arch is the first piece of it · real images · the screen-recording | Decide the look before P5 rebuilds more surfaces. |
+| **7** | **P5 · Money made visible** *(was F, minus the wallet)* | the rest of P5 · a transaction history on the profile · convert/withdraw on every ballot · F15 / F20 / F26 · D22–D25 | The wallet is built; P5 now finishes the numbers around it. |
+| **8** | **P6 · Counterparty** *(was G)* | as written, **+ a real payment processor replacing test funds** (D34) | External clocks: D11, D12, the nonprofit. |
+| **9** | **P7b · Trust** *(was H)* | as written | Needs real activity to tune against. |
+| **10** | **P8b · About & static pages** *(was I)* | as written | Each page ships the day its copy exists. |
 
-**Pushed back (not queued):** the one-post-at-a-time reader (after C proves the
-feed), the animated process diagram (`s4` — after E), the Mission "read-only +
-News as the contribution hub" idea (revisit after C: News may already be that),
-Locations and the globe, mission trips/travel (still deliberately off the chart),
-the Apache stack, spending EBX on merch/travel (after G).
-
-**Combined, so they stop appearing twice:** Profile appears in BACKLOG › Profile,
-P5 and P2b's out-of-scope — now F. Admin appears in P7, BACKLOG › Admin and
-BACKLOG › Bots — now B (tools) and H (trust). The weekly update appears in P3,
-P4 and BACKLOG › Posting — now C.
+**Pushed back (unchanged):** the one-post-at-a-time reader, the animated
+process diagram, Mission as read-only + News as the hub, Locations and the
+globe, mission trips, the Apache stack, spending EBX on merch/travel.
 
 ### The build clock
 
@@ -224,6 +235,9 @@ gantt
     P4 Event log + Inbox                      :done, p4, 2026-10-04, 1d
     P8 About reshape (tabs: story, goals, how, team) :done, p8, 2026-10-05, 1d
     P1 + P2 items (x leading, post about x, hub)  :done, p1x, 2026-10-05, 1d
+    Profile + wallet (arch, add funds, D31)   :done, pfw, 2026-10-07, 1d
+    10/9 Reshuffle (nav, weekly report, News arch, choices hub, rulings 19-20) :done, rs, 2026-10-09, 1d
+    1 Participation kit                       :crit, pk, after rs, 6d
     Animated process diagram                  :s4, after p4, 7d
 
     section Money model
@@ -263,6 +277,9 @@ liability surface. It should not be designed until one mission has resolved.
 ## 2. DECIDE
 *Only Jax answers these. A pass with an open blocker does not start. Answered
 questions are cleared: each answer now lives in the pass or doc it shaped.*
+*Cleared 2026-10-07: **D31** (grants — built, `money_model.md` ruling 17),
+**D32** (the annulus as the cause picker — step 6, Design direction), **D33**
+(the re-order — adopted, `## THE PLAN`).*
 
 | id | Question | Proposed | Blocks |
 |---|---|---|---|
@@ -273,22 +290,144 @@ questions are cleared: each answer now lives in the pass or doc it shaped.*
 | **D22** | Research paid in minted EBX on budget day: (a) the pot, (b) which votes split it, (c) its place in deployment order, (d) EBX never buys anything personal. | 3/32 · only this mission's votes, weighted by EBX held · same tier as the initiative's winning backers · nothing personal | P5 |
 | **D23** | Who checks a budget item, and how is a wrong one caught? | price — evidence attached · feasible — the organization · legal/honest — Earthbux News; a challenge with evidence, not a downvote | P5 |
 | **D24** | What does budget day hand over? | the reporting, not the control; vetting finished before it | P5 |
+| **D34** | *(2026-10-07)* Which payment processor turns "Add funds" from test deposits into real money, and when? | Stripe (cards + Apple/Google Pay), once D12 says where the money lives; test deposits reversed the same day (F27) | P6 |
 | **D25** | Move budget day back (framing 8 or 10 weeks)? | the overlap is the rotation, not framing's length — separate ballots per benefactor instead | P5 |
-| **D31** | *(P1, 2026-10-05)* "Tokens should be granted as soon as the initiative election opens." Today a grant exists only in its week and may enter only the ME/OE that **closes** that week (`money_model.md` §0.7, §4; `crud.replace_p1_shares` → `granted_allowed = mission.cause_id == active_cause_id()`). That is why only **4 tokens** (purchased) could go into the Land election: Land is not this week's door, so granted ct is refused there. Change the rule? | (a) keep the rule and say so on the ballot ("your 10 granted tokens open on <date>; purchased tokens can go in now"); or (b) a grant may enter **any initiative election that is open** in its week (still one grant per week, still non-transferable) — a one-line change to `granted_allowed`, plus §0.7/§4 rewritten. Money-moving: proposed, not applied. | P5 (or a small money pass before it) |
-| **D32** | *(P1, 2026-10-05)* "I really should think about replacing the cause toggle with the rotating annulus." | Not yet — decide with the design-direction call (D33's step E): the annulus is already the mission page's centre, and a second, rotating one as the cause picker is the BACKLOG › Profile idea ("navigate using the annulus") too. Prototype once, use on both. | — (design) |
-| **D33** | Adopt the re-ordered build sequence in `## THE PLAN` › *Proposed re-order (2026-10-05)*? | yes | the next pass |
+| **D35** | *(2026-10-09, F32)* Is a cause election's **window** one fixed future week — so its six weekly columns follow it as it moves nearer — or a standing seat, "the window N weeks out"? | one fixed week: the column *k* weeks back reads slot + *k* | step 5 (F32) |
 
 ## 3. BUILD SEQUENCE
 
-### P1. Mission
-*Pass 2026-10-05 — see `## ARCHIVE` › 2026-10-05.*
-- ✅ In the mission navigator, instead of "which cause holds" and "Land x", display "x leading". — the cause card reads "<cause> leading · the window of <date>", an open initiative election "<initiative> leading", an organization election "<org> leading" in its sub-line.
-- ⏸ for some reason I'm only able to commit 4 tokens for the land election at the moment. Also, tokens should be granted as soon as the initiative election opens. — **not a bug: the rule.** A granted token may only enter the election that closes in its grant week (Land isn't this week's), so only your 4 purchased tokens could go in. Changing it is money-moving → **D31**.
-- ⏸ I really should think about replacing the cause toggle with the rotating annulus. — a design call → **D32**.
-- ✅ instead of "discuss", have "post about x" — every ballot bar's Discuss → **Post about <initiative / Cause n / cause>**, opening the composer on that target.
-- ✅ tivs should not be removed from the ballot after they have won. — `crud._relist_winner`: when an initiative wins, a fresh candidacy of it (`<id>-r<next cycle>`, no votes) is listed in the cause's next initiative election beside the re-listed losers. Forward-going only; winners elected before today are not copied (a one-off for P7a).
+*Re-sorted 2026-10-07 to `## THE PLAN` › The order (D33 adopted, upgraded for
+participation). Steps **1–10** are the queue, top down. Passes already built
+keep their sections under **Built — reference** at the end, with anything still
+waiting folded into a numbered step.*
 
-### P2b · Organization experience
+### ✅ 10/9 Reshuffle — built 2026-10-09
+*Jax's text, adapted to what was built (his original is in `## ARCHIVE` ›
+2026-10-09, with the pass report). Specs: `structure.md` §1, §4, §5, §6, §8;
+rulings 19–20 in `money_model.md` §0. Done when: `reshuffle_check` 44/44, and
+every pinned check green.*
+
+- ✅ **Home: Missions hub → Missions. Feed → News** (no more discussion on
+  Home). The hub is `EBX.Hub` (`resources/js/ebx_hub.js`) at the top of the
+  mission page; the feed is News.
+- ✅ **Mission: Report → Home — the new report.** Home carries **the weekly
+  report** at all times (`GET /inbox/weekly/report`, `backend/app/report.py`).
+  The mission's own report went to **News**, above that mission's posts (Jax,
+  2026-10-09); the mission page keeps a card that leads there.
+- ✅ **News: everything, or toggled by one mission**, with the profile's globe
+  and 3/7 annulus at the top (`EBX.Arch`, `resources/js/ebx_arch.js`): a sector
+  (or a row beside the globe) is the toggle; the mission's report
+  (`EBX.MissionReport`) sits above its posts.
+- ✅ **Profile: the missions hub showing the user's selections** (the choices
+  hub, `EBX.Hub` in `mine` mode); **wallet, allocations, stats, choices hub,
+  personal posts** — no globe, no mission toggle.
+- ✅ **Profile and Inbox left the tabs** — Home · Missions · News; Profile is the
+  badge, and Inbox an icon beside it carrying the unread count.
+- ✅ **The weekly report** — "October 6 – 13: Land": three updates above the
+  timeline (this week's new mission · the leading organizations in the final
+  week of its organization election · the upcoming budget day), three below it
+  (this week's initiative election — the only dot in next week's cause — and
+  last week's cause just entering and just leaving prep). The timeline runs from
+  the initiative election to a week after budget day, every mission a coloured
+  dot labelled with its number. At the bottom: cause-election updates (who won
+  this week, which incumbents secured their windows) and the exchange's top
+  movers — ranked by EBX held for now, by the week's change once trading opens
+  (Jax, 2026-10-09).
+- ✅ **The grants.** Every initiative election carries exactly ten granted
+  tokens (ruling 19) — the "land only" bug is gone with the door it came from.
+- ✅ **The organization election.** Everyone has the nominal vote in every open
+  one; committing tokens needs a vote in its initiative election; carried tokens
+  count on the ladder (ruling 20, replaces 16).
+- ✅ **Framing → "Prep"** wherever a reader sees it.
+- ✅ **The five steps on Home stand left of the visual**; "Reporting" →
+  **"Feedback"**.
+- ✅ **Two main allocation bars — Committed and Uncommitted** — on the profile,
+  on one scale.
+- ✅ *(asked first)* Home's door copy, with edits 1–3: "$1 to vote with in every
+  initiative election", "public, week by week", "move your donation".
+
+### ✅ Profile + wallet — built 2026-10-07
+*Jax's text, adapted to what was built (his original is in `## ARCHIVE` ›
+2026-10-07). Spec: `structure.md` §5. `profile_check` 20/20 · `wallet_check`
+145/145 · `token_model_check` 104/104.*
+
+- ✅ **Full overhaul.** The old page (three cards, seven weekly windows, member
+  mode, the admin console inside the profile) is gone.
+- ✅ **3/7 of the annulus, the whole width of the page**, the globe where the
+  full circle's centre would be. Each sector is one mission with three layers —
+  inner: its initiative election, middle: its organization election, outer: its
+  budget day — each dated, the text curving with the ring.
+  - **Left:** the upcoming ME (closes this week) — inner layer lit, with what is leading.
+  - **Middle:** the current OE — middle layer lit, with the mission and the organization leading.
+  - **Right:** the upcoming budget day for the most recently elected OE — outer layer lit.
+  - The causes sit in the mission page's annulus order (left = +1); **swipe**
+    (or ← Last week / Next week →, or the arrow keys) moves one week and turns
+    the ring one sector.
+- ✅ **Left of the globe:** the profile, mission memberships as coins under
+  **Donated** (one per mission: ballot · membership · EBX), and settings &
+  options (inbox, organization login, admin console for staff, sign out).
+- ✅ **Right of the globe:** the wallet — Committed (ME · OE · Prep) and
+  Uncommitted (grant · purchased), pre-EBX tokens, EBX, final, cash — and the
+  stats: account age, elections voted, winners backed, posts, comments, votes
+  on posts, upvotes received, initiatives suggested.
+- ✅ **Below:** a panel for each of the three missions in the arch — your
+  allocation, your contributions, the community's participation, Vote / Post
+  about it. Clicking a coin (or a sector) opens that mission's panel.
+- ✅ **Add funds first.** `POST /wallet/add-funds`: dollars become PURCHASED
+  tokens ($1 = 10). **Test mode** until a processor is connected (D34): credited
+  at once, logged as a TEST deposit, capped $100/deposit and $500/account.
+  `EBX.Wallet.addFunds` is the one dialog — the profile and every **Donate
+  more** on the mission page open it.
+- ✅ **The grant is a separate entity** in the wallet (`GET /wallet` › `grant`):
+  10 tokens, the one initiative election it may enter, what is used, when it
+  expires. **D31 built** (money_model ruling 17): ten every week, only that
+  week's initiative election, unused expires, returns are last-in-first-out.
+  Organization elections take purchased tokens only.
+- ✅ **EBX and pre-EBX tokens** are separate lines; **membership coins** come
+  from the positions (`GET /wallet/positions`) — backing an initiative election
+  makes the coin that is your membership in its organization election.
+- ✅ **No unallocated funds → "Add funds…"** prompt in the wallet.
+- ⏸ *"Shold be"* — Jax's line was cut off; tell me the rest and it goes in step 1 or 7.
+- **Left for later:** a transaction history (step 7) · clicking the other 4/7
+  of the annulus (D32, step 6) · public benefactor profiles (step 1 or 4) ·
+  real geography on the globe (pushed back).
+
+### 1 · Participation kit
+*New 2026-10-07 — see `## THE PLAN` › The order for why it is first.*
+
+**Goal.** A stranger can go from a shared link to a vote and a post in under a
+minute, and gets one reason a week to come back (G1, G3).
+
+**Includes**
+- **Vote before you sign up.** Ballots work signed out: the slate and amount are
+  kept in the browser; the ballot's Commit opens an inline sign-up and commits
+  on success (since ruling 19 every initiative election's ten granted tokens are
+  there from the first commit).
+- **"Use your 10 tokens."** *(2026-10-09: ruling 19 puts ten in every initiative
+  election, and Home's weekly report already sends this week's to its ballot —
+  "Vote with your 10 tokens".)* What is left: one card listing every open
+  initiative election with its ten, and one tap to each ballot.
+- **The weekly edition, everywhere.** On Home (`/inbox/weekly/latest`) and as an
+  opt-in **email** through the Resend route Contact us already uses (D9:
+  optional).
+- **Share.** A share button on every mission, initiative and post; per-page
+  social previews (`og:` tags; `/p/<id>` and `/m/<slug>` answer with the
+  title and excerpt) — pulled forward from P3b.
+- **Never an empty room.** Bots spread their votes across the open elections
+  (F6) and Earthbux seeds one Background per open initiative election.
+- **First-time nudges** in the inbox: your first vote, your first post, "your
+  initiative is leading".
+
+**Decides.** — none (D9 already answered: email is optional).
+
+**Done when.** A `participation_check`: a signed-out ballot commits after an
+inline sign-up; Home shows the grant card; the weekly email renders; `/m/<slug>`
+and `/p/<id>` carry `og:title`; every open initiative election has ≥1 post.
+
+**Out of scope.** Personalization (P3b/P4), real payments (step 8).
+
+### 2 · P2b · Organization experience — finish
+*Step 2 of the order (was A). Add: a "Share your campaign" link on every campaign page.*
 *(Added 2026-10-01; rebuilt the same day on Jax's answers to D26 and D28, and his
 notes on the public profile and the campaign page.)*
 
@@ -436,7 +575,214 @@ benefactor profile ("still shoddy") — BACKLOG › Profile.
 
 ---
 
-### P2 · Home
+### 3 · P7a · Admin tools
+*Split from P7 by the order (was B).*
+
+**Includes.** Admin edits any part of a mission (P7's first Includes item,
+below) · retarget posts and change tags · each account's dashboard viewable ·
+fix Profile's admin link (done 2026-10-07: Settings › Admin console →
+admin.html) · pull live data to local · the bot console, bot task split and
+vote spread (F6, if step 1 did not finish it) · D17 tooling for F11 · relist
+past winners (the one-off from P1) · **reverse the TEST deposits** (F27).
+
+**Done when.** An `admin_check` edits a mission's initiative, organization and
+dates through the API and reads the change back in the log.
+
+---
+
+### 4 · P3b · News + the weekly edition
+*Step 4 (was C). Step 1 takes the social previews and the first weekly edition; the rest stays here, plus P3's "Still waiting" and P4's leftovers ("a phase opens" events, the reports queue in admin).*
+*(inbox 2026-09-29: "Where is news in our plan?")*
+
+**Goal.** News is **the ordered, searchable feed of everything, everywhere** —
+algorithmically ordered, never personalized. Home is personalized; Mission is
+mission-ized. The difference between Home and News is the point of the pass
+(G3, G4).
+
+| Surface | Scope | Personalization | Order |
+|---|---|---|---|
+| **News** | wide — every post | none | algorithmic (`feed_rank`), the reader picks: Latest · Trending · Research · Missions |
+| **Home** | middle — the reader's causes and missions, and the most recent weekly update | full (follow-graph vs. best of the network — after P4's event log) | personalized |
+| **Mission** | narrow — one mission, context-rich | none | the mission's own: leads, then votes in that mission |
+
+*Jax's notes, kept:* Trending is velocity with time decay; outrage ranking is
+the norm and we need something different; posts with identical timestamps will
+cause problems (both handled in `feed_rank.py`). The signal list is in
+`feed_rank.FUTURE_SIGNALS`.
+
+**Includes**
+- `cause.html` → **`news.html`** (the old address forwards): one feed, unified with filters — the four orders above, plus cause · type · tag · date · search.
+- **What News carries:** every post; the **weekly updates** (P4 writes them; until then Earthbux's editorial posts); every Earthbux and organization post. A benefactor post is never "elevated" into News — it is in it from the start. Elevation is the Mission page's job (the report's leading posts).
+- **Home vs News:** Home has no filters (Home mods, 2026-09-30); every filter, thread and search is News.
+- **A thread has an address:** `/p/<post id>` serves the Full view (`EBX.Post.full`) as its own page.
+- **Discoverability:** meta and social-preview tags on every page; **per-thread dynamic OG** (`/p/<id>` answers with the post's title, author and excerpt in its `<meta>`); an **RSS feed** of News (`/news.rss`, `?cause=` per cause); **`robots.txt`** and **`sitemap.xml`** (the pages, every mission by its slug, every post).
+
+**Decides.** D18 (the one-liners for Missions and News) — not blocking.
+
+**Done when.** `feed_check` rewritten for the unified page (each order, each
+filter, search, the thread address); an `og_check` fetches `/p/<id>`,
+`/news.rss`, `/sitemap.xml` and `/robots.txt` and reads their tags.
+
+**Out of scope.** Personalization (Home, after P4). Tuning the orders (P5).
+
+---
+
+### 5 · Mission hygiene
+*Was D.* F19 (phone width) · F22 (oe_check) · F24 (`meMission` skips missions
+past T; stale `current_phase`) · after-nominate the window collapses · bot cases
+on the mission page · retroactive posts for recent elections.
+
+---
+
+### 6 · Design direction
+*Was E. Decision first, 1–2 days.* Light / monochrome / interlocking panels
+(BACKLOG › Future) and the light-dark setting · **D32 (Jax, 2026-10-07):** "It
+would be the same annulus, and clicking on it would rotate it … maybe we can
+make it so that the 7th section becomes the election panel (shadows around it
+somehow)." The profile's arch (2026-10-07) is its first piece: one annulus
+component — mission page, Home's steps, profile — clickable, rotating, the
+focused sector opening as the panel · real images · the screen-recording (P2's
+first line) once the UI stops moving.
+
+---
+
+### 7 · P5 · Money made visible
+*Step 7 (was F, minus the wallet — built). Add: a transaction history on the profile (deposits, commits, moves, withdrawals, skims — the ledger already has them) · F15 / F20 / F26 · D22–D25.*
+
+**Goal.** One pass over everything that reads the token model, so the numbers
+agree on every surface (G2).
+
+**Includes**
+
+- **Withdraw / convert** on the initiative, organization and framing ballots.
+- **Allocations** shows which organization elections you hold tokens to vote in, and whether your votes won.
+- The two accounting numbers everywhere: **EBX sent** and **EBX held**.
+- A constant tally of the **guaranteed pool** and the **committed pool**, in EBX, against the EBX value.
+- **Resolving a budget item moves the coin price**, by speed and efficiency; the suggestion → approval threshold that makes an item org-resolvable.
+- Profile: **wallet value · money donated · spent**, a transaction history, the coin display integrated with allocations, and the coin actions (trade, budget).
+- Credit-badge colorization perk ($10 participation, `vvv`).
+- **Build the algorithm** — the ranking strategies P3 frames (`feed_rank.py`), tuned against real engagement once there is some, and the research ranking the payout reads.
+- **Canonicalization of citations** — one id per cited source (the same report linked three ways is one reference), so the research split (D22) pays a source once and "cited by" counts are true.
+
+**Decides.** D11 (affects what the fee line says, not whether the pass runs).
+
+**Done when.** `wallet_check` and `token_model_check` extended to the new
+actions, and one figure reconciled across ballot, profile and mission page.
+
+**Out of scope.** The DEX. The framing exchange itself (backend, money_model §12).
+
+---
+
+### 8 · P6 · Counterparty
+*Step 8. Add: **a real payment processor replaces test funds** (D34) — the one switch is `EBX_FUNDS_MODE`.*
+
+**Goal.** A real organization can be found, can claim, and can be paid (G4, G5).
+
+**Includes.** Initiative coins on the organization home (P2b builds the home,
+registration and claim) · the M1 registered / M2 might-win / M3 won
+messages · vetting gates · beneficiary surface (voice at phase-2 start) ·
+mail transport · check flow and payee.
+
+**Decides.** D11, D12.
+
+**Done when.** A claimed organization (P2b) appears as payee in a dry-run, with
+the vetting state visible on the mission page and on its home.
+
+---
+
+### 9 · P7b · Trust (and what step 3 left of P7)
+
+**Goal.** Run the thing without a second website, and keep it from being gamed.
+
+**Done** *(2026-10-01)*: staff **remove posts (with their replies),
+initiatives and organizations** — admin.html › Remove, `DELETE
+/admin/posts|initiatives|organizations/{id}` (`?dry_run=true` first). Refused:
+an elected initiative or organization, an initiative with tokens on it, an
+organization on the ledger. The bots' `backfill` now elects initiatives too
+(`--missions hmr1`; staff password from `bots.local.json`).
+
+**Includes.**
+- **Admin edits any part of a mission** (Jax, 2026-10-01: "I would like to be
+  able to go in from admin and edit any part of the mission") — its initiative
+  and organization (elect / un-elect), dates and phase, title, candidacies,
+  posts' targets and tags (BACKLOG › Admin), with every edit logged.
+- `admin.html` absorbed into the site, off Profile · admin data hub
+keyed on missions, accounts, organizations, purchases · bot task split
+(voting · researching · proposing · exchanging · budgeting), scheduling and
+network-wide deploy, and the **bot vote-spread bug** (**F6**) · vote event log
+with duplicate/invalid flags and CSV · mission simulator, `is_test` +
+`cyclestart`, v2 seeder · new-account vote-buying gate · kids accounts after
+legal review · moderation, IP/spam blocking, the real content classifier ·
+a record of commit history.
+
+---
+
+### 10 · P8b · About & static pages
+
+**▶ Reshaped 2026-10-05** (BACKLOG › ABOUT PAGE RESHAPE, executed on Jax's
+instruction). `about.html` has its own tab bar — **← Earthbux Home · Our story ·
+Our goals · How it works · Our team** — and no site nav and no hero. Every old
+anchor still lands (`#why` → Our story; `#grant` → Our goals; `#what`,
+`#earthbuck`, `#posting`, `#ab-phases` → How it works). How it works has one
+section per phase, its copy read from `EBX.Wheel.COPY` (the one source), each
+with "the network here" (Background in 2, Investigation in 3, budget items and
+Analysis in 4, the newsroom in 5), then the Earthbuck, How to post and **How we
+compare**. Our team is a frame: Jax (photo and bio to fill), the open roles, Join
+us and Contact us. New copy (Our story, Our goals › optimism, How we compare) is
+drawn from `pitch/deck.md` and `RESEARCH.md` §2 — Jax to edit freely.
+`landing_check` 39/39. What is left of P8 is the static pages — step I of the
+proposed re-order.
+
+**Goal.** One About page with a tab for each thing a newcomer has to understand,
+so the working pages can stay compact (G3).
+
+**Includes**
+
+- `about.html` becomes tabbed. Tabs, proposed: Earthbux (today's copy) · Causes
+  ("What is a cause") · The five phases ("How this phase works" — the Process /
+  Reason copy that left the mission page 2026-09-28) · Initiatives ·
+  Organizations · Missions · Posting (P3's How to post section) · The Earthbuck.
+- The phase tab reads `EBX.Wheel.COPY`, the same text Home's top cards use, so
+  there is one copy of it.
+- A deep link per tab (`about.html#phases`, `#posting` …). The mission page's
+  "How each phase works →" (today `about.html#ab-phases`) and the composer's
+  guide link land on theirs.
+- Sources: BACKLOG › Home feedback 1 ("Maybe I need an 'About' description page
+  for everything … I could have my about page have a bunch of different tabs");
+  › Step descriptions (moved here): "'What is a cause' and 'How this phase works'".
+
+**Decides.** — (the tab list is a proposal; reorder freely).
+
+**Done when.** `landing_check` extended: every tab renders, every deep link
+lands, and the phase tab's copy is the same string Home shows.
+
+**Out of scope.** New copy beyond moving and titling what exists.
+
+---
+
+---
+
+### 999 · Housekeeping — ends every pass
+
+- (a) **ToC** — `scripts/toc.py` over the docs it touched.
+- (b) **structure.md** — page layouts updated, outdated content removed.
+- (c) **The clock** — new items added, completed marked, behind-schedule flagged.
+- (d) **README** — suggest the edits that align it with what now exists.
+- (e) **This file** — defects filed, register updated, pass report moved to `## ARCHIVE`.
+
+
+### Built — reference
+*Passes already built. Their open items are folded into the numbered steps above; the text is kept so nothing Jax wrote is lost.*
+
+#### P1. Mission
+*Pass 2026-10-05 — see `## ARCHIVE` › 2026-10-05.*
+- ✅ In the mission navigator, instead of "which cause holds" and "Land x", display "x leading". — the cause card reads "<cause> leading · the window of <date>", an open initiative election "<initiative> leading", an organization election "<org> leading" in its sub-line.
+- ⏸ for some reason I'm only able to commit 4 tokens for the land election at the moment. Also, tokens should be granted as soon as the initiative election opens. — **not a bug: the rule.** A granted token may only enter the election that closes in its grant week (Land isn't this week's), so only your 4 purchased tokens could go in. Changing it is money-moving → **D31**.
+- ⏸ I really should think about replacing the cause toggle with the rotating annulus. — a design call → **D32**.
+- ✅ instead of "discuss", have "post about x" — every ballot bar's Discuss → **Post about <initiative / Cause n / cause>**, opening the composer on that target.
+- ✅ tivs should not be removed from the ballot after they have won. — `crud._relist_winner`: when an initiative wins, a fresh candidacy of it (`<id>-r<next cycle>`, no votes) is listed in the cause's next initiative election beside the re-listed losers. Forward-going only; winners elected before today are not copied (a one-off for P7a).
+
+#### P2 · Home
 *Pass 2026-10-05 — see `## ARCHIVE` › 2026-10-05. Everything but the first line is built.*
 - ⏸ The instructional video can go along with (or be replaceb by) instructional screen-recording of how to use the platform. — needs the recording; proposed for step E of the re-order, once the UI stops moving.
 - ✅ In the missions hub, conserve space the same way we did in the descriptions - we don't need a full border and can have shared borders. Also, it needs to say "Leading: initiative". Right now it looks like the initiative count is the thing that's leading which is not accurate. The "closes x" line should be in the same line that shows the phase, so "Initiative election - closes oct 18" should be across the top row. The bottom row should show "cause - started x". No need for the "week x". Also, since causes are now in the boxes, no need for the row labels. Also, no need for the column labels (cause election, newest mission, ...)
@@ -446,7 +792,7 @@ benefactor profile ("still shoddy") — BACKLOG › Profile.
 - ✅ Remove "The Network" and "What the network made this week", Put the toggle options in the same row as +Post
 
 
-### Footer
+#### Footer
 *Built 2026-09-25 — see `## ARCHIVE` › 2026-09-25c, where the sorting table is
 kept. Status 2026-10-01.*
 
@@ -474,7 +820,7 @@ kept. Status 2026-10-01.*
 | Get the app | an app |
 | Send love / Pay us | a donate-to-Earthbux link — D11, D12 |
 
-### P3 · Posting
+#### P3 · Posting
 *Built 2026-09-29; the display pass 2026-10-01 — see `## ARCHIVE` › 2026-09-29,
 › 2026-10-01 (the Mission statement) and › 2026-10-01d (the card). The posting
 model, its diagrams and the card now live in `docs/structure.md` § 8c.*
@@ -530,43 +876,7 @@ The top row "Oceans" directs to the news. Should direct tot he oceans mission pa
 
 ---
 
-### P3b · News
-*(inbox 2026-09-29: "Where is news in our plan?")*
-
-**Goal.** News is **the ordered, searchable feed of everything, everywhere** —
-algorithmically ordered, never personalized. Home is personalized; Mission is
-mission-ized. The difference between Home and News is the point of the pass
-(G3, G4).
-
-| Surface | Scope | Personalization | Order |
-|---|---|---|---|
-| **News** | wide — every post | none | algorithmic (`feed_rank`), the reader picks: Latest · Trending · Research · Missions |
-| **Home** | middle — the reader's causes and missions, and the most recent weekly update | full (follow-graph vs. best of the network — after P4's event log) | personalized |
-| **Mission** | narrow — one mission, context-rich | none | the mission's own: leads, then votes in that mission |
-
-*Jax's notes, kept:* Trending is velocity with time decay; outrage ranking is
-the norm and we need something different; posts with identical timestamps will
-cause problems (both handled in `feed_rank.py`). The signal list is in
-`feed_rank.FUTURE_SIGNALS`.
-
-**Includes**
-- `cause.html` → **`news.html`** (the old address forwards): one feed, unified with filters — the four orders above, plus cause · type · tag · date · search.
-- **What News carries:** every post; the **weekly updates** (P4 writes them; until then Earthbux's editorial posts); every Earthbux and organization post. A benefactor post is never "elevated" into News — it is in it from the start. Elevation is the Mission page's job (the report's leading posts).
-- **Home vs News:** Home has no filters (Home mods, 2026-09-30); every filter, thread and search is News.
-- **A thread has an address:** `/p/<post id>` serves the Full view (`EBX.Post.full`) as its own page.
-- **Discoverability:** meta and social-preview tags on every page; **per-thread dynamic OG** (`/p/<id>` answers with the post's title, author and excerpt in its `<meta>`); an **RSS feed** of News (`/news.rss`, `?cause=` per cause); **`robots.txt`** and **`sitemap.xml`** (the pages, every mission by its slug, every post).
-
-**Decides.** D18 (the one-liners for Missions and News) — not blocking.
-
-**Done when.** `feed_check` rewritten for the unified page (each order, each
-filter, search, the thread address); an `og_check` fetches `/p/<id>`,
-`/news.rss`, `/sitemap.xml` and `/robots.txt` and reads their tags.
-
-**Out of scope.** Personalization (Home, after P4). Tuning the orders (P5).
-
----
-
-### P4 · Event log + Inbox
+#### P4 · Event log + Inbox
 
 **▶ Built 2026-10-04** (Jax: "Build the inbox step"). `inbox_check` **65/65**;
 `org_check` 44/44, `posting_check` 66/66 on db copies. Spec: `structure.md` §1 › Inbox.
@@ -623,126 +933,6 @@ per-user fan-out, and the weekly-update assembly.
 
 ---
 
-### P5 · Money made visible
-
-**Goal.** One pass over everything that reads the token model, so the numbers
-agree on every surface (G2).
-
-**Includes**
-
-- **Withdraw / convert** on the initiative, organization and framing ballots.
-- **Allocations** shows which organization elections you hold tokens to vote in, and whether your votes won.
-- The two accounting numbers everywhere: **EBX sent** and **EBX held**.
-- A constant tally of the **guaranteed pool** and the **committed pool**, in EBX, against the EBX value.
-- **Resolving a budget item moves the coin price**, by speed and efficiency; the suggestion → approval threshold that makes an item org-resolvable.
-- Profile: **wallet value · money donated · spent**, a transaction history, the coin display integrated with allocations, and the coin actions (trade, budget).
-- Credit-badge colorization perk ($10 participation, `vvv`).
-- **Build the algorithm** — the ranking strategies P3 frames (`feed_rank.py`), tuned against real engagement once there is some, and the research ranking the payout reads.
-- **Canonicalization of citations** — one id per cited source (the same report linked three ways is one reference), so the research split (D22) pays a source once and "cited by" counts are true.
-
-**Decides.** D11 (affects what the fee line says, not whether the pass runs).
-
-**Done when.** `wallet_check` and `token_model_check` extended to the new
-actions, and one figure reconciled across ballot, profile and mission page.
-
-**Out of scope.** The DEX. The framing exchange itself (backend, money_model §12).
-
----
-
-### P6 · Counterparty
-
-**Goal.** A real organization can be found, can claim, and can be paid (G4, G5).
-
-**Includes.** Initiative coins on the organization home (P2b builds the home,
-registration and claim) · the M1 registered / M2 might-win / M3 won
-messages · vetting gates · beneficiary surface (voice at phase-2 start) ·
-mail transport · check flow and payee.
-
-**Decides.** D11, D12.
-
-**Done when.** A claimed organization (P2b) appears as payee in a dry-run, with
-the vetting state visible on the mission page and on its home.
-
----
-
-### P7 · Admin & trust
-
-**Goal.** Run the thing without a second website, and keep it from being gamed.
-
-**Done** *(2026-10-01)*: staff **remove posts (with their replies),
-initiatives and organizations** — admin.html › Remove, `DELETE
-/admin/posts|initiatives|organizations/{id}` (`?dry_run=true` first). Refused:
-an elected initiative or organization, an initiative with tokens on it, an
-organization on the ledger. The bots' `backfill` now elects initiatives too
-(`--missions hmr1`; staff password from `bots.local.json`).
-
-**Includes.**
-- **Admin edits any part of a mission** (Jax, 2026-10-01: "I would like to be
-  able to go in from admin and edit any part of the mission") — its initiative
-  and organization (elect / un-elect), dates and phase, title, candidacies,
-  posts' targets and tags (BACKLOG › Admin), with every edit logged.
-- `admin.html` absorbed into the site, off Profile · admin data hub
-keyed on missions, accounts, organizations, purchases · bot task split
-(voting · researching · proposing · exchanging · budgeting), scheduling and
-network-wide deploy, and the **bot vote-spread bug** (**F6**) · vote event log
-with duplicate/invalid flags and CSV · mission simulator, `is_test` +
-`cyclestart`, v2 seeder · new-account vote-buying gate · kids accounts after
-legal review · moderation, IP/spam blocking, the real content classifier ·
-a record of commit history.
-
----
-
-### P8 · About
-
-**▶ Reshaped 2026-10-05** (BACKLOG › ABOUT PAGE RESHAPE, executed on Jax's
-instruction). `about.html` has its own tab bar — **← Earthbux Home · Our story ·
-Our goals · How it works · Our team** — and no site nav and no hero. Every old
-anchor still lands (`#why` → Our story; `#grant` → Our goals; `#what`,
-`#earthbuck`, `#posting`, `#ab-phases` → How it works). How it works has one
-section per phase, its copy read from `EBX.Wheel.COPY` (the one source), each
-with "the network here" (Background in 2, Investigation in 3, budget items and
-Analysis in 4, the newsroom in 5), then the Earthbuck, How to post and **How we
-compare**. Our team is a frame: Jax (photo and bio to fill), the open roles, Join
-us and Contact us. New copy (Our story, Our goals › optimism, How we compare) is
-drawn from `pitch/deck.md` and `RESEARCH.md` §2 — Jax to edit freely.
-`landing_check` 39/39. What is left of P8 is the static pages — step I of the
-proposed re-order.
-
-**Goal.** One About page with a tab for each thing a newcomer has to understand,
-so the working pages can stay compact (G3).
-
-**Includes**
-
-- `about.html` becomes tabbed. Tabs, proposed: Earthbux (today's copy) · Causes
-  ("What is a cause") · The five phases ("How this phase works" — the Process /
-  Reason copy that left the mission page 2026-09-28) · Initiatives ·
-  Organizations · Missions · Posting (P3's How to post section) · The Earthbuck.
-- The phase tab reads `EBX.Wheel.COPY`, the same text Home's top cards use, so
-  there is one copy of it.
-- A deep link per tab (`about.html#phases`, `#posting` …). The mission page's
-  "How each phase works →" (today `about.html#ab-phases`) and the composer's
-  guide link land on theirs.
-- Sources: BACKLOG › Home feedback 1 ("Maybe I need an 'About' description page
-  for everything … I could have my about page have a bunch of different tabs");
-  › Step descriptions (moved here): "'What is a cause' and 'How this phase works'".
-
-**Decides.** — (the tab list is a proposal; reorder freely).
-
-**Done when.** `landing_check` extended: every tab renders, every deep link
-lands, and the phase tab's copy is the same string Home shows.
-
-**Out of scope.** New copy beyond moving and titling what exists.
-
----
-
-### 999 · Housekeeping — ends every pass
-
-- (a) **ToC** — `scripts/toc.py` over the docs it touched.
-- (b) **structure.md** — page layouts updated, outdated content removed.
-- (c) **The clock** — new items added, completed marked, behind-schedule flagged.
-- (d) **README** — suggest the edits that align it with what now exists.
-- (e) **This file** — defects filed, register updated, pass report moved to `## ARCHIVE`.
-
 ## 4. OPEN DEFECTS
 
 *Filed until fixed. A pass that fixes one strikes it here, not in its report.*
@@ -755,11 +945,11 @@ lands, and the phase tab's copy is the same string Home shows.
 | ~~**F4**~~ | ~~`oe_check.js` drove the 2026-08-20 table.~~ Rewritten against the merged page: *Show all races*, the race-is-a-mission move, the backers-only refusal. The full commit round-trip needs a closed ME stake — a bot-seeded DB (backlog). | 2026-09-08 | **P1, 2026-09-24** |
 | ~~**F5**~~ | ~~`liveLine()` in `ebx_wheel.js` is no longer painted.~~ It is the left half of Home's top card now — the live facts for the focused cause. | 2026-09-20 | **P2, 2026-09-25** |
 | **F6** | The bots only voted on Human Progress — the latest possible election. They should spread across open elections, weighted to the upcoming one. | 2026-09-20 | P7 (or bots2) |
-| **F7** | Profile choice cards are in reverse order: each tiv/org should swap, running week+1 top-left counterclockwise to week+6 top-right. | — | P5 |
+| ~~**F7**~~ | ~~Profile choice cards are in reverse order.~~ The cards are gone with the old profile; the arch replaces them. | — | **Profile + wallet, 2026-10-07** |
 | ~~**F8**~~ | ~~`render_check.js` (13 MISS) and `ce_check.js` (timed out on `.hig__toggle`) asserted the pre-2026-09-20 Elect page.~~ Both rewritten against the merged page; clean. | 2026-09-24 | **P1, 2026-09-24** |
 | ~~**F9**~~ | ~~The shared footer linked `en.html`, `initiative.html` and four `href="#"` items.~~ The footer (2026-09-25) links only pages that exist; the rest read "soon". | 2026-09-24 | **Footer, 2026-09-25** |
 | ~~**F10**~~ | ~~The mission page's discussion box got `p2Active: ph >= 2` where `ph` was an object — always false.~~ Reads the mission now. | 2026-09-24 | **P1, 2026-09-24** |
-| **F11** | wil0 and hpr0 are organization elections **past their close** (Sep 8, Sep 22) with no winner — their only candidates are `pending`. They sort first, so wil0 is "this week's race, open to everyone" and two live races (hpr1, atm2) fall outside `/wallet/rows`' eight. Needs D17. | 2026-09-24 | P5 / P7 |
+| **F11** | wil0 and hpr0 are organization elections **past their close** (Sep 8, Sep 22) with no winner — their only candidates are `pending`. They sort first, so wil0 is "this week's race, open to everyone" and two live races (hpr1, atm2) fall outside `/wallet/rows`' eight. Needs D17. *2026-10-09:* since ruling 20 anyone can cast the nominal vote in them — `PUT /wallet/org` checks for an elected initiative, not for a close that has passed; `reshuffle_check` picks a race whose date is still ahead. | 2026-09-24 | P5 / P7 |
 | **F12** | ~~"Show all races" threw~~ — its `onclick` called `_oeScope()`, which in markup is the page's `let` string, not the accessor. **Fixed P1.** | 2026-09-24 | **P1, 2026-09-24** |
 | ~~**F13**~~ | ~~A race missing from `/wallet/rows` (see F11) shows **live** Vote buttons.~~ The ballot now fetches a missing race's row (`GET /wallet/row/{id}`), so it knows `can_take_part` — and the stake, which was the "I can't withdraw my slate" bug. Signed out there is nothing to vote with. | 2026-09-24 | **Mission pass, 2026-10-01** |
 | ~~**F14**~~ | ~~At phone width the top bar overflows.~~ At ≤640px the five tabs pin to the bottom and hide while scrolling down (`ebx_shared.js` `bindNavScroll`, `ebx_frontend.css`). | 2026-09-24 | **P2, 2026-09-25** |
@@ -769,12 +959,19 @@ lands, and the phase tab's copy is the same string Home shows.
 | ~~**F18**~~ | ~~Breaking a sign-up rule shows `[object Object]` instead of the rule.~~ `Auth.signup` prints each broken rule's `msg`. | 2026-09-28 | **P3, 2026-09-29** |
 | **F19** | At phone width (390px) the mission page is 536px wide: the final-standings "elected" pill and the candidate pills (`.ml-row__won`, `.mh-pill--nostmt`) and the ring layer run off the right edge. Predates 2026-09-28 (the same with the page before the mission edits). | 2026-09-28 | P1 follow-ups |
 | ~~**F21**~~ | ~~The progress log sat at the far left of the mission page, outside the panel.~~ It is inside the panel, top left; the table is a full-width row under it. | 2026-09-29 | **Unified elections, 2026-09-29** |
-| **F22** | *(P3 §0 sweep)* `scripts/oe_check.js` fails 3 of 23 on the compact mission page (2026-09-28): it expects "Organization Election" as the phase title and the initiative's name in the head. Same 3 failures with P3's code removed — the check predates the page, not a regression. | 2026-09-29 | P1 follow-ups |
+| ~~**F22**~~ | ~~*(P3 §0 sweep)* `scripts/oe_check.js` fails 3 of 23 on the compact mission page.~~ It reads the P1-edits rule now: after the initiative election the title above the annulus is the mission's own (its initiative), and the line under it says the organization is being elected. 22/22. | 2026-09-29 | **10/9 Reshuffle, 2026-10-09** |
 | **F23** | *(P3)* Images on posts are stored as downscaled data URLs in `posts.image_url` (≤1280px JPEG). Fine at pilot scale; at volume they belong in file storage, and **video** needs that storage before the composer's Video button can work. | 2026-09-29 | BACKLOG › Infra |
 | **F24** | *(Home mods §0 sweep)* hmr1's initiative election closed on Sep 8 with no winner, and `EBX.Wheel.meMission` picks the **oldest** un-won mission in phase `pre`/`initiative` — so for Human Rights it returns hmr1, not the open hmr2, wherever the wheel's "this week's initiative election" is read. `missions.current_phase` is also stale (every mission reads `initiative`, winners or not); the mission hub reads dates and winners instead. `meMission` should skip missions past T. | 2026-09-30 | P1 follow-ups |
 | **F25** | *(mission pass §0 sweep)* `feed_check.js` fails "…a way through to the mission it was written in" on a fresh database: the HOT order's first post is a target-less general post (P3 made those possible), which has no mission to link. The same on the baseline — the check predates target-less posts. | 2026-10-01 | P3b (feed_check rewrite) |
 | **F26** | *(mission pass)* Legacy organization-race rows with `donated_ct = 0` (F15) count nothing as final. `withdraw_stake` now treats the 10% initiative-election skim as final when it **materializes** a derived stake, but a row that already has `stake_ct` and no recorded skim (e.g. GameMaster's hmr1 locally) can still withdraw all of it. Needs the same read-only production count as F20 before a backfill. | 2026-10-01 | P5 |
 | **F20** | Some organization races hold no carried initiative-election money: locally atm1, oce1, lan1, wil0 and hpr0 have `votes_p1` stakes but no `settle_me` element on their `votes_p2` rows (elected before the carry existed, or by a path that skipped it). The 2026-09-28 fix lets those voters vote; the money itself is still not in the race (cf. F15). Check production with a read-only count before any backfill. | 2026-09-28 | P5 |
+| **F27** | *(Profile + wallet)* **Test deposits.** Until a payment processor is connected (D34), Add funds credits tokens with no money behind them — one `transactions` row per deposit (`type=transfer`, `bucket=deposit`, note starts `TEST deposit`). Before real money: reverse them (take the purchased ct back out of `free_ct`/`purchased_ct`, or out of the stakes they entered) and set `EBX_FUNDS_MODE` to the processor. Capped $100/deposit, $500/account meanwhile. | 2026-10-07 | step 3 (tooling) · step 8 (switch) |
+| ~~**F28**~~ | ~~*(Profile + wallet, pre-existing)* Lowering a stake in a **non-door** initiative election returns it as PURCHASED whatever paid for it.~~ Ruling 19 derives the split from the commit itself — the first ten tokens of a stake are its election's grant, anything above is purchased — so lowering returns only the purchased part above ten, in every initiative election, with no migration. What the switch left behind is F33. | 2026-10-07 | **10/9 Reshuffle, 2026-10-09** |
+| ~~**F29**~~ | ~~*(Profile + wallet §0 sweep)* `scripts/posts_box_check.js` stops at Home's `.ld-trio__link`.~~ It reads About's How-it-works tab (`#how .ld-trio__link`) and Home's missing + — and, past the point it used to stop, every posting assertion passes (40/40). `jsdom` lives in a dev `node_modules` (`NODE_PATH`). | 2026-10-07 | **10/9 Reshuffle, 2026-10-09** |
+| **F30** | *(10/9 Reshuffle §0 sweep, pre-existing)* **Granted tokens can leave as cash.** When an initiative election closes, its stake — granted ten included — carries into the organization race, and `wallet.withdraw_stake` hands back the non-final part as cash without asking what paid for it: 9 of every granted ten. `money_model.md` §4 and ruling 19 say a granted token is never withdrawn. With ruling 19 a member can hold granted stakes in seven missions at once, so each week's closing election can release up to $0.90 per member. Fix: cap a withdrawal at the stake's purchased part (derivable — the ME commit less its ten, plus any tokens committed in the race). **Money-moving code — proposed, not applied.** | 2026-10-09 | step 7 (or sooner, on a nod) |
+| **F31** | *(10/9 Reshuffle §0 sweep, pre-existing)* Cause votes are counted in **calendar** weeks (`crud._week_start`: Monday 00:00 UTC), while the mission clock's weeks start **Tuesday 12:00 UTC** (`GENESIS` 2026-04-28 12:00). A cause vote cast between Monday 00:00 and Tuesday noon UTC counts in the week the mission clock calls the next one; the weekly report reads "this week's vote" on the calendar week. | 2026-10-09 | step 5 |
+| **F32** | *(10/9 Reshuffle §0 sweep, needs a ruling)* A cause election's six-week streak reads votes by **slot number** (weeks out) — `cause_ballot_state(db, slot)` counts `CauseVote.slot == slot` for each of the last six weeks. A window moves one slot nearer every week, so the six columns are six different windows' votes. If a window is one fixed future week, column *k* should read slot + *k*; if a slot is a standing seat ("the window 7 weeks out"), the docs should say so. | 2026-10-09 | D-question → step 5 |
+| **F33** | *(10/9 Reshuffle)* **The switch to ruling 19 reclassified old stakes.** A stake of ten tokens or fewer that a benefactor paid for with PURCHASED tokens in a non-door initiative election before 2026-10-09 now reads as that election's grant: lowering it returns nothing to purchased, so up to $1 per such election stopped being withdrawable. Production needs a read-only count (open `votes_p1` stakes ≤ 1000 ct outside the old door, against `transactions` deposits) before deciding on a credit. | 2026-10-09 | step 7 |
 
 ## 5. BACKLOG
 
@@ -783,6 +980,14 @@ lands, and the phase tab's copy is the same string Home shows.
 - ~~*ABOUT PAGE RESHAPE*~~ — built 2026-10-05 (P8 › Reshaped; `## ARCHIVE` › 2026-10-05).
 
 **Future/Conceptual**
+- Maybe you can post anonymously with no account?
+- The app!
+- Share one of your posts on other social meida
+build a logic model
+- The home tab and profile tab are both redundant. Some kind of tabs-with-dropdowns would probably be better. 
+- For the 2 "This weeks missions", it should say: "This weeks missions: Date". And make the initiative election and Organization headers more visible. The cause should be on the bottom left corner of the card, and the leader should be a row in the rankings, not holding multiple rows. It should be glowing/highlighted to indicate that it is leading.
+- If it is a mission statement, the initiative is the title. Same for some other forms of comment.
+
 - Thinking about maybe scrapping the initiative election - we can have initiatives reach funding goals, and then once they hit their goal we move on to the 'election' where we vote on an organization. The issue with that is that it messes up the weekly-rotating nature of things. We could even remove the whole 'cause rotation' or maybe we just don't make it so you are forced to donate to something you didn't fund. issue with that is that you don't get the chance to donate if your thing never gets funded. Well, maybe you can have donations on the spot, and you always have the ability to move your donation to another source. 
 - Make the UI more similar to other charity platforms - simple, clean, monochrome, interlocking panels, calming white background.
 - Monochrome on things that aren't cause-related
@@ -796,6 +1001,40 @@ lands, and the phase tab's copy is the same string Home shows.
 - *(inbox 2026-09-28)* Research the planning software large projects run on — Jira, Canvas/Moodle and the like — for mission steps and the organization tasklist (P6).
 - I should have an option to share the link to earthbux on social media. 
 - *(inbox 2026-09-29)* **`MissionStep` is out of date** (`models.py`): it still carries `guaranteed_ebx` / `potential_ebx` per step from the pre-2026-09-16 pool model, and nothing on the page writes steps. It needs reshaping around the mission clock (`mission_model.md`) and the organization's tasklist (P6; see the Jira/Canvas research note above) before anything builds on it.
+
+**Profile**
+- New choices display:
+                            Prep area (top row)
+                              |
+            ____—---------------____
+          /				                  \ - Expanded top 1/7 of annulus
+           \           3 rows       /
+            \                      /-
+            -\_____—----------___/   \
+          /	 |                   |    OE area (Middle row)
+    ME area (Bottom row)		     |
+             |    6/7 of annulus |
+
+
+
+
+
+- In the 6/7 of annulus, a user can click another section of the annulus to have the displayed sector be the one clicked.
+- Each row will say the org, tiv, and start date (future or past). Details about each of the 3 elections (My vote, leaders) will be shown in their respective areas. 
+
+- Not that the actual display of the top annulus section can be a rectangle. The 1/7 of an annulus can be a highlighed area behind it
+
+- *(2026-10-07: the build-sequence version was built instead — the arch with three layers per mission, coins left, allocations right. Kept for the design step: the "Prep area / OE area / ME area" rows and the rectangle-with-a-highlighted-1/7 idea.)*
+- The top of the page will show allocations and coins together
+
+- RHS will include mission memberships (count) and settings and allocations. LHS will include all the credit coins. Down-scrollable like the mission navigator. Clicking on one will bring up a users individual contributions to that mission. The allocations are:
+
+And the header for the coins is "Donated".
+
+- In the profile, the choice cards need work. The organization choices don't say which initiative they're choosing, and it seems like one is choosing a related initiative + organization.
+- Messageing should be about *Creating your fund* - choosing is important, but so is donating. 
+- *(inbox 2026-09-29)* **The timeline as a visual on Home** — one mission's phases on a dated line (T, T+8, T+15, exchange). Pairs with the animated process diagram on the clock (`s4`), which may be the same drawing.
+- Each person should have a full dashboard of everything they've done. *(2026-10-07: the stats tiles and mission panels are its start; the transaction history is step 7.)*
 
 **Admin**
 - Create email addresses like inquiries@earthbux.net or admin or purchasing or hr or operations
@@ -872,21 +1111,6 @@ The preview will include the photograph (if there is one)
 *Framing*
 - Don't need to seperate the 7 into weeks, should be ALL TASKS DONE by budget day.
 - (Budget items with the organization's input → P2b.)
-
-**Profile**
-- I want people to be able to navigate using the annulus. - Maybe on the profile page, they can rotate it with their touch and the center (or a box below it) shows all their commitments for that cause. It will be like 'Cause: oceans - starting x - my vote and leading + committed, started '
-- The profile page is going to adopt a similar no-side-card but 2-side-panel approach to the mission page. RHS will include mission memberships (count) and settings and allocations. LHS will include all the credit coins. Down-scrollable like the mission navigator. Clicking on one will bring up a users individual contributions to that mission. The allocations are:
-Committed (OE or ME)
-Uncommitted (Grant or purchased)
-And the header for the coins is "Donated".
-- "The benefactor profile is still shoddy" (from ORG EXPERIENCE, 2026-10-01).
-- In the profile, the choice cards need work. The organization choices don't say which initiative they're choosing, and it seems like one is choosing a related initiative + organization.
-- Messageing should be about *Creating your fund* - choosing is important, but so is donating. 
-- *(inbox 2026-09-29)* **The timeline as a visual on Home** — one mission's phases on a dated line (T, T+8, T+15, exchange). Pairs with the animated process diagram on the clock (`s4`), which may be the same drawing.
-- Each benefactor needs to add funds to their account first, which appear in their wallet. The grants should appear as a seperate entity in the wallet, as should ebx and pre-ebx tokens. Every transaction made should rely on what is already in the wallet. Create this asap and organization and clarity will improve.
-  - Every action relies on the contents of the wallet - if a user participates in a tiv election, the subsequent org election becomes a wallet item
-  - If there are no unallocated funds in the wallet, it should prompt something like "Add funds..."
-- Each person should have a full dashboard of everything they've done.
 
 **Locations**
 - `location_type` + coordinates on missions (site / region / distributed / global); home location on benefactors; location(s) on orgs.
@@ -1249,9 +1473,311 @@ guards on a mount that no longer exists, so it paints nothing.
 - `initiatives.description` — replaced by Mission-statement / Justification posts. Still read as the report's last fallback until `POST /admin/initiatives/descriptions-to-posts?apply=true` has run on the live site; then the column can go (a migration — proposed, not applied).
 - The `tiv:<id>`-tagged Justification as the link between a suggested organization and an initiative — replaced in P2b by `mission_candidacies.tiv_id`.
 
+### Added 2026-10-07 (Profile + wallet)
+
+#### Done this pass
+- The old profile page in full: the three top cards (`c` wallet strip · `b` allocations · `a` profile), the seven weekly window cards and their globe, **member/org mode** (the membership tasklist scaffold, `ebx_org_tasks` in localStorage), the **admin console rendered inside the profile** (Settings › Admin console now links admin.html), the settings modal, the unreachable `renderOnboarding` fallback, `getNextPoolDate`. All `.pf2-*` CSS went with the page.
+- `buyVoteEbx`'s "Buying tokens is not wired up yet" alert (mission.html) — it opens Add funds now. (Strike it from §B › Added 2026-10-01.)
+
+#### New — §A, safe now
+- `Claude outputs/_ebx_sync.tgz` — a working copy made for this pass's tests; nothing reads it.
+
+#### New — §C, live but replaced
+- `GET /benefactors/me/credit-coins` and `/benefactors/me/memberships` — the profile no longer reads them (its coins are `GET /wallet/positions`); mission.html and admin.html still do.
+- `credit_coins` rows as "membership" — the wallet's coins are derived from the votes and stakes; the table is still written at settlement.
+- `tm.available_ct` — still true (`max(10, held)`) but nothing user-facing needs it now that the grant is a fixed ten.
+
+### Added 2026-10-09 (the 10/9 Reshuffle)
+
+#### Done this pass
+- **Home (`index.html`)**: the missions hub — its markup, CSS and script (`HomeHub`, `#mh*`) — and the Network + feed (`HomeFeed`, `#hf-*`, `.hn*`, Home's + Post `#hn-post`); `ebx_wheel.js` no longer loads there. The hub lives on as `resources/js/ebx_hub.js` (`EBX.Hub`) + `ebx_frontend.css` § THE MISSIONS HUB; the feed is News.
+- **`mission.html`**: the report (`renderReport`, `budgetHTML`, `renderBudget`, `_missionStatementPost`), its thread (`#mxt-bg`, `openThread`, `paintThread`), the full-screen composer (`#mxc-bg` — with its disabled Image/Video placeholders and the "reply to any post" picker; a new post is written on post.html), the rating handler, and all their CSS → `resources/js/ebx_report.js` (`EBX.MissionReport`) + § THE MISSION REPORT. What stays is `#mb-news`, the way to it.
+- **`cause.html`**: the cause render — the hero's three columns (`#cause-hero`), the wheel mounted here (`#cause-annulus-*`, `#ebx-rotating-group`), `#leading-initiatives-panel`, `#mission-header` / `#mission-overview`, `#lhs-vote`, the page tag — about 1,600 lines of script and 1,200 of CSS (3,446 → ~800 lines).
+- **`profile.html`**: the arch, the globe and the week navigator (→ `resources/js/ebx_arch.js`, `EBX.Arch`, + § THE ARCH — now News'), the Donated coins, the three mission panels; `#pf2-newpost` is `#pf-newpost`.
+- **`ebx_shared.js`**: the Profile and Inbox tabs in `NAV_TABS`.
+- **`token_model.py`**: `reset_grant`. **`wallet.py`**: the takes-part refusal in `set_org` (ruling 20).
+
+#### New — §A, safe now
+- `Feed.noteCause` (cause.html) — its only caller was the cause render.
+- The `#ebx-pagetag` write in cause.html's `paintMission` — the element is gone with the cause render (the code checks for it).
+- `Claude outputs/_ebx_sync.tgz` — refreshed as this pass's working copy; nothing reads it.
+
+#### New — §C, live but replaced
+- `wallet.ensure_grant` / `tm.retire_weekly_grant` / `BenefactorAccount.last_grant_week` — since ruling 19 they only retire a D31 weekly pile; once every account has passed one week change there is nothing left to retire, and `GET /wallet` can stop calling it.
+- `tm.WEEKLY_GRANT_CT`, `tm.grant_ct()`, `rules.weekly_grant_ct` — the old names of `ME_GRANT_CT`; `token_model_check` still reads them.
+- `wallet.door_mission` — "the nearest open initiative election"; only `wallet_check` reads it now (the grant entity names its own nearest).
+- mission.html's allocation-bar preview (`window._grantWeek`, `granted = free − purchased`) still reads the D31 weekly pile; since ruling 19 the wallet holds no grant, so that segment is always empty — the grant is per initiative election (`GET /wallet` › `grant`).
+
 ## ARCHIVE
 
+### 2026-10-09 — the 10/9 Reshuffle · rulings 19–20 · Framing → Prep
+
+*Jax: "Got some new steps. Let me know what you think, and then execute the
+reshuffle step." — with new copy for Home's doors. "I'll be here, so if you have
+questions along the way, just ask."*
+
+**Jax's text, as written** (moved from `## BUILD SEQUENCE` › 10/9 - Reshuffle time):
+> I'll be here, so if you have questions along the way, just ask.
+>
+> Home: Missions hub -> Missions. Feed -> News (no more discussion on home)
+> Mission: Report* -> home *use new report
+> News: Either all-encompassing, or toggled by a specific mission. The glob and 3/7 annulus display from profile is now at the top.
+> Profile: Profile will have a missions hub, but instead of showing the leaders, it will show the selections of the user. Globe and 3/7 annulus display -> News. Profile doesn't need the globe and mission toggle, just wallet, allocations, stats, choices-hub, and personal posts. 
+>
+> - Remove profile from the 5 toggles, it's always available in the profile badge. Remove inbox as well, replace with an icon next to the profile badge.
+>
+> *weekly report* This will be displayed on the home page at all times, updated each week.
+> October 6-13: Land
+>
+> - An update on each of the following 3 missions (similar to what is currently on profile)
+>
+> 1. This weeks new mission
+> 2. The leading organizations in the final week of x
+> 3. The upcoming budget day for x
+>
+> - A TIMELINE, from ME to a week after budget day, with the 3 land missions marked with dots, and labeled with their numbers.
+> - The timeliine includes colored dots representing each of these missions. 3 in this weeks cause, 2 in last weeks, and 1 in next weeks.
+>
+> - 2 updates on oceans missions - 1 on the one that just entered framing and one on the one that just left it. Both of these go on the timeline.
+>
+> Finally, an update on the upcoming week - the current ME and its leaders, which will be the only dot on the timeline in forests.
+>
+> - So the timeline has 3 updates above and 3 below.
+>
+> At the bottom,
+> - cause election updates - any non-incumbent that won this week, and any incumbernts that secured their spots.
+> - Exchange updates - top movers.
+>
+>
+>
+> - There's still an issue with the grants. The uncommitted is allowing me to use it on the land initiative elction and none of the others. This would be wrong even by the old rules, because the land initiative was elected last week, so the current land ME is 7 weeks out. But by the new rules, each of the ME elections should have 10 granted tokens available. You cn logic it like this: if it is an initiative election, there should be exactly 10 granted tokens available, no matter what.
+> - During the organization election, a user needs to have voted in the initiative election in order to commit more than the nominal 1 vote (This is sort of analogous to the grant). Any tokens that carry over from the initiative election increase the weight of their OE vote. 
+>
+> - Framing needs to be switched to "Prep"
+>
+> - The 5 steps on home should be to the left of the visual. Also replace "Reporting" with "Feedback"
+>
+> - There should be 2 main allocations bars - committed and uncommitted.
+
+**The doors' new copy, as Jax sent it:** "Two key decisions / 1. What mission
+to fund. We grant everybody $1 each week to put towards the initiative election.
+/ 2. Which organization leads it. When an initiative wins, charities compete for
+the chance to lead the mission. / Every voice matters / Ideas and opinions are as
+important as financial donations. On Earthbux, charities don't get funded until
+they agree to follow the will of the people. / Feedback and accountability / Our
+news team reports on each mission so that progress is publicly available in real
+time. If it's moving too slowly, donors can exchange into a different mission."
+
+**Asked, and answered (2026-10-09).**
+- The doors — **with edits 1–3**: "We give everyone $1 to vote with in every
+  initiative election." (the grant is per election now, not per week) · "…so that
+  progress is public, week by week." (the reports are weekly, not real-time) ·
+  "…you can move your donation to a different mission." (plain words for the
+  exchange). Card 2 as written.
+- Where the mission's own report goes — **News, per mission**: when News is
+  filtered to a mission, its report sits above its posts; the mission page keeps
+  the hub and the elections.
+- Which organization elections the nominal vote reaches — **every open one**
+  (ruling 20; replaces ruling 16).
+- The exchange's top movers — **by size now, by change later**: ranked by EBX
+  held, with the week's change beside it (+0 until trading opens).
+
+**Readings taken (not asked).**
+- The report's six missions by *weeks since T* (T = the initiative election's
+  close): this week's new mission T = w (its organization election opens) · the
+  final week of the organization election T = w−7 · budget day this week
+  T = w−14 · this week's initiative election (next week's cause) T = w+1 · just
+  entered prep T = w−8 · just left prep T = w−15 (last week's cause). The
+  timeline's x is weeks since T, −2.5 → 16.
+- The report is `GET /inbox/weekly/report`, beside the weekly edition.
+- **The grant without a migration:** a commit's split is derived — its first ten
+  tokens are the election's grant, the rest purchased. What that cannot see of
+  the past is F33; a granted stake leaving as cash after its election closes is
+  F30 (pre-existing, proposed).
+- News' `?id=<cause>` (the footer's cause links) filters the feed to that cause,
+  now that the cause render it opened is gone.
+- Phones: the badge row drops the handle at ≤480px so the brand and the badge
+  share the bar.
+- About's grant copy follows ruling 19: "10 tokens in every initiative election —
+  a new one opens each week" (was "10 tokens a week").
+
+**Built.**
+- **Backend.** `token_model.py`: ruling 19 (`ME_GRANT_CT`, `me_grant_part`,
+  `me_purchased_part`, `me_ceiling_ct`, `me_purchased_delta`,
+  `retire_weekly_grant`; `reset_grant` gone; `me_grant_ct` in the wallet and the
+  rules). `wallet.py`: `open_initiative_elections`, `grant_info` (every open
+  election with its ten), `ensure_grant` (retires a D31 pile, pays nothing);
+  ruling 20 (`_check_takes_part(v, adding_tokens, voted_me)` in `set_stake` and
+  at `move_stake`'s destination; `set_org` open to everyone in a race with an
+  elected initiative; `can_take_part` / `can_commit` on rows, `can_vote` /
+  `can_commit` on coins). `crud.replace_p1_shares`: grant-first funding.
+  `report.py` (new) + `GET /inbox/weekly/report`. `events.py`: "prep".
+- **Modules (new).** `resources/js/ebx_hub.js` (`EBX.Hub` — Home's hub;
+  `leaders` on Missions, `mine` on Profile; a window's number now read from the
+  window — it ran one ahead), `ebx_report.js` (`EBX.MissionReport` — the report,
+  its thread and reply composer, the rating), `ebx_arch.js` (`EBX.Arch` — the
+  profile's arch, with a selection, cards beside the globe, missions named
+  "LAND 2"). Their styles moved into `ebx_frontend.css` (§ THE MISSIONS HUB · §
+  THE MISSION REPORT · § THE ARCH).
+- **Pages.** `index.html` (steps left of the visual, "Feedback", the doors, the
+  weekly report; hub and feed out) · `mission.html` (the hub on top, `#mb-news`,
+  the grant in every initiative ballot, the OE ballot's one-vote copy, Prep, the
+  top bar's phone gutter) · `cause.html` (rebuilt: the arch and its two cards,
+  the mission toggle, the report above the posts — 3,446 → 810 lines) ·
+  `profile.html` (rebuilt: you, the wallet's two bars on one scale, the stats,
+  the choices hub, your posts — 969 → 576 lines) · `about.html` (Prep, the grant
+  copy) · `ebx_shared.js` (three tabs; the inbox icon carries the count) ·
+  `ebx_steps.js` · `ebx_wheel.js` (Prep). `?v=20261009a` on every page.
+- **Docs.** `money_model.md` rulings 19–20 (16 and 17 marked replaced), the
+  Prep terminology note, §4, §12 › Built 2026-10-09, §13 · `structure.md` §1,
+  §4, §5, §6, §8 (each a new top section with its drawing) · this file (the
+  pass marked ✅, D35, F22/F28/F29 struck, F11 noted, F30–F33 filed, the
+  register, the clock).
+
+**Money-moving — applied on Jax's instruction** ("each of the ME elections should
+have 10 granted tokens available" · the organization-election rule). No
+migration. Before deploying: (1) on each account's first `GET /wallet` after the
+deploy, `ensure_grant` retires what is left of its D31 weekly pile (granted
+tokens, never purchases); (2) a stake of ten or fewer purchased tokens in a
+non-door initiative election made before today now reads as grant (F33);
+(3) F30 — granted tokens leaving as cash through `withdraw_stake` once their
+election closes — is older than this pass and **not** fixed: proposed.
+
+**§0 sweep.** Filed **F30–F33** and **D35**; noted on **F11** that the nominal
+vote reaches a stalled race. Struck **F22** (oe_check reads the P1-edits title
+rule), **F28** (ruling 19's split), **F29** (posts_box_check reads About's tab —
+and, past where it used to stop, passes). Two stale assertions that were failing
+unfiled are fixed: `render_check`'s `.ld-band` on About, `wheel_check`'s "with
+Vetting".
+
+**Checks — all green.** `reshuffle_check` 44/44 (new) · `home_check` 88/88 ·
+`landing_check` 41/41 · `feed_check` 45 ok · `composer_check` 23/23 ·
+`profile_check` 25/25 (rewritten) · `posts_box_check` 40/40 · `render_check`
+113 ok · `oe_check` 22/22 · `wheel_check` 40/40 · `ce_check` 85/85 ·
+`carryover_check` · `unit_sweep` · `mission_layout_check` 134/134 ·
+`election_check` 52/52 · `token_model_check` 112/112 · `wallet_check` 154/154 ·
+`posting_check` 66/66 · `inbox_check` 65/65 · `org_check` 44/44 ·
+`contact_check` 14/14. Pages screenshotted at 1400px and 390px: no script
+errors, no sideways scroll.
+
+**README — suggested edits (999 d).**
+- §5 *The grant*: "Ten tokens a week, stamped with the week … a floor" →
+  ruling 19: ten granted tokens in every initiative election, spent first, never
+  into an organization election, the wallet or cash.
+- §6 and §14's `election_check` row: "only this week's race without an ME
+  stake" → ruling 20: one vote for everyone in every open organization election;
+  tokens for its initiative election's voters.
+- §7 *API surface*: add `/inbox` (`summary`, `weekly/latest`, `weekly/report`)
+  and `/wallet` (`positions`, `stats`, `add-funds`, `org`, `commit`, `move`).
+- §9 *The five surfaces*: Home = the steps, the doors, the weekly report · News =
+  the arch, everything or one mission, its report · Missions = the hub on top,
+  the report in News · Profile = the wallet's two bars, the choices hub, your
+  posts · the nav: Home · Missions · News, the badge and the inbox icon.
+- §12 *File map*: `resources/js/ebx_hub.js`, `ebx_report.js`, `ebx_arch.js`,
+  `backend/app/report.py`.
+- §14 *The checks*: add `reshuffle_check`; the counts and descriptions above
+  for `landing_check`, `home_check`, `feed_check`, `profile_check`,
+  `posts_box_check`, `oe_check`, `composer_check`, `mission_layout_check`.
+- Where the README describes the phase to a reader, "framing" → "prep" (the
+  model's word stays in `money_model.md` until Jax rewrites it).
+- `CLAUDE.md`'s one-paragraph money summary still says "grants carry a week id,
+  never a cause" — since ruling 19: "ten granted tokens in every initiative
+  election; one vote for everyone in every open organization election (ruling
+  20)".
+
+### 2026-10-07 — Profile + wallet · D31 · the order adopted and upgraded
+
+*Jax: "Go ahead and build the new profile and update the build sequence as I
+instructed in the build sequence."*
+
+**Jax's text, as written** (moved from `## BUILD SEQUENCE` › Profile):
+> - Here is the profile page rebuild. Do a full overhaul.
+> - This is is: Do 3/7 of an annulus (the 3 top sections). The annulus sections will have 3 layers, and represent a particular week by the day its elections close. The leftmost section will have the upcoming ME and its date in the innermost layer, and the dates of the OE and budget day corresponding to its mission in the middle and outer layers, respectively. The middle section will have the current OE in the middle layer, and the corresponding missions ME and budget day in the inner and outer layers, respectively, and the rightmost section will have the upcoming budget day (FOR THE MOST RECENTLY ELECTED OE) in the outer layer and the corresponding missions ME and OE in the inner and middle layers, respectively. The text should curve with the curve of the annulus. The display should take the whole width of the page. The user should be able to swipe left and right through dates, one week at a time. This display will allow the causes to be arranged in the same order they are on the mission page, now only 3 are showing at once. The globe should be in position inside where the full circle would be.
+> - Below this display to the left of the globe, have the users profile and misison memberships (which are represented by credit coins). Also display settings and options. To the right, display their total allocations, which are: Committed (Prep, OE or ME) · Uncommitted (Grant or purchased). Also display any stats you can think of - account age, number of votes, comments, posts, etc.
+> - Below this, there should be a panel for each of the selected missions which displays the users allocations, contributions, and community participation in each.
+> - Each benefactor needs to add funds to their account first, which appear in their wallet. The grants should appear as a seperate entity in the wallet, as should ebx and pre-ebx tokens. Every transaction made should rely on what is already in the wallet. Create this asap and organization and clarity will improve.
+>   - Every action relies on the contents of the wallet - if a user participates in a tiv election, the subsequent org election becomes a wallet item in the form of a membership coin
+>   - If there are no unallocated funds in the wallet, it should prompt something like "Add funds..."
+> - Shold be
+>
+> **Plan** — After this wallet build, edit the build sequence to match the plan. Adapt the profile section to match what you just built. And suggest an even bettwer upgraded plan, with the goal of being able to get people participating in the votes and discussions as quickly as possible.
+
+**Reading the arch.** "The upcoming ME", "the current OE" and "the most recently
+elected OE" are three adjacent causes in the mission page's annulus — this week
+Forests (ME closes Oct 13) · Land (OE closes Oct 13) · Oceans (budget day Nov 24)
+— which is what makes "the causes arranged in the same order they are on the
+mission page" true. The middle sector is the week's cause; the grant's door
+(Land's newly opened initiative election, lan3) is a different mission of that
+cause, and the wallet's grant card links it.
+
+**Built.**
+- `profile.html` rewritten (≈970 lines, was ≈2,480): the arch, the globe, You |
+  Wallet, a panel per arch mission, the activity feed; signed-out gate kept.
+- `backend/app/wallet.py`: `add_funds`, `grant_info`, `door_mission`,
+  `positions`, `stats`, `mission_phase`; `ensure_grant` resets to ten and
+  expires the old grant; organization races take purchased tokens only and
+  return purchased.
+- `routers/wallet.py`: `POST /wallet/add-funds`, `GET /wallet/positions`,
+  `GET /wallet/stats`; `GET /wallet` carries `grant`, `funds`,
+  `expired_this_week_ct`.
+- `crud.replace_p1_shares`: the grant is made on a vote too; the door returns
+  last in, first out.
+- `token_model.py`: `grant_ct` is a fixed ten, `reset_grant`; `config.py`:
+  `EBX_FUNDS_MODE` (test | off), the two caps. **No migration.**
+- `ebx_shared.js`: `EBX.Wallet` (the Add funds dialog, `tk`, `usd`);
+  every page's `?v=` bumped to 20261007a. `mission.html`: Donate more → Add funds.
+- Docs: `money_model.md` rulings 17–18 and §4's note; `structure.md` §5
+  rewritten; this file re-sorted (D31–D33 cleared, D34 added, F7 struck,
+  F27–F29 filed).
+
+**Money-moving — applied on Jax's instruction ("create this asap"; D31
+answered).** Two things to know before deploying: (1) deposits are TEST money
+(F27) and anyone signed in can add up to $500; switch `EBX_FUNDS_MODE=off` on
+Railway if that is too open before launch; (2) at the first week change after
+deploy every account's granted part resets to ten — unused grants expire, as
+ruled.
+
+**Checks.** `profile_check` 20/20 (rewritten) · `wallet_check` 145/145 (D31
+section added; the organization-race sections now pay with added funds) ·
+`token_model_check` 104/104 · `election_check` 51/51 · `posting_check` 66/66 ·
+`org_check` 44/44 · `inbox_check` 65/65 · `oe_check` 19/22 (F22, unchanged) ·
+`posts_box_check` stops on Home (F29).
+
 ### 2026-10-05 — About reshape · P1 mission items · P2 Home items · the re-order proposal
+
+**The 2026-10-05 proposal, as adopted by D33 (moved here from `## THE PLAN` 2026-10-07):**
+
+*Read against the queue as it stood on 2026-10-05 and the whole BACKLOG. Nothing
+below is queued until Jax answers D33; when he does, `## BUILD SEQUENCE` is
+re-sorted to match and this section folds into "Pass order, and why".*
+
+**Done this pass, and so off the front of the queue:** P1's five items (three
+built, D31 and D32 filed), P2 · Home's six items, and the About reshape, which
+was most of P8.
+
+| # | Pass | What it combines | Why here |
+|---|---|---|---|
+| **A** | **P2b · Organization experience — finish** | P2b's open items (memberships reshape — migration proposed; suggestion → candidacy; verification rule; progress reports; framing shows the org's input) **+ Jax's org dev review** (org page → mission page logs you out; sign-up: no cause, Q&A split from admin questions, one agreement, website optional / phone-or-email, political candidates and corporations under integrity) **+ P6's "Org registration + claim" and "Initiative coins on the organization home"** (already P2b in practice) | Still the critical path on the clock, half-built, and the org-review bugs are live defects (a logout on navigation). Finishing it before News means News carries organization posts from organizations that can actually log in. |
+| **B** | **P7a · Admin tools** *(pulled forward, split from P7)* | Edit any part of a mission (P7 Includes) · retarget posts and change tags · each account's dashboard viewable · fix Profile's admin link (BACKLOG › Admin) · pull live data to local (BACKLOG › Admin) · the bot console + bot task split + vote spread (**F6**) · D17 backfill tooling for **F11** · the relist-past-winners one-off (below) | Small (≈3 days), and every later pass needs Jax to be able to *fix data without a migration* — F11, F20, F24 and the stale `current_phase` all wait on it. Bots that spread votes make every later check meaningful. |
+| **C** | **P3b · News + the weekly edition** | P3b as written **+** P4's leftovers (weekly edition on Home and in News, "a phase opens" events, the reports queue in admin) **+** P3's "Still waiting" (News cards → `EBX.Post.collapsed`, the cause-coloured top row linking to the *mission*, not News) **+** BACKLOG › Posting "Create the weekly report … with the date of the week" **+** BACKLOG › Admin "Google preview" and Future "share on social media" (= P3b's OG / sitemap / robots) **+** the Framing → **Prep** rename in copy (D27) | One pass over everything a reader *reads*. The weekly edition is the habit loop P4 built the back half of; News is where it lives. Fixes **F25**. |
+| **D** | **Mission hygiene** *(P1 follow-ups, renamed)* | **F19** (phone width), **F22** (oe_check), **F24** (`meMission` skips missions past T; stale `current_phase`) · after-nominate the window collapses (BACKLOG › Mission) · bot cases on the mission page · retroactive posts for recent elections (clock `posts`) | Short and mechanical; best done right after C so the mission page and News agree on posts. |
+| **E** | **Design direction** *(new, 1–2 days, decision first)* | BACKLOG › Future "simple, clean, monochrome, interlocking panels, calming white background" + "monochrome on things that aren't cause-related" + light/dark setting · **D32** (annulus as cause picker / profile navigator) · real images (BACKLOG › Home) · the instructional screen-recording (P2 · Home's first line) | Every pass so far re-polished the dark theme by hand. If the site is going light/monochrome, decide it **before** P5 rebuilds Profile — otherwise Profile is built twice. The screen-recording waits until the UI stops moving. |
+| **F** | **P5 · Money made visible + the wallet** | P5 as written **+** BACKLOG › Profile "add funds first … every action relies on the wallet — create this asap" **+** the Profile reshape (two side panels, coins as "Donated", full dashboard, choice-card fixes **F7**) **+** **D31** (grant timing) **+** **F15 / F20 / F26** (legacy stakes — after B's read-only production counts) | The wallet-first model *is* "money made visible"; building it as a separate Profile pass would read the token model twice. Blocked on D11, D22–D25, D31 — answer them during A–E. **Decide BACKLOG › Future "budget day → T+16" and "scrap the initiative election?" here too**: both rewrite `money_model.md`. |
+| **G** | **P6 · Counterparty** | P6 minus what A took: M1–M3 messages, vetting gates, beneficiary voice, mail transport (unblocks self-serve password reset, BACKLOG › Infra), check flow and payee | Still gated by D11, D12 and the bank/nonprofit enquiries — external clocks, not engineering. |
+| **H** | **P7b · Trust** | New-account vote-buying gate · moderation, IP/spam, the real classifier · Rules page (Footer "soon") · kids accounts after legal review · commit-history record | Needs real activity to tune against, which C–G create. |
+| **I** | **P8b · About & static pages** | What is left of P8 (the Posting/Earthbuck copy lives in How it works already) · Footer's "soon" pages: White paper (Jax's document), Help Center, Safety, Privacy, Terms, Accessibility · Jax's bio and photo on Our team | Copy-heavy and waiting on Jax's documents and the legal review, so it goes last; each page can ship the day its copy exists. |
+
+**Pushed back (not queued):** the one-post-at-a-time reader (after C proves the
+feed), the animated process diagram (`s4` — after E), the Mission "read-only +
+News as the contribution hub" idea (revisit after C: News may already be that),
+Locations and the globe, mission trips/travel (still deliberately off the chart),
+the Apache stack, spending EBX on merch/travel (after G).
+
+**Combined, so they stop appearing twice:** Profile appears in BACKLOG › Profile,
+P5 and P2b's out-of-scope — now F. Admin appears in P7, BACKLOG › Admin and
+BACKLOG › Bots — now B (tools) and H (trust). The weekly update appears in P3,
+P4 and BACKLOG › Posting — now C.
+
 
 *Jax: "Execute the about page reshape as described in backlog. Also, execute the
 changes in the build sequence home and mission steps … and suggest an updated

@@ -13,10 +13,13 @@ const PAGES = [
   // and the feed; the explainer (bands, dimes, runway) moved to about.html.
   // P2 · Home mods (2026-09-30): the hero with the five steps to its right,
   // the mission hub, the Network (links, not toggles) and the feed.
-  ['index.html', '', ['#ld-flow .ld-flow__i', '#hk .hk__card', '#mh-week .mw', '.hx #ebx-steps .sx__scene.on', '#ebx-steps .sx__msg',
-                      '#mh-toggle',
-                      '#hf-list .ep--card']],
-  ['about.html', '', ['.ld-band', '.ld-trio__cell', '#ld-dime-viz svg', '.ld-runway__bars', '#ld-active-users b', '#ab-phases li']],
+  // 10/9 Reshuffle (2026-10-09): the steps stand left of the visual; the hub
+  // went to Missions and the feed to News; Home carries THE WEEKLY REPORT.
+  ['index.html', '', ['#ld-flow .ld-flow__i', '#hk .hk__card', '.hx #ebx-steps .sx__scene.on', '#ebx-steps .sx__msg',
+                      '#wr-title .wr__swatch', '#wr-above .wu', '#wr-below .wu', '#wr-tl .tl__ph', '#wr-tl .tl__dot',
+                      '#wr-ce .wr__bh', '#wr-ex .wr__bh']],
+  // About reshape (2026-10-05): its own tabs (`.ld-band` was the old page's)
+  ['about.html', '', ['.ab-tab', '.ld-trio__cell', '#ld-dime-viz svg', '.ld-runway__bars', '#ld-active-users b', '#ab-phases li']],
   // build-seq P1 (2026-09-24) — THE MERGE. main.html is a redirect; the mission
   // page carries the elections. Its default (/m) is the newest initiative
   // election (D2). Every state: the annulus in its mission variant between the
@@ -34,7 +37,9 @@ const PAGES = [
                         '#fr-ballot-mount .votebar', '#ex-ballot-mount .votebar', '#fx-view',
                         '#init-search',
                         '#votebar-notice-mount .votebar--notice', '#votebar-notice-mount .vb-notice__body',
-                        '#mx-phases .mx-phase--row', '#mh-candidates', '.el3__col.on .bb .bb__post', '#mb-report .mb-report__sec', '#mxt-bg', '#mxc-bg',
+                        '#mx-phases .mx-phase--row', '#mh-candidates', '.el3__col.on .bb .bb__post',
+                        // 10/9 Reshuffle: the hub on top; the report went to News (#mb-news is the way there)
+                        '#mx-hub .mh__head', '#mx-hub [data-hub="week"] .mw', '#mb-news',
                         '#mx-stage .mx-logcol__how', '#mx-stage #mx-table #init-table-body', '#mx-head #mx-title', '#mx-sub .mx-now']],
   // An organization election, by its old link. The discussion box (structure.md
   // §6 box i, 2026-09-17) and the final standings of the initiative election
@@ -45,26 +50,21 @@ const PAGES = [
                                      '.init-table__myvote, #init-table-body .init-table__empty',
                                      '#votebar-notice-mount .votebar--notice',
                                      '#ml-board .ml-row', '.ml-row__bar i', '#ml-note',
-                                     '#mb-report .mb-report__sec', '#mx-sub .mx-got']],
+                                     '#mb-news .mb-news__t', '#mx-sub .mx-got']],
   // review 2026-09-24: a phase that is not the mission's live one is a recap
   ['mission.html', '?mission=oce1&phase=me', ['#mx-recap .mx-recap__p', '#mx-phases .mx-phase.on[data-step="tiv"]']],
   // 2026-09-17: the feed took the page's spine; the box's selectors went to
   // mission.html above. feed_check.js drives the feed's behaviour — these are
-  // only "it painted".
+  // only "it painted". 10/9 Reshuffle (2026-10-09): the cause render is gone;
+  // the arch (EBX.Arch — the top 3/7 of the mission annulus, the globe at its
+  // centre) is on top, and ?mission= narrows the feed, the report above it.
   ['cause.html', '?id=atmosphere', ['#fd-panel', '#fd-search', '#fd-sort', '#fd-compose',
                                     '#fd-filters .fd-chip', '#fd-filters .fd-chip--on',
                                     'article.ep--card', 'article.ep--card [data-ep-vote]', 'article.ep--card [data-ep-reply]',
-                                    '#leading-initiatives-panel',
-                                    '#mission-header #mission-overview', '#lhs-vote',
-                                    // §2 (2026-08-26) — THE ANNULUS SWAP. This page has the
-                                    // seven-sector WHEEL now (EBX.Annulus), with the centre
-                                    // stack as an HTML panel over its dark core, and it has
-                                    // no cause tabs in the top bar: the sectors are the
-                                    // toggle.
-                                    '#cause-annulus-mount svg', '#ebx-rotating-group',
-                                    '#cause-annulus-center .cause-center__today',
-                                    '#cause-annulus-center .cause-center__title',
-                                    '#ebx-pagetag']],
+                                    '#nw-arch .ar-arch', '#nw-arch .ar-sec[data-m]', '#nw-arch [data-ar="globe"]',
+                                    '#nw-arch .ar-weeknav', '#nw-arch .nw-card', '#nw-arch .nw-wk__row']],
+  ['cause.html', '?mission=lan1', ['#fd-mission .fd-mission__t', '#mr .mb-report__sec', '#nw-arch .ar-sec--on',
+                                   '#nw-arch .nw-wk__row[aria-pressed="true"]', 'article.ep--card']],
   // …the old Elect links still land, through the redirect, in the right phase.
   // for0 (Forests) is in framing until Oct 20, 2026; after that this view shows
   // the empty state, so the mission selectors accept it.

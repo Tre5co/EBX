@@ -44,20 +44,27 @@ ok(tm.usd(1000) == 1.0, "10 tokens = $1", str(tm.usd(1000)))
 ok(tm.usd(1) == 0.001, "1 ct = $0.001")
 
 # ---------------------------------------------------------------------------
-section("the grant — ten is a FLOOR, said from both ends")
-ok(tm.grant_ct(0) == 1000, "hold nothing -> 10 tokens")
-ok(tm.grant_ct(6 * T) == 4 * T, "hold 6 -> grant 4  (Jax's example)")
-ok(tm.grant_ct(10 * T) == 0, "hold 10 -> no grant")
-ok(tm.grant_ct(50 * T) == 0, "hold 50 -> no grant, never negative")
-ok(tm.grant_ct(1) == 999, "hold 1 ct -> 999 ct: no cliff at the bottom")
-ok(tm.available_ct(6 * T) == 10 * T,
-   "<= 10 held -> 10 available in the next election")
-ok(tm.available_ct(20 * T) == 20 * T,
-   ">= 10 held -> that amount is available: nothing above ten is clawed back")
-ok(all(tm.available_ct(h) == max(10 * T, h) for h in range(0, 4000, 53)),
-   "available = max(10, held), at every holding")
-ok(all(tm.grant_ct(f) + f == tm.available_ct(f) for f in range(0, 4000, 53)),
-   "grant_ct and available_ct are the SAME rule read from opposite ends")
+section("the grant — ten in EVERY initiative election (ruling 19, 2026-10-09)")
+ok(tm.grant_ct() == 1000 and tm.ME_GRANT_CT == 1000, "the grant is 10 tokens")
+ok(tm.grant_ct(50 * T) == 1000, "…whatever is held: purchased tokens never eat it")
+ok(not hasattr(tm, "reset_grant"), "no weekly top-up: the grant lives in each election, not the wallet")
+ok(tm.retire_weekly_grant(14 * T, 4 * T) == (4 * T, 10 * T),
+   "the switch: a D31 weekly pile left in the bar retires; purchased tokens stay")
+ok(tm.retire_weekly_grant(5 * T, 9 * T) == (5 * T, 0), "…and a bar of purchased tokens is untouched")
+ok(tm.me_grant_part(4 * T) == 4 * T and tm.me_grant_part(25 * T) == 10 * T,
+   "grant first: the first ten tokens of a commit are the grant's")
+ok(tm.me_purchased_part(4 * T) == 0 and tm.me_purchased_part(25 * T) == 15 * T,
+   "…and only what is above ten is the benefactor's own money")
+ok(tm.me_ceiling_ct(0, 0) == 10 * T, "every initiative election takes ten with nothing purchased")
+ok(tm.me_ceiling_ct(0, 7 * T) == 17 * T and tm.me_ceiling_ct(15 * T, 2 * T) == 17 * T,
+   "…ten (or what is in, if more) plus the purchased tokens still free")
+ok(tm.me_purchased_delta(0, 8 * T) == 0, "committing 8 takes nothing from the wallet")
+ok(tm.me_purchased_delta(0, 25 * T) == 15 * T, "committing 25 takes 15 purchased")
+ok(tm.me_purchased_delta(25 * T, 5 * T) == -15 * T,
+   "lowering 25 → 5 hands the 15 purchased back first (last in, first out)")
+ok(tm.me_purchased_delta(8 * T, 2 * T) == 0, "lowering inside the grant moves nothing through the wallet")
+ok(tm.available_ct(6 * T) == 10 * T and tm.available_ct(20 * T) == 20 * T,
+   "available = max(10, held) still reads the same")
 ok(not hasattr(tm, "commit_by_week") and not hasattr(tm, "roll_commit_by"),
    "the rolling commit-by date is gone: a granted token cannot expire or move")
 ok(not hasattr(tm, "GRANT_COMMIT_BY_WEEKS"),
@@ -210,7 +217,7 @@ w = tm.Wallet(cash_ct=250, free_ct=4 * T, committed_ct=26 * T,
               minted_ct=120 * T, donated_ct=9 * T)
 ok(w.tokens_ct == 30 * T, "the Tokens bin is free + committed")
 ok(w.ebx_ct == 120 * T, "EBX is what has minted and not yet been donated")
-ok(w.next_grant_ct == 6 * T, "holding 4 free -> next grant is 6")
+ok(w.next_grant_ct == 10 * T, "the grant is 10, whatever is held (D31; per initiative election since ruling 19)")
 d = w.as_dict()
 ok("claimed_ct" not in d and "staked_ct" not in d,
    "`claimed` goes back to meaning an ORG claiming a mission; `staked` is `committed`")

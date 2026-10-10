@@ -5,6 +5,8 @@
   /inbox/notifications/read              POST  {ids: [...]} or {all: true}
   /inbox/weekly                          GET   an edition (?week=, default the latest) + YOUR part
   /inbox/weekly/latest                   GET   public — the latest edition (Home, News)
+  /inbox/weekly/report                   GET   public — the week's report, Home's main display
+                                               (10/9 Reshuffle, 2026-10-09; ?week=, default this week)
   /inbox/weekly/publish                  POST  staff — publish a week's edition now (?week=)
   /inbox/weekly/preview                  GET   staff — assemble a week without publishing
   /inbox/threads                         GET   my threads (?q= name or mission)
@@ -25,7 +27,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from .. import events
+from .. import events, report as report_mod
 from ..auth import get_current_benefactor, get_current_benefactor_optional
 from ..database import get_db
 from ..models import BenefactorAccount
@@ -89,6 +91,16 @@ def mark_read(data: ReadIn, db: Session = Depends(get_db),
 def weekly_latest(db: Session = Depends(get_db)):
     ev = events.latest_weekly(db)
     return events.weekly_dict(db, ev) if ev else None
+
+
+@router.get("/weekly/report")
+def weekly_report(week: Optional[int] = None, db: Session = Depends(get_db)):
+    """The week's report (`report.weekly_report`): this week's cause and its
+    three missions, last week's two, next week's initiative election, the
+    timeline, the cause elections and the exchange. Public and read-only."""
+    if week is not None and week < 0:
+        raise HTTPException(status_code=400, detail="week must be 0 or more")
+    return report_mod.weekly_report(db, week)
 
 
 @router.get("/weekly/preview")

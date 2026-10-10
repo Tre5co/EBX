@@ -8,7 +8,9 @@ Rewritten 2026-08-27c for the finalized model (`docs/_to_delete/ME_OE_FINALIZATI
 Seven operations, and the shape of the list is the model:
 
     read_wallet     what the four segments hold right now
-    ensure_grant    ten tokens appear, stamped with THIS WEEK
+    ensure_grant    keeps the bar grant-free: since 2026-10-09 (ruling 19) the
+                    grant is ten tokens in EVERY initiative election, not a
+                    weekly pile (`grant_info`, `crud.replace_p1_shares`)
     harden_due      the week roll — standing OE allocations become EBX
     set_stake       an allocation, as a POSITION: up or down, inside the week
     move_stake      ct from one race to another, carrying its philanthropy vote
@@ -25,9 +27,10 @@ of a private counter nobody else could see.
 
 WHAT IS SOFT, AND WHAT IS NOT
 -----------------------------
-    granted ct      appears in its grant week (a week id, never a cause). Cannot be transferred
-                    or withdrawn — there is no moment at which it exists and is
-                    free — and if unspent it waits for that cause's next window.
+    granted ct      ten in every initiative election, spent first, never in the
+                    wallet (ruling 19, 2026-10-09). Cannot be transferred or
+                    withdrawn — there is no moment at which it exists and is
+                    free — and unused it never becomes money at all.
     purchased ct    exists the moment it is bought; transferable and
                     withdrawable right up until it enters this week's election.
     marked ct       lost an initiative election. Still a token, still movable —
@@ -41,7 +44,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from . import models, token_model as tm
@@ -314,7 +317,11 @@ def _oe_row(db: Session, m: models.Mission, ben_id: Optional[int], ben, free: in
                                         models.VoteP1.mission_id == m.id,
                                         models.VoteP1.tiv_id == m.winning_tiv_id)
         ).first() is not None
-    headroom = free if m.id == active_id else purchased
+    # 2026-10-09 (ruling 20, replaces 16): everyone has the nominal vote in every
+    # open organization election; only a voter in its initiative election may
+    # commit tokens to it (carried tokens count on the ladder either way).
+    can_commit = bool(ben_id) and (_carried_from_me(v) or _voted_in_me(db, ben_id, m.id))
+    headroom = purchased if can_commit else 0
     return {
         "mission_id": m.id,
         "cause_id": m.cause_id,
@@ -342,8 +349,10 @@ def _oe_row(db: Session, m: models.Mission, ben_id: Optional[int], ben, free: in
         "backed_winner": backed_winner,
         "my_weight": tm.weight_tokens(my_ct),
         "my_votes": tm.oe_votes(my_ct),            # 2026-09-17: the doubling ladder
-        "can_take_part": bool(ben_id) and (m.id == active_id or _carried_from_me(v)
-                                           or _voted_in_me(db, ben_id, m.id)),
+        # ruling 20 (2026-10-09): the nominal vote is everyone's, in every race;
+        # tokens are for the people who voted in its initiative election.
+        "can_take_part": bool(ben_id),
+        "can_commit": can_commit,
         "my_final_ct": final_ct_of(db, v, now) if v else 0,
         "born_week": (v.born_week if v else None),
         "origin_mission_id": ((v.origin_mission_id if v and v.origin_mission_id
@@ -405,33 +414,39 @@ def oe_row_for(db: Session, ben_id: Optional[int], mission_id: str,
 # Write — the grant, the roll, and the four moves
 # ---------------------------------------------------------------------------
 def ensure_grant(db: Session, ben_id: int, now: Optional[datetime] = None) -> dict:
-    """Ten tokens appear, stamped with this week. At most once per week.
+    """Keep the unallocated bar grant-free (ruling 19, 2026-10-09).
 
-    "10 tokens appear in your account each week." Ten is a FLOOR, not a ration:
-    the top-up is `max(0, 10 - free)`, so holding six brings four and holding
-    twenty brings none and takes none away. Idempotent by `last_grant_week`,
-    because this runs on a read path and a grant that pays twice on a refresh is
-    money invented by a page load.
+    Until today this paid "ten tokens a week" into `free_ct` (D31: for that
+    week's one initiative election, expiring at the week change). Jax, 10/9
+    Reshuffle: "if it is an initiative election, there should be exactly 10
+    granted tokens available, no matter what." The grant is each initiative
+    election's own ten now (`grant_info`, `crud.replace_p1_shares`), so nothing
+    is paid into the wallet any more. What this does — on every read path,
+    idempotently — is retire whatever is left of a D31 weekly grant, so the bar
+    holds purchased tokens and nothing else. Nobody loses a vote by it: every
+    open initiative election, the one that pile was for included, carries its
+    own ten.
 
-    2026-09-16 — the grant carries its WEEK and nothing else. "Grants do not
-    have a cause id, only a weekly id ... the active week's cause is different
-    between the 2 elections." `last_grant_week` is that id: a granted token may
-    enter the initiative election or the organization election closing that
-    week.
+    The name is kept because every read path already calls it.
     """
     ben = db.get(models.BenefactorAccount, ben_id)
     if ben is None:
         raise ValueError("Benefactor not found")
     week = current_week(now)
-    if ben.last_grant_week is not None and int(ben.last_grant_week) >= week:
-        return {"granted_ct": 0, "week": week, "free_ct": int(ben.free_ct or 0),
-                "grant_week": int(ben.last_grant_week)}
-    amount = tm.grant_ct(int(ben.free_ct or 0))
-    ben.free_ct = int(ben.free_ct or 0) + amount
-    ben.last_grant_week = week
-    db.commit()
-    return {"granted_ct": amount, "week": week, "free_ct": int(ben.free_ct),
-            "grant_week": week}
+    free = int(ben.free_ct or 0)
+    new_free, retired = tm.retire_weekly_grant(free, int(ben.purchased_ct or 0))
+    changed = False
+    if new_free != free or int(ben.purchased_ct or 0) != new_free:
+        ben.free_ct = new_free
+        ben.purchased_ct = new_free
+        changed = True
+    if ben.last_grant_week is None or int(ben.last_grant_week) < week:
+        ben.last_grant_week = week
+        changed = True
+    if changed:
+        db.commit()
+    return {"granted_ct": 0, "week": week, "free_ct": int(ben.free_ct or 0),
+            "grant_week": week, "expired_ct": retired}
 
 
 def harden_due(db: Session, ben_id: Optional[int] = None,
@@ -528,33 +543,43 @@ def _check_oe_minimum(v: Optional[models.VoteP2], target_ct: int,
         "initiative election first")
 
 
-def _check_takes_part(is_active: bool, v: Optional[models.VoteP2], have_ct: int,
-                      adding: bool, voted_me: bool = False) -> None:
-    """2026-09-17 (INSTRUCTIONS build-seq §1): without a stake carried in from
-    this mission's own initiative election, a benefactor takes part only in THIS
-    WEEK'S organization election. Everyone may vote there (0 tokens = 1 vote);
-    the other open races belong to the people who funded their initiative
-    election. Lowering or clearing an existing position is always allowed, and
-    so is naming an organization for tokens already moved into the race."""
-    if not adding or is_active or voted_me or _carried_from_me(v) or int(have_ct or 0) > 0:
+def _check_takes_part(v: Optional[models.VoteP2], adding_tokens: bool,
+                      voted_me: bool = False) -> None:
+    """Who may put TOKENS into an organization election (ruling 20, 2026-10-09).
+
+    Jax, 10/9 Reshuffle: "During the organization election, a user needs to have
+    voted in the initiative election in order to commit more than the nominal 1
+    vote (This is sort of analogous to the grant). Any tokens that carry over
+    from the initiative election increase the weight of their OE vote."
+
+    So the NOMINAL vote is everyone's, in every open organization election
+    (0 tokens = 1 vote on the doubling ladder) — naming an organization never
+    needs this check. Raising a stake does: only someone who voted in this
+    mission's initiative election (with or without tokens), or who carried
+    tokens in from it, may commit more. Lowering, clearing, and naming an
+    organization for tokens already in the race are always allowed.
+
+    Replaces ruling 16 (2026-09-17), which opened only THIS WEEK'S race to
+    people who had not backed the initiative election."""
+    if not adding_tokens or voted_me or _carried_from_me(v):
         return
     raise ValueError(
-        "This organization election is not this week's. You can vote in it only "
-        "if you backed its initiative election; this week's race is open to everyone")
+        "Only people who voted in this mission's initiative election can commit "
+        "tokens to its organization election. Everyone has one vote here — pick "
+        "an organization to cast it")
 
 
 def _spendable_ct(ben: models.BenefactorAccount, is_active_race: bool) -> int:
-    """What may enter THIS race out of the unallocated bar.
+    """What may enter an ORGANIZATION race out of the unallocated bar.
 
-    A GRANTED token may only be spent in this week's elections — the initiative
-    election of the week's cause, or the one organization election closing
-    soonest. A PURCHASED token carries no such fence and may enter any race.
-    Same tokens, different permissions, which is why the unallocated bar draws
-    two colours.
+    D31 (2026-10-07): a granted token may enter only its week's initiative
+    election, so no organization race — not even this week's — can take one.
+    Only PURCHASED tokens (added funds) enter an organization election from the
+    bar. `is_active_race` still decides who may take part (`_check_takes_part`);
+    it no longer decides which tokens pay.
     """
     free = int(ben.free_ct or 0)
-    purchased = min(int(ben.purchased_ct or 0), free)
-    return free if is_active_race else purchased
+    return min(int(ben.purchased_ct or 0), free)
 
 
 def set_stake(db: Session, ben_id: int, mission_id: str, target_ct: int,
@@ -591,8 +616,9 @@ def set_stake(db: Session, ben_id: int, mission_id: str, target_ct: int,
     v = _vote_row(db, ben_id, mission_id)
     derived = crud.p2_ebx_by_ben(db, mission_id).get(ben_id, 0.0)
     have = stake_ct_of(v, derived) if (v or derived) else 0
-    _check_takes_part(is_active, v, have, int(target_ct or 0) > have or org_id is not None,
-                      _voted_in_me(db, ben_id, mission_id))
+    # ruling 20 (2026-10-09): raising the stake takes an initiative-election
+    # vote; naming an organization (the nominal vote) never does.
+    _check_takes_part(v, int(target_ct or 0) > have, _voted_in_me(db, ben_id, mission_id))
     minted = minted_ct_of(v)
     unminted = max(0, have - minted)
     if unminted > 0 and not is_movable(v, week):
@@ -635,34 +661,20 @@ def set_stake(db: Session, ben_id: int, mission_id: str, target_ct: int,
         # roll is the allocation as it STANDS, not the first one made.
         v.committed_week = week
 
-    # Granted first, where granted ct is allowed; purchased only, everywhere
-    # else. Getting this backwards would spend a grant through a door it is not
-    # allowed through, and the benefactor would lose the wider permission by
-    # accident.
+    # D31 (2026-10-07): purchased only, in every organization race — granted
+    # ct belongs to the week's initiative election. So what comes back out of a
+    # draft comes back as PURCHASED ct: nothing granted went in. (Before D31 a
+    # return from this week's race refilled the grant, which would now expire a
+    # benefactor's own added funds at the week change.)
     free = int(ben.free_ct or 0)
     purchased = min(int(ben.purchased_ct or 0), free)
-    granted = max(0, free - purchased)
     if delta > 0:
-        from_granted = min(delta, granted) if is_active else 0
         ben.free_ct = free - delta
-        ben.purchased_ct = max(0, purchased - (delta - from_granted))
+        ben.purchased_ct = max(0, purchased - delta)
     elif delta < 0:
-        # Money coming back out of a draft returns through the SAME door it went
-        # through: granted-first up, granted-first down. On a non-active race
-        # only purchased ct could have gone in, so only purchased ct comes back.
-        #
-        # The asymmetry is deliberate and it is named here because it has a cost.
-        # A benefactor who exhausted their grant and then spent PURCHASED ct on
-        # this week's race gets it back as grant-permission ct — narrower than
-        # what they put in. Erring the other way would let a grant be laundered
-        # into go-anywhere ct by dialling a race up and back down, which is the
-        # failure that matters. Fixing it properly needs per-row provenance of
-        # which slice funded which ct; it is on the backlog beside the purchase
-        # endpoint, and until that endpoint exists the case cannot arise.
         back = -delta
         ben.free_ct = free + back
-        if not is_active:
-            ben.purchased_ct = purchased + back
+        ben.purchased_ct = purchased + back
 
     if org_id is not None:
         if db.get(models.Organization, org_id) is None:
@@ -730,6 +742,9 @@ def move_stake(db: Session, ben_id: int, from_mission_id: str, to_mission_id: st
     dst = _vote_row(db, ben_id, to_mission_id)
     dst_derived = crud.p2_ebx_by_ben(db, to_mission_id).get(ben_id, 0.0)
     dst_have = stake_ct_of(dst, dst_derived) if (dst or dst_derived) else 0
+    # ruling 20 (2026-10-09): moving tokens INTO a race commits them there, so it
+    # takes a vote in that race's initiative election like any other commit.
+    _check_takes_part(dst, True, _voted_in_me(db, ben_id, to_mission_id))
     _check_oe_minimum(dst, dst_have + move, db, ben_id)
     if dst is None:
         dst = models.VoteP2(ben_id=ben_id, mission_id=to_mission_id, org_id=None,
@@ -794,10 +809,10 @@ def set_org(db: Session, ben_id: int, mission_id: str, org_id: Optional[str],
     week = current_week(now)
     harden_due(db, ben_id, now)
     v = _vote_row(db, ben_id, mission_id)
-    open_missions = _open_p2_missions(db)
-    is_active = bool(open_missions) and open_missions[0].id == mission_id
-    _check_takes_part(is_active, v, stake_ct_of(v) if v is not None else 0,
-                      org_id is not None, _voted_in_me(db, ben_id, mission_id))
+    if not mission.winning_tiv_id:
+        raise ValueError("That mission has no elected initiative yet")
+    # ruling 20 (2026-10-09): naming an organization is the nominal vote, and
+    # everyone has it in every open organization election — no check here.
     if v is None:
         v = models.VoteP2(ben_id=ben_id, mission_id=mission_id, votes=1, ebx_spent=0,
                           valence="helpful", committed=False, stake_ct=0,
@@ -1022,4 +1037,338 @@ def mission_overview(db: Session, m: models.Mission,
         "budget_day_reached": now >= budget_day(m),
         "credit_value": float(m.credit_value or 1.0),
         "spent": m.spent or 0,
+    }
+
+
+# ===========================================================================
+# The wallet build (2026-10-07, INSTRUCTIONS › BUILD SEQUENCE › Profile).
+#
+# "Each benefactor needs to add funds to their account first, which appear in
+# their wallet. The grants should appear as a separate entity in the wallet, as
+# should EBX and pre-EBX tokens. Every transaction made should rely on what is
+# already in the wallet … if a user participates in a tiv election, the
+# subsequent org election becomes a wallet item in the form of a membership
+# coin. If there are no unallocated funds in the wallet, it should prompt
+# something like 'Add funds…'."
+#
+# Three reads and one write, none of them a new table:
+#   add_funds   cash in -> PURCHASED tokens, one ledger row per deposit
+#   grant_info  this week's grant as its own entity: amount, door, expiry
+#   positions   one row per mission the benefactor is in — the coins
+#   stats       what the profile's right-hand panel counts
+# ===========================================================================
+def _funds_settings():
+    from .config import get_settings
+    return get_settings()
+
+
+def funds_mode() -> str:
+    mode = (_funds_settings().ebx_funds_mode or "test").strip().lower()
+    return mode if mode in ("test", "off") else "test"
+
+
+def test_deposits_ct(db: Session, ben_id: int) -> int:
+    """Every test deposit this account has made, in ct (from the ledger)."""
+    rows = db.scalars(select(models.Transaction).where(
+        models.Transaction.ben_id == ben_id, models.Transaction.type == "transfer",
+        models.Transaction.bucket == "deposit")).all()
+    return sum(max(0, int(r.amount_ebx or 0)) for r in rows)
+
+
+def add_funds(db: Session, ben_id: int, usd_cents: int) -> dict:
+    """Add funds: dollars in, PURCHASED tokens out ($1 = 10 tokens = 1000 ct).
+
+    Purchased tokens are the mobile money of the model (money_model §4): they
+    exist the moment they are bought, may enter any election, and may be
+    withdrawn back to cash until they are committed. Granted tokens are never
+    touched here.
+
+    TEST MODE. No payment processor is connected (D12). In `test` mode the
+    deposit is credited at once and written to the ledger as
+    `transfer / deposit` with a note saying so — one row per deposit, so every
+    test dollar can be found and reversed before real money is used. `off`
+    refuses. Capped per deposit and per account (config).
+    """
+    st = _funds_settings()
+    if funds_mode() == "off":
+        raise ValueError("Adding funds is switched off on this server")
+    cents = int(usd_cents or 0)
+    if cents < 10:
+        raise ValueError("The smallest deposit is 10¢ (1 token)")
+    if cents > int(st.funds_max_deposit_cents):
+        raise ValueError(f"The most one deposit can add is ${st.funds_max_deposit_cents / 100:g}")
+    ben = db.get(models.BenefactorAccount, ben_id)
+    if ben is None:
+        raise ValueError("Benefactor not found")
+    ct = cents * tm.CT_PER_TOKEN // 10           # 1 token = 10¢
+    already = test_deposits_ct(db, ben_id)
+    cap_ct = int(st.funds_max_test_cents) * tm.CT_PER_TOKEN // 10
+    if already + ct > cap_ct:
+        left = max(0, cap_ct - already)
+        raise ValueError(
+            f"Test funds are capped at ${st.funds_max_test_cents / 100:g} per account "
+            f"while payments are not connected — ${tm.usd(left):.2f} left")
+    ensure_grant(db, ben_id)
+    db.refresh(ben)
+    free = int(ben.free_ct or 0)
+    purchased = min(int(ben.purchased_ct or 0), free)
+    ben.free_ct = free + ct
+    ben.purchased_ct = purchased + ct
+    db.add(models.Transaction(
+        type="transfer", ben_id=ben_id, bucket="deposit", amount_ebx=ct,
+        note=(f"TEST deposit ${cents / 100:.2f} = {ct} ct — no payment processor "
+              f"connected (EBX_FUNDS_MODE=test). Reverse before real money is used.")))
+    db.commit()
+    return {"added_ct": ct, "usd_cents": cents, "mode": funds_mode(),
+            "free_ct": int(ben.free_ct), "purchased_ct": int(ben.purchased_ct),
+            "test_deposits_ct": already + ct}
+
+
+def open_initiative_elections(db: Session, now: Optional[datetime] = None) -> list[models.Mission]:
+    """Every initiative election open right now — seven at steady state, one per
+    cause, one closing each week — soonest to close first. Each carries its own
+    ten granted tokens for every benefactor (ruling 19, 2026-10-09)."""
+    now = now or datetime.utcnow()
+    rows = db.scalars(select(models.Mission).where(
+        models.Mission.winning_tiv_id.is_(None), models.Mission.started_at.is_not(None),
+        models.Mission.current_phase.in_(("pre", "initiative")))).all()
+    live = [m for m in rows if m.started_at <= now < m.started_at + 7 * WEEK]
+    return sorted(live, key=lambda m: m.started_at)
+
+
+def door_mission(db: Session, now: Optional[datetime] = None) -> Optional[models.Mission]:
+    """The initiative election closing soonest. Until 2026-10-09 this was the
+    ONE election the week's grant could enter (D31); every open initiative
+    election carries its own grant now (ruling 19), and this is only the
+    nearest place to use one."""
+    ms = open_initiative_elections(db, now)
+    return ms[0] if ms else None
+
+
+def grant_info(db: Session, ben: models.BenefactorAccount,
+               now: Optional[datetime] = None) -> dict:
+    """The grant as its own wallet entity — ten tokens in EACH open initiative
+    election (ruling 19, 2026-10-09), with what this benefactor has used of
+    each. Grant first: the first ten tokens of a commit are the grant's."""
+    week = current_week(now)
+    ms = open_initiative_elections(db, now)
+    held: dict[str, int] = {}
+    if ms:
+        for r in db.scalars(select(models.VoteP1).where(
+                models.VoteP1.ben_id == ben.id,
+                models.VoteP1.mission_id.in_([m.id for m in ms]))).all():
+            held[r.mission_id] = held.get(r.mission_id, 0) + p1_stake_ct_of(r)
+    els = []
+    for m in ms:
+        c = held.get(m.id, 0)
+        used = tm.me_grant_part(c)
+        els.append({"mission_id": m.id, "cause_id": m.cause_id, "cycle_num": m.cycle_num,
+                    "closes": (m.started_at + 7 * WEEK).isoformat(),
+                    "committed_ct": int(c), "used_ct": int(used),
+                    "left_ct": int(tm.ME_GRANT_CT - used)})
+    left = sum(e["left_ct"] for e in els)
+    used = sum(e["used_ct"] for e in els)
+    nxt = next((e for e in els if e["left_ct"] > 0), els[0] if els else None)
+    return {
+        "week": week,
+        "per_election_ct": tm.ME_GRANT_CT,
+        "amount_ct": tm.ME_GRANT_CT,
+        "elections": els,
+        "open": len(els),
+        "left_ct": int(left),
+        "used_ct": int(used),
+        "held_ct": int(left),
+        # the nearest initiative election with grant left ("Use it →")
+        "mission_id": nxt["mission_id"] if nxt else None,
+        "cause_id": nxt["cause_id"] if nxt else None,
+        "mission_closes": nxt["closes"] if nxt else None,
+        "expires": nxt["closes"] if nxt else None,
+        "rule": "Ten tokens from Earthbux in every initiative election. They go in first, "
+                "stay with that election, and can't be withdrawn.",
+    }
+
+
+def _mission_dates(m: models.Mission) -> dict:
+    s = m.started_at or GENESIS
+    return {"opened": s.isoformat(), "me": (s + 7 * WEEK).isoformat(),
+            "oe": (s + 15 * WEEK).isoformat(), "budget": (s + 22 * WEEK).isoformat()}
+
+
+def mission_phase(m: models.Mission, now: Optional[datetime] = None) -> str:
+    """me · oe · prep · exchange — and `closed` for an organization race that
+    passed its date with no organization (F11)."""
+    now = now or datetime.utcnow()
+    s = m.started_at or GENESIS
+    if not m.winning_tiv_id:
+        return "me"
+    if not m.winning_org_id:
+        return "oe" if now < s + 15 * WEEK else "closed"
+    return "prep" if now < s + 22 * WEEK else "exchange"
+
+
+def _public_mission(db: Session, m: models.Mission, now: Optional[datetime]) -> dict:
+    """What anyone can see about a mission: its leaders and its size."""
+    from . import crud
+    lead_tiv = None
+    if m.winning_tiv_id:
+        lead_tiv = m.winning_tiv_id
+    else:
+        try:
+            ent = sorted(crud.p1_tally(db, m.id).get("entries", []),
+                         key=lambda e: (-(e.get("weighted_share") or 0), -(e.get("voter_count") or 0)))
+            lead_tiv = ent[0]["tiv_id"] if ent and ((ent[0].get("weighted_share") or 0) > 0
+                                                    or (ent[0].get("voter_count") or 0) > 0) else None
+        except Exception:
+            lead_tiv = None
+    lead_org = m.winning_org_id
+    if not lead_org and m.winning_tiv_id:
+        try:
+            ent = sorted(crud.p2_tally(db, m.id).get("entries", []),
+                         key=lambda e: (-(e.get("net_votes") or 0), -(e.get("ebx") or 0)))
+            lead_org = ent[0]["org_id"] if ent else None
+        except Exception:
+            lead_org = None
+    ov = mission_overview(db, m, now)
+    tiv_count = len(db.scalars(select(models.Initiative.id).where(
+        models.Initiative.mission_id == m.id)).all())
+    posts = db.scalar(select(func.count(models.Post.id)).where(models.Post.mission_id == m.id)) or 0
+    return {"lead_tiv_id": lead_tiv, "lead_org_id": lead_org,
+            "members": ov["members"], "committed_ct": ov["committed_ct"],
+            "final_ct": ov["guaranteed_ct"], "initiatives": tiv_count, "posts": int(posts)}
+
+
+def positions(db: Session, ben_id: int, include: Optional[list[str]] = None,
+              now: Optional[datetime] = None) -> list[dict]:
+    """One row per mission: every mission this benefactor is in, plus any
+    asked for by id (the profile's three arch sections).
+
+    A row is the benefactor's COIN for that mission. Its `coin` says what it is:
+      ballot      money or a vote standing in an open initiative election
+      membership  backed the initiative election, so a member of the mission:
+                  may commit tokens in its organization election (ruling 20,
+                  2026-10-09 — everyone else has the one nominal vote there),
+                  and holds whatever stake carried in
+      ebx         a stake that minted into EBX (prep / exchange)
+      none        an included mission this benefactor has not touched
+    """
+    from . import crud
+    now = now or datetime.utcnow()
+    week = current_week(now)
+    p1_rows = db.scalars(select(models.VoteP1).where(models.VoteP1.ben_id == ben_id)).all()
+    p2_rows = {v.mission_id: v for v in db.scalars(select(models.VoteP2).where(
+        models.VoteP2.ben_id == ben_id)).all()}
+    by_m: dict[str, list[models.VoteP1]] = {}
+    for r in p1_rows:
+        by_m.setdefault(r.mission_id, []).append(r)
+    ids = list(dict.fromkeys(list(by_m) + list(p2_rows) + list(include or [])))
+    # my posts, by mission
+    my_posts = db.scalars(select(models.Post).where(models.Post.ben_author_id == ben_id)).all()
+    link = {}
+    pids = [p.id for p in my_posts]
+    if pids:
+        for pm in db.scalars(select(models.PostMission).where(models.PostMission.post_id.in_(pids))).all():
+            link.setdefault(pm.post_id, set()).add(pm.mission_id)
+    out = []
+    for mid in ids:
+        m = db.get(models.Mission, mid)
+        if m is None:
+            continue
+        phase = mission_phase(m, now)
+        rows = by_m.get(mid, [])
+        shares = {r.tiv_id: float(r.share or 0) for r in rows if (r.share or 0) > 0}
+        me_ct = sum(p1_stake_ct_of(r) for r in rows)
+        top = max(shares.items(), key=lambda kv: kv[1])[0] if shares else None
+        v = p2_rows.get(mid)
+        derived = crud.p2_ebx_by_ben(db, mid).get(ben_id, 0.0) if m.winning_tiv_id else 0.0
+        oe_ct = stake_ct_of(v, derived) if (v is not None or derived) else 0
+        minted = minted_ct_of(v)
+        final = final_ct_of(db, v, now) if v is not None else 0
+        voted_me = bool(shares) or me_ct > 0
+        if phase == "me":
+            coin = "ballot" if voted_me else "none"
+            stake = me_ct
+        else:
+            stake = oe_ct if (oe_ct or v is not None) else 0
+            if minted > 0 or (phase in ("prep", "exchange") and stake > 0):
+                coin = "ebx"
+            elif voted_me or stake > 0 or (v is not None and v.org_id):
+                coin = "membership"
+            else:
+                coin = "none"
+        posts = [p for p in my_posts if p.mission_id == mid or mid in link.get(p.id, ())]
+        out.append({
+            "mission_id": mid, "cause_id": m.cause_id, "cycle_num": m.cycle_num,
+            "phase": phase, "dates": _mission_dates(m),
+            "winning_tiv_id": m.winning_tiv_id, "winning_org_id": m.winning_org_id,
+            "coin": coin,
+            "stake_ct": int(stake),
+            "me": {"ct": int(me_ct), "shares": shares, "top_tiv_id": top,
+                   "backed_winner": bool(m.winning_tiv_id and top == m.winning_tiv_id)},
+            "oe": {"ct": int(oe_ct), "org_id": (v.org_id if v is not None else None),
+                   "minted_ct": int(minted), "final_ct": int(final),
+                   "movable": bool(v is not None and is_movable(v, week)),
+                   "marked_tiv_id": (getattr(v, "marked_tiv_id", None) if v is not None else None),
+                   # ruling 20 (2026-10-09): the nominal vote is everyone's;
+                   # tokens are for initiative-election voters.
+                   "can_vote": bool(phase == "oe"),
+                   "can_commit": bool(phase == "oe" and (voted_me or stake > 0))},
+            "posts": {"count": len([p for p in posts if not p.parent_id]),
+                      "comments": len([p for p in posts if p.parent_id]),
+                      "helpful": sum(int(p.helpful_count or 0) for p in posts),
+                      "latest": [{"id": p.id, "title": p.title or (p.body or "")[:80],
+                                  "type": p.type, "category": p.category,
+                                  "created_at": p.created_at.isoformat() if p.created_at else None}
+                                 for p in sorted(posts, key=lambda p: p.created_at or GENESIS,
+                                                 reverse=True)[:3]]},
+            "public": _public_mission(db, m, now),
+        })
+    order = {"oe": 0, "me": 1, "prep": 2, "exchange": 3, "closed": 4}
+    out.sort(key=lambda r: (r["coin"] == "none", order.get(r["phase"], 9), r["dates"]["me"]))
+    return out
+
+
+def stats(db: Session, ben_id: int, now: Optional[datetime] = None) -> dict:
+    """The profile's numbers: how long, how often, how much."""
+    now = now or datetime.utcnow()
+    ben = db.get(models.BenefactorAccount, ben_id)
+    if ben is None:
+        raise ValueError("Benefactor not found")
+    p1 = db.scalars(select(models.VoteP1).where(models.VoteP1.ben_id == ben_id)).all()
+    me_missions = {r.mission_id for r in p1 if (r.share or 0) > 0 or p1_stake_ct_of(r) > 0}
+    p2 = db.scalars(select(models.VoteP2).where(models.VoteP2.ben_id == ben_id)).all()
+    oe_missions = {v.mission_id for v in p2 if v.org_id or int(v.stake_ct or 0) > 0}
+    cause_votes = db.scalar(select(func.count(models.CauseVote.id)).where(
+        models.CauseVote.ben_id == ben_id)) or 0
+    posts = db.scalars(select(models.Post).where(models.Post.ben_author_id == ben_id)).all()
+    post_votes = db.scalar(select(func.count(models.PostVote.id)).where(
+        models.PostVote.ben_id == ben_id)) or 0
+    vote_changes = db.scalar(select(func.count(models.Transaction.id)).where(
+        models.Transaction.ben_id == ben_id, models.Transaction.type == "vote")) or 0
+    won = 0
+    for mid in me_missions:
+        m = db.get(models.Mission, mid)
+        if m is None or not m.winning_tiv_id:
+            continue
+        mine = [r for r in p1 if r.mission_id == mid and (r.share or 0) > 0]
+        if mine and max(mine, key=lambda r: r.share).tiv_id == m.winning_tiv_id:
+            won += 1
+    suggested = db.scalar(select(func.count(models.Initiative.id)).where(
+        models.Initiative.proposer_ben_id == ben_id)) or 0
+    created = ben.created_at or now
+    w = read_wallet(db, ben_id, now)
+    return {
+        "joined": created.isoformat(),
+        "account_age_days": max(0, (now - created).days),
+        "initiative_elections": len(me_missions),
+        "organization_elections": len(oe_missions),
+        "cause_votes": int(cause_votes),
+        "vote_changes": int(vote_changes),
+        "winners_backed": won,
+        "posts": len([p for p in posts if not p.parent_id]),
+        "comments": len([p for p in posts if p.parent_id]),
+        "post_votes": int(post_votes),
+        "helpful_received": sum(int(p.helpful_count or 0) for p in posts),
+        "initiatives_suggested": int(suggested),
+        "final_ct": w.final_ct,
+        "test_deposits_ct": test_deposits_ct(db, ben_id),
     }

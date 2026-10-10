@@ -91,8 +91,11 @@ const section = t => console.log('\n=== ' + t);
   }));
   ok(/^\/m\/[a-z0-9-]+$/.test(st.path) && !/^\/m\/[a-z]{3}\d+$/.test(st.path),
      'the old ?mission= link settles on the initiative-title address (D1)', st.path);
-  ok(st.head === 'Organization Election', 'the phase title above the annulus reads "Organization Election" (review 2)', st.head);
-  ok(st.sub.indexOf(title) >= 0, '…and the line under it names the initiative', st.sub);
+  // P1 edits (2026-09-28): the phase names the title above the annulus for the
+  // cause and initiative elections only; after that it is the mission's own —
+  // its initiative — and the line under it says what is being elected.
+  ok(st.head === title, 'the title above the annulus is the mission\'s: its initiative (P1 edits 2026-09-28)', st.head);
+  ok(/Electing the organization/.test(st.sub), '…and the line under it says the organization is being elected', st.sub);
   ok(st.phase === 'org', 'the phase toggle is on 3 · Organization election');
   ok(st.bar.indexOf(title) >= 0, 'the ballot topbar names THIS race, not the one closing soonest', st.bar.slice(0, 80));
   // Unified elections (2026-09-29): the header line names the race; the ballot no longer repeats the title.
@@ -122,7 +125,7 @@ const section = t => console.log('\n=== ' + t);
   await page.click(`tr[data-mission="${other.mission}"] .init-table__name`);
   await page.waitForTimeout(1400);
   const moved = await page.evaluate(() => ({
-    path: location.pathname, head: document.getElementById('mx-sub').textContent,
+    path: location.pathname, head: document.getElementById('mx-title').textContent,
     picked: window._pickedMission && window._pickedMission(),
     state: window.MX && MX.state.mission && MX.state.mission.id,
   }));

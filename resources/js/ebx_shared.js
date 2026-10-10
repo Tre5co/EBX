@@ -742,13 +742,14 @@
   // build-seq P1 (2026-09-24): "Home · Missions · News · Inbox · Profile".
   // Elect merged into Missions (main.html is a redirect now); Inbox is a stub
   // until P4 — drawn, not linked, so nobody lands on a page that is not there.
+  // 10/9 Reshuffle (2026-10-09): "Remove profile from the 5 toggles, it's
+  // always available in the profile badge. Remove inbox as well, replace with
+  // an icon next to the profile badge." Three tabs; the inbox is `inboxIcon`
+  // beside the badge (`userBadge`), and it carries the unread count now.
   var NAV_TABS = [
     { label: "Home", href: "index.html", match: ["index.html", ""] },
     { label: "Missions", href: "mission.html", match: ["mission.html", "mission.html", "m"] },
-    { label: "News", href: "cause.html", match: ["cause.html"] },
-    // P4 (2026-10-04): the stub is real — notifications, messages, the weekly update.
-    { label: "Inbox", href: "inbox.html", match: ["inbox.html", "inbox"], badge: true },
-    { label: "Profile", href: "profile.html", match: ["profile.html"] }
+    { label: "News", href: "cause.html", match: ["cause.html"] }
   ];
   function currentPageFile() {
     // /m and /m/<slug> are the mission page (D1).
@@ -801,9 +802,10 @@
     document.body.insertBefore(wrap, document.body.firstChild);
     refreshInboxBadge();
   }
-  // P4 (2026-10-04) — the Inbox tab carries the unread count: notifications
-  // plus threads with a message you have not read. `inbox.html` calls this
-  // again after it marks things read.
+  // P4 (2026-10-04) — the inbox carries the unread count: notifications plus
+  // threads with a message you have not read. `inbox.html` calls this again
+  // after it marks things read. Since the 10/9 Reshuffle the count rides on the
+  // inbox ICON beside the profile badge, not on a tab.
   async function refreshInboxBadge(known) {
     const badges = document.querySelectorAll("[data-ebx-inbox-badge]");
     if (!badges.length) return;
@@ -836,6 +838,7 @@
     }
     const me = await Auth.fetchMe();
     mount.innerHTML = userBadge({ handle: me?.handle });
+    refreshInboxBadge();
   }
   function getParam(key) {
     return new URLSearchParams(window.location.search).get(key);
@@ -1567,8 +1570,18 @@
       fill="${cause.color}" fill-opacity="0.22" stroke="#0f1a14" stroke-width="0.6"/>`;
     }).join("");
     const logoutScript = `if(confirm('Log out?')){EBX.Auth.clear();localStorage.removeItem('ebx_profile');location.reload();}`;
+    // 10/9 Reshuffle (2026-10-09): the inbox left the tabs for an icon here,
+    // beside the badge, with the unread count on it (`refreshInboxBadge`).
+    const inboxOn = currentPageFile() === "inbox.html";
+    const inbox = `<a href="inbox.html" class="ebx-inbox-ic${inboxOn ? " ebx-inbox-ic--on" : ""}" data-ebx-inbox-tab
+         aria-label="Inbox" title="Inbox \u2014 notifications, messages, the weekly update"${inboxOn ? ' aria-current="page"' : ""}>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor"
+             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7.5l8.5 6 8.5-6"/></svg>
+        <span class="ebx-nav__badge ebx-inbox-ic__n" data-ebx-inbox-badge hidden></span>
+      </a>`;
     return `
-    <div style="display:inline-flex;align-items:center;gap:6px;">
+    <div class="ebx-badge-row" style="display:inline-flex;align-items:center;gap:6px;">
+      ${inbox}
       <a href="profile.html" class="ebx-user-badge"
          style="display:inline-flex;align-items:center;gap:10px;
                 text-decoration:none;color:rgba(245,240,232,0.85);
@@ -2998,6 +3011,106 @@
     return { guide, composeUrl, kind, collapsed, expand, full, open, preview, suggest, targetLine, css, threadHref, missionHref, bindVotes, bind: bindVotes, loadMine, SOURCE_WORD };
   })();
 
+
+  // ── EBX.Wallet — adding funds (2026-10-07, build-seq › Profile) ──────────
+  // "Each benefactor needs to add funds to their account first, which appear in
+  // their wallet … every transaction made should rely on what is already in the
+  // wallet." One dialog, used by the profile's wallet and by every "Donate more"
+  // on the mission page, so there is one way money comes in.
+  //
+  //   EBX.Wallet.addFunds({ onDone(result) {} , reason: 'to vote here' })
+  //   EBX.Wallet.usd(ct) / EBX.Wallet.tk(ct)     display helpers ($1 = 10 tk = 1000 ct)
+  //
+  // No payment processor is connected yet (D12), so the server runs deposits in
+  // TEST mode: credited at once, logged as test deposits. The dialog says so.
+  const Wallet = (() => {
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+      (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const tk = (ct) => {
+      const v = (Number(ct) || 0) / 100;
+      return (Math.abs(v - Math.round(v)) < 0.005 ? String(Math.round(v)) : v.toFixed(2).replace(/0$/, "")) + " tk";
+    };
+    const usd = (ct) => "$" + ((Number(ct) || 0) / 1000).toFixed(2);
+    let _css = false;
+    function css() {
+      if (_css) return; _css = true;
+      const st = document.createElement("style");
+      st.textContent = `
+      .ebw-bg{position:fixed;inset:0;z-index:90;background:rgba(6,12,9,.62);display:flex;align-items:center;justify-content:center;padding:16px}
+      .ebw{width:100%;max-width:420px;background:#13201a;color:#f5f0e8;border:1px solid rgba(255,255,255,.12);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.5);font-family:var(--font-body,'DM Sans',sans-serif)}
+      .ebw__hd{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 6px}
+      .ebw__t{font-family:var(--font-display,Georgia,serif);font-size:1.35rem}
+      .ebw__x{background:none;border:0;color:rgba(245,240,232,.6);font-size:1.1rem;cursor:pointer}
+      .ebw__bd{padding:6px 18px 18px}
+      .ebw__why{font-size:.84rem;color:rgba(245,240,232,.7);margin-bottom:12px;line-height:1.45}
+      .ebw__presets{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+      .ebw__p{padding:10px 0;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);color:#f5f0e8;font:600 .95rem var(--font-body,'DM Sans',sans-serif);cursor:pointer}
+      .ebw__p small{display:block;font:400 .66rem var(--font-mono,monospace);color:rgba(245,240,232,.55);margin-top:2px}
+      .ebw__p.on{border-color:#e8a84c;background:rgba(232,168,76,.12);color:#e8a84c}
+      .ebw__own{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.84rem;color:rgba(245,240,232,.7)}
+      .ebw__own input{flex:1;min-width:0;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.14);border-radius:8px;color:#f5f0e8;padding:8px 10px;font:inherit}
+      .ebw__sum{margin:14px 0 10px;padding:10px 12px;border-radius:9px;background:rgba(255,255,255,.04);font-size:.86rem;display:flex;justify-content:space-between}
+      .ebw__sum b{color:#e8a84c}
+      .ebw__test{font-size:.74rem;line-height:1.45;color:rgba(245,240,232,.62);border-left:2px solid #e8a84c;padding:2px 0 2px 10px;margin-bottom:14px}
+      .ebw__go{width:100%;padding:12px;border:0;border-radius:10px;background:#e8a84c;color:#1a1a12;font:700 .95rem var(--font-body,'DM Sans',sans-serif);cursor:pointer}
+      .ebw__go[disabled]{opacity:.5;cursor:default}
+      .ebw__msg{min-height:18px;margin-top:8px;font-size:.78rem;text-align:center;color:#f2a3a3}
+      .ebw__msg.ok{color:#8fce9d}`;
+      document.head.appendChild(st);
+    }
+    function addFunds(opts) {
+      opts = opts || {};
+      if (!(Auth && Auth.isLoggedIn && Auth.isLoggedIn())) { if (Auth && Auth.openModal) Auth.openModal("login"); return; }
+      css();
+      document.getElementById("ebw-bg")?.remove();
+      const presets = [100, 500, 1000, 2500];
+      let cents = opts.cents || 500;
+      const bg = document.createElement("div");
+      bg.className = "ebw-bg"; bg.id = "ebw-bg";
+      bg.innerHTML = `<div class="ebw" role="dialog" aria-modal="true" aria-labelledby="ebw-t">
+        <div class="ebw__hd"><div class="ebw__t" id="ebw-t">Add funds</div><button class="ebw__x" aria-label="Close" data-x>&#10005;</button></div>
+        <div class="ebw__bd">
+          <div class="ebw__why">${esc(opts.reason || "Funds become tokens in your wallet. Commit them to any election, or withdraw them until they are committed.")}</div>
+          <div class="ebw__presets">${presets.map((c) => `<button class="ebw__p${c === cents ? " on" : ""}" data-c="${c}">$${c / 100}<small>${c / 10} tk</small></button>`).join("")}</div>
+          <label class="ebw__own">Other amount $<input type="number" min="0.1" max="100" step="0.1" inputmode="decimal" data-own placeholder="e.g. 3"></label>
+          <div class="ebw__sum"><span>You get</span><span><b data-tk></b> <span data-usd></span></span></div>
+          <div class="ebw__test"><b>Test funds.</b> Card payments aren&rsquo;t connected yet, so this adds tokens straight away and records them as a test deposit. They vote like any other tokens, and will be cleared before real money is used.</div>
+          <button class="ebw__go" data-go>Add funds</button>
+          <div class="ebw__msg" data-msg></div>
+        </div></div>`;
+      document.body.appendChild(bg);
+      const $ = (q) => bg.querySelector(q);
+      const paint = () => { $("[data-tk]").textContent = (cents / 10) + " tokens"; $("[data-usd]").textContent = "· $" + (cents / 100).toFixed(2); $("[data-go]").disabled = cents < 10; };
+      paint();
+      const close = () => { bg.remove(); document.removeEventListener("keydown", onKey); };
+      const onKey = (e) => { if (e.key === "Escape") close(); };
+      document.addEventListener("keydown", onKey);
+      bg.addEventListener("click", (e) => { if (e.target === bg || e.target.closest("[data-x]")) close(); });
+      bg.querySelectorAll("[data-c]").forEach((b) => b.addEventListener("click", () => {
+        cents = +b.dataset.c; $("[data-own]").value = "";
+        bg.querySelectorAll("[data-c]").forEach((x) => x.classList.toggle("on", x === b)); paint();
+      }));
+      $("[data-own]").addEventListener("input", (e) => {
+        const v = Math.round((parseFloat(e.target.value) || 0) * 100);
+        cents = Math.max(0, Math.round(v / 10) * 10);
+        bg.querySelectorAll("[data-c]").forEach((x) => x.classList.toggle("on", +x.dataset.c === cents)); paint();
+      });
+      $("[data-go]").addEventListener("click", async () => {
+        const msg = $("[data-msg]"); msg.className = "ebw__msg"; msg.textContent = "Adding…";
+        $("[data-go]").disabled = true;
+        try {
+          const r = await Auth.fetchAuthed("/wallet/add-funds", { method: "POST", body: JSON.stringify({ usd_cents: cents }) });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) { msg.textContent = j.detail || ("Couldn't add funds (HTTP " + r.status + ")"); $("[data-go]").disabled = false; return; }
+          msg.className = "ebw__msg ok"; msg.textContent = "Added " + tk(j.added_ct) + " to your wallet.";
+          setTimeout(() => { close(); if (opts.onDone) opts.onDone(j); }, 650);
+        } catch (e) { msg.textContent = "Couldn't reach the server."; $("[data-go]").disabled = false; }
+      });
+      $("[data-c].on")?.focus();
+    }
+    return { addFunds, tk, usd };
+  })();
+
   var EBX = {
     config,
     Slug,
@@ -3060,6 +3173,7 @@
     Dialogs,
     openP1Mission,
     Post,
+    Wallet,
     Auth,
     refreshInboxBadge
   };

@@ -8,6 +8,13 @@
 //
 // The last assertion is the move itself: the DISCUSSION BOX is gone from this
 // page. posts_box_check.js drives it on mission.html now.
+//
+// 10/9 Reshuffle (2026-10-09): News is "either all-encompassing, or toggled by a
+// specific mission", with the arch (the top 3/7 of the mission annulus, the
+// globe at its centre) on top. The cause render is gone: the page opens on
+// EVERYTHING, ?id=<cause> (the footer's cause links) opens filtered to that
+// cause, and a sector of the arch — Feed.setMission(id) — narrows the feed to
+// that mission with its report above its posts.
 const { JSDOM, VirtualConsole } = require('jsdom');
 const BASE = process.argv[2] || 'http://127.0.0.1:8000';
 const CAUSE = process.argv[3] || 'atmosphere';
@@ -21,7 +28,7 @@ const CAUSE = process.argv[3] || 'atmosphere';
   });
   vc.on('error', (...a) => errs.push('console.error: ' + a.join(' ').slice(0, 200)));
 
-  const dom = await JSDOM.fromURL(BASE + '/cause.html?id=' + CAUSE, {
+  const dom = await JSDOM.fromURL(BASE + '/cause.html', {
     runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       w.fetch = (u, o) => fetch(String(u).startsWith('http') ? u : BASE + u, o);
@@ -144,7 +151,7 @@ const CAUSE = process.argv[3] || 'atmosphere';
     method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ username: EMAIL, password: 'feed-check-pw-1' }),
   })).json()).access_token;
-  const dom2 = await JSDOM.fromURL(BASE + '/cause.html?id=' + CAUSE, {
+  const dom2 = await JSDOM.fromURL(BASE + '/cause.html', {
     runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
     beforeParse(w) {
       w.fetch = (u, o) => fetch(String(u).startsWith('http') ? u : BASE + u, o);
@@ -211,12 +218,59 @@ const CAUSE = process.argv[3] || 'atmosphere';
     say('gone: ' + sel, q(sel).length === 0, q(sel).length ? q(sel).length + ' left' : '');
   }
   say('and the page does not still load its handlers', typeof W.pbPhase === 'undefined');
-  say('the hero above it is untouched — the cause bar, wheel and mission cards stay',
-      !!d.getElementById('cause-tabs') && !!d.getElementById('cause-annulus-mount') &&
-      !!d.getElementById('right-mission-panel'));
+  say('the cause render is gone too — the cause bar, its wheel and its mission cards (10/9 Reshuffle)',
+      !d.getElementById('cause-tabs') && !d.getElementById('cause-annulus-mount') && !d.getElementById('right-mission-panel'));
+
+  // ── 10/9 Reshuffle: the arch on top, and the mission toggle ──
+  section('the arch on top — and the feed toggled by a mission (10/9 Reshuffle)');
+  const secs = q('#nw-arch .ar-sec');
+  say('the arch: five sectors on the ring, three bands each, the globe at the centre',
+      secs.length === 5 && secs.every(g => g.querySelectorAll('path.ar-band').length === 3) && !!d.querySelector('#nw-arch [data-ar="globe"]'),
+      secs.length + ' sectors');
+  const mid = (d.querySelector('#nw-arch .ar-sec[data-rel="0"]') || { dataset: {} }).dataset.m;
+  say('…beside it, the week\'s three missions as toggles', q('#nw-arch .nw-wk__row[data-mpick]').length >= 2 && !!mid,
+      q('#nw-arch .nw-wk__row').map(b => b.dataset.mpick || '—').join(' · '));
+  say('the page opens on everything — no mission bar, no report', d.getElementById('fd-mission').hidden && d.getElementById('mr').hidden);
+  if (mid) {
+    W.Feed.setMission(mid);
+    await new Promise(r => setTimeout(r, 2500));
+    const mapi = await (await fetch(BASE + '/posts?sort=hot&roots_only=true&limit=120&mission_id=' + encodeURIComponent(mid))).json();
+    const mshown = q('article.ep--card').map(c => c.dataset.post);
+    say('a sector narrows the feed to its mission — GET /posts?mission_id=, in that order',
+        mshown.length === Math.min(mapi.length, 15) && mshown.every((id, i) => id === mapi[i].id),
+        mid + ': ' + mshown.length + ' of ' + mapi.length);
+    say('…names it in the mission bar, and the address carries it',
+        !d.getElementById('fd-mission').hidden && W.location.search.indexOf('mission=' + mid) >= 0, txt('#fd-mission .fd-mission__t'));
+    say('…and puts the mission\'s report above its posts', !d.getElementById('mr').hidden && !!d.querySelector('#mr .mb-report__title')
+        && !!(d.getElementById('mr').compareDocumentPosition(d.getElementById('fd-list')) & W.Node.DOCUMENT_POSITION_FOLLOWING),
+        txt('#mr .mb-report__title'));
+    say('…lighting its sector and its row', !!d.querySelector('#nw-arch .ar-sec--on[data-m="' + mid + '"]') &&
+        !!d.querySelector('#nw-arch .nw-wk__row[aria-pressed="true"][data-mpick="' + mid + '"]'));
+    W.Feed.setMission('');
+    await new Promise(r => setTimeout(r, 1500));
+    say('"Show everything" turns it off', d.getElementById('fd-mission').hidden && d.getElementById('mr').hidden
+        && q('article.ep--card').map(c => c.dataset.post).every((id, i) => id === api[i].id));
+  }
+  dom.window.close();
+
+  // ?id=<cause> — the footer's cause links — open the feed filtered to that cause
+  const dom3 = await JSDOM.fromURL(BASE + '/cause.html?id=' + CAUSE, {
+    runScripts: 'dangerously', resources: 'usable', pretendToBeVisual: true, virtualConsole: vc,
+    beforeParse(w) {
+      w.fetch = (u, o) => fetch(String(u).startsWith('http') ? u : BASE + u, o);
+      w.matchMedia = w.matchMedia || (() => ({ matches: false, addListener() {}, removeListener() {} }));
+    },
+  });
+  await new Promise(r => setTimeout(r, 4000));
+  const d3 = dom3.window.document;
+  const on3 = [...d3.querySelectorAll('#fd-filters .fd-chip--on')].map(e => e.textContent.trim());
+  const ids3 = [...d3.querySelectorAll('article.ep--card')].map(c => c.dataset.post);
+  say('?id=' + CAUSE + ' opens the feed on that cause — its chip on, only its posts',
+      on3.some(t => /^Only /.test(t)) && ids3.every(id => { const p = api.find(x => x.id === id); return !p || p.cause_id === CAUSE; }),
+      on3.join(' + ') + ' · ' + ids3.length + ' cards');
+  dom3.window.close();
 
   say('no script errors', errs.length === 0, errs.join(' | '));
-  dom.window.close();
   console.log(bad ? '\nFEED: ' + bad + ' PROBLEM(S)' : '\nFEED CLEAN');
   process.exit(bad ? 1 : 0);
 })();

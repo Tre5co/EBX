@@ -618,7 +618,8 @@ em { font-style: italic; }
   color: var(--clr-parchment);
 }
 
-/* ── SITE NAV — the five tabs (build-seq Misc, 2026-09-08) ──────────────────
+/* ── SITE NAV — three tabs since the 10/9 Reshuffle (Home · Missions · News);
+   Profile is the badge and Inbox an icon beside it (build-seq Misc, 2026-09-08) ──
    About(index) · Elections(main) · Missions(mission) · News(cause) ·
    Profile(profile). Drawn by `EBX.initNav` in resources/js/ebx_shared.js, so
    the markup exists once and these are the only styles for it.
@@ -673,6 +674,21 @@ em { font-style: italic; }
   background: var(--clr-honey); color: #0f1a14; font-size: 0.58rem; font-weight: 700; letter-spacing: 0;
   display: inline-flex; align-items: center; justify-content: center; line-height: 1; box-sizing: border-box; }
 .ebx-nav__badge[hidden] { display: none; }
+/* 10/9 Reshuffle (2026-10-09) — the inbox is an icon beside the profile badge,
+   not a tab, and the unread count sits on its corner. */
+.ebx-inbox-ic { position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; flex: none; border-radius: 50%; box-sizing: border-box;
+  color: rgba(245, 240, 232, 0.78); background: rgba(15, 26, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.12); text-decoration: none; transition: color .15s, border-color .15s; }
+.ebx-inbox-ic:hover { color: var(--clr-parchment, #f5f0e8); border-color: rgba(255, 255, 255, 0.3); }
+.ebx-inbox-ic--on { color: var(--clr-honey); border-color: rgba(232, 168, 76, 0.5); background: rgba(232, 168, 76, 0.1); }
+.ebx-inbox-ic__n { position: absolute; top: -5px; right: -5px; margin: 0; box-shadow: 0 0 0 2px #0f1a14; }
+/* phones: the badge row is inbox · the ring · sign out — the handle is on the
+   profile, and the row has to share the bar with the brand */
+@media (max-width: 480px) {
+  .ebx-badge-row .ebx-user-badge > span { display: none; }
+  .ebx-badge-row .ebx-user-badge { padding-right: 4px !important; gap: 0 !important; }
+}
 
 /* build-seq P2 (2026-09-25) — phones: the five tabs pin to the bottom and
    slide away while scrolling down (`body.ebx-nav--hide`, ebx_shared.js). */
@@ -1373,3 +1389,251 @@ em { font-style: italic; }
 
 .lw--mission { margin-top: 0; }
 .lw--mission .lw-wheel { max-width: 460px; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE MISSIONS HUB — resources/js/ebx_hub.js (EBX.Hub)
+   Moved off Home in the 10/9 Reshuffle (2026-10-09): mission.html mounts it
+   with the leaders, profile.html with YOUR choices (`.mh--mine`). Seven rows,
+   one per cause. Column 0 is the cause's election; then its missions, newest
+   first. ‹ › move one column, « » one page.
+   ══════════════════════════════════════════════════════════════════════════ */
+.mh { margin-top: 0; }
+.mh__head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px; }
+.mh__title { font-family: var(--font-display, serif); font-weight: 800; margin: 0;
+  font-size: clamp(1.2rem, 2.6vw, 1.6rem); color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em; }
+.mh__sub { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: rgba(245,240,232,0.45); }
+.mh__sub b { color: var(--clr-honey, #e8a84c); font-weight: 400; }
+.mh__nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.mh__btn { font: inherit; font-size: 0.8rem; line-height: 1; cursor: pointer; min-width: 30px; height: 30px; padding: 0 9px;
+  border-radius: 8px; color: var(--clr-parchment, #f5f0e8); background: rgba(245,240,232,0.04);
+  border: 1px solid rgba(245,240,232,0.16); }
+.mh__btn:hover:not([disabled]) { border-color: var(--clr-honey, #e8a84c); }
+.mh__btn[disabled] { opacity: 0.3; cursor: default; }
+.mh__btn:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
+.mh__toggle { margin-left: 8px; font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.mh__body { margin-top: 14px; }
+/* collapsed: this week's two elections, each with its top three.
+   P2 · Home (2026-10-05): "This Week's Decisions", a standing column head
+   over each card (Initiative Election · Organization Election), and no
+   phase label inside the cards. */
+.mh__week { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+.mh__wcol { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.mh__wh { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(245,240,232,0.5); padding: 0 2px; }
+.mh__week[hidden] { display: none; }
+@media (max-width: 760px) { .mh__week { grid-template-columns: 1fr; } }
+.mw { --c: #e8a84c; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; padding: 14px 16px 12px;
+  border-radius: 12px; background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12); border-top: 3px solid var(--c);
+  transition: background .15s, border-color .15s; }
+.mw:hover { background: rgba(245,240,232,0.055); border-color: rgba(245,240,232,0.28); border-top-color: var(--c); }
+.mw:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
+.mw.mc--now { border-color: color-mix(in srgb, var(--c) 70%, transparent); }
+.mw__top { display: flex; align-items: baseline; gap: 10px; }
+.mw__k { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.13em; text-transform: uppercase; color: color-mix(in srgb, var(--c) 75%, #f5f0e8); }
+.mw__d { margin-left: auto; font-family: var(--font-mono, monospace); font-size: 0.62rem; font-weight: 700; color: var(--clr-honey, #e8a84c); white-space: nowrap; }
+.mw__t { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.05rem; line-height: 1.25; color: var(--clr-parchment, #f5f0e8); }
+.mw__lead { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.mw__lead li { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 0.8rem; color: rgba(245,240,232,0.82); }
+.mw__lead i { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.62rem; color: rgba(245,240,232,0.45); }
+.mw__lead span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mw__lead b { font-family: var(--font-mono, monospace); font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
+.mw__lead li:first-child span { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
+.mw__lab { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.5); margin-top: 2px; }
+.mw__t small { display: block; margin-top: 3px; font-family: var(--font-mono, monospace); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
+.mw__t em { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.6rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.55); display: block; margin-bottom: 2px; }
+.mw__none { font-size: 0.8rem; color: rgba(245,240,232,0.5); font-style: italic; }
+.mh__body[hidden] { display: none; }
+/* P2 · Home (2026-10-05): "conserve space the same way we did in the
+   descriptions — we don't need a full border and can have shared borders."
+   One hairline grid, like the four doors; each card keeps its cause stripe. */
+.mh__grid { display: grid; gap: 0; align-items: stretch;
+  border-top: 1px solid rgba(245,240,232,0.12); border-left: 1px solid rgba(245,240,232,0.12); }
+.mh__grid > * { border-right: 1px solid rgba(245,240,232,0.12); border-bottom: 1px solid rgba(245,240,232,0.12); }
+.mh__colhead { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(245,240,232,0.4); padding: 0 2px 2px; align-self: end; }
+.mh__rowhead { display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0;
+  font-weight: 700; font-size: 0.84rem; color: var(--clr-parchment, #f5f0e8); }
+.mh__rowhead i { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); }
+.mh__rowhead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mh__rowhead:hover span { text-decoration: underline; }
+.mc { --c: #e8a84c; position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; min-height: 86px;
+  text-decoration: none; color: inherit; padding: 10px 12px 9px;
+  background: transparent; box-shadow: inset 0 3px 0 var(--c);
+  transition: background .15s; }
+.mc:hover { background: rgba(245,240,232,0.055); }
+.mc:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
+.mc__k { font-family: var(--font-mono, monospace); font-size: 0.54rem; letter-spacing: 0.13em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--c) 75%, #f5f0e8); line-height: 1.45; }   /* wraps: "phase · closes x" is read whole (2026-10-05) */
+.mc__t { font-family: var(--font-display, serif); font-weight: 800; font-size: 0.9rem; line-height: 1.22; color: var(--clr-parchment, #f5f0e8);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mc__l { font-size: 0.72rem; color: rgba(245,240,232,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc__f { margin-top: auto; padding-top: 4px; display: flex; gap: 8px; align-items: baseline;
+  font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(245,240,232,0.48); }
+.mc__f span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc__f b { font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
+.mc--ce { background: rgba(245,240,232,0.015); }
+.mc--stalled { opacity: 0.62; }
+/* decided this week — the glow */
+.mc--now { animation: mcGlow 2.6s ease-in-out infinite alternate; }
+.mc--now .mc__k { color: var(--clr-honey, #e8a84c); }
+@keyframes mcGlow { from { box-shadow: inset 0 3px 0 var(--c), inset 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent), inset 0 0 14px -4px color-mix(in srgb, var(--c) 45%, transparent); }
+                    to { box-shadow: inset 0 3px 0 var(--c), inset 0 0 0 1px color-mix(in srgb, var(--c) 65%, transparent), inset 0 0 22px 0 color-mix(in srgb, var(--c) 50%, transparent); } }
+.mw.mc--now { animation: none; }
+@media (prefers-reduced-motion: reduce) { .mc--now { animation: none; } }
+.mc--empty { background: none; min-height: 86px; }
+.mh__loading { padding: 26px; text-align: center; font-size: 0.84rem; color: rgba(245,240,232,0.5); }
+@media (max-width: 560px) { .mh__nav .mh__btn--page { display: none; } }
+/* the choices hub (profile): what YOU chose, the rest dimmed */
+.mh--mine .mc--notyou { opacity: 0.5; }
+.mh--mine .mc--notyou:hover { opacity: 0.85; }
+.mh--mine .mc--you .mc__l { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
+.mw__you { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px;
+  background: color-mix(in srgb, var(--c) 14%, transparent); font-weight: 700; font-size: 0.92rem; color: var(--clr-parchment, #f5f0e8); }
+.mw__you em { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.56rem; font-weight: 400; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(245,240,232,0.6); }
+.mw__you--none { background: rgba(245,240,232,0.04); font-weight: 400; color: rgba(245,240,232,0.6); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE MISSION REPORT — resources/js/ebx_report.js (EBX.MissionReport)
+   Moved off the mission page in the 10/9 Reshuffle (2026-10-09): News, filtered
+   to a mission, shows that mission's report above its posts. The report, its
+   thread (#mxt-bg) and the reply composer (#mxc-bg) are drawn for a DARK
+   surface; `--mx-c` is the mission's cause colour.
+   ══════════════════════════════════════════════════════════════════════════ */
+.mb-report { --mx-c: #e8a84c; cursor: pointer; border-radius: 16px; padding: 18px 20px 20px; color: var(--clr-parchment, #f5f0e8);
+  border: 1px solid color-mix(in srgb, var(--mx-c) 45%, transparent);
+  background: linear-gradient(160deg, rgba(245,240,232,0.06), rgba(245,240,232,0.015));
+  box-shadow: inset 0 3px 0 var(--mx-c); transition: box-shadow .15s, border-color .15s; }
+.mb-report[hidden] { display: none; }
+.mb-report:hover, .mb-report:focus-visible { border-color: var(--mx-c); outline: none;
+  box-shadow: inset 0 3px 0 var(--mx-c), 0 0 24px color-mix(in srgb, var(--mx-c) 25%, transparent); }
+.mb-report__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.mb-report__kicker { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: color-mix(in srgb, var(--mx-c) 75%, #f5f0e8); }
+.mb-report__title { font-family: var(--font-display, serif); font-weight: 900; font-size: 1.6rem; line-height: 1.15; margin: 4px 0 0; color: var(--clr-parchment, #f5f0e8); }
+.mb-report__open { font-size: 0.82rem; color: var(--mx-c); }
+.mb-report__top { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; padding-bottom: 14px; margin-bottom: 14px;
+  border-bottom: 1px solid rgba(245,240,232,0.08); }
+.mb-report__three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 860px) { .mb-report__top, .mb-report__three { grid-template-columns: 1fr; } }
+.mb-report__sec h4 { font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--mx-c); margin: 0 0 6px; font-weight: 600; }
+.mb-report__sec h4 small { color: rgba(245,240,232,0.4); letter-spacing: 0.06em; margin-left: 6px; }
+.mb-report__sec p { font-size: 0.88rem; line-height: 1.6; color: rgba(245,240,232,0.82); margin: 0 0 6px; }
+.mb-report__lead { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.02rem; color: var(--clr-parchment, #f5f0e8); margin-bottom: 4px; }
+.mb-report__quote { font-family: var(--font-display, serif); font-size: 1.05rem !important; color: var(--clr-parchment, #f5f0e8) !important; }
+.mb-report__by { font-size: 0.7rem !important; color: rgba(245,240,232,0.45) !important; }
+.mb-report__empty { font-style: italic; color: rgba(245,240,232,0.5) !important; font-size: 0.86rem; }
+.mb-report__plan { margin: 0 0 6px; padding-left: 18px; font-size: 0.86rem; line-height: 1.6; color: rgba(245,240,232,0.85); }
+.mb-report__plan small { color: rgba(245,240,232,0.45); }
+.mb-report .mb-budget__add { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px;
+  border-top: 1px solid rgba(245,240,232,0.08); padding-top: 12px; }
+.mb-report .mb-budget__lab { grid-column: 1 / -1; font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--mx-c); }
+.mb-report .mb-budget__btn { font: inherit; text-align: left; cursor: pointer; color: rgba(245,240,232,0.85);
+  background: rgba(0,0,0,0.22); border: 1px solid rgba(245,240,232,0.14); border-radius: 10px; padding: 8px 10px; }
+.mb-report .mb-budget__btn:hover { border-color: var(--mx-c); }
+.mb-report .mb-budget__btn b { display: block; font-size: 0.86rem; color: var(--clr-parchment, #f5f0e8); }
+.mb-report .mb-budget__btn small { display: block; font-size: 0.66rem; color: rgba(245,240,232,0.5); }
+@media (max-width: 560px) { .mb-report .mb-budget__add { grid-template-columns: 1fr; } }
+.mb-report .mp-post__reply, .mxt .mp-post__reply { font: inherit; font-size: 0.68rem; background: none; border: 0; padding: 0;
+  color: var(--mx-c, #e8a84c); cursor: pointer; }
+/* the thread and the reply composer — full-screen dialogs */
+body.mxc-open { overflow: hidden; }
+.mxc-bg { --mx-c: #e8a84c; position: fixed; inset: 0; z-index: 950; background: rgba(5,10,8,0.72); display: flex;
+  align-items: center; justify-content: center; padding: 3vh 3vw; }
+.mxc-bg[hidden] { display: none; }
+.mxc { width: min(880px, 100%); height: min(760px, 100%); display: flex; flex-direction: column; box-sizing: border-box;
+  background: #13211a; color: var(--clr-parchment, #f5f0e8); border: 1px solid rgba(245,240,232,0.16);
+  border-radius: 16px; box-shadow: 0 30px 80px rgba(0,0,0,0.55); }
+#mxc-bg .mxc { height: auto; max-height: 100%; }
+.mxc__head { display: flex; justify-content: space-between; align-items: flex-start; padding: 18px 22px 8px; }
+.mxc__kicker { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--mx-c); }
+.mxc__title { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.35rem; margin: 4px 0 0; color: var(--clr-parchment, #f5f0e8); }
+.mxc__x { font: inherit; font-size: 1.6rem; line-height: 1; background: none; border: 0; color: rgba(245,240,232,0.6); cursor: pointer; }
+.mxc__types { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 22px 10px; }
+.mxc__types[hidden] { display: none; }
+.mxc__type { font: inherit; font-size: 0.8rem; cursor: pointer; padding: 6px 13px; border-radius: 999px;
+  background: none; color: rgba(245,240,232,0.75); border: 1px solid rgba(245,240,232,0.2); }
+.mxc__type.on { background: var(--mx-c); border-color: var(--mx-c); color: #0f1a14; font-weight: 700; }
+.mxc__type small { opacity: 0.6; margin-left: 3px; }
+.mxc__body { flex: 1; overflow-y: auto; padding: 4px 22px 10px; display: flex; flex-direction: column; gap: 10px; }
+.mxc__reply { font-size: 0.85rem; color: rgba(245,240,232,0.75); }
+.mxc__in { font: inherit; color: inherit; background: rgba(0,0,0,0.22); border: 1px solid rgba(245,240,232,0.14);
+  border-radius: 10px; padding: 10px 12px; width: 100%; box-sizing: border-box; }
+.mxc__in--text { flex: 1; min-height: 180px; resize: vertical; line-height: 1.6; }
+.mxc__foot { display: flex; align-items: center; gap: 10px; padding: 12px 22px 18px; border-top: 1px solid rgba(245,240,232,0.08); }
+.mxc__msg { flex: 1; font-size: 0.82rem; }
+.mxc__btn { font: inherit; font-weight: 700; font-size: 0.86rem; cursor: pointer; padding: 9px 20px; border-radius: 999px;
+  background: var(--mx-c); color: #0f1a14; border: 0; }
+.mxc__btn--ghost { background: none; color: rgba(245,240,232,0.7); border: 1px solid rgba(245,240,232,0.2); }
+.mxc__btn:disabled { opacity: 0.5; }
+.mxt__body { gap: 14px; }
+.mxt__post { border: 1px solid rgba(245,240,232,0.12); border-radius: 12px; padding: 12px 14px; background: rgba(0,0,0,0.18); }
+.mxt__post--lead { border-color: color-mix(in srgb, var(--mx-c) 55%, transparent); }
+.mxt__post h3 { font-family: var(--font-display, serif); font-size: 1.1rem; margin: 2px 0 6px; color: var(--clr-parchment, #f5f0e8); }
+.mxt__text { font-size: 0.9rem; line-height: 1.65; color: rgba(245,240,232,0.85); white-space: pre-wrap; }
+.mxt__replies { margin-top: 10px; padding-left: 14px; border-left: 2px solid rgba(245,240,232,0.12); display: grid; gap: 8px; }
+.mxt__reply { font-size: 0.84rem; line-height: 1.5; color: rgba(245,240,232,0.8); }
+.mxt .mp-post__meta { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(245,240,232,0.5); margin-bottom: 3px; }
+.mxt .mp-post__foot { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.mb-rate { display: inline-flex; gap: 4px; }
+.mb-rate button { font: inherit; font-family: var(--font-mono, monospace); font-size: 0.62rem; cursor: pointer; padding: 2px 7px;
+  border-radius: 999px; background: none; color: rgba(245,240,232,0.6); border: 1px solid rgba(245,240,232,0.15); }
+.mb-rate button:hover { color: var(--clr-parchment, #f5f0e8); border-color: var(--mx-c, #e8a84c); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE ARCH — resources/js/ebx_arch.js (EBX.Arch)
+   The top 3/7 of the mission annulus with the globe at its centre, the whole
+   width of the page. Built for the profile (2026-10-07); at the top of News
+   since the 10/9 Reshuffle (2026-10-09), where a sector toggles the feed to
+   its mission. Drawn for a DARK surface.
+   ══════════════════════════════════════════════════════════════════════════ */
+.ar { position: relative; overflow-x: hidden; color: var(--clr-parchment, #f5f0e8); }
+.ar-stage { position: relative; width: 100%; }
+.ar-arch { position: absolute; left: 0; top: 0; display: block; touch-action: pan-y; user-select: none; -webkit-user-select: none; cursor: grab; }
+.ar-arch.dragging { cursor: grabbing; }
+.ar-ring { transform-box: view-box; transition: transform 0.45s cubic-bezier(.3,.7,.2,1); }
+.ar-ring.instant { transition: none; }
+.ar-sec { cursor: pointer; outline: none; }
+.ar-sec path.ar-band { transition: fill-opacity .2s; }
+.ar-sec:hover path.ar-band, .ar-sec:focus-visible path.ar-band { fill-opacity: var(--hov, .5); }
+.ar-sec--on path.ar-band { filter: drop-shadow(0 0 6px rgba(255,255,255,0.25)); }
+.ar-t1 { font: 600 10.5px 'DM Mono', monospace; letter-spacing: .08em; fill: #0f1a14; }
+.ar-t2 { font: 700 12.5px 'DM Sans', sans-serif; fill: #0f1a14; }
+.ar-t0 { font: 500 9.5px 'DM Mono', monospace; letter-spacing: .06em; fill: rgba(245,240,232,0.78); }
+.ar-tl { font: 500 10px 'DM Mono', monospace; letter-spacing: .14em; fill: rgba(245,240,232,0.7); }
+.ar-tl .you { fill: #e8a84c; }
+.ar-land { fill: rgba(143,206,157,0.30); stroke: rgba(190,230,200,0.35); stroke-width: .5; }
+.ar-grat { fill: none; stroke: rgba(160,210,235,0.16); stroke-width: .6; }
+.ar-weeknav { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; width: min(520px, 80vw); z-index: 2; }
+.ar-weeknav__k { font: 500 .66rem 'DM Mono', monospace; letter-spacing: .18em; text-transform: uppercase; color: rgba(245,240,232,0.45); }
+.ar-weeknav__t { font-family: 'Playfair Display', Georgia, serif; font-size: 1.7rem; line-height: 1.15; margin: 4px 0 6px; color: var(--clr-parchment, #f5f0e8); }
+.ar-weeknav__s { font-size: .82rem; color: rgba(245,240,232,0.65); line-height: 1.45; }
+.ar-weeknav__btns { display: inline-flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.ar-btn { font: 600 .74rem 'DM Sans', sans-serif; color: var(--clr-parchment, #f5f0e8); background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 999px; padding: 6px 12px; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px; }
+.ar-btn:hover { border-color: rgba(255,255,255,0.3); }
+.ar-btn:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
+.ar-legend { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; font: 500 .62rem 'DM Mono', monospace;
+  letter-spacing: .08em; text-transform: uppercase; color: rgba(245,240,232,0.45); }
+.ar-legend i { display: inline-block; width: 18px; height: 6px; border-radius: 3px; background: rgba(245,240,232,0.25); margin-right: 5px; vertical-align: middle; }
+.ar-legend i.l2 { background: rgba(245,240,232,0.38); }
+.ar-legend i.l3 { background: rgba(245,240,232,0.52); }
+/* On desktop the row sits over the arch's lower half (its padding brings the
+   cards down beside the globe), so only the cards take the pointer — the
+   sectors under the row's padding stay clickable. */
+.ar-row { position: relative; z-index: 1; display: grid; gap: 18px; padding: 0 16px; align-items: start; pointer-events: none; }
+.ar-row__gap { pointer-events: none; }
+.ar-side { min-width: 0; pointer-events: auto; }
+@media (max-width: 899px) {
+  .ar-row { grid-template-columns: 1fr !important; padding-top: 6px !important; }
+  .ar-row__gap { display: none; }
+  .ar-weeknav { position: static; transform: none; width: auto; padding: 0 16px 14px; }
+  .ar-weeknav__t { font-size: 1.35rem; }
+}
+@media (prefers-reduced-motion: reduce) { .ar-ring { transition: none; } }

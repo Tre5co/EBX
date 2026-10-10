@@ -10,6 +10,9 @@ verb:
     POST /wallet/move     race -> race, carrying the philanthropy vote with it
     POST /wallet/withdraw purchased, unvoted tokens back to cash
     PUT  /wallet/org      name the phl this race's ct stand behind
+    POST /wallet/add-funds dollars in, purchased tokens out (2026-10-07; TEST mode
+                          until a payment processor is connected)
+    GET  /wallet/positions one row per mission — the coins (2026-10-07)
 
 `POST /wallet/convert` is GONE with the budget of three it spent. Moving ct is
 free and unlimited inside its own week and impossible after the roll, so a
@@ -63,6 +66,11 @@ class WithdrawStakeBody(BaseModel):
     ct: int = Field(gt=0)
 
 
+class AddFundsBody(BaseModel):
+    # Whole cents. $1 = 10 tokens; the smallest deposit is 10¢ (one token).
+    usd_cents: int = Field(gt=0)
+
+
 class OrgBody(BaseModel):
     mission_id: str
     org_id: Optional[str] = None      # null returns the stake to unassigned
@@ -73,13 +81,14 @@ def get_wallet(
     db: Session = Depends(get_db),
     user: BenefactorAccount = Depends(get_current_benefactor),
 ):
-    """The four segments, the week's grant, and the OE table's rows.
+    """The four segments, the grant, and the OE table's rows.
 
     Two things are applied HERE, on read, because opening the page is when a
-    benefactor's week catches up with them: the grant (idempotent per week, so a
-    refresh cannot pay one twice) and the ROLL (`harden_due`, idempotent by
-    construction — a row with nothing unminted is skipped). Neither invents
-    anything; both are the calendar, applied late.
+    benefactor's week catches up with them: `ensure_grant` (since 2026-10-09,
+    ruling 19, it only retires a D31 weekly pile — the grant is each initiative
+    election's own ten, listed in `grant`) and the ROLL (`harden_due`,
+    idempotent by construction — a row with nothing unminted is skipped).
+    Neither invents anything; both are the calendar, applied late.
     """
     granted = w.ensure_grant(db, user.id)
     w.harden_due(db, user.id)
@@ -94,8 +103,19 @@ def get_wallet(
         "grant_week": granted.get("grant_week"),
         "hardens_week": tm.hardens_at_week(week),
         "rows": w.oe_rows(db, user.id),
+        # 2026-10-07 (the wallet build): the grant as its own entity, and how
+        # funds get in. Since 2026-10-09 (ruling 19) `grant` lists every open
+        # initiative election with the ten tokens it carries and what is used
+        # of each; `expired_this_week_ct` is a D31 weekly pile just retired.
+        "grant": w.grant_info(db, user),
+        "expired_this_week_ct": granted.get("expired_ct", 0),
+        "funds": {"mode": w.funds_mode(),
+                  "test_deposits_ct": w.test_deposits_ct(db, user.id),
+                  "max_deposit_cents": w._funds_settings().funds_max_deposit_cents,
+                  "max_test_cents": w._funds_settings().funds_max_test_cents},
         "rules": {
             "weekly_grant_ct": tm.WEEKLY_GRANT_CT,
+            "me_grant_ct": tm.ME_GRANT_CT,             # ruling 19: ten in every initiative election
             "ct_per_token": tm.CT_PER_TOKEN,
             "max_split_tivs": tm.MAX_SPLIT_TIVS,
             # The finality ladder (2026-09-16): 10% at the ME, another 10% at
@@ -203,3 +223,38 @@ def put_org(
         return w.set_org(db, user.id, body.mission_id, body.org_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/add-funds", response_model=dict)
+def post_add_funds(
+    body: AddFundsBody,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """Add funds to the wallet as PURCHASED tokens. TEST mode until a payment
+    processor is connected: credited at once, logged as a test deposit."""
+    try:
+        return w.add_funds(db, user.id, body.usd_cents)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/positions", response_model=list)
+def get_positions(
+    include: Optional[str] = None,
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """One row per mission the benefactor is in — the wallet's coins — plus any
+    missions named in `include` (comma-separated), for the profile's arch."""
+    ids = [x.strip() for x in (include or "").split(",") if x.strip()][:12]
+    return w.positions(db, user.id, ids)
+
+
+@router.get("/stats", response_model=dict)
+def get_stats(
+    db: Session = Depends(get_db),
+    user: BenefactorAccount = Depends(get_current_benefactor),
+):
+    """The profile's numbers: account age, elections, posts, votes."""
+    return w.stats(db, user.id)

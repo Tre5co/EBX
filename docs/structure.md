@@ -12,17 +12,22 @@ behind the pages is [`README.md`](../README.md).*
 - [1. Site layout](#1-site-layout)
 - [2. Communications](#2-communications)
 - [4. index.html (Home) — **the week, and the network** *(was Landing — About Earthbux)*](#4-indexhtml-home--the-week-and-the-network-was-landing--about-earthbux)
+  - [✅ 10/9 RESHUFFLE — BUILT 2026-10-09](#109-reshuffle--built-2026-10-09)
   - [✅ P2 · HOME PASS — BUILT 2026-10-01](#p2--home-pass--built-2026-10-01)
   - [✅ P2 · HOME MODS — BUILT 2026-09-30](#p2--home-mods--built-2026-09-30)
   - [✅ P2 · HOME — BUILT 2026-09-25](#p2--home--built-2026-09-25)
 - [5. profile.html — Profiles](#5-profilehtml--profiles)
+  - [✅ 10/9 RESHUFFLE — REBUILT 2026-10-09](#109-reshuffle--rebuilt-2026-10-09)
+  - [✅ PROFILE + WALLET — BUILT 2026-10-07 (build-seq › Profile, "Do a full overhaul")](#profile--wallet--built-2026-10-07-build-seq--profile-do-a-full-overhaul)
 - [6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout · MERGED 2026-09-24)](#6-missionhtml--mission-page-rebuilt-2026-08-01--jax-notes-2-layout--merged-2026-09-24)
+  - [✅ 10/9 RESHUFFLE — 2026-10-09](#109-reshuffle--2026-10-09)
   - [✅ MISSION PASS — BUILT 2026-10-01](#mission-pass--built-2026-10-01)
   - [✅ P1 · THE MERGE — BUILT 2026-09-24](#p1--the-merge--built-2026-09-24)
   - [◑ Box **i** LANDED EARLY, 2026-09-17 — the discussion box moved in.](#box-i-landed-early-2026-09-17--the-discussion-box-moved-in)
   - [▶ NEXT — the redesign (build-seq §3). Build order, box by box.](#next--the-redesign-build-seq-3-build-order-box-by-box)
 - [7. main.html (Election Page) — **the VOTING surface** · MERGED INTO §6 2026-09-24](#7-mainhtml-election-page--the-voting-surface--merged-into-6-2026-09-24)
 - [8. cause.html (Discussion → **NEWS**) **the DISCUSSION hub**](#8-causehtml-discussion--news-the-discussion-hub)
+  - [✅ 10/9 RESHUFFLE — NEWS REBUILT 2026-10-09](#109-reshuffle--news-rebuilt-2026-10-09)
   - [◑ THE NEWSFEED — boxes a · b · d · f BUILT 2026-09-17; c · e next.](#the-newsfeed--boxes-a--b--d--f-built-2026-09-17-c--e-next)
   - [▶ NEXT — the newsfeed rebuild (build-seq §3). Build order, box by box.](#next--the-newsfeed-rebuild-build-seq-3-build-order-box-by-box)
   - [✅ The discussion box (BUILT 2026-08-12, build-seq §1)](#the-discussion-box-built-2026-08-12-build-seq-1)
@@ -38,17 +43,21 @@ behind the pages is [`README.md`](../README.md).*
 <!-- /TOC -->
 
 ## 1. Site layout
-Navigation drawn by `EBX.initNav` in `resources/js/ebx_shared.js`
+Navigation drawn by `EBX.initNav` in `resources/js/ebx_shared.js` — since the
+10/9 Reshuffle (2026-10-09) **three tabs: Home · Missions · News**. Profile is the
+badge (always there, top right) and Inbox an icon beside it carrying the unread
+count (`userBadge` · `refreshInboxBadge`); on phones the tabs pin to the bottom
+and the badge row drops the handle.
 | Surface | Page | What it shows | Posting |
 |---|---|---|---|
-| **Home** | `index.html` | the hero and the five steps (animated), the mission hub (every mission by cause, this week's decisions glowing), the Network and the feed — P2 mods, 2026-09-30 | **+ Post** (P3) opens `post.html`; every post and tile opens in News |
+| **Home** | `index.html` | the hero and the five steps (animated; the stacked list LEFT of the visual, step 5 "Feedback"), the four doors, and **the weekly report** (`GET /inbox/weekly/report`) — 10/9 Reshuffle. The mission hub went to Missions and the feed to News: no discussion on Home. | — (the doors lead to Missions, About and News) |
 | **About** | `about.html` | the explainer that left Home (P2): the copy spine, the grant, the runway, the research/news/budget bands. Footer-linked. | — |
 | **Footer** | every page (`EBX.initFooter`) | 2026-09-25: brand + **Contact us** · About (#why #what #how #earthbuck) · Take part · Causes · Help & legal; pages that do not exist yet read "soon". Contact us is a dialog → `POST /contact` → `contact_messages`, emailed to jax@earthbux.net when SMTP is set; staff read them in admin.html. | the contact dialog |
-| **Missions** | `mission.html` · `/m/<slug>` | **one page for a mission's whole life** (P1, 2026-09-24): the elections, the ballots, the table, the allocations, and the mission's own story. `main.html` forwards here. | Can suggest causes/initiatives, nominate organizations, post to the mission |
-| **News** | `cause.html` | Full discussion home — the feed. P3: any `feed_rank` order (Hot · Newest · Trending · Research · By mission), a Full view per post, replies to anything. | **+ Post** opens `post.html`; replies in place; "Respond in a post" |
+| **Missions** | `mission.html` · `/m/<slug>` | **one page for a mission's whole life** (P1, 2026-09-24): the elections, the ballots, the table, the allocations, and the mission's own story. `main.html` forwards here. Since the 10/9 Reshuffle the **missions hub** (moved from Home, `EBX.Hub`) is at the top, and the mission's **report** is in News (a card here leads to it). | Can suggest causes/initiatives, nominate organizations, post to the mission |
+| **News** | `cause.html` | Full discussion home — the feed. P3: any `feed_rank` order (Hot · Newest · Trending · Research · By mission), a Full view per post, replies to anything. 10/9 Reshuffle: **the arch** (the top 3/7 of the mission annulus, the globe at its centre — `EBX.Arch`) on top; the feed is **everything, or toggled to one mission**, whose **report** (`EBX.MissionReport`) then sits above its posts. | **+ Post** opens `post.html` (on the toggled mission, if any); replies in place; "Respond in a post" |
 | **Post** | `post.html` | **P3 · Posting (2026-09-29)** — the one composer: General · Research · Budget, the target and type preselected by the link, the type's guide beside it (`GET /posts/guide`), the Analysis's references, images, edits as new versions (`?edit=`), pulling an old post into a mission. §8b. | every new post |
-| **Inbox** | `inbox.html` | **P4 (2026-10-04)** — one toggle, three views: **Notifications** (replies · votes on your posts at 1/5/10/25… · a post you cite has a new version · organizations for your initiatives · your initiative and organization elections, won / lost / followed, and what comes next · the weekly update), read / unread, filter by kind · **Messages** (threads with members of a mission you share, search by name or mission, the no-campaigning rule, Report) · **Weekly update** (the edition + *Your week*). The nav's Inbox tab carries the unread count. API `/inbox/*` (`routers/inbox.py`), logic `backend/app/events.py`. | — |
-| **Profile** | `profile.html` | all activity from the signed-in user | **+ New post**; each of your posts has *edit* (a new version) |
+| **Inbox** | `inbox.html` | **P4 (2026-10-04)** — one toggle, three views: **Notifications** (replies · votes on your posts at 1/5/10/25… · a post you cite has a new version · organizations for your initiatives · your initiative and organization elections, won / lost / followed, and what comes next · the weekly update), read / unread, filter by kind · **Messages** (threads with members of a mission you share, search by name or mission, the no-campaigning rule, Report) · **Weekly update** (the edition + *Your week*). The inbox icon beside the profile badge carries the unread count (a tab until the 10/9 Reshuffle). API `/inbox/*` (`routers/inbox.py`), logic `backend/app/events.py`; Home's weekly report is `GET /inbox/weekly/report` (`backend/app/report.py`). | — |
+| **Profile** | `profile.html` | the signed-in benefactor's own page — 10/9 Reshuffle: the wallet with **two allocation bars** (Uncommitted · Committed), the stats, **the choices hub** (the missions hub reading *your* selections) and your posts; no globe, no mission toggle (they went to News) | **+ New post**; each of your posts has *edit* (a new version) |
 
 ## 2. Communications
 **Winning Org spiel** "Hi, we're here to work with you to help the cause. Either we report on the cause, or we report on you. The goal is to report on the cause. If you do a good job, we'll be able to tell intersting stories about the cause. You have 7 weeks to claim the profile on our website. If you don't, you will only receive a small donation (which we will still investigate)."
@@ -63,6 +72,74 @@ exist yet were drawn from the built page). The letters in a PAGE LAYOUT are the
 drawing's letters. `[ ]` in a legend = drawn but not built.
 
 ## 4. index.html (Home) — **the week, and the network** *(was Landing — About Earthbux)*
+
+### ✅ 10/9 RESHUFFLE — BUILT 2026-10-09
+
+*Jax's text: INSTRUCTIONS › BUILD SEQUENCE › 10/9 - Reshuffle time (report in
+ARCHIVE › 2026-10-09). "Home: Missions hub -> Missions. Feed -> News (no more
+discussion on home)" · "The 5 steps on home should be to the left of the visual.
+Also replace 'Reporting' with 'Feedback'" · the weekly report "displayed on the
+home page at all times, updated each week". Pinned by `home_check` (88),
+`landing_check` (41), `render_check`, `reshuffle_check`.*
+
+**DRAWING — Home (10/9 Reshuffle)**
+```
+ ____________________________________________________________________________
+|Earthbux News______________Home · Missions · News______________[✉][badge]__|
+| Earthbux News          |  1. Cause      | [ the step's animated scene ]   |
+| you donate, we follow  |     ↓          | [                            ]   |  <- h1
+| [Log in / Sign up]     |  … 5. Feedback | message            ▬ ▬ ▬ ▬ ▬     |
+|----------------------------------------------------------------------------|
+| Two key decisions | Every voice matters | Feedback and       | Make your   |  <- h2
+|  1 What mission…  |                     |  accountability    |  impact     |
+|  2 Which org…     |  → Who are we?      |  → News            |  Sign in…   |
+|----------------------------------------------------------------------------|
+| WEEKLY REPORT · October 6 – 13: Land                                       |
+|  [3 new mission]     [2 final OE week]        [1 budget day]   <- this week's cause
+|     ┆                    ┆                         ┆                      |
+|  ME ─●──── organization election ────●────── prep ───────●─ ex          |  <- h3
+|    ┆        ┆                              ┆                              |
+|  [3 this week's ME] [2 entered prep]   [1 left prep]  <- next / last week's cause
+|  [ Cause elections: secured · won · leading ]  [ Exchange · top movers ]   |
+|________________________________footer______________________________________|
+```
+- **h1** unchanged but for the order: `#ld-flow` (the five step names, arrows
+  down) stands LEFT of the visual (`.hx__vis { grid-template-columns: auto
+  minmax(0, 1fr) }`), and step 5 reads **Feedback** (`EBX.Steps` name; the key
+  stays `reporting`).
+- **h2** the doors, in Jax's copy of 2026-10-09 with three of the suggested
+  edits: "We give everyone $1 to vote with in every initiative election." ·
+  "Every voice matters" as written · "…so that progress is public, week by week.
+  If it's moving too slowly, you can move your donation to a different mission."
+- **h3** **the weekly report** — one read of `GET /inbox/weekly/report`
+  (`backend/app/report.py`, `weekly_report(db, week)`), titled "<Month d> –
+  <d>: <Cause>" for the week's cause. Six updates, each a mission card (number,
+  label, kicker, title, a line, leaders or facts, *Open the mission* · *News
+  about it*):
+  - above the line, **this week's cause**: *this week's new mission* (its
+    initiative was elected as the week began — its organization election opens;
+    T = w) · *final week of the organization election* (T = w−7, the leading
+    organizations) · *budget day this week* (T = w−14);
+  - below it: *this week's initiative election* (**next** week's cause, T = w+1
+    — the only dot left of 0, with its leading initiatives) · *just entered
+    prep* and *just left prep* (**last** week's cause, T = w−8 and w−15).
+  - **The timeline** runs from the initiative election's last weeks to a week
+    after budget day (x = weeks since T, −2.5 → 16): Initiative election ·
+    Organization election (8 weeks) · Prep (7 weeks) · Exchange, the three
+    elections' days marked. Each mission is a dot labelled with its number,
+    coloured by its cause; each row is sorted by age, so on a wide screen card
+    *i* hangs straight down (or up) from dot *i*. Phones stack the cards and the
+    timeline keeps its dots.
+  - **At the bottom:** *Cause elections* — any challenger that won this week's
+    vote (or took its window after six in a row), incumbents that secured their
+    windows, and who leads this week's vote · *Exchange · top movers* — missions
+    past budget day ranked by **EBX held**, with the week's change (+0 until
+    trading opens) and members.
+- **Gone from Home:** the missions hub (Missions, §6 — `EBX.Hub`) and the
+  Network + feed (News, §8). `HomeFeed` / `HomeHub` are gone with them —
+  INSTRUCTIONS › REMOVAL REGISTER › Added 2026-10-09.
+
+*Everything below in this section is the page's history.*
 
 ### ✅ P2 · HOME PASS — BUILT 2026-10-01
 
@@ -382,97 +459,203 @@ mission.html and the composer all still say Context. index.html is the only
 surface using the new name. The rename is NOT done.
 
 ## 5. profile.html — Profiles
-*backlog*
-- [ ] **Wallet**
-  - indicate whether benefactor predicted correctly either of the 2 elections. 
-  - Anything I voted on should have a coin in the wallet.
-- [ ] **Allocations**
-  - Conversions need work. Note that you can only move tokens if your vote lost.
-  - Should have options to convert or withdraw ebx eventually too.
-- [ ] **MEMBER MODE** - must have a coin selected.
-  - What does the experience look like? Well, first the user is instructed to search their org in our database. If its there, they claim it. If not, they register it.
-- [ ] **Choice cards**
-  - Don't say "Week + x". Replace with "X weeks away" and remove the day count. Only have the election date on the top right.
-  - cards should toggle page, not link to election.
-- [ ] Beneficiary profiles
-- [ ] Credit badge colorization (participation perk)
-*end backlog*
+
+### ✅ 10/9 RESHUFFLE — REBUILT 2026-10-09
+
+*"Profile will have a missions hub, but instead of showing the leaders, it will
+show the selections of the user. Globe and 3/7 annulus display -> News. Profile
+doesn't need the globe and mission toggle, just wallet, allocations, stats,
+choices-hub, and personal posts." · "There should be 2 main allocations bars -
+committed and uncommitted." Pinned by `profile_check` (25) and
+`reshuffle_check`.*
+
+**DRAWING — Profile (10/9 Reshuffle)**
+```
+ ____________________________________________________________________________
+|Earthbux News______________Home · Missions · News______________[✉][badge]__|
+| (PF) @handle                                                  [Settings ▾] |  <- a
+|      Benefactor since …                                                    |
+|----------------------------------------------------------------------------|
+| WALLET                                [+ Add funds] | YOUR NUMBERS         |
+|  Uncommitted                               73 tk    |  [age] [elections]   |  <- b · c
+|  [▒▒▒▒▒▒ granted ▒▒▒▒▒▒|███ purchased ███]          |  [winners] [ideas]   |
+|   Granted 40 — 10 in each of the 7 open MEs  [Use it in Human Progress 3 →]|
+|   Purchased 33 — yours to commit or withdraw   [Add] [Withdraw]           |
+|  Committed                                 42 tk    |  [posts] [comments]  |
+|  [██ ME ██|█ OE █|█ Prep █      ]  (same scale)     |  [votes] [upvotes]   |
+|   pre-EBX · EBX · Final (deductible) · Cash withdrawn                      |
+|----------------------------------------------------------------------------|
+| YOUR CHOICES THIS WEEK                              [Show all missions]   |  <- d
+|  [Initiative election: Forests 3 — your vote · the leader]                |
+|  [Organization election: Land 2 — your vote · the leader]                 |
+|----------------------------------------------------------------------------|
+| YOUR POSTS                                   [In the news →] [+ New post] |  <- e
+|  [post] [post] …                                       [Show more]         |
+```
+- **a** — avatar, @handle, "Benefactor since …", role chip for staff;
+  **Settings ▾**: handle, email, Inbox & notifications, Organization login
+  (`/org`), Admin console (staff), Sign out.
+- **b · the wallet** — two allocation bars **on one scale** (the longer fills
+  its track), each with its total in tokens:
+  - **Uncommitted** — **Granted** (hatched: ten in each open initiative
+    election not yet used there, `GET /wallet` › `grant.elections` — ruling 19;
+    *Use it in <the nearest> →*) and **Purchased** (`wallet.purchased_ct`; Add ·
+    Withdraw).
+  - **Committed** — by where each mission is (`GET /wallet/positions`, summed by
+    phase): Initiative elections · Organization elections (a stalled race
+    counts here) · Prep · Exchange (only when non-zero); under it the ledger:
+    pre-EBX tokens · EBX · Final — deductible · Cash withdrawn.
+  - Nothing on either side: a prompt to vote this week (the grant is waiting).
+- **c · your numbers** — account age · elections voted · winners backed ·
+  initiatives suggested · posts · comments · votes on posts · upvotes received
+  (`GET /wallet/stats`).
+- **d · your choices** — `EBX.Hub.mount('#pf-hub', { mode: 'mine' })` (§6): the
+  missions hub reading **your** selections — collapsed, this week's initiative
+  and organization elections with *your vote* beside the leader; open, every
+  mission and cause election, the ones you voted in lit ("You: …"), the rest
+  dimmed. A money change reloads it.
+- **e · your posts** — your root posts, newest first (`EBX.Post.collapsed`),
+  ten at a time; *In the news →* (`cause.html?author=`) and **+ New post**.
+- **Gone:** the arch, the globe and the week navigator (to News, §8 —
+  `resources/js/ebx_arch.js`), the Donated coins and the three mission panels
+  (the choices hub carries what they said) — REMOVAL REGISTER › Added
+  2026-10-09.
+
+*Everything below in this section is the page's history.*
+
+### ✅ PROFILE + WALLET — BUILT 2026-10-07 (build-seq › Profile, "Do a full overhaul")
+
+*Replaces the 2026-08-28 page (three cards · seven weekly windows · member mode),
+which is gone in full — see INSTRUCTIONS › REMOVAL REGISTER › Added 2026-10-07.*
 
 **DRAWING — Profile**
 ```
- ____________________________________________________________________________
-|EBX______________________________________________________________|_badge____|
-|  ____________   _________________________________________   _____________  |
-| |            | |                                         | |             | |
-| |      c     | |                     b                   | |      a      | |
-| |            | |                                         | |             | |
-| |____________| |_________________________________________| |_aa_ab_ac____| |
-|                       _____________e0_______________                       |
-|  ____________        |_organization_|__initiative__|         ____________  |
-| |_____e6_____|                                              |_____e1_____| |
-|  ____________                                                ____________  |
-| |_____e5_____|                      d                       |_____e2_____| |
-|  ____________                                                ____________  |
-| |_____e4_____|                                              |_____e3_____| |
-|  ________________________________________________________________________  |
-| |                                                                        | |
-| |                            f                                           | |
-| |                                                                        | |
+ ______________________________________________________________________________
+|                    LAND · lan1                                               |
+|            ___________outer: budget day____________                           |
+|  FORESTS  /_________ORGANIZATION ELECTION · OCT 13_\   OCEANS                |
+|   ·for2  /           inner: initiative · Aug 18 ✓    \  ·oce1                |
+| /INITIATIVE      THIS WEEK  Oct 6 – Oct 13        BUDGET DAY\                |
+|/ ELECTION·OCT 13   ← Last week  Next week →        · NOV 24  \              |
+|___________________________ ( globe ) __________________________\             |
+| You                        |         |  Wallet           [+ Add funds]       |
+|  @handle · since …         |  globe  |  $6.00 · 60 tk                         |
+|  DONATED (coins)           |         |  Uncommitted: Weekly grant · Funds     |
+|  ▸ coin per mission        |         |  Committed: ME · OE · Prep (bar)       |
+|  Settings & options        |         |  pre-EBX · EBX · Final · Cash          |
+|                            |         |  Your numbers (8 tiles)                |
+|______________________________________________________________________________|
+| This week's three missions:  [left mission] [middle mission] [right mission] |
+| Your activity  (+ New post)                                                  |
 ```
-- **a** Profile — **aa** Settings · **ab** Member mode (gated on a coin in **c** being SELECTED) / Benefactor mode when already a member · **ac** Sign out
-- **b** Allocations — one bar, three sets of two: `unallocated (granted · purchased)` · `committed (initiatives · organizations)` · `EBX (held)`, with `final (deductible)` as a figure; the grant's week on the head; the conversion row (`POST /wallet/move`)
-- **c** EBX wallet — credit coins, horizontal strip; a coin is selectable
-- **d** The globe — rotates to the selected window's causes; marks CAUSE ANCHORS until a model carries lat/lon [ ] real geography
-- **e0–e6** Seven weekly windows (the choices table, evolved). Each holds one initiative and one organization, two cause colours. Time runs clockwise:
-  - **e0** this week — split into COLUMNS, organization left, initiative right
-  - **e1–e3** right column, weeks +1 +2 +3 — ROWS, organization on top, initiative below
-  - **e4–e6** left column, weeks +4 +5 +6 (bottom to top) — initiative on top, organization below
-  - each half: `{cause}` · my pick · `{ct}` committed → the election
-- **f** Feed — Benefactor mode: Posts · Comments · Research. Member mode: the user's research + research they commented on
 
-- ✅ **PAGE LAYOUT**
-  - ✅ **Topbar** — brand · profile badge
-  - ✅ **Top row** — `c` | `b` | `a`
-    - ✅ **(c) EBX wallet** — credit coins, horizontal strip
-      - ✅ **A coin is SELECTABLE** — `pickCoin`; this is what gates `ab`
-    - ✅ **(b) Allocations** — one bar, **three sets of two**, the same shape
-      main.html draws: `unallocated (granted · purchased)` ·
-      `committed (initiatives · organizations)` · `EBX (held)` with
-      `final (deductible)` as a figure, not a segment (2026-09-16)
-      - ✅ **The grant's week** on the head — "granted for this week's
-        elections" (2026-09-16: a grant carries a week id, never a cause)
-      - ✅ **Conversion row** — `POST /wallet/move`, race → race
-    - ✅ **(a) Profile** — badge · handle · mode
-      - ✅ **aa Settings** · ✅ **ab Member / Benefactor** · ✅ **ac Sign out**
-      - ✅ **ab is gated on a coin being SELECTED**, not merely held
-  - ✅ **(e) Seven weekly windows** — the choices table, evolved
-    - ✅ **Top card** — this week, split into COLUMNS: organization left,
-      initiative right
-    - ✅ **Right column** — weeks +1 +2 +3, split into ROWS: organization on
-      top, initiative below (falling clockwise)
-    - ✅ **Left column** — weeks +6 +5 +4, initiative on top, organization
-      below (coming back up)
-    - ✅ **Two cause colours per card** — the ME and the OE closing in one week are never the same cause, because 8 weeks is not 7
-    - ✅ **Each half** — `{cause}` · my pick · `{ct}` committed → the election
-  - ◑ **(d) The globe** — orthographic sphere, own graticule, turns continuously
-    and eases round to the selected window's causes
-    - ✅ Mounted, animating, aimed by `selectWindow`
-    - [ ] **Real geography** — no model carries lat/lon, so it marks CAUSE
-      ANCHORS and the caption says so. This is the blocker for everything else
-      here, and for the same globe on mission.html.
-    - [ ] Move / share the component with mission.html
-  - ✅ **(f) Feed** — `GET /posts?ben_author_id=`
-    - ✅ **Benefactor mode** — Posts · Comments · Research
-    - ✅ **Member mode** — the user's research, plus research they commented on
-  - ✅ **Settings modal** · ✅ **Switch to Organization mode** · ✅ **Admin console**
-  - [ ] **ORG MODE registration** — search the database → claim, else register
-  - [ ] **Organization profile** — initiative coins · tasklist · annulus 4 · memberships
-  - [ ] **Beneficiary profile** — voice at phase-2 start
-  - [ ] **Mission-member messageboard** — separate from posts
-  - [ ] **Credit badge colorization**
-  - **Checked by** `scripts/profile_check.js` — 42 assertions.
+- **The arch** — the top 3/7 of the mission page's annulus, the whole width of
+  the page, the globe at the circle's centre. A sector is a **mission**; its
+  three layers are that mission's **initiative election (inner) · organization
+  election (middle) · budget day (outer)**, each with its date; text rides the
+  curve (`textPath`). For cycle week *w* (the middle sector is *w*'s cause):
+  - **left (+1)** — the initiative election that closes at the end of *w*;
+    the **inner** layer is lit: "INITIATIVE ELECTION · CLOSES <date>" and its
+    leading (or winning) initiative.
+  - **middle (0)** — the organization election that closes at the end of *w*;
+    the **middle** layer is lit, with the mission and its leading organization.
+  - **right (−1)** — the budget day of the organization election that closed
+    as *w* began (the most recently elected OE); the **outer** layer is lit.
+  - The three are adjacent causes in the mission page's annulus order (left =
+    +1). A mission opened in week *s* is cause *s* mod 7; its ME closes *s*+7,
+    OE *s*+15, budget day *s*+22 (`money_model.md` §0). Sector at `rel`:
+    `rel>0` mission opened *w*−7+rel · `rel=0` *w*−14 · `rel<0` *w*−14+rel.
+    Missions not created yet are drawn from the calendar ("Opens <date>").
+  - **Swipe** (drag) or **← Last week / Next week →** / arrow keys: one week at
+    a time; the ring turns one sector (next week = clockwise, the left sector
+    comes up). Five sectors are drawn and clipped to the top 3/7, so the turn
+    slides one in and one out. A sector the benefactor is in carries
+    "● YOU <tk>" on its label; clicking a sector opens its panel.
+  - Phones: the arch is wider than the screen (the side sectors peek), the
+    globe sits under it, the week navigator below the globe.
+- **You (left of the globe)** — handle, since, role; **Donated**: one coin per
+  mission (`GET /wallet/positions`) — `ballot` (money or a vote in an open
+  initiative election), `membership` (backed the initiative election, so a
+  member of its organization election, ruling 16), `ebx` (minted); clicking a
+  coin opens that mission's panel ("Your coin"). **Settings & options**:
+  handle, email, Inbox, Write a post, Organization login (`/org`), Admin
+  console (staff → admin.html), Sign out.
+- **Wallet (right of the globe)** — total ($ and tokens) and **+ Add funds**
+  (`EBX.Wallet.addFunds`, the one dialog every "Donate more" also opens).
+  **Uncommitted**: the **weekly grant** as its own entity (10 tk, for this
+  week's initiative election only, expires at the week change — D31; meter of
+  what is used; "Use it →" the door mission) and **your funds** (purchased:
+  any election, withdrawable — Add · Withdraw). With nothing unallocated the
+  wallet prompts **Add funds…**. **Committed**: one bar, ME · OE · Prep (from
+  the positions, by phase); then pre-EBX tokens · EBX · Final (deductible) ·
+  Cash withdrawn. **Your numbers**: account age · elections voted · winners
+  backed · posts · comments · votes on posts · upvotes received · initiatives
+  suggested (`GET /wallet/stats`).
+- **This week's three missions** — a panel per arch sector, left to right:
+  title, role, the three dates (the lit one highlighted, ✓ when done); **your
+  allocation** (initiative vote and split, ME commit, organization vote, stake
+  and EBX, final); **your contributions** (posts · comments · upvotes, latest
+  three); **community** (members, committed by everyone, initiatives on the
+  ballot, posts about it); **Vote / Change my vote / Open the mission →** and
+  **Post about it**. A selected coin outside the arch gets its own panel first.
+- **Your activity** — the benefactor's posts (`EBX.Post.collapsed`), **+ New post**.
+- **Signed out** — the inline log in / sign up gate (unchanged).
+- **Checked by** `scripts/profile_check.js` — 20 assertions (arch shape and
+  lit layers, week navigation, You | Wallet, Add funds end to end, panels, no
+  sideways scroll at 390px).
+
+*Still open (INSTRUCTIONS › BUILD SEQUENCE):* real geography on the globe ·
+the rest of the annulus (6/7) clickable as a cause picker (D32, design step) ·
+public benefactor profiles · beneficiary profiles · credit-badge colorization ·
+a transaction history (P5).
 
 ## 6. mission.html — Mission page (REBUILT 2026-08-01 · jax notes 2 layout · MERGED 2026-09-24)
+
+### ✅ 10/9 RESHUFFLE — 2026-10-09
+
+*"Home: Missions hub -> Missions" · "Mission: Report -> home *use new report" —
+Home carries the new weekly report, and the mission's own report went to News
+("When News is filtered to a mission, that mission's report sits above its
+posts") · "Framing needs to be switched to 'Prep'". Pinned by
+`mission_layout_check` (134), `composer_check` (23), `render_check`,
+`reshuffle_check`.*
+
+```
+| THIS WEEK'S DECISIONS                                [Show all missions]   |  <- the hub
+|  [Initiative election · Forests 3 · leading · runners-up] [Organization …] |
+|----------------------------------------------------------------------------|
+| 7 causes · the annulus row · the stage (progress log | ballot) · table …   |  (unchanged)
+|----------------------------------------------------------------------------|
+| [ Mission report · written by its members                                 ]|  <- #mb-news
+| [ The report on <mission> — read, rate and add to it in News →            ]|
+```
+- **The missions hub** — `EBX.Hub.mount('#mx-hub', { mode: 'leaders' })`
+  (`resources/js/ebx_hub.js`, Home's hub as a module; styles § THE MISSIONS HUB
+  in `ebx_frontend.css`), at the top of the page: collapsed, this week's
+  initiative and organization elections with their top three; open, the
+  seven-row grid (cause election first, then the missions newest first, the
+  week's decisions glowing). The same module reads *your* choices on the
+  profile (`mode: 'mine'`, §5). A window's number is read from the window
+  itself ("Land 4" for the one whose election opens this week).
+- **The report → News.** `#mb-news` is a card that opens
+  `cause.html?mission=<id>#mr`; it shows once the initiative is elected (before
+  that, the posts on the initiatives stand in, as before — MX › paintPrePosts
+  decides). `MB.compose('research')` goes there too; a new post still opens
+  post.html, preselected. The report, its thread and the reply composer are
+  `EBX.MissionReport` (`resources/js/ebx_report.js`).
+- **Prep.** Framing reads **Prep** wherever a reader sees it: the phase toggle
+  ("4 Prep"), the step names and titles, the wheel's phase card ("Mission
+  Prep"), the ballots' and the hub's labels. Code keys (`frame`, `fr`) are
+  unchanged.
+- **The grant (ruling 19).** The initiative ballot's budget is `max(10, what is
+  already in) + the purchased tokens still unallocated` (`committableFor`, reading
+  `rules.me_grant_ct`) in **every** initiative election — the week's-cause door
+  is gone.
+- **The organization ballot (ruling 20).** Every open race takes the reader's one
+  vote (`can_take_part`); tokens only where `can_commit` — they voted in its
+  initiative election — and the ballot says so where they cannot.
+
+*Everything below in this section is the page's history.*
 
 ### ✅ MISSION PASS — BUILT 2026-10-01
 
@@ -1010,6 +1193,72 @@ uncommitted") and the back face with [vote] [orgs] [discuss] — the cards are
     - [ ] **CE Panel**
 
 ## 8. cause.html (Discussion → **NEWS**) **the DISCUSSION hub**
+
+### ✅ 10/9 RESHUFFLE — NEWS REBUILT 2026-10-09
+
+*"News: Either all-encompassing, or toggled by a specific mission. The globe and
+3/7 annulus display from profile is now at the top." · asked where a mission's
+report goes now: "When News is filtered to a mission, that mission's report sits
+above its posts." Pinned by `feed_check`, `composer_check`, `render_check` and
+`reshuffle_check`.*
+
+**DRAWING — News (10/9 Reshuffle)**
+```
+ ____________________________________________________________________________
+|Earthbux News______________Home · Missions · News______________[✉][badge]__|
+|                          LAND 2 · SHOWING                                  |
+|              ____outer: budget day · Dec 1____                             |
+|  FORESTS 3  /_ORGANIZATION ELECTION · CLOSES OCT 13_\   OCEANS 2           |  <- c
+|            /     inner: initiative · Aug 18 ✓         \                    |
+|   INITIATIVE      THIS WEEK  Oct 6 – Oct 13        BUDGET DAY             |
+|   ELECTION        ← Last week  Next week →           · NOV 24             |
+| [You're reading:        ]    ( globe )     [This week's three missions ]   |  <- g · h
+| [ All the news / Land 2 ]                  [ ▌Forests 3  ▌Land 2  ▌Oceans 2]|
+|----------------------------------------------------------------------------|
+| [Showing the news about Land 2 · Protect lake ecosystems  Open · Show all] |  <- m
+| [ THE REPORT on Protect lake ecosystems — statement · plan · B · I · A    ]|  <- r
+| [ News: search · order · filters · + Post                                 ]|  <- d
+| [ the feed — that mission's posts, or everything                          ]|  <- a
+```
+- **c · the arch** — `EBX.Arch.mount('#nw-arch', …)` (`resources/js/ebx_arch.js`,
+  the profile's arch of 2026-10-07 as a module): the top 3/7 of the mission
+  annulus, the whole width of the page, the globe at the circle's centre. A
+  sector is a mission — inner: its initiative election · middle: its
+  organization election · outer: its budget day; the week's three lit as on the
+  profile (left +1 ME closing this week · middle 0 OE closing this week · right
+  −1 the budget day of the OE that just closed). Missions are named by cause and
+  number ("LAND 2"). Swipe, ← Last week / Next week → or the arrow keys turn it a
+  week. **A sector is the toggle**: click it (or Enter) to show only that
+  mission's news, again to show everything; the chosen one reads "· SHOWING".
+  The cards beside the globe sit in the arch's row, which takes the pointer only
+  over the cards.
+- **g · left of the globe** — what the feed is showing: *All the news* (with how
+  to narrow it), or the chosen mission — where it stands this week, its leader,
+  *Read its report ↓* · *Open the mission →* · *Show everything*.
+- **h · right of the globe** — the week's three missions as rows (stage · date,
+  name, leader), each a toggle (`data-mpick`), the shown one pressed.
+- **m · the mission bar** and **r · the report** — only when a mission is chosen
+  (`Feed.setMission(id)`; `?mission=<id>` opens on one, `#mr` scrolls to it).
+  The report is `EBX.MissionReport.mount('#mr', id)` (`resources/js/ebx_report.js`,
+  moved whole from mission.html): the mission statement, the plan (budget items
+  and *Suggest* Service · Supply · Support once the initiative is elected),
+  Background · Investigation · Analysis — each its leading post. Clicking it
+  opens the thread (read, rate, reply in its own composer; *Write yours* opens
+  post.html).
+- **d · a** — the control panel and the feed as before; with a mission chosen the
+  feed is `GET /posts?mission_id=<id>` (in the chosen order) and **+ Post** opens
+  post.html on that mission. `?id=<cause>` (the footer's cause links) opens the
+  feed filtered to that cause ("Only <cause>" on); `?cause=` `?cat=` `?q=`
+  `?thread=` `?source=` `?initiative=` `?author=` as before.
+- **Phones** — the arch is wider than the screen (the side sectors peek), the
+  globe under it, the week navigator, then the cards stacked; with a mission
+  chosen the left card steps aside for the mission bar, and a sector tap scrolls
+  to it.
+- **Gone:** the cause render (the hero's three columns, the wheel `EBX.Annulus`
+  here, the mission header and overview, the leading-initiatives panel, the page
+  tag) — REMOVAL REGISTER › Added 2026-10-09.
+
+*Everything below in this section is the page's history.*
 
 ### ◑ THE NEWSFEED — boxes a · b · d · f BUILT 2026-09-17; c · e next.
 

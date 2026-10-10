@@ -25,7 +25,7 @@
  *                   into it until the problem heals.
  *   4 Network       people all around send ideas, messages, photos and votes
  *                   into the sector; the whole map closes into one coin.
- *   5 Reporting     a news crew takes the coin in and sends articles, photos
+ *   5 Feedback      a news crew takes the coin in and sends articles, photos
  *                   and video out to people, who trade missions (coins).
  *
  * The vistas and problems are drawn here, one panorama per cause (PANOS), as
@@ -48,7 +48,8 @@
     { key: 'initiative', name: 'Initiative', msg: 'Broad causes → narrow missions' },
     { key: 'organization', name: 'Organization', msg: 'Identify those worthy of the job' },
     { key: 'network', name: 'Network', msg: 'Collaborate and create a plan' },
-    { key: 'reporting', name: 'Reporting', msg: 'Regular updates and built in control' },
+    // 10/9 Reshuffle (2026-10-09): "replace 'Reporting' with 'Feedback'".
+    { key: 'reporting', name: 'Feedback', msg: 'Regular updates and built in control' },
   ];
 
   // When EBX.config.causes is empty (no API): the seven, as the API serves them.

@@ -5,1153 +5,441 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux — Your Profile</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261004a" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261009a" />
+  <!--
+    profile.html — REBUILT in the 10/9 Reshuffle (2026-10-09). Jax: "Profile will
+    have a missions hub, but instead of showing the leaders, it will show the
+    selections of the user. Globe and 3/7 annulus display -> News. Profile
+    doesn't need the globe and mission toggle, just wallet, allocations, stats,
+    choices-hub, and personal posts." · "There should be 2 main allocations
+    bars - committed and uncommitted."
+
+      ┌── you: avatar · @handle · since ─────────────────────── Settings ▾ ──┐
+      ├── WALLET: the two allocation bars ─────────┬── your numbers ─────────┤
+      │   Uncommitted  granted ▒▒▒ · purchased ███ │   8 tiles               │
+      │   Committed    ME ███ · OE ███ · Prep ███  │                         │
+      ├── YOUR CHOICES — the missions hub, your selections (EBX.Hub 'mine') ─┤
+      └── YOUR POSTS ────────────────────────────────────────── + New post ──┘
+
+    Every number is the server's: GET /wallet (the wallet, the grant — ten
+    tokens in each open initiative election, ruling 19), GET /wallet/positions
+    (one row per mission: the committed bar's phases), GET /wallet/stats. The
+    arch, the globe, the coins and the three mission panels of 2026-10-07 are
+    gone — the arch to News (resources/js/ebx_arch.js), the rest into the hub.
+  -->
   <style>
-
-    /* ── New profile onboarding flow ── */
-    .onboarding {
-      min-height: calc(100vh - var(--nav-height));
-      background: #0f1a14;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: var(--sp-2xl) var(--sp-lg);
-    }
-
-    .onboarding__card {
-      width: 100%;
-      max-width: 560px;
-      background: rgba(30,42,30,0.85);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius-lg);
-      overflow: hidden;
-    }
-
-    /* Progress bar across top */
-    .onboarding__progress {
-      height: 3px;
-      background: rgba(255,255,255,0.06);
-    }
-
-    .onboarding__progress-fill {
-      height: 100%;
-      background: var(--clr-amber);
-      transition: width 0.4s ease;
-    }
-
-    .onboarding__body {
-      padding: var(--sp-2xl) var(--sp-xl);
-    }
-
-    .onboarding__step-label {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--clr-honey);
-      opacity: 0.7;
-      margin-bottom: var(--sp-sm);
-    }
-
-    .onboarding__title {
-      color: var(--clr-parchment);
-      font-size: 1.5rem;
-      margin-bottom: var(--sp-sm);
-    }
-
-    .onboarding__subtitle {
-      color: rgba(245,240,232,0.5);
-      font-size: 0.88rem;
-      line-height: 1.65;
-      margin-bottom: var(--sp-xl);
-    }
-
-    /* Form fields */
-    .ob-field {
-      margin-bottom: var(--sp-lg);
-    }
-
-    .ob-label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: rgba(245,240,232,0.7);
-      margin-bottom: var(--sp-xs);
-      letter-spacing: 0.02em;
-    }
-
-    .ob-label span {
-      font-weight: 400;
-      opacity: 0.5;
-      font-size: 0.72rem;
-    }
-
-    .ob-input {
-      width: 100%;
-      padding: 10px 14px;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: var(--radius-sm);
-      color: var(--clr-parchment);
-      font-family: var(--font-body);
-      font-size: 0.9rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .ob-input:focus {
-      border-color: var(--clr-amber);
-    }
-
-    .ob-input::placeholder {
-      color: rgba(245,240,232,0.2);
-    }
-
-    .ob-input-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--sp-md);
-    }
-
-    /* Cause interest selector */
-    .cause-picker {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
-      gap: var(--sp-sm);
-    }
-
-    .cause-pick {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-sm);
-      padding: 10px 12px;
-      border: 1.5px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      user-select: none;
-    }
-
-    .cause-pick:hover {
-      border-color: rgba(255,255,255,0.2);
-    }
-
-    .cause-pick.selected {
-      border-color: var(--pick-color, var(--clr-amber));
-      background: color-mix(in srgb, var(--pick-color, var(--clr-amber)) 10%, transparent);
-    }
-
-    .cause-pick input[type="checkbox"] {
-      display: none;
-    }
-
-    .cause-pick__dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .cause-pick__name {
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: rgba(245,240,232,0.7);
-    }
-
-    .cause-pick.selected .cause-pick__name {
-      color: rgba(245,240,232,0.95);
-    }
-
-    /* Donation amount tiles */
-    .amount-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: var(--sp-sm);
-      margin-bottom: var(--sp-md);
-    }
-
-    .amount-tile {
-      padding: 12px 8px;
-      text-align: center;
-      border: 1.5px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      transition: all 0.2s;
-      background: none;
-      color: rgba(245,240,232,0.65);
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-
-    .amount-tile:hover {
-      border-color: rgba(255,255,255,0.25);
-      color: var(--clr-parchment);
-    }
-
-    .amount-tile.selected {
-      border-color: var(--clr-amber);
-      background: rgba(201,124,42,0.12);
-      color: var(--clr-honey);
-    }
-
-    .amount-tile__sub {
-      display: block;
-      font-family: var(--font-body);
-      font-size: 0.6rem;
-      font-weight: 400;
-      opacity: 0.5;
-      margin-top: 2px;
-    }
-
-    /* Type choice: benefactor vs org */
-    .type-choice {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--sp-md);
-    }
-
-    .type-card {
-      padding: var(--sp-lg);
-      border: 1.5px solid rgba(255,255,255,0.08);
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      transition: all 0.2s;
-      background: none;
-      text-align: left;
-    }
-
-    .type-card:hover {
-      border-color: rgba(255,255,255,0.2);
-    }
-
-    .type-card.selected {
-      border-color: var(--clr-amber);
-      background: rgba(201,124,42,0.08);
-    }
-
-    .type-card__icon {
-      font-size: 1.5rem;
-      margin-bottom: var(--sp-sm);
-    }
-
-    .type-card__title {
-      font-family: var(--font-display);
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--clr-parchment);
-      margin-bottom: 4px;
-    }
-
-    .type-card__desc {
-      font-size: 0.75rem;
-      color: rgba(245,240,232,0.45);
-      line-height: 1.5;
-    }
-
-    /* Navigation buttons */
-    .onboarding__actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: var(--sp-xl);
-      padding-top: var(--sp-lg);
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .ob-back {
-      font-size: 0.82rem;
-      color: rgba(245,240,232,0.35);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      transition: color 0.2s;
-    }
-    .ob-back:hover { color: rgba(245,240,232,0.65); }
-
-    /* Step dots */
-    .step-dots {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .step-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.15);
-      transition: background 0.2s, transform 0.2s;
-    }
-
-    .step-dot.active {
-      background: var(--clr-amber);
-      transform: scale(1.3);
-    }
-
-    .step-dot.done {
-      background: rgba(245,240,232,0.4);
-    }
-
-    /* ── Existing profile view ── */
-    .profile-layout {
-      display: grid;
-      grid-template-columns: 240px 1fr 280px;
-      gap: var(--sp-xl);
-      align-items: start;
-      padding: var(--sp-2xl) 0;
-    }
-
-    @media (max-width: 1100px) {
-      .profile-layout { grid-template-columns: 220px 1fr; }
-      .profile-choices-col { display: none; }
-    }
-    @media (max-width: 720px) {
-      .profile-layout { grid-template-columns: 1fr; }
-    }
-
-    .profile-sidebar {
-      position: sticky;
-      top: calc(var(--nav-height) + var(--sp-lg));
-    }
-
-    .profile-card {
-      background: var(--clr-forest);
-      border-radius: var(--radius-lg);
-      padding: var(--sp-xl);
-      color: var(--clr-parchment);
-      margin-bottom: var(--sp-lg);
-    }
-
-    .profile-card__avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-display);
-      font-size: 1.4rem;
-      font-weight: 900;
-      margin-bottom: var(--sp-md);
-      color: var(--clr-honey);
-    }
-
-    .profile-card__handle {
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      opacity: 0.5;
-      margin-bottom: var(--sp-xs);
-    }
-
-    .profile-card__name {
-      font-family: var(--font-display);
-      font-size: 1.3rem;
-      font-weight: 700;
-      margin-bottom: var(--sp-sm);
-    }
-
-    .profile-card__type {
-      font-family: var(--font-mono);
-      font-size: 0.62rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--clr-honey);
-      opacity: 0.7;
-    }
-
-    .wallet-card {
-      background: white;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md);
-      padding: var(--sp-lg);
-      margin-bottom: var(--sp-lg);
-    }
-
-    .wallet-card__label {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--clr-ink-light);
-      margin-bottom: var(--sp-xs);
-    }
-
-    .wallet-card__balance {
-      font-family: var(--font-display);
-      font-size: 2rem;
-      font-weight: 900;
-      color: var(--clr-earth);
-      margin-bottom: 4px;
-    }
-
-    .wallet-card__sub {
-      font-size: 0.75rem;
-      color: var(--clr-ink-light);
-      margin-bottom: var(--sp-md);
-    }
-
-    /* Credit badge section */
-    .credits-section {
-      background: white;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md);
-      padding: var(--sp-lg);
-    }
-
-    .credits-section__title {
-      font-size: 0.82rem;
-      font-weight: 700;
-      margin-bottom: var(--sp-md);
-      color: var(--clr-earth);
-    }
-
-    .credit-badge-row {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-md);
-      padding: var(--sp-sm) 0;
-      border-bottom: 1px solid var(--clr-border);
-      cursor: pointer;
-      transition: background 0.15s;
-      border-radius: var(--radius-sm);
-    }
-
-    .credit-badge-row:last-child { border-bottom: none; }
-    .credit-badge-row:hover { background: var(--clr-surface); }
-
-    .credit-badge-row__info { flex: 1; }
-
-    .credit-badge-row__title {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--clr-earth);
-    }
-
-    .credit-badge-row__meta {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      color: var(--clr-ink-light);
-    }
-
-    /* ── Upcoming cause banner (b) ── */
-    .upcoming-banner {
-      background: #0f1a14;
-      border-radius: var(--radius-md);
-      padding: var(--sp-lg);
-      margin-bottom: var(--sp-lg);
-      color: var(--clr-parchment);
-      border: 1px solid rgba(255,255,255,0.07);
-    }
-    .upcoming-banner__eyebrow {
-      font-family: var(--font-mono);
-      font-size: 0.6rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: rgba(245,240,232,0.4);
-      margin-bottom: var(--sp-sm);
-    }
-    .upcoming-banner__rows {
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .upcoming-banner__row {
-      display: flex; align-items: center; gap: var(--sp-md);
-      padding: 10px 12px;
-      background: rgba(255,255,255,0.04);
-      border-radius: var(--radius-sm);
-      border-left: 3px solid rgba(255,255,255,0.1);
-      cursor: pointer; transition: background 0.15s;
-      text-decoration: none;
-    }
-    .upcoming-banner__row:hover { background: rgba(255,255,255,0.07); }
-    .upcoming-banner__row--cause { border-left-color: var(--clr-honey); }
-    .upcoming-banner__row--org   { border-left-color: var(--clr-moss); }
-    .upcoming-banner__row-label {
-      font-family: var(--font-mono); font-size: 0.6rem;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: rgba(245,240,232,0.4); flex-shrink: 0; width: 64px;
-    }
-    .upcoming-banner__row-choice {
-      flex: 1; font-size: 0.85rem; font-weight: 600;
-      color: var(--clr-parchment); line-height: 1.3;
-    }
-    .upcoming-banner__row-meta {
-      font-family: var(--font-mono); font-size: 0.7rem;
-      color: rgba(245,240,232,0.5); text-align: right; flex-shrink: 0;
-    }
-    .upcoming-banner__row-timer {
-      font-family: var(--font-mono); font-size: 0.68rem;
-      color: var(--clr-honey); margin-top: 2px;
-    }
-
-    /* ── Choices table (d) ── */
-    .choices-col-card {
-      background: white;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-    }
-    .choices-col-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--sp-md) var(--sp-lg);
-      border-bottom: 1px solid var(--clr-border);
-      background: var(--clr-surface);
-    }
-    .choices-col-title {
-      font-family: var(--font-mono); font-size: 0.65rem;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--clr-ink-muted); font-weight: 600;
-    }
-    .choices-toggle {
-      display: flex; gap: 4px;
-    }
-    .choices-toggle button {
-      padding: 3px 10px;
-      font-family: var(--font-mono); font-size: 0.6rem;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      border: 1px solid var(--clr-border); border-radius: 3px;
-      background: none; color: var(--clr-ink-muted); cursor: pointer;
-    }
-    .choices-toggle button.active {
-      background: var(--clr-forest); color: white; border-color: var(--clr-forest);
-    }
-    .choices-table { width: 100%; border-collapse: collapse; }
-    .choices-table td {
-      padding: 8px 12px; border-bottom: 1px solid rgba(212,206,194,0.3);
-      font-size: 0.78rem; color: var(--clr-ink-muted);
-    }
-    .choices-table tbody tr:last-child td { border-bottom: none; }
-    .choices-table tbody tr:hover td { background: rgba(78,122,78,0.03); }
-    .choices-table .cause-dot {
-      display: inline-block; width: 8px; height: 8px;
-      border-radius: 50%; margin-right: 6px; flex-shrink: 0;
-    }
-    .choices-table .choice-link {
-      font-weight: 600; color: var(--clr-earth);
-      text-decoration: none;
-    }
-    .choices-table .choice-link:hover { text-decoration: underline; }
-    .choices-table .no-choice { color: var(--clr-ink-light); font-style: italic; }
-
-    /* ── Feed history (e) ── */
-    .profile-feed-history {
-      background: var(--clr-bg);
-    }
-    .profile-feed-eyebrow {
-      font-family: var(--font-mono); font-size: 0.6rem;
-      letter-spacing: 0.14em; text-transform: uppercase;
-      color: var(--clr-ink-light); margin-bottom: var(--sp-md);
-    }
-    /* ── EN strip on profile (moved from main.html, pass 12) ── */
-    .profile-en-strip { margin-bottom: var(--sp-2xl); }
-    .profile-en-strip__header {
-      display: flex; align-items: baseline; justify-content: space-between;
-      margin-bottom: var(--sp-md);
-    }
-    .profile-en-strip__more {
-      font-family: var(--font-mono); font-size: 0.7rem;
-      color: var(--clr-moss); text-decoration: none;
-    }
-    .profile-en-strip__grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-md);
-    }
-    @media (max-width: 700px) {
-      .profile-en-strip__grid { grid-template-columns: 1fr; }
-    }
-
-    /* Main content area */
-    .profile-main {}
-
-    .profile-tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid var(--clr-border);
-      margin-bottom: var(--sp-xl);
-    }
-
-    .profile-tab {
-      padding: var(--sp-md) var(--sp-lg);
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: var(--clr-ink-muted);
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-      transition: color 0.2s, border-color 0.2s;
-    }
-
-    .profile-tab:hover { color: var(--clr-ink); }
-
-    .profile-tab.active {
-      color: var(--clr-earth);
-      border-bottom-color: var(--clr-amber);
-    }
-
-    .profile-panel { display: none; }
-    .profile-panel.active { display: block; }
-
-    /* Activity feed items */
-    .activity-item {
-      display: flex;
-      gap: var(--sp-md);
-      padding: var(--sp-md) 0;
-      border-bottom: 1px solid var(--clr-border);
-    }
-
-    .activity-item:last-child { border-bottom: none; }
-
-    .activity-item__icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--clr-surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.9rem;
-      flex-shrink: 0;
-    }
-
-    .activity-item__body { flex: 1; }
-
-    .activity-item__text {
-      font-size: 0.85rem;
-      color: var(--clr-ink-muted);
-      line-height: 1.5;
-    }
-
-    .activity-item__time {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      color: var(--clr-ink-light);
-      margin-top: 2px;
-    }
-
-    /* Settings form */
-    .settings-group {
-      background: white;
-      border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md);
-      padding: var(--sp-lg);
-      margin-bottom: var(--sp-lg);
-    }
-
-    .settings-group__title {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--clr-earth);
-      margin-bottom: var(--sp-lg);
-      padding-bottom: var(--sp-sm);
-      border-bottom: 1px solid var(--clr-border);
-    }
-
-    .settings-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--sp-sm) 0;
-      border-bottom: 1px solid var(--clr-border);
-      gap: var(--sp-md);
-    }
-
-    .settings-row:last-child { border-bottom: none; }
-
-    .settings-row__label {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: var(--clr-ink);
-    }
-
-    .settings-row__sub {
-      font-size: 0.75rem;
-      color: var(--clr-ink-light);
-      margin-top: 1px;
-    }
-
-    .toggle {
-      width: 40px;
-      height: 22px;
-      border-radius: 11px;
-      background: var(--clr-border);
-      position: relative;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: background 0.2s;
-    }
-
-    .toggle.on { background: var(--clr-moss); }
-
-    .toggle::after {
-      content: '';
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: white;
-      top: 3px;
-      left: 3px;
-      transition: transform 0.2s;
-    }
-
-    .toggle.on::after { transform: translateX(18px); }
-
-    /* ── Pass 34 overhaul — drawing layout ── */
-
-    .pf-left { display: flex; flex-direction: column; gap: var(--sp-lg); }
-
-    /* CreditCoin Wallet — horizontal scroll strip */
-    .wallet-strip-card {
-      background: white; border: 1px solid var(--clr-border);
-      border-radius: var(--radius-md); overflow: hidden;
-    }
-    .wallet-strip-card__head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--sp-md) var(--sp-lg);
-      border-bottom: 1px solid var(--clr-border); background: var(--clr-surface);
-    }
-    .wallet-strip-card__nav button {
-      background: none; border: 1px solid var(--clr-border); border-radius: 3px;
-      width: 22px; height: 22px; cursor: pointer; color: var(--clr-ink-muted);
-      font-size: 0.85rem; line-height: 1; margin-left: 4px;
-    }
-    .wallet-strip-card__nav button:hover { background: var(--clr-surface); }
-    .wallet-strip {
-      display: flex; gap: var(--sp-sm); overflow-x: auto;
-      padding: var(--sp-md); scroll-snap-type: x mandatory;
-    }
-    .coin-chip {
-      flex: 0 0 116px; scroll-snap-align: start;
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      padding: var(--sp-sm); border: 1px solid var(--clr-border);
-      border-radius: var(--radius-sm); text-decoration: none;
-      transition: background 0.15s, border-color 0.15s;
-    }
-    .coin-chip:hover { background: var(--clr-surface); border-color: var(--clr-moss); }
-    .coin-chip__name { font-size: 0.68rem; font-weight: 600; color: var(--clr-earth); text-align: center; }
-    .coin-chip__ebx  { font-family: var(--font-mono); font-size: 0.62rem; color: var(--clr-ink-light); }
-    .coin-chip--empty {
-      flex: 1 1 auto; border-style: dashed; cursor: default;
-      font-size: 0.72rem; color: var(--clr-ink-light); text-align: center; line-height: 1.6;
-    }
-
-    /* The Annulus-3 placeholder that stood in the middle of this page is gone
-       (§1, 2026-08-28): the centre is the globe now, and it is real. */
-
-    /* Right rail: gear (b), badge (a), org mode (c) */
-    .pf-right { display: flex; flex-direction: column; gap: var(--sp-lg); }
-    .pf-right-row { display: flex; gap: var(--sp-sm); align-items: flex-start; }
-    .pf-gear {
-      width: 36px; height: 36px; flex-shrink: 0; cursor: pointer;
-      background: white; border: 1px solid var(--clr-border); border-radius: var(--radius-sm);
-      font-size: 1rem; color: var(--clr-ink-muted); transition: background 0.15s;
-    }
-    .pf-gear:hover { background: var(--clr-surface); }
-    .pf-badge-card {
-      flex: 1; background: var(--clr-forest); border-radius: var(--radius-md);
-      padding: var(--sp-lg); text-align: center; color: var(--clr-parchment);
-    }
-    .pf-badge-card__ring { display: flex; justify-content: center; margin-bottom: var(--sp-sm); }
-    .pf-badge-card__handle {
-      font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 2px;
-    }
-    .pf-orgmode {
-      width: 100%; padding: 10px 12px; cursor: pointer;
-      background: white; border: 1px solid var(--clr-border); border-radius: var(--radius-sm);
-      font-size: 0.78rem; font-weight: 600; color: var(--clr-earth);
-      display: flex; flex-direction: column; gap: 2px; align-items: center;
-      transition: border-color 0.15s;
-    }
-    .pf-orgmode:hover:not(:disabled) { border-color: var(--clr-moss); }
-    .pf-orgmode:disabled { cursor: not-allowed; opacity: 0.55; }
-    .pf-orgmode__lock {
-      font-family: var(--font-mono); font-size: 0.6rem; font-weight: 400;
-      color: var(--clr-ink-light);
-    }
-
-
-    /* ══════════════════════════════════════════════════════════════════
-       §1 (2026-08-28) — THE PROFILE PAGE, to the drawing in the build
-       sequence. Three cards across the top (c wallet · b allocations ·
-       a profile), then SEVEN weekly-window cards around the globe, then
-       the feed. The old three-column `pf-grid` is gone: it was a wallet,
-       a placeholder ring and a button rail, and none of the three said
-       what this benefactor had chosen.
-
-       The seven cards ARE the choices table. "Each represents a weekly
-       window from the election page. Each box has one initiative and one
-       organization" — which is why each one carries TWO cause colours:
-       the initiative election closing that week and the organization
-       election closing that week belong to different causes, always.
-       ══════════════════════════════════════════════════════════════════ */
-    .pf2 { display: flex; flex-direction: column; gap: var(--sp-lg); }
-
-    /* ── the top row: c | b | a ── */
-    .pf2-top {
-      display: grid; gap: var(--sp-md);
-      grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 0.9fr);
-      align-items: stretch;
-    }
-    @media (max-width: 980px) { .pf2-top { grid-template-columns: 1fr; } }
-    .pf2-card {
-      background: #fff; border: 1px solid var(--clr-border, #e3ddd0);
-      border-radius: var(--radius-md, 10px); padding: var(--sp-md, 12px);
-      display: flex; flex-direction: column; min-width: 0;
-    }
-    .pf2-card__title {
-      font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700;
-      letter-spacing: 0.11em; text-transform: uppercase;
-      color: var(--clr-ink-light); margin-bottom: 8px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .pf2-card__title .pf2-spacer { margin-left: auto; }
-
-    /* (a) profile — badge over three actions: aa settings · ab mode · ac out */
-    .pf2-me { align-items: center; text-align: center; }
-    .pf2-me__handle { font-weight: 700; font-size: 0.9rem; margin-top: 6px; }
-    .pf2-me__type {
-      font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--clr-ink-light);
-    }
-    .pf2-me__acts { display: flex; gap: 6px; margin-top: auto; padding-top: 10px; width: 100%; }
-    .pf2-act {
-      flex: 1 1 0; min-width: 0; cursor: pointer;
-      background: var(--clr-surface, #f6f3ec); border: 1px solid var(--clr-border, #e3ddd0);
-      border-radius: 6px; padding: 6px 4px; font-size: 0.62rem; line-height: 1.2;
-      font-family: var(--font-mono); letter-spacing: 0.04em; color: var(--clr-ink);
-    }
-    .pf2-act:hover:not(:disabled) { background: #fff; border-color: var(--clr-moss, #4e7a4e); }
-    .pf2-act:disabled { opacity: 0.4; cursor: not-allowed; }
-    .pf2-act__k {
-      display: block; font-size: 0.5rem; opacity: 0.5; letter-spacing: 0.14em;
-    }
-
-    /* (c) the wallet strip — a coin is SELECTABLE now, because ab is gated on
-       one being picked ("must have a coin in c. selected"). */
-    .coin-chip.is-picked {
-      outline: 2px solid var(--clr-moss, #4e7a4e); outline-offset: 2px;
-    }
-
-    /* (b) allocations — the same three sets of two as the election page, so a
-       benefactor reads one bar in one shape wherever they are. */
-    .pf2-alloc { display: flex; gap: var(--sp-md); flex-wrap: wrap; }
-    .pf2-set { flex: 1 1 150px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-    .pf2-set__head { display: flex; align-items: baseline; gap: 6px; }
-    .pf2-set__name {
-      font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--clr-ink-light);
-    }
-    .pf2-set__n { font-size: 0.82rem; }
-    .pf2-set__usd { font-size: 0.62rem; color: var(--clr-ink-light); margin-left: auto; }
-    .pf2-bar {
-      display: flex; height: 9px; border-radius: 5px; overflow: hidden;
-      background: rgba(20,26,22,0.06);
-    }
-    .pf2-seg { display: block; height: 100%; }
-    .pf2-seg--fresh { background: #d8a13a; }
-    .pf2-seg--buy   { background: #74c476; }
-    .pf2-seg--tiv   { background: #6baed6; }
-    .pf2-seg--org   { background: #9a7fd0; }
-    .pf2-seg--ebx   { background: #e0a458; }
-    .pf2-seg--don   { background: #6f8f7a; }
-    .pf2-key { display: flex; gap: 10px; font-size: 0.6rem; color: var(--clr-ink-light); }
-    /* The legend marks are DOTS, not bar segments — they shared a class until
-       2026-08-28, which made ".pf2-alloc .pf2-seg" count twelve things when the
-       bar has six. */
-    .pf2-dot { display: inline-block; width: 7px; height: 7px; border-radius: 2px; margin-right: 4px; }
-    .pf2-conv { margin-top: 10px; border-top: 1px dashed var(--clr-border); padding-top: 8px; }
-    .pf2-conv__row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 0.7rem; }
-    .pf2-conv select, .pf2-conv input {
-      font: inherit; font-size: 0.7rem; padding: 3px 5px;
-      border: 1px solid var(--clr-border); border-radius: 5px; background: #fff; min-width: 0;
-    }
-    .pf2-conv select { max-width: 190px; }
-    .pf2-conv input { width: 66px; }
-    .pf2-conv__msg { font-size: 0.65rem; color: var(--clr-ink-light); }
-
-    /* ── the ring: top card, two columns of three, globe in the middle ── */
-    .pf2-ring {
-      display: grid; gap: var(--sp-md);
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr) minmax(0, 1fr);
-      grid-template-areas: ".  top  ." "left globe right";
-    }
-    .pf2-ring__top   { grid-area: top; }
-    .pf2-ring__left  { grid-area: left; }
-    .pf2-ring__right { grid-area: right; }
-    .pf2-ring__globe { grid-area: globe; display: flex; align-items: center; justify-content: center; }
-    .pf2-ring__col { display: flex; flex-direction: column; gap: var(--sp-md); justify-content: space-between; }
-    @media (max-width: 980px) {
-      .pf2-ring { grid-template-columns: 1fr; grid-template-areas: "top" "globe" "left" "right"; }
-    }
-
-    /* ── (e) one weekly window ── */
-    .pf2-win {
-      border: 1px solid var(--clr-border, #e3ddd0); border-radius: var(--radius-md, 10px);
-      background: #fff; overflow: hidden; display: flex; flex-direction: column;
-      cursor: pointer; transition: box-shadow 0.12s, transform 0.12s;
-      /* the two colours of the week, as one hairline across the top */
-      border-top: 3px solid transparent;
-      border-image: linear-gradient(90deg, var(--c-o) 0 50%, var(--c-i) 50% 100%) 1;
-    }
-    .pf2-win:hover { box-shadow: 0 4px 14px rgba(20,26,22,0.10); }
-    .pf2-win.is-selected { box-shadow: 0 0 0 2px var(--clr-moss, #4e7a4e); }
-    .pf2-win__wk {
-      font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--clr-ink-light);
-      padding: 5px 9px 3px; display: flex; gap: 8px; align-items: baseline;
-    }
-    .pf2-win__wk b { color: var(--clr-ink); font-weight: 700; }
-    .pf2-win__wk .pf2-spacer { margin-left: auto; }
-    .pf2-win__body { display: flex; min-height: 0; }
-    .pf2-win--rows .pf2-win__body { flex-direction: column; }
-    .pf2-win--cols .pf2-win__body { flex-direction: row; }
-    .pf2-half {
-      flex: 1 1 0; min-width: 0; padding: 7px 9px 9px;
-      border-top: 1px solid rgba(20,26,22,0.07);
-      display: flex; flex-direction: column; gap: 2px;
-    }
-    .pf2-win--cols .pf2-half + .pf2-half { border-left: 1px solid rgba(20,26,22,0.07); }
-    .pf2-half__kind {
-      font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.1em;
-      text-transform: uppercase; display: flex; align-items: center; gap: 5px;
-    }
-    .pf2-half__kind i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
-    .pf2-half__pick {
-      font-size: 0.76rem; font-weight: 600; line-height: 1.25;
-      overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
-      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    }
-    .pf2-half__pick--none { font-weight: 400; font-style: italic; color: var(--clr-ink-light); }
-    .pf2-half__mine { font-family: var(--font-mono); font-size: 0.6rem; color: var(--clr-ink-light); }
-    .pf2-half__mine b { color: var(--clr-ink); }
-
-    /* ── (d) the globe ── */
-    .pf2-globe {
-      width: 100%; max-width: 360px; aspect-ratio: 1 / 1;
-      display: flex; flex-direction: column; align-items: center; gap: 6px;
-    }
-    .pf2-globe svg { width: 100%; height: auto; display: block; }
-    .pf2-globe__cap {
-      font-size: 0.62rem; color: var(--clr-ink-light); text-align: center; line-height: 1.4;
-    }
-
-    /* ── (f) the feed ── */
-    .pf2-feed__tabs { display: flex; gap: 6px; margin-left: auto; }
-    .pf2-newpost { font-size: 0.74rem; font-weight: 700; text-decoration: none; padding: 4px 11px; border-radius: 999px;
-      background: var(--clr-honey, #e8a84c); color: #0f1a14; margin-left: 8px; }
-    .pf2-feed__tabs button {
-      font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.08em;
-      text-transform: uppercase; padding: 3px 8px; cursor: pointer;
-      border: 1px solid var(--clr-border); background: var(--clr-surface); border-radius: 5px;
-    }
-    .pf2-feed__tabs button.active { background: var(--clr-moss, #4e7a4e); color: #fff; border-color: transparent; }
-    .pf2-post {
-      border-bottom: 1px solid var(--clr-border); padding: 9px 0; display: flex; gap: 10px;
-    }
-    .pf2-post:last-child { border-bottom: none; }
-    .pf2-post__type {
-      font-family: var(--font-mono); font-size: 0.55rem; letter-spacing: 0.08em;
-      text-transform: uppercase; color: var(--clr-ink-light); flex: 0 0 84px; padding-top: 2px;
-    }
-    .pf2-post__t { font-weight: 600; font-size: 0.8rem; }
-    .pf2-post__b { font-size: 0.74rem; color: var(--clr-ink-light); margin-top: 2px; }
-    .pf2-post__m { font-family: var(--font-mono); font-size: 0.58rem; color: var(--clr-ink-light); margin-top: 3px; }
-
+    :root {
+      --pf-bg: #0f1a14;
+      --pf-line: rgba(255,255,255,0.09);
+      --pf-ink: #f5f0e8;
+      --pf-mute: rgba(245,240,232,0.64);
+      --pf-faint: rgba(245,240,232,0.44);
+      --pf-honey: #e8a84c;
+      --pf-good: #8fce9d;
+      /* the committed bar is coloured by phase; the uncommitted bar is not —
+         nothing has been chosen for it yet */
+      --pf-me: #8ec5e8;
+      --pf-oe: #e8a84c;
+      --pf-prep: #8fce9d;
+      --pf-ex: #b9a6e0;
+      --pf-own: #e6dccb;
+    }
+    html, body { background: var(--pf-bg); color: var(--pf-ink); }
+
+    /* ── Top bar: brand · the site tabs · badge + inbox (as News) ── */
+    .ebx-topbar { background: #0f1a14; border-bottom: 1px solid rgba(245,240,232,0.07); position: relative; z-index: 20; }
+    .ebx-topbar__inner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--sp-md); padding-top: 10px; padding-bottom: 10px; }
+    .ebx-topbar__brand { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: var(--clr-parchment);
+      text-decoration: none; letter-spacing: -0.01em; white-space: nowrap; }
+    .ebx-topbar__brand em { color: var(--clr-honey); font-style: normal; }
+    #ebx-nav-mount { justify-self: center; min-width: 0; }
+    .ebx-topbar__right { display: flex; justify-content: flex-end; align-items: center; min-width: 0; }
+    body > .ebx-home-mark { display: none; }
+
+    .pf { max-width: 1180px; margin: 0 auto; padding: 28px 16px 72px; }
+    .pf-btn { font: 600 .76rem 'DM Sans', sans-serif; color: var(--pf-ink); background: rgba(255,255,255,0.05); border: 1px solid var(--pf-line);
+      border-radius: 999px; padding: 6px 12px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .pf-btn:hover { border-color: rgba(255,255,255,0.28); }
+    .pf-btn:focus-visible, .pf-set summary:focus-visible { outline: 2px solid var(--pf-honey); outline-offset: 2px; }
+    .pf-btn--honey { background: var(--pf-honey); color: #1a1a12; border-color: var(--pf-honey); }
+    .pf-btn--honey:hover { filter: brightness(1.06); }
+    .pf-card { background: rgba(255,255,255,0.03); border: 1px solid var(--pf-line); border-radius: 14px; padding: 18px; min-width: 0; }
+    .pf-k { font: 500 .66rem 'DM Mono', monospace; letter-spacing: .16em; text-transform: uppercase; color: var(--pf-faint); margin: 0; }
+    .pf-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .pf-h__t { font-family: 'Playfair Display', Georgia, serif; font-size: 1.45rem; line-height: 1.1; margin: 0; color: var(--pf-ink); }
+    .pf-h__sp { flex: 1; }
+    .pf-empty { font-size: .86rem; color: var(--pf-mute); line-height: 1.55; padding: 8px 0; }
+    .pf-empty a { color: var(--pf-honey); }
+
+    /* ── you ── */
+    .pf-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+    .pf-avatar { width: 60px; height: 60px; border-radius: 50%; background: rgba(232,168,76,0.14); border: 1px solid rgba(232,168,76,0.4);
+      color: var(--pf-honey); display: flex; align-items: center; justify-content: center; font: 700 1.15rem 'DM Sans', sans-serif; flex: none; }
+    .pf-me { min-width: 0; }
+    .pf-me__h { font-family: 'Playfair Display', Georgia, serif; font-size: 1.9rem; line-height: 1.05; margin: 0; overflow-wrap: anywhere; color: var(--pf-ink); }
+    .pf-me__s { font-size: .84rem; color: var(--pf-mute); margin-top: 4px; }
+    .pf-chip { display: inline-block; font: 500 .6rem 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; padding: 2px 7px;
+      border-radius: 999px; border: 1px solid var(--pf-line); color: var(--pf-mute); vertical-align: 1px; }
+    .pf-set { margin-left: auto; position: relative; }
+    .pf-set summary { list-style: none; cursor: pointer; }
+    .pf-set summary::-webkit-details-marker { display: none; }
+    .pf-set summary::after { content: '▾'; font-size: .7rem; opacity: .7; }
+    .pf-set[open] summary::after { content: '▴'; }
+    .pf-set__menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(330px, calc(100vw - 32px));
+      background: #13201a; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 6px 14px; box-shadow: 0 18px 48px rgba(0,0,0,0.45); }
+    .pf-set__row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: .86rem; }
+    .pf-set__row:last-child { border-bottom: 0; }
+    .pf-set__row span { color: var(--pf-mute); font-size: .8rem; overflow-wrap: anywhere; text-align: right; }
+    .pf-set__row a { color: var(--pf-ink); text-decoration: none; }
+    .pf-set__row a:hover { color: var(--pf-honey); }
+
+    /* ── the wallet and its two allocation bars ── */
+    .pf-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+    .pf-al + .pf-al { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--pf-line); }
+    .pf-al__top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .pf-al__n { font-family: 'Playfair Display', Georgia, serif; font-size: 1.2rem; margin: 0; color: var(--pf-ink); }
+    .pf-al__v { margin-left: auto; font: 600 1.05rem 'DM Mono', monospace; color: var(--pf-ink); }
+    .pf-al__v small { font: 400 .74rem 'DM Mono', monospace; color: var(--pf-faint); margin-left: 6px; }
+    .pf-al__p { font-size: .8rem; color: var(--pf-mute); line-height: 1.45; margin: 4px 0 0; }
+    /* both bars share one scale, so their lengths compare */
+    .pf-track { height: 18px; border-radius: 9px; background: rgba(255,255,255,0.05); margin: 12px 0 12px; overflow: hidden; }
+    .pf-fill { display: flex; height: 100%; min-width: 0; border-radius: 9px; overflow: hidden; transition: width .5s cubic-bezier(.3,.7,.2,1); }
+    .pf-fill > i { display: block; height: 100%; min-width: 3px; }
+    .pf-fill > i + i { box-shadow: inset 2px 0 0 var(--pf-bg); }
+    .pf-c--grant { background: repeating-linear-gradient(135deg, rgba(230,220,203,0.62) 0 5px, rgba(230,220,203,0.28) 5px 10px); }
+    .pf-c--own { background: var(--pf-own); }
+    .pf-c--me { background: var(--pf-me); }
+    .pf-c--oe { background: var(--pf-oe); }
+    .pf-c--prep { background: var(--pf-prep); }
+    .pf-c--ex { background: var(--pf-ex); }
+    .pf-keys { display: grid; gap: 12px; }
+    .pf-keys--row { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; }
+    .pf-key { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 3px 10px; align-items: baseline; }
+    .pf-key > i { width: 12px; height: 12px; border-radius: 3px; align-self: center; }
+    .pf-key__n { font-weight: 600; font-size: .9rem; }
+    .pf-key__v { font: 600 .9rem 'DM Mono', monospace; text-align: right; white-space: nowrap; }
+    .pf-key__d { grid-column: 2 / -1; font-size: .78rem; color: var(--pf-mute); line-height: 1.45; }
+    .pf-key__d b { color: var(--pf-ink); font-weight: 600; }
+    .pf-key__acts { grid-column: 2 / -1; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+    .pf-keys--row .pf-key { grid-template-columns: 12px minmax(0, 1fr); }
+    .pf-keys--row .pf-key__v { grid-column: 2; text-align: left; font-size: 1rem; }
+    .pf-ledger { margin-top: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 22px; }
+    .pf-mini { display: flex; justify-content: space-between; gap: 10px; font-size: .8rem; color: var(--pf-mute); padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.07); }
+    .pf-mini b { font: 600 .82rem 'DM Mono', monospace; color: var(--pf-ink); white-space: nowrap; }
+    .pf-prompt { margin-top: 14px; border: 1px solid rgba(232,168,76,0.45); background: rgba(232,168,76,0.07); border-radius: 10px; padding: 10px 12px;
+      display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; font-size: .84rem; color: var(--pf-mute); }
+
+    /* ── your numbers ── */
+    .pf-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .pf-stat { border: 1px solid var(--pf-line); border-radius: 10px; padding: 9px 11px; min-width: 0; }
+    .pf-stat b { display: block; font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; line-height: 1.1; color: var(--pf-ink); }
+    .pf-stat span { font-size: .74rem; color: var(--pf-faint); }
+
+    /* ── your choices (the hub) and your posts ── */
+    .pf-sec { margin-top: 36px; }
+    .pf-sec .mh__title { font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: 1.45rem; color: var(--pf-ink); }
+    .pf-sec .mh__head { border-top: 0; padding-top: 0; }
+    .pf-posts .ep { margin-bottom: 10px; }
+    .pf-more { text-align: center; margin-top: 6px; }
+
+    .pf-modal-bg { position: fixed; inset: 0; z-index: 80; background: rgba(6,12,9,.62); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .pf-modal { width: 100%; max-width: 380px; background: #13201a; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; padding: 18px; color: var(--pf-ink); }
+    .pf-modal h3 { font-family: 'Playfair Display', Georgia, serif; font-weight: 400; font-size: 1.3rem; margin-bottom: 6px; color: var(--pf-ink); }
+    .pf-modal p { font-size: .82rem; color: var(--pf-mute); line-height: 1.45; margin-bottom: 12px; }
+    .pf-modal input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.14); border-radius: 8px; color: var(--pf-ink); padding: 9px 10px; font: inherit; margin-bottom: 12px; }
+    .pf-modal__msg { min-height: 18px; font-size: .78rem; color: #f2a3a3; margin-top: 8px; }
+
+    @media (max-width: 900px) { .pf-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 640px) {
+      .ebx-topbar__inner { grid-template-columns: auto minmax(0, 1fr); }
+      #ebx-nav-mount { position: absolute; }
+      .pf { padding-top: 20px; }
+      .pf-me__h { font-size: 1.55rem; }
+      .pf-set { margin-left: 0; width: 100%; }
+      .pf-set__menu { left: 0; right: auto; }
+      .pf-card { padding: 15px; }
+      .pf-ledger { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { .pf-fill { transition: none; } }
   </style>
 </head>
 <body>
-  <!-- §1 (2026-09-08, build-seq Profile.html): the WARNING banner is GONE.
-       It said the page "isn't developed yet" and pointed at "the Context page",
-       which has not been called that since 2026-08-26 — and the page it was
-       apologising for was rebuilt to the drawing on 2026-08-28 (three top cards,
-       seven weekly windows, the globe, the feed). It was the last thing a
-       benefactor read before their own wallet. -->
-  <div class="ebx-navstrip"><div id="ebx-nav-mount"></div></div>
-  <a href="mission.html" class="ebx-home-mark">EBX</a>
 
-  <!-- JS decides whether to show onboarding or profile -->
-  <div id="app-root"></div>
+  <!-- ══ TOP BAR — brand · the three site tabs · the badge and the inbox ══ -->
+  <div class="ebx-topbar">
+    <div class="container ebx-topbar__inner">
+      <a class="ebx-topbar__brand" href="index.html">Earthbux <em>News</em></a>
+      <div id="ebx-nav-mount"></div>
+      <div class="ebx-topbar__right" id="ebx-user-badge-mount"></div>
+    </div>
+  </div>
+
+  <!-- ══ APP ROOT — rendered by JS ══ -->
+  <main id="app-root"></main>
 
   <div id="ebx-footer-mount"></div>
 
-  <script src="resources/js/ebx_shared.js?v=20261004a"></script>
+  <script src="resources/js/ebx_shared.js?v=20261009a"></script>
+  <!-- the hub's data layer (missions, initiatives, the slate, the tallies) -->
+  <script src="resources/js/ebx_wheel.js?v=20261009a"></script>
+  <script src="resources/js/ebx_hub.js?v=20261009a"></script>
   <script>
   (async function () {
-
+    "use strict";
     await EBX.loadAll();
-    const causes = EBX.config.causes;
 
-    // build-seq 9: load the signed-in ben's phase-1 votes once and group them
-    // by cause so the choices table + wallet reflect real current votes.
-    window._myP1ByCause = {};
-    async function loadMyChoices() {
-      window._myP1ByCause = {};
-      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn() && EBX.Auth.fetchAuthed)) return;
-      const causeOf = {};
-      (EBX.config.missions || []).forEach(m => { causeOf[m.id] = m.cause_id; });
-      try {
-        const r = await EBX.Auth.fetchAuthed('/benefactors/me/p1-votes');
-        if (r && r.ok) {
-          (await r.json()).forEach(v => {
-            const cid = causeOf[v.mission_id];
-            if (!cid) return;
-            const e = window._myP1ByCause[cid] || (window._myP1ByCause[cid] = { shares: {}, ebx: 0 });
-            e.shares[v.tiv_id] = v.share;
-            e.ebx += (v.ebx_committed || 0);
-            // …and by MISSION, which is what a window card is.
-            const mm = window._myP1ByMission[v.mission_id]
-              || (window._myP1ByMission[v.mission_id] = { shares: {}, ct: 0, topTiv: null, topShare: 0 });
-            mm.shares[v.tiv_id] = v.share;
-            // `stake_ct` is the finalized model's field; `ebx_committed` is the
-            // legacy float behind it (see wallet.p1_stake_ct_of, §0a).
-            mm.ct += (v.stake_ct != null ? Number(v.stake_ct) : Math.round((v.ebx_committed || 0) * 100));
-            if ((Number(v.share) || 0) > mm.topShare) {
-              mm.topShare = Number(v.share) || 0; mm.topTiv = v.tiv_id;
-            }
-          });
-        }
-      } catch (e) {}
-    }
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
+      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const tk = ct => EBX.Wallet.tk(ct);
+    const usd = ct => EBX.Wallet.usd(ct);
+    const fmt = d => d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+    const fmtY = d => d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const causeById = id => (EBX.config.causes || []).find(c => c.id === id) || null;
+    const missionHref = id => (EBX.Post && EBX.Post.missionHref) ? EBX.Post.missionHref(id) : 'mission.html?mission=' + encodeURIComponent(id);
+    const postHref = q => (EBX.Post && EBX.Post.composeUrl) ? EBX.Post.composeUrl(Object.assign({ back: 'profile.html' }, q)) : 'post.html';
 
-    // §1a: the wallet runs on REAL CreditCoin rows now (minted at election
-    // settlement). Coin icon shows only next to real financial holdings.
-    window._myCoins = null;
-    async function loadMyCoins() {
-      window._myCoins = null;
-      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn() && EBX.Auth.fetchAuthed)) return;
-      try {
-        const r = await EBX.Auth.fetchAuthed('/benefactors/me/credit-coins');
-        if (r && r.ok) window._myCoins = await r.json();
-      } catch (e) {}
-    }
-
-    // §1 (2026-08-28) — the profile page needs the SAME two reads the election
-    // page makes, because the seven window cards are the election page seen
-    // from one benefactor's side: `GET /wallet` for the four states in the
-    // allocations panel, `GET /wallet/rows` for what they are standing behind
-    // in each open organization election. The old choices table had no org
-    // data at all — `orgVotes` was an empty object with a comment saying so.
-    window._myWallet = null;
-    window._walletRows = [];
-    window._walletRowByMission = {};
-    async function loadMyWallet() {
-      window._myWallet = null; window._walletRows = []; window._walletRowByMission = {};
-      if (!(EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn() && EBX.Auth.fetchAuthed)) return;
-      try {
-        const r = await EBX.Auth.fetchAuthed('/wallet');
-        if (r && r.ok) {
-          const j = await r.json();
-          // `GET /wallet` answers `{wallet: {...}, week, grant_week, rows}`.
-          // The rows come from HERE, not from `GET /wallet/rows`: that one is the
-          // SIGNED-OUT variant and reports `my_stake_ct: 0` for every race, which
-          // is why the organization half of every window card said "no vote yet"
-          // for an account with fifty tokens standing in three of them.
-          window._myWallet = Object.assign({}, j.wallet || j,
-            { grant_week: (j.grant_week != null) ? j.grant_week : (j.wallet || {}).grant_week,
-              week: j.week });
-          window._walletRows = Array.isArray(j.rows) ? j.rows : [];
-        }
-      } catch (e) {}
-      if (!window._walletRows.length) {          // signed out, or /wallet failed
-        try {
-          const r = await fetch('/wallet/rows');
-          if (r && r.ok) window._walletRows = await r.json();
-        } catch (e) {}
-      }
-      (window._walletRows || []).forEach(row => {
-        window._walletRowByMission[row.mission_id] = row;
-      });
-    }
-
-    // Phase-1 votes per MISSION as well as per cause. A window card is a
-    // mission, not a cause — two missions of the same cause are in flight at
-    // once, so grouping by cause cannot say which race a commitment is in.
-    window._myP1ByMission = {};
-
-    // §1 (2026-08-28) — the FEED (f). "When in benefactor mode, it shows the
-    // users recent posts and comments. When in member mode, it shows the users
-    // research posts and other research posts they have contributed to."
-    window._myPosts = [];
-    window._myResearch = [];
-    window._contributedResearch = [];
-    async function loadMyActivity(benId) {
-      window._myPosts = []; window._myResearch = []; window._contributedResearch = [];
-      if (benId == null) return;
-      const get = async (qs) => {
-        try { const r = await fetch('/posts?' + qs); return (r && r.ok) ? await r.json() : []; }
-        catch (e) { return []; }
-      };
-      window._myPosts = await get('ben_author_id=' + benId + '&limit=50');
-      window._myResearch = window._myPosts.filter(
-        x => ['context', 'investigation', 'analysis'].indexOf(x.type) >= 0);
-      // "…and other research posts they have contributed to": a contribution is
-      // a comment of theirs on somebody else's research, so the parent is what
-      // the member sees, not their own reply.
-      const parents = Array.from(new Set(window._myPosts
-        .filter(x => x.parent_id).map(x => x.parent_id)));
-      if (parents.length) {
-        const all = await get('type=context,investigation,analysis&limit=200');
-        const mine = new Set(window._myResearch.map(x => x.id));
-        window._contributedResearch = all.filter(
-          x => parents.indexOf(x.id) >= 0 && !mine.has(x.id));
-      }
-    }
-
-    // Shared nav: home mark + user badge on every page
     await EBX.initPage();
+    const me = (EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn()) ? await EBX.Auth.fetchMe() : null;
+    if (!me) { renderAuthGate(); return; }
 
-    /* ═══════════════════════════════════════════
-       AUTH GATE — check real API session first
-       ═════════════════════════════════════════= */
+    // ── state ───────────────────────────────────────────────────────────
+    const S = { me, wallet: null, posList: [], stats: null, posts: [], postLimit: 10, setOpen: false, hub: null };
 
-    // If a JWT token exists, validate it with the API
-    let apiUser = null;
-    if (EBX.Auth.isLoggedIn()) {
-      apiUser = await EBX.Auth.fetchMe();
-      // fetchMe clears the token if invalid; apiUser===null means expired
+    async function getJSON(path) {
+      try { const r = await EBX.Auth.fetchAuthed(path); return r.ok ? await r.json() : null; } catch (e) { return null; }
+    }
+    async function loadWallet() { S.wallet = await getJSON('/wallet'); }
+    async function loadStats() { S.stats = await getJSON('/wallet/stats'); }
+    async function loadPositions() { S.posList = (await getJSON('/wallet/positions')) || []; }
+    async function loadPosts() {
+      try { const r = await fetch('/posts?ben_author_id=' + me.id + '&roots_only=true&sort=recent&limit=60'); S.posts = r.ok ? await r.json() : []; }
+      catch (e) { S.posts = []; }
     }
 
-    if (apiUser) {
-      /* ── Logged-in: merge API identity with any localStorage extras ── */
-      let extras = {};
-      try { extras = JSON.parse(localStorage.getItem('ebx_profile') || '{}'); } catch(e) {}
-      const profile = {
-        id:          apiUser.id,
-        role:        apiUser.role || 'benefactor',
-        handle:      apiUser.handle,
-        email:       apiUser.email,
-        joined:      apiUser.created_at,
-        ebx_balance: extras.ebx_balance ?? 0,
-        credits:     extras.credits     ?? [],
-        causes:      extras.causes      ?? [],
-        amount:      extras.amount      ?? 20,
-        type:        extras.type        ?? 'benefactor',
+    // ── you ─────────────────────────────────────────────────────────────
+    function headHTML() {
+      const initials = (me.handle || '?').replace(/[^a-z0-9]/ig, '').slice(0, 2).toUpperCase() || '?';
+      const staff = me.role === 'admin' || me.role === 'employee';
+      return '<header class="pf-head">' +
+        '<div class="pf-avatar" aria-hidden="true">' + esc(initials) + '</div>' +
+        '<div class="pf-me"><h1 class="pf-me__h">@' + esc(me.handle) + '</h1>' +
+          '<div class="pf-me__s">Benefactor since ' + esc(fmtY(new Date(me.created_at))) + (staff ? ' · <span class="pf-chip">' + esc(me.role) + '</span>' : '') + '</div></div>' +
+        '<details class="pf-set"' + (S.setOpen ? ' open' : '') + '><summary class="pf-btn">Settings</summary><div class="pf-set__menu">' +
+          '<div class="pf-set__row">Handle<span>@' + esc(me.handle) + '</span></div>' +
+          '<div class="pf-set__row">Email<span>' + esc(me.email || '—') + '</span></div>' +
+          '<div class="pf-set__row"><a href="inbox.html">Inbox &amp; notifications &rarr;</a></div>' +
+          '<div class="pf-set__row"><a href="/org">Work for a charity? Organization login &rarr;</a></div>' +
+          (staff ? '<div class="pf-set__row"><a href="admin.html">Admin console &rarr;</a></div>' : '') +
+          '<div class="pf-set__row">Signed in as @' + esc(me.handle) + '<button class="pf-btn" type="button" data-signout>Sign out</button></div>' +
+        '</div></details>' +
+      '</header>';
+    }
+
+    // ── the wallet: two allocation bars ─────────────────────────────────
+    // Committed, by phase, from the coins (GET /wallet/positions). A race
+    // that closed with no organization still holds its stake (F11): it counts
+    // with the organization elections.
+    function phaseSums() {
+      const s = { me: 0, oe: 0, prep: 0, exchange: 0 };
+      S.posList.forEach(p => {
+        if (p.coin === 'none') return;
+        const k = p.phase === 'closed' ? 'oe' : p.phase;
+        s[k] = (s[k] || 0) + (Number(p.stake_ct) || 0);
+      });
+      return s;
+    }
+    function walletHTML() {
+      const W = S.wallet || {}, w = W.wallet || {}, gr = W.grant || {};
+      const per = Number(gr.per_election_ct) || 1000;
+      const els = gr.elections || [];
+      const grant = Number(gr.left_ct) || 0, own = Number(w.purchased_ct) || 0;
+      const sums = phaseSums();
+      const unc = grant + own, com = sums.me + sums.oe + sums.prep + sums.exchange;
+      const scale = Math.max(unc, com, 1);
+      const pct = v => (v / scale * 100).toFixed(2) + '%';
+      const seg = (cls, v, t) => v > 0 ? '<i class="pf-c--' + cls + '" style="flex:' + v + ' 0 0" title="' + esc(t + ': ' + tk(v)) + '"></i>' : '';
+      const untouched = els.filter(e => (Number(e.used_ct) || 0) === 0).length;
+      const nxt = gr.mission_id ? els.find(e => e.mission_id === gr.mission_id) : null;
+      const nc = nxt ? causeById(nxt.cause_id) : null;
+      const nxtName = nxt ? (nc ? nc.name : nxt.cause_id) + ' ' + ((nxt.cycle_num || 0) + 1) : '';
+      const grantWords = els.length
+        ? per / 100 + ' from Earthbux in each of the <b>' + els.length + '</b> open initiative election' + (els.length === 1 ? '' : 's') +
+          (untouched === els.length ? ', none used yet' : (untouched ? ' — ' + untouched + ' still untouched' : '')) + '. Each ten stays with its election and can&rsquo;t be withdrawn.'
+        : 'No initiative election is open right now.';
+      const ownWords = own > 0
+        ? esc(usd(own)) + ' you added and haven&rsquo;t committed. Any election takes it — initiative or organization — or withdraw it.'
+        : 'Money you add arrives here: $1 is 10 tokens, for any election, and withdrawable until it is committed.';
+      const key = (cls, name, v, d, acts) => '<div class="pf-key"><i class="pf-c--' + cls + '"></i><span class="pf-key__n">' + name + '</span>' +
+        '<span class="pf-key__v">' + esc(tk(v)) + '</span><span class="pf-key__d">' + d + '</span>' + (acts ? '<span class="pf-key__acts">' + acts + '</span>' : '') + '</div>';
+      const phaseKey = (cls, name, v) => '<div class="pf-key"><i class="pf-c--' + cls + '"></i><span class="pf-key__n">' + name + '</span><span class="pf-key__v">' + esc(tk(v)) + '</span></div>';
+      return '<section class="pf-card" id="pf-wallet" aria-labelledby="pf-wallet-h">' +
+        '<div class="pf-h"><h2 class="pf-h__t" id="pf-wallet-h">Wallet</h2><span class="pf-h__sp"></span>' +
+          '<button class="pf-btn pf-btn--honey" type="button" data-addfunds>+ Add funds</button></div>' +
+
+        '<div class="pf-al" id="pf-al-unc">' +
+          '<div class="pf-al__top"><h3 class="pf-al__n">Uncommitted</h3><span class="pf-al__v">' + esc(tk(unc)) + '</span></div>' +
+          '<p class="pf-al__p">Tokens you can still put into an election.</p>' +
+          '<div class="pf-track" role="img" aria-label="' + esc('Uncommitted: ' + tk(grant) + ' granted, ' + tk(own) + ' purchased') + '">' +
+            '<div class="pf-fill" style="width:' + pct(unc) + '">' + seg('grant', grant, 'Granted') + seg('own', own, 'Purchased') + '</div></div>' +
+          '<div class="pf-keys">' +
+            key('grant', 'Granted', grant, grantWords,
+              nxt ? '<a class="pf-btn" href="' + esc(missionHref(nxt.mission_id)) + '">Use it in ' + esc(nxtName) + ' &mdash; closes ' + esc(fmt(new Date(nxt.closes))) + ' &rarr;</a>' : '') +
+            key('own', 'Purchased', own, ownWords,
+              '<button class="pf-btn" type="button" data-addfunds>Add</button>' + (own > 0 ? '<button class="pf-btn" type="button" data-withdraw>Withdraw</button>' : '')) +
+          '</div>' +
+        '</div>' +
+
+        '<div class="pf-al" id="pf-al-com">' +
+          '<div class="pf-al__top"><h3 class="pf-al__n">Committed</h3><span class="pf-al__v">' + esc(tk(com)) + '</span></div>' +
+          '<p class="pf-al__p">Tokens standing in a mission, by where that mission is.</p>' +
+          '<div class="pf-track" role="img" aria-label="' + esc('Committed: ' + tk(sums.me) + ' in initiative elections, ' + tk(sums.oe) + ' in organization elections, ' + tk(sums.prep) + ' in prep' + (sums.exchange ? ', ' + tk(sums.exchange) + ' in the exchange' : '')) + '">' +
+            '<div class="pf-fill" style="width:' + pct(com) + '">' + seg('me', sums.me, 'Initiative elections') + seg('oe', sums.oe, 'Organization elections') +
+              seg('prep', sums.prep, 'Prep') + seg('ex', sums.exchange, 'Exchange') + '</div></div>' +
+          '<div class="pf-keys pf-keys--row">' +
+            phaseKey('me', 'Initiative elections', sums.me) + phaseKey('oe', 'Organization elections', sums.oe) + phaseKey('prep', 'Prep', sums.prep) +
+            (sums.exchange ? phaseKey('ex', 'Exchange', sums.exchange) : '') +
+          '</div>' +
+          '<div class="pf-ledger">' +
+            '<div class="pf-mini">Pre-EBX tokens <b title="Committed, not yet minted">' + esc(tk(w.committed_ct)) + '</b></div>' +
+            '<div class="pf-mini">EBX <b title="Mission-tied; minted at the week change or when an organization is elected">' + esc(tk(w.minted_ct)) + '</b></div>' +
+            '<div class="pf-mini">Final — deductible <b>' + esc(usd(w.final_ct)) + '</b></div>' +
+            '<div class="pf-mini">Cash withdrawn <b>' + esc(usd(w.cash_ct)) + '</b></div>' +
+          '</div>' +
+        '</div>' +
+        (unc <= 0 && com <= 0
+          ? '<div class="pf-prompt"><span>Nothing here yet. Your first vote in an initiative election uses its ten granted tokens.</span>' +
+            (gr.mission_id ? '<a class="pf-btn pf-btn--honey" href="' + esc(missionHref(gr.mission_id)) + '">Vote this week &rarr;</a>' : '') + '</div>'
+          : '') +
+      '</section>';
+    }
+
+    // ── your numbers ────────────────────────────────────────────────────
+    function statsHTML() {
+      const st = S.stats || {};
+      const tile = (v, l) => '<div class="pf-stat"><b>' + esc(v) + '</b><span>' + esc(l) + '</span></div>';
+      const age = st.account_age_days != null ? st.account_age_days + (st.account_age_days === 1 ? ' day' : ' days') : '—';
+      return '<section class="pf-card" id="pf-stats" aria-labelledby="pf-stats-h">' +
+        '<div class="pf-h"><h2 class="pf-h__t" id="pf-stats-h">Your numbers</h2></div>' +
+        '<div class="pf-stats">' +
+          tile(age, 'Account age') +
+          tile((st.initiative_elections || 0) + (st.organization_elections || 0) + (st.cause_votes || 0), 'Elections voted') +
+          tile(st.winners_backed || 0, 'Winners backed') +
+          tile(st.initiatives_suggested || 0, 'Initiatives suggested') +
+          tile(st.posts || 0, 'Posts') +
+          tile(st.comments || 0, 'Comments') +
+          tile(st.post_votes || 0, 'Votes on posts') +
+          tile(st.helpful_received || 0, 'Upvotes received') +
+        '</div>' +
+      '</section>';
+    }
+
+    // ── your posts ──────────────────────────────────────────────────────
+    function postsHTML() {
+      const top = (S.posts || []).filter(p => !p.parent_id);
+      const shown = top.slice(0, S.postLimit);
+      const body = shown.length && EBX.Post && EBX.Post.collapsed
+        ? shown.map(p => EBX.Post.collapsed(p)).join('') +
+          (top.length > shown.length ? '<div class="pf-more"><button class="pf-btn" type="button" data-moreposts>Show more</button></div>' : '')
+        : '<div class="pf-empty">Nothing yet. A post about a mission — research, a budget item, or a plain question — is how the network decides. <a href="' + esc(postHref({})) + '">Write the first one &rarr;</a></div>';
+      return '<section class="pf-sec pf-posts" id="pf-posts" aria-labelledby="pf-posts-h">' +
+        '<div class="pf-h"><h2 class="pf-h__t" id="pf-posts-h">Your posts</h2><span class="pf-h__sp"></span>' +
+          (top.length ? '<a class="pf-btn" href="cause.html?author=' + encodeURIComponent(me.id) + '">In the news &rarr;</a>' : '') +
+          '<a class="pf-btn pf-btn--honey" id="pf-newpost" href="' + esc(postHref({})) + '" title="Make a post — general, research or a budget item">+ New post</a></div>' +
+        '<div id="pf-posts-body">' + body + '</div>' +
+      '</section>';
+    }
+
+    // ── painting ─────────────────────────────────────────────────────────
+    const root = document.getElementById('app-root');
+    function paint() {
+      root.innerHTML = '<div class="pf">' + headHTML() +
+        '<div class="pf-grid">' + walletHTML() + statsHTML() + '</div>' +
+        // your choices: the missions hub, reading YOUR selections (EBX.Hub 'mine')
+        '<section class="pf-sec" aria-label="Your choices"><div id="pf-hub"></div></section>' +
+        postsHTML() +
+      '</div>';
+      bind();
+      S.hub = EBX.Hub && EBX.Hub.mount ? EBX.Hub.mount('#pf-hub', { mode: 'mine' }) : null;
+    }
+    // money changed: repaint the wallet and the numbers, reload the hub's choices
+    function repaintMoney() {
+      const a = document.getElementById('pf-wallet'), b = document.getElementById('pf-stats');
+      if (!a || !b) return paint();
+      const t = document.createElement('div');
+      t.innerHTML = walletHTML(); a.replaceWith(t.firstChild);
+      t.innerHTML = statsHTML(); b.replaceWith(t.firstChild);
+      bind();
+      if (S.hub && S.hub.reload) S.hub.reload();
+    }
+    function repaintPosts() {
+      const el = document.getElementById('pf-posts'); if (!el) return;
+      const t = document.createElement('div'); t.innerHTML = postsHTML(); el.replaceWith(t.firstChild);
+      bind();
+    }
+
+    function bind() {
+      document.querySelectorAll('[data-addfunds]').forEach(b => b.onclick = () => EBX.Wallet.addFunds({
+        reason: 'Funds become tokens in your wallet ($1 = 10 tokens). Commit them to any election — initiative or organization — or withdraw them until they are committed.',
+        onDone: refreshMoney }));
+      document.querySelectorAll('[data-withdraw]').forEach(b => b.onclick = openWithdraw);
+      document.querySelectorAll('[data-moreposts]').forEach(b => b.onclick = () => { S.postLimit += 10; repaintPosts(); });
+      document.querySelectorAll('[data-signout]').forEach(b => b.onclick = () => {
+        EBX.Auth.clear(); try { localStorage.removeItem('ebx_profile'); } catch (e) {} location.href = 'index.html';
+      });
+      const det = document.querySelector('.pf-set');
+      if (det) det.ontoggle = () => { S.setOpen = det.open; };
+      const pb = document.getElementById('pf-posts-body');
+      if (pb && EBX.Post && EBX.Post.bindVotes) { try { EBX.Post.bindVotes(pb); } catch (e) {} }
+    }
+    // the settings menu closes on a click elsewhere, or Escape
+    document.addEventListener('click', e => {
+      const det = document.querySelector('.pf-set[open]');
+      if (det && !det.contains(e.target)) det.open = false;
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const det = document.querySelector('.pf-set[open]');
+      if (det) { det.open = false; const s = det.querySelector('summary'); if (s) s.focus(); }
+    });
+
+    async function refreshMoney() {
+      await Promise.all([loadWallet(), loadStats(), loadPositions()]);
+      repaintMoney();
+    }
+
+    function openWithdraw() {
+      const w = (S.wallet && S.wallet.wallet) || {};
+      const max = Number(w.purchased_ct) || 0;
+      const bg = document.createElement('div');
+      bg.className = 'pf-modal-bg';
+      bg.innerHTML = '<div class="pf-modal" role="dialog" aria-modal="true" aria-labelledby="pf-wd-h"><h3 id="pf-wd-h">Withdraw funds</h3>' +
+        '<p>Uncommitted funds you added can come back out as cash. You have <b>' + esc(tk(max)) + '</b> (' + esc(usd(max)) + ') you can withdraw. Granted tokens can&rsquo;t be withdrawn.</p>' +
+        '<input type="number" min="0.1" step="0.1" max="' + (max / 100) + '" value="' + (max / 100) + '" aria-label="Tokens to withdraw">' +
+        '<div style="display:flex;gap:8px;justify-content:flex-end"><button class="pf-btn" type="button" data-x>Cancel</button><button class="pf-btn pf-btn--honey" type="button" data-go>Withdraw</button></div>' +
+        '<div class="pf-modal__msg" role="status"></div></div>';
+      document.body.appendChild(bg);
+      const close = () => bg.remove();
+      bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-x]')) close(); });
+      bg.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+      bg.querySelector('[data-go]').onclick = async () => {
+        const ct = Math.round((parseFloat(bg.querySelector('input').value) || 0) * 100);
+        const msg = bg.querySelector('.pf-modal__msg');
+        if (ct <= 0) { msg.textContent = 'Enter an amount.'; return; }
+        const r = await EBX.Auth.fetchAuthed('/wallet/withdraw', { method: 'POST', body: JSON.stringify({ ct }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) { msg.textContent = j.detail || 'Withdrawal refused.'; return; }
+        close(); refreshMoney();
       };
-      await loadMyChoices();
-      try { await loadMyCoins(); } catch (e) {}   // build-seq 9: seed choices table + wallet
-      try { await loadMyWallet(); } catch (e) {}          // §1 (2026-08-28): b + the OE half of e
-      try { await loadMyActivity(apiUser.id); } catch (e) {}  // §1 (2026-08-28): f
-      renderProfile(profile);
-      return;
+      bg.querySelector('input').focus();
     }
 
-    /* ── Not logged in: show login/signup gate ── */
-    renderAuthGate();
-    return;
-
-    /* ═══════════════════════════════════════════
-       (unreachable guard — renderOnboarding kept
-        for the localStorage-only fallback path
-        reached from within renderAuthGate)
-       ═════════════════════════════════════════= */
-
+    // ── go ───────────────────────────────────────────────────────────────
+    await Promise.all([loadWallet(), loadStats(), loadPositions(), loadPosts()]);
+    paint();
 
     /* ─────────────────────────────────────────
-       AUTH GATE (login + signup tabs, inline)
+       AUTH GATE (login + signup tabs, inline) — unchanged from the old page
        ───────────────────────────────────────── */
-
     function renderAuthGate() {
       const root = document.getElementById('app-root');
       root.style.cssText = 'background:#0f1a14;min-height:calc(100vh - 56px);display:flex;align-items:center;justify-content:center;padding:24px;';
@@ -1280,1194 +568,6 @@
       ['ag-su-email','ag-su-handle','ag-su-pass'].forEach(id => document.getElementById(id)?.addEventListener('keydown', e => { if (e.key==='Enter') agDoSignup(); }));
       document.getElementById('ag-lg-user')?.focus();
     }
-
-    /* ─────────────────────────────────────────
-       ONBOARDING (localStorage-only fallback)
-       ───────────────────────────────────────── */
-
-    function renderOnboarding() {
-      const root = document.getElementById('app-root');
-      root.innerHTML = `<div class="onboarding" id="ob-wrap"></div>`;
-
-      const steps = [
-        { id: 'type',     title: 'Who are you?',           subtitle: 'Tell us how you\'ll be using Earthbux. You can always change this later.' },
-        { id: 'identity', title: 'Set up your identity',   subtitle: 'This is how the community will know you. Your real name is never required.' },
-        { id: 'causes',   title: 'What do you care about?', subtitle: 'Select the causes you want to follow. This shapes your feed and credit portfolio.' },
-        { id: 'donation', title: 'Make your first donation', subtitle: 'Every two weeks a new pool forms. Your first donation mints your first earthbucks and creates your credit.' },
-        { id: 'confirm',  title: 'You\'re in.',             subtitle: 'Your profile is ready. Your earthbucks will be minted on the next pool date.' },
-      ];
-
-      let currentStep = 0;
-      const formData  = { type: 'benefactor', handle: '', display: '', causes: [], amount: 20 };
-
-      function saveAndAdvance() {
-        if (currentStep < steps.length - 1) {
-          currentStep++;
-          drawStep();
-        } else {
-          // Save profile
-          profile = {
-            type:        formData.type,
-            handle:      formData.handle || 'anon_' + Math.floor(Math.random() * 9999),
-            display:     formData.display || 'Anonymous',
-            causes:      formData.causes,
-            amount:      formData.amount,
-            joined:      new Date().toISOString(),
-            ebx_balance: 0,
-            credits:     [],
-          };
-          try { localStorage.setItem('ebx_profile', JSON.stringify(profile)); } catch(e) {}
-          renderProfile(profile);
-        }
-      }
-
-      function drawStep() {
-        const step     = steps[currentStep];
-        const pct      = ((currentStep + 1) / steps.length) * 100;
-        const dotsHTML = steps.map((_,i) =>
-          `<div class="step-dot ${i < currentStep ? 'done' : i === currentStep ? 'active' : ''}"></div>`
-        ).join('');
-
-        document.getElementById('ob-wrap').innerHTML = `
-          <div class="onboarding__card">
-            <div class="onboarding__progress">
-              <div class="onboarding__progress-fill" style="width:${pct}%"></div>
-            </div>
-            <div class="onboarding__body">
-              <div class="onboarding__step-label">Step ${currentStep + 1} of ${steps.length}</div>
-              <h2 class="onboarding__title">${step.title}</h2>
-              <p class="onboarding__subtitle">${step.subtitle}</p>
-              <div id="ob-step-content"></div>
-              <div class="onboarding__actions">
-                <button class="ob-back" id="ob-back-btn"
-                  ${currentStep === 0 ? 'style="visibility:hidden"' : ''}>← Back</button>
-                <div class="step-dots">${dotsHTML}</div>
-                <button class="btn btn-primary" id="ob-next-btn">
-                  ${currentStep === steps.length - 1 ? 'Go to my profile' : 'Continue →'}
-                </button>
-              </div>
-            </div>
-          </div>`;
-
-        // Render step content
-        const content = document.getElementById('ob-step-content');
-
-        if (step.id === 'type') {
-          content.innerHTML = `
-            <div class="type-choice">
-              <button class="type-card ${formData.type==='benefactor'?'selected':''}"
-                      data-type="benefactor" onclick="pickType(this)">
-                <div class="type-card__icon">🌱</div>
-                <div class="type-card__title">Benefactor</div>
-                <div class="type-card__desc">I donate and want to guide how the money is used. I vote on initiatives and orgs.</div>
-              </button>
-              <button class="type-card ${formData.type==='org'?'selected':''}"
-                      data-type="org" onclick="pickType(this)">
-                <div class="type-card__icon">🏛️</div>
-                <div class="type-card__title">Organization</div>
-                <div class="type-card__desc">We bid on initiatives and carry out funded missions. We report progress to unlock payment.</div>
-              </button>
-            </div>`;
-
-        } else if (step.id === 'identity') {
-          content.innerHTML = `
-            <div class="ob-input-row">
-              <div class="ob-field">
-                <label class="ob-label">Handle <span>(public, unique)</span></label>
-                <input class="ob-input" id="ob-handle" type="text"
-                  placeholder="e.g. terra_watcher"
-                  value="${formData.handle}"
-                  oninput="formData.handle=this.value" />
-              </div>
-              <div class="ob-field">
-                <label class="ob-label">Display name <span>(optional)</span></label>
-                <input class="ob-input" id="ob-display" type="text"
-                  placeholder="e.g. Maya R."
-                  value="${formData.display}"
-                  oninput="formData.display=this.value" />
-              </div>
-            </div>
-            <div class="ob-field">
-              <label class="ob-label">Email <span>(private, for notifications)</span></label>
-              <input class="ob-input" id="ob-email" type="email"
-                placeholder="you@example.com" />
-            </div>
-            <p style="font-size:0.75rem;color:rgba(245,240,232,0.3);margin-top:var(--sp-sm);line-height:1.6;">
-              Your handle is the only thing other users see. Your email is never shared. No password required yet — full auth is coming soon.
-            </p>`;
-
-        } else if (step.id === 'causes') {
-          content.innerHTML = `
-            <div class="cause-picker" id="cause-picker">
-              ${causes.map(c => `
-                <label class="cause-pick ${formData.causes.includes(c.index)?'selected':''}"
-                       style="--pick-color:${c.color}"
-                       onclick="toggleCause(${c.index},this)">
-                  <input type="checkbox" ${formData.causes.includes(c.index)?'checked':''} />
-                  <div class="cause-pick__dot" style="background:${c.color}"></div>
-                  <span class="cause-pick__name">${c.name}</span>
-                </label>`).join('')}
-            </div>
-            <p style="font-size:0.75rem;color:rgba(245,240,232,0.3);margin-top:var(--sp-md);line-height:1.6;">
-              You can follow all causes or just a few. Causes you select appear first in your feed and your credit badges will reflect them.
-            </p>`;
-
-        } else if (step.id === 'donation') {
-          const amounts = [10, 20, 50, 100];
-          content.innerHTML = `
-            <div class="amount-grid">
-              ${amounts.map(a => `
-                <button class="amount-tile ${formData.amount===a?'selected':''}"
-                        onclick="pickAmount(${a},this)">
-                  $${a}
-                  <span class="amount-tile__sub">/ cycle</span>
-                </button>`).join('')}
-            </div>
-            <div class="ob-field">
-              <label class="ob-label">Or enter a custom amount</label>
-              <input class="ob-input" type="number" min="1" placeholder="$"
-                oninput="formData.amount=parseFloat(this.value)||formData.amount" />
-            </div>
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);
-                        border-radius:var(--radius-sm);padding:var(--sp-md);margin-top:var(--sp-md);">
-              <div style="font-size:0.75rem;color:rgba(245,240,232,0.5);line-height:1.8;">
-                <div>🌱 <strong style="color:rgba(245,240,232,0.85);">5/16</strong> goes to Earthbux operations</div>
-                <div>💸 <strong style="color:rgba(245,240,232,0.85);">1/16</strong> to the winning org, immediately in cash</div>
-                <div>🔓 <strong style="color:rgba(245,240,232,0.85);">3/8</strong> becomes your earthbucks, released over 12 weeks</div>
-                <div>📅 <strong style="color:rgba(245,240,232,0.85);">1/4</strong> released to the org weekly, contingent on reporting</div>
-              </div>
-            </div>`;
-
-        } else if (step.id === 'confirm') {
-          const causeNames = formData.causes
-            .map(ci => causes.find(c=>c.index===ci)?.name)
-            .filter(Boolean).join(', ') || 'All causes';
-          const nextPool = getNextPoolDate();
-          content.innerHTML = `
-            <div style="display:flex;flex-direction:column;gap:var(--sp-md);">
-              <div style="background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);padding:var(--sp-lg);">
-                <div style="font-size:0.72rem;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;
-                            color:rgba(245,240,232,0.35);margin-bottom:var(--sp-sm);">Your profile</div>
-                <div style="font-size:0.9rem;color:rgba(245,240,232,0.85);margin-bottom:4px;">
-                  <strong>@${formData.handle || 'anon'}</strong>${formData.display ? ` · ${formData.display}` : ''}
-                </div>
-                <div style="font-size:0.78rem;color:rgba(245,240,232,0.45);">
-                  ${formData.type === 'org' ? 'Organization' : 'Benefactor'} · Following: ${causeNames}
-                </div>
-              </div>
-              <div style="background:rgba(201,124,42,0.1);border:1px solid rgba(201,124,42,0.25);
-                          border-radius:var(--radius-sm);padding:var(--sp-lg);">
-                <div style="font-size:0.72rem;font-family:var(--font-mono);letter-spacing:.08em;text-transform:uppercase;
-                            color:var(--clr-honey);opacity:.7;margin-bottom:var(--sp-sm);">First donation</div>
-                <div style="font-family:var(--font-display);font-size:1.8rem;font-weight:900;color:var(--clr-honey);">
-                  $${formData.amount}
-                </div>
-                <div style="font-size:0.78rem;color:rgba(245,240,232,0.4);margin-top:4px;">
-                  Minted on next pool date: ${nextPool}
-                </div>
-              </div>
-              <p style="font-size:0.78rem;color:rgba(245,240,232,0.35);line-height:1.65;margin:0;">
-                Your earthbucks and credit will appear in your wallet after the pool closes.
-                You can adjust your donation amount or causes at any time from your profile.
-              </p>
-            </div>`;
-        }
-
-        // Wire buttons
-        document.getElementById('ob-next-btn').addEventListener('click', saveAndAdvance);
-        const back = document.getElementById('ob-back-btn');
-        if (back) back.addEventListener('click', () => {
-          if (currentStep > 0) { currentStep--; drawStep(); }
-        });
-      }
-
-      // Expose helpers to inline handlers
-      window.formData   = formData;
-      window.pickType   = (el) => {
-        formData.type = el.dataset.type;
-        document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
-        el.classList.add('selected');
-      };
-      window.toggleCause = (idx, el) => {
-        if (formData.causes.includes(idx)) {
-          formData.causes = formData.causes.filter(c => c !== idx);
-          el.classList.remove('selected');
-        } else {
-          formData.causes.push(idx);
-          el.classList.add('selected');
-        }
-      };
-      window.pickAmount = (a, el) => {
-        formData.amount = a;
-        document.querySelectorAll('.amount-tile').forEach(t => t.classList.remove('selected'));
-        el.classList.add('selected');
-      };
-
-      drawStep();
-    }
-
-
-    /* ─────────────────────────────────────────
-       PROFILE VIEW — pass 34 overhaul (build-seq 1)
-       Layout per STRUCTURE.md Benefactor-Profile drawing:
-         left   = CreditCoin Wallet (top) + Choices table
-         center = Annulus 3, front/back toggle (empty for now)
-         right  = (b) settings gear · (a) credit badge · (c) org-mode switch
-       Upcoming-decisions banner removed (drawing has no banner; also a
-       BACKLOG item). Settings modal kept; open/close helpers now defined
-       (they were referenced but missing — gear was dead before this pass).
-       ───────────────────────────────────────── */
-
-    // Admin mode: the profile page rendered AS the admin data console. Browses the
-    // same whitelisted tables admin.html does, via the staff-gated /admin endpoints.
-    async function renderAdminConsole(root, p) {
-      if (!root) return;
-      const esc = (v) => (v == null ? '' : String(v)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'));
-      root.innerHTML = `
-        <div style="max-width:1100px;margin:0 auto;padding:var(--sp-xl,24px) var(--sp-lg,16px);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:var(--sp-md,12px);">
-            <div>
-              <div class="profile-feed-eyebrow" style="margin:0;">Admin · Data Console</div>
-              <div style="font-size:0.8rem;color:var(--clr-ink-light,#777);">Signed in as @${esc(p.handle)} · ${esc(p.role)}</div>
-            </div>
-            <button class="pf-orgmode" style="width:auto;padding:8px 14px;" onclick="switchProfileMode('benefactor')">Exit admin mode</button>
-          </div>
-          <div id="admin-entities" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--sp-md,12px);"></div>
-          <div id="admin-grid" style="overflow:auto;border:1px solid var(--clr-border,#e3ddd0);border-radius:8px;
-               background:var(--clr-paper,#fdfbf6);min-height:120px;font-size:12.5px;">
-            <div style="padding:16px;color:var(--clr-ink-light,#888);">Select a table to browse.</div>
-          </div>
-        </div>`;
-
-      const grid = root.querySelector('#admin-grid');
-      const renderGrid = (rows) => {
-        if (!Array.isArray(rows) || !rows.length) {
-          grid.innerHTML = `<div style="padding:16px;color:var(--clr-ink-light,#888);">No rows.</div>`;
-          return;
-        }
-        const cols = Object.keys(rows[0]);
-        grid.innerHTML = `<table style="border-collapse:collapse;width:100%;">
-          <thead><tr>${cols.map(c => `<th style="text-align:left;padding:7px 10px;border-bottom:2px solid var(--clr-border,#e3ddd0);
-            position:sticky;top:0;background:var(--clr-paper,#fdfbf6);white-space:nowrap;">${esc(c)}</th>`).join('')}</tr></thead>
-          <tbody>${rows.map(r => `<tr>${cols.map(c => `<td style="padding:6px 10px;border-bottom:1px solid var(--clr-border,#efeadd);
-            white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;">${esc(r[c])}</td>`).join('')}</tr>`).join('')}</tbody>
-        </table>`;
-      };
-
-      const loadEntity = async (name) => {
-        grid.innerHTML = `<div style="padding:16px;color:var(--clr-ink-light,#888);">Loading ${esc(name)}…</div>`;
-        root.querySelectorAll('[data-entity]').forEach(b =>
-          b.style.fontWeight = (b.dataset.entity === name ? '700' : '400'));
-        try {
-          const res = await EBX.Auth.fetchAuthed('/admin/query/run', {
-            method: 'POST', body: JSON.stringify({ entity: name, limit: 200 }),
-          });
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          renderGrid(await res.json());
-        } catch (e) {
-          grid.innerHTML = `<div style="padding:16px;color:#c0392b;">Couldn't load ${esc(name)} (${esc(e.message)}).</div>`;
-        }
-      };
-
-      try {
-        const res = await EBX.Auth.fetchAuthed('/admin/query/entities');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const entities = await res.json();
-        const box = root.querySelector('#admin-entities');
-        box.innerHTML = entities.map(name =>
-          `<button class="btn btn-ghost btn-sm" data-entity="${esc(name)}"
-             style="border:1px solid var(--clr-border,#e3ddd0);border-radius:6px;padding:5px 10px;cursor:pointer;">${esc(name)}</button>`
-        ).join('');
-        box.querySelectorAll('[data-entity]').forEach(b =>
-          b.addEventListener('click', () => loadEntity(b.dataset.entity)));
-        if (entities.length) loadEntity(entities[0]);
-      } catch (e) {
-        root.querySelector('#admin-entities').innerHTML =
-          `<div style="color:#c0392b;">Couldn't load tables (${esc(e.message)}). Staff sign-in required.</div>`;
-      }
-    }
-
-    function renderProfile(p) {
-      document.title = `Earthbux — @${p.handle}`;
-      const root = document.getElementById('app-root');
-      // build-seq 5 (pass 35): org mode stays ON profile.html — the page
-      // re-renders its org face (Initiative Coins / Tasklist / Annulus 4)
-      // instead of navigating away. The two faces resemble each other.
-      window._lastProfileData = p;
-      const orgMode = window._profileMode === 'org';
-      const isStaff = ['employee', 'admin'].includes(p.role);
-
-      // Admin mode (staff only): the profile page BECOMES the admin data console —
-      // the same /admin endpoints admin.html uses, rendered inline. Non-staff can
-      // never reach it (the toggle is hidden and the server gates every call).
-      if (window._profileMode === 'admin' && isStaff) {
-        renderAdminConsole(document.getElementById('app-root'), p);
-        return;
-      }
-
-      /* ══════════════════════════════════════════════════════════════
-         §1 (2026-08-28) — (e) THE SEVEN WEEKLY WINDOWS.
-
-         "Each represents a weekly window from the election page. Each box
-         has one initiative and one organization."
-
-         A window is a WEEK, not a cause. In any one week exactly one
-         initiative election closes (a mission reaching T) and exactly one
-         organization election closes (a mission reaching T + 8wk), and
-         because 8 is not 7 those two always belong to different causes —
-         which is where "each will have 2 colors" comes from.
-
-         "Time rotates clockwise": the top card is this week and reads
-         left-to-right, organization then initiative. Going clockwise from
-         it you fall down the RIGHT column, so those cards read top-to-
-         bottom, organization then initiative; you come back UP the left
-         column, so those read initiative then organization. The org half
-         is always the one you have already passed.
-         ══════════════════════════════════════════════════════════════ */
-      const _WKMS = 7 * 24 * 60 * 60 * 1000;
-      function buildWindows() {
-        const byWeek = {};
-        const put = (key, side, obj) => {
-          const w = byWeek[key] || (byWeek[key] = { key: key, me: null, oe: null });
-          if (!w[side] || obj.date < w[side].date) w[side] = obj;
-        };
-        (EBX.config.missions || []).forEach(m => {
-          let d; try { d = EBX.Cycle.missionDates(m); } catch (e) { return; }
-          if (!m.winning_tiv_id) {
-            put(Math.round(d.missionStarted.getTime() / _WKMS), 'me',
-                { mission: m, date: d.missionStarted });
-          } else if (!m.winning_org_id) {
-            put(Math.round(d.phlElected.getTime() / _WKMS), 'oe',
-                { mission: m, date: d.phlElected });
-          }
-        });
-        // Yesterday, not now: a race decided this morning is still the week a
-        // benefactor is looking at.
-        const floor = Date.now() - 24 * 60 * 60 * 1000;
-        return Object.keys(byWeek).map(k => byWeek[k])
-          .map(w => {
-            w.date = (w.me && w.me.date) || (w.oe && w.oe.date) || null;
-            return w;
-          })
-          .filter(w => w.date && w.date.getTime() >= floor)
-          .sort((a, b) => a.date - b.date)
-          .slice(0, 7);
-      }
-
-      const causeById = {}; causes.forEach(c => { causeById[c.id] = c; });
-      const _tk = ct => EBX.formatTokens ? EBX.formatTokens((ct || 0) / 100)
-                                         : (((ct || 0) / 100).toFixed(2) + ' tokens');
-      const _short = d => d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
-
-      // One half of a window card. `kind` is 'oe' or 'me'.
-      function winHalf(side, kind) {
-        const m = side && side.mission;
-        const c = m ? (causeById[m.cause_id] || { name: m.cause_id, color: '#999' }) : null;
-        const label = kind === 'oe' ? 'Organization' : 'Initiative';
-        if (!m) {
-          return `<div class="pf2-half">
-            <div class="pf2-half__kind"><i style="background:#ccc"></i>${label}</div>
-            <div class="pf2-half__pick pf2-half__pick--none">no race this week</div>
-          </div>`;
-        }
-        let pick = null, mine = '';
-        if (kind === 'oe') {
-          const row = (window._walletRowByMission || {})[m.id] || null;
-          const orgId = row && row.my_org_id;
-          pick = orgId ? (orgById[String(orgId)] ? orgById[String(orgId)].name : orgId) : null;
-          const ct = row ? Number(row.my_stake_ct || 0) : 0;
-          mine = ct > 0 ? `<b>${_tk(ct)}</b> committed` : '';
-          if (!pick && ct > 0) pick = null;   // staked with nobody named yet
-        } else {
-          const mm = (window._myP1ByMission || {})[m.id] || null;
-          const tiv = mm && mm.topTiv ? initById[String(mm.topTiv)] : null;
-          pick = tiv ? tiv.title : (mm && mm.topTiv ? mm.topTiv : null);
-          const ct = mm ? Number(mm.ct || 0) : 0;
-          const nShares = mm ? Object.keys(mm.shares || {}).length : 0;
-          mine = ct > 0
-            ? `<b>${_tk(ct)}</b>${nShares > 1 ? ` across ${nShares}` : ''}`
-            : '';
-        }
-        const href = kind === 'oe'
-          ? `mission.html?state=oe&cause=${m.cause_id}`
-          : `mission.html?state=me&cause=${m.cause_id}`;
-        return `<div class="pf2-half">
-          <div class="pf2-half__kind" style="color:${c.color}">
-            <i style="background:${c.color}"></i>${label} · ${c.name}
-          </div>
-          ${pick
-            ? `<a class="pf2-half__pick" href="${href}" style="color:inherit;text-decoration:none;">${pick}</a>`
-            : `<a class="pf2-half__pick pf2-half__pick--none" href="${href}" style="text-decoration:none;">${
-                 mine ? 'committed — no pick named' : 'no vote yet'}</a>`}
-          <div class="pf2-half__mine">${mine || '&nbsp;'}</div>
-        </div>`;
-      }
-
-      // `place` is 'top' | 'right' | 'left' and decides both the axis and the
-      // order of the two halves — the clockwise rule above.
-      function winCard(w, place, idx) {
-        const oc = w.oe && causeById[w.oe.mission.cause_id];
-        const ic = w.me && causeById[w.me.mission.cause_id];
-        const halves = [winHalf(w.oe, 'oe'), winHalf(w.me, 'me')];
-        if (place === 'left') halves.reverse();          // coming back up: i on top
-        const when = w.date;
-        const days = when ? Math.max(0, Math.round((when - Date.now()) / 86400000)) : null;
-        return `<div class="pf2-win pf2-win--${place === 'top' ? 'cols' : 'rows'}"
-                     data-week="${idx}"
-                     style="--c-o:${(oc && oc.color) || '#ccc'};--c-i:${(ic && ic.color) || '#ccc'};"
-                     onclick="selectWindow(${idx})">
-          <div class="pf2-win__wk">
-            <b>${idx === 0 ? 'This week' : 'Week +' + idx}</b>
-            <span class="pf2-spacer"></span>
-            <span>${_short(when)}${days != null ? ' · ' + days + 'd' : ''}</span>
-          </div>
-          <div class="pf2-win__body">${halves.join('')}</div>
-        </div>`;
-      }
-
-      /* ── (d) THE GLOBE ────────────────────────────────────────────────
-         "3D globe display that rotates depending on which mission is
-         selected. It will mark the locations relevant to this mission."
-
-         Missions carry no geography yet — there is no lat/lon on any model
-         — so this marks the seven CAUSE ANCHORS and spins the selected
-         window's two causes to the front. It is drawn as a real sphere
-         (orthographic projection, its own graticule, day terminator) so
-         that when a mission does get coordinates the only thing that
-         changes is where the markers come from, and so mission.html can
-         take the same component. The caption says exactly this rather
-         than implying the dots are places.                              */
-      const CAUSE_ANCHOR = {   // stable points on the sphere, one per cause
-        'atmosphere':     [ 38,  -20], 'oceans':      [-10,  -150],
-        'land':           [ 10,   25], 'forests':     [ -5,   -60],
-        'wildlife':       [-20,   30], 'human-rights':[ 45,    10],
-        'human-progress': [ 20,   80]
-      };
-      // The rAF handle lives on `window` because `renderProfile` re-runs on
-      // every mode switch and would otherwise leave the previous loop turning
-      // a globe that is no longer in the document.
-      let _globeLon = 0, _globeTarget = 0;
-      function globeSVG() {
-        return `<div class="pf2-globe">
-          <svg viewBox="0 0 320 320" id="pf2-globe-svg" role="img"
-               aria-label="Globe marking the causes in the selected week">
-            <defs>
-              <radialGradient id="gl-sea" cx="35%" cy="30%">
-                <stop offset="0%" stop-color="#2b4c63"/>
-                <stop offset="70%" stop-color="#16303f"/>
-                <stop offset="100%" stop-color="#0b1c25"/>
-              </radialGradient>
-              <radialGradient id="gl-glow" cx="50%" cy="50%">
-                <stop offset="70%" stop-color="rgba(120,190,220,0)"/>
-                <stop offset="100%" stop-color="rgba(120,190,220,0.28)"/>
-              </radialGradient>
-            </defs>
-            <circle cx="160" cy="160" r="132" fill="url(#gl-sea)"/>
-            <g id="gl-grid" stroke="rgba(160,210,235,0.20)" fill="none" stroke-width="0.8"></g>
-            <g id="gl-marks"></g>
-            <circle cx="160" cy="160" r="132" fill="url(#gl-glow)" pointer-events="none"/>
-          </svg>
-          <div class="pf2-globe__cap" id="pf2-globe-cap"></div>
-        </div>`;
-      }
-      function _project(latDeg, lonDeg, lon0) {
-        const la = latDeg * Math.PI / 180, lo = (lonDeg - lon0) * Math.PI / 180;
-        const x = Math.cos(la) * Math.sin(lo);
-        const y = Math.sin(la);
-        const z = Math.cos(la) * Math.cos(lo);          // z > 0 = facing us
-        return { x: 160 + x * 132, y: 160 - y * 132, z: z };
-      }
-      function drawGlobe() {
-        const grid = document.getElementById('gl-grid');
-        const marks = document.getElementById('gl-marks');
-        if (!grid || !marks) return;
-        const path = [];
-        for (let lat = -60; lat <= 60; lat += 30) {          // parallels
-          const pts = [];
-          for (let lon = -180; lon <= 180; lon += 6) {
-            const q = _project(lat, lon, _globeLon);
-            if (q.z >= 0) pts.push((pts.length ? 'L' : 'M') + q.x.toFixed(1) + ' ' + q.y.toFixed(1));
-            else pts.push('');
-          }
-          path.push('<path d="' + pts.filter(Boolean).join(' ').replace(/L(?=\s*$)/, '') + '"/>');
-        }
-        for (let lon = -180; lon < 180; lon += 30) {          // meridians
-          const pts = [];
-          for (let lat = -90; lat <= 90; lat += 4) {
-            const q = _project(lat, lon, _globeLon);
-            if (q.z >= 0) pts.push((pts.length ? 'L' : 'M') + q.x.toFixed(1) + ' ' + q.y.toFixed(1));
-          }
-          if (pts.length > 1) path.push('<path d="' + pts.join(' ') + '"/>');
-        }
-        grid.innerHTML = path.join('');
-        const w = _windows[_selWindow];
-        const items = [];
-        if (w) {
-          [['oe', w.oe], ['me', w.me]].forEach(([kind, side]) => {
-            if (!side) return;
-            const cid = side.mission.cause_id;
-            const a = CAUSE_ANCHOR[cid]; if (!a) return;
-            const c = causeById[cid] || { color: '#fff', name: cid };
-            const q = _project(a[0], a[1], _globeLon);
-            const front = q.z >= 0;
-            items.push(`<g opacity="${front ? 1 : 0.18}">
-              <circle cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${front ? 7 : 4}"
-                      fill="${c.color}" stroke="rgba(255,255,255,0.85)" stroke-width="1.4"/>
-              ${front ? `<text x="${q.x.toFixed(1)}" y="${(q.y - 12).toFixed(1)}"
-                     text-anchor="middle" fill="rgba(255,255,255,0.9)"
-                     style="font-family:var(--font-mono);font-size:9px;">${c.name}</text>` : ''}
-            </g>`);
-          });
-        }
-        marks.innerHTML = items.join('');
-      }
-      function _spin() {
-        const d = _globeTarget - _globeLon;
-        _globeLon += (Math.abs(d) > 0.4 ? d * 0.08 : 0.12);   // ease to target, then drift
-        if (Math.abs(d) <= 0.4) _globeTarget = _globeLon;
-        drawGlobe();
-        window._globeRaf = requestAnimationFrame(_spin);
-      }
-      function aimGlobe() {
-        const w = _windows[_selWindow];
-        const side = w && (w.oe || w.me);
-        const a = side && CAUSE_ANCHOR[side.mission.cause_id];
-        if (a) _globeTarget = a[1];
-        const cap = document.getElementById('pf2-globe-cap');
-        if (cap) {
-          const names = [w && w.oe, w && w.me].filter(Boolean)
-            .map(x => (causeById[x.mission.cause_id] || {}).name).filter(Boolean);
-          cap.innerHTML = names.length
-            ? `${names.join(' · ')} — cause anchors. Missions carry no coordinates yet,
-               so these mark the causes in this week, not places on the ground.`
-            : 'No race in this window.';
-        }
-      }
-      window.selectWindow = function (i) {
-        _selWindow = i;
-        document.querySelectorAll('.pf2-win').forEach(el => {
-          el.classList.toggle('is-selected', Number(el.dataset.week) === i);
-        });
-        aimGlobe();
-      };
-
-      const _windows = buildWindows();
-      let _selWindow = 0;
-
-      const initials = (p.display || p.handle || '?')
-        .split(' ').map(w => w[0]?.toUpperCase()).slice(0,2).join('');
-
-      const _ls = k => { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch(e) { return {}; } };
-      // build-seq 9: phase-1 choices come from the loaded vote state (grouped
-      // by cause in window._myP1ByCause). Org votes (p2) stay empty for now.
-      const _mineByCause = window._myP1ByCause || {};
-      const tivShares = {}, tivCommits = {}, orgVotes = {}, orgCommits = {};
-      Object.keys(_mineByCause).forEach(cid => {
-        tivShares[cid]  = _mineByCause[cid].shares || {};
-        tivCommits[cid] = { ebx: Math.round(_mineByCause[cid].ebx || 0) };
-      });
-      const inits = EBX.config.initiatives   || [];
-      const orgs  = EBX.config.organizations || [];
-      const initById = {}; inits.forEach(i => { initById[String(i.id)] = i; });
-      const orgById  = {}; orgs.forEach(o => { orgById[String(o.id)]  = o; });
-
-      /* ── CreditCoin Wallet (§1a) — REAL CreditCoin rows, minted at election
-         settlement. The 🪙 icon marks real financial holdings only; while no
-         coin is minted yet, live commitments show WITHOUT the coin icon.
-         Admin/staff coins (not real money) render in a different color. ── */
-      const _PFX2CAUSE = { atm: 'atmosphere', oce: 'oceans', lan: 'land', 'for': 'forests',
-                           wil: 'wildlife', hmr: 'human-rights', hpr: 'human-progress' };
-      const _realCoins = Array.isArray(window._myCoins) ? window._myCoins : [];
-      const _isAdminCoin = isStaff;   // staff-held coins are test money
-      let coins, walletHTML;
-      if (_realCoins.length) {
-        coins = _realCoins.map(cc => {
-          const cid = _PFX2CAUSE[String(cc.mission_id).slice(0, 3)] || null;
-          const c = causes.find(x => x.id === cid) || null;
-          return { cause: c || { id: '', name: cc.mission_id, index: 0, color: '#999' },
-                   ebx: cc.amount_ebx, value: cc.value || 1, mission: cc.mission_id, real: true };
-        });
-        walletHTML = coins.map(coin => `
-            <a class="coin-chip" data-coin="${coin.mission}" onclick="pickCoin('${coin.mission}', event)"
-               href="${coin.cause.id ? 'cause.html?id=' + coin.cause.id : 'mission.html?mission=' + coin.mission}"
-               title="${coin.mission} credit coin${_isAdminCoin ? ' (admin/test — not real money)' : ''} — click to select for member mode"
-               style="${_isAdminCoin ? 'filter:grayscale(0.8);opacity:0.75;outline:1px dashed #999;' : ''}">
-              ${EBX.creditBadge([{ causeIndex: coin.cause.index, amount: coin.ebx }], 40)}
-              <div class="coin-chip__name">🪙 ${coin.cause.name}</div>
-              <div class="coin-chip__ebx">${EBX.formatEBX(coin.ebx)} · ×${Number(coin.value).toFixed(2)}</div>
-            </a>`).join('');
-      } else {
-        // no minted coins yet — live commitments (no coin icon: not settled money)
-        coins = causes.map(c => {
-          const ebx = ((tivCommits[c.id] && tivCommits[c.id].ebx) || 0)
-                    + ((orgCommits[c.id] && orgCommits[c.id].ebx) || 0);
-          return ebx > 0 ? { cause: c, ebx } : null;
-        }).filter(Boolean);
-        walletHTML = coins.length
-          ? coins.map(coin => `
-              <a class="coin-chip" data-coin="${coin.cause.id}" onclick="pickCoin('${coin.cause.id}', event)"
-                 href="cause.html?id=${coin.cause.id}"
-                 title="${coin.cause.name} mission — committed (coin mints at election settlement)">
-                ${EBX.creditBadge([{ causeIndex: coin.cause.index, amount: coin.ebx }], 40)}
-                <div class="coin-chip__name">${coin.cause.name}</div>
-                <div class="coin-chip__ebx">${EBX.formatEBX(coin.ebx)} committed</div>
-              </a>`).join('')
-          : `<div class="coin-chip coin-chip--empty">No credit coins yet.<br/>Commit EBX to a mission to mint your first.</div>`;
-      }
-
-      /* ── Choices table — one row per cause; multi-tiv splits show top share only ── */
-      const choiceRows = causes.map(c => {
-        const shares = tivShares[c.id] || {};
-        let topId = null, topShare = 0;
-        Object.keys(shares).forEach(id => {
-          const s = Number(shares[id]) || 0;
-          if (s > topShare) { topShare = s; topId = id; }
-        });
-        const tiv   = topId != null ? (initById[String(topId)] || null) : null;
-        // build-seq 4/5 (pass 35): ebx_org_votes now stores objects
-        // ({org_id, tiv_id, votes}); accept both shapes.
-        const _ov = orgVotes[c.id];
-        const orgId = _ov && typeof _ov === 'object' ? _ov.org_id : _ov;
-        const org   = orgId != null ? (orgById[String(orgId)] || null) : null;
-        return {
-          cause: c, topShare,
-          tivLabel: tiv ? tiv.title : (topId != null ? 'Initiative #' + topId : null),
-          orgLabel: org ? org.name  : (orgId != null ? 'Org #' + orgId : null),
-        };
-      });
-
-      const choiceRowHTML = (row, kind) => {
-        const label = kind === 'org' ? row.orgLabel : row.tivLabel;
-        const split = kind === 'tiv' && label && row.topShare > 0 && row.topShare < 1
-          ? ` <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--clr-ink-light);">${Math.round(row.topShare * 100)}%</span>`
-          : '';
-        return `
-          <tr>
-            <td style="width:36px;">
-              <span class="cause-dot" style="background:${row.cause.color};display:inline-block;"></span>
-            </td>
-            <td>
-              <div style="font-size:0.72rem;color:var(--clr-ink-light);">${row.cause.name}</div>
-              ${label
-                ? `<a class="choice-link" href="cause.html?id=${row.cause.id}">${label}</a>${split}`
-                : `<span class="no-choice">${kind === 'org' ? 'No org vote yet' : 'No vote yet'}</span>`}
-            </td>
-          </tr>`;
-      };
-
-      /* ── (a) credit badge holdings · (c) org-mode gate ── */
-      const holdings = coins.map(c => ({ causeIndex: c.cause.index, amount: c.ebx }));
-      const hasCoin  = coins.length > 0;
-
-      /* ── (b) ALLOCATIONS ─────────────────────────────────────────────
-         The four states in one bar, three sets of two — the same shape the
-         election page draws, because a benefactor should not have to learn
-         their own balance twice. Below it, the CONVERSION row: `POST
-         /wallet/move` is the only way ct changes race now that the
-         three-conversion budget is retired.                              */
-      const _W = window._myWallet || {};
-      const _free = Number(_W.unallocated_ct != null ? _W.unallocated_ct : (_W.free_ct || 0)) || 0;
-      const _buy  = Number(_W.purchased_ct || 0) || 0;
-      const _cmt  = Number(_W.committed_ct || 0) || 0;
-      const _mint = Number(_W.minted_ct || 0) || 0;
-      // 2026-09-16 — final is an overlay on the position, not a segment beside it.
-      const _don  = Number(_W.final_ct != null ? _W.final_ct : (_W.donated_ct || 0)) || 0;
-      // Split the committed bin the way the window cards do: initiative
-      // elections vs organization elections. Both read what is already loaded,
-      // so the panel and the cards can never disagree.
-      let _tivCt = 0;
-      Object.keys(window._myP1ByMission || {}).forEach(mid => {
-        const m = (EBX.config.missions || []).find(x => x.id === mid);
-        if (m && !m.winning_tiv_id) _tivCt += Number(window._myP1ByMission[mid].ct || 0);
-      });
-      const _orgCt = Math.max(0, _cmt - _tivCt);
-      const _usd = ct => '$' + ((ct || 0) / 1000).toFixed(2);   // 1 token = 10c
-      const _pctw = (tot, part) => (tot > 0 ? (100 * part / tot).toFixed(2) : '0') + '%';
-      // 2026-09-16 — a grant carries its WEEK, never a cause: granted tokens
-      // may enter the initiative or organization election closing that week.
-      const _grantWk = (_W.grant_week != null) ? _W.grant_week : null;
-      const allocTotalLabel = _tk(_free + _cmt + _mint) + ' total'
-        + (_grantWk != null ? (_grantWk === _W.week ? ' · granted for this week&rsquo;s elections' : ` · granted in week ${_grantWk}`) : '');
-      const _set = (name, total, segs, keys) => `
-        <div class="pf2-set">
-          <div class="pf2-set__head">
-            <span class="pf2-set__name">${name}</span>
-            <b class="pf2-set__n">${_tk(total)}</b>
-            <span class="pf2-set__usd">${_usd(total)}</span>
-          </div>
-          <div class="pf2-bar">${segs.map(sg =>
-            `<i class="pf2-seg pf2-seg--${sg[0]}" style="width:${_pctw(total, sg[1])}"></i>`).join('')}</div>
-          <div class="pf2-key">${keys.map(k =>
-            `<span><i class="pf2-dot pf2-seg--${k[0]}"></i>${_tk(k[1])} ${k[2]}</span>`).join('')}</div>
-        </div>`;
-      const _movable = (window._walletRows || []).filter(r => r.movable && Number(r.my_stake_ct || 0) > 0);
-      const _allRaces = (window._walletRows || []);
-      const allocHTML = `
-        <div class="pf2-alloc">
-          ${_set('Unallocated', _free, [['fresh', Math.max(0, _free - _buy)], ['buy', _buy]],
-                 [['fresh', Math.max(0, _free - _buy), 'granted'], ['buy', _buy, 'purchased']])}
-          ${_set('Committed', _cmt, [['tiv', _tivCt], ['org', _orgCt]],
-                 [['tiv', _tivCt, 'initiatives'], ['org', _orgCt, 'organizations']])}
-          ${_set('EBX', _mint, [['ebx', _mint]],
-                 [['ebx', _mint, 'held'], ['don', _don, 'final (deductible)']])}
-        </div>
-        <div class="pf2-conv">
-          <div class="pf2-conv__row">
-            <span class="pf2-set__name">Convert</span>
-            <select id="pf2-conv-from" ${_movable.length ? '' : 'disabled'}>
-              ${_movable.length
-                ? _movable.map(r => `<option value="${r.mission_id}">${r.tiv_title} — ${_tk(r.my_stake_ct)}</option>`).join('')
-                : '<option>nothing movable this week</option>'}
-            </select>
-            <span>&rarr;</span>
-            <select id="pf2-conv-to" ${_allRaces.length ? '' : 'disabled'}>
-              ${_allRaces.map(r => `<option value="${r.mission_id}">${r.tiv_title}</option>`).join('')}
-            </select>
-            <input id="pf2-conv-amt" type="number" min="0" step="0.1" placeholder="0" />
-            <button class="pf2-act" style="flex:0 0 auto;" onclick="pfConvert()"
-                    ${_movable.length ? '' : 'disabled'}>Move</button>
-          </div>
-          <div class="pf2-conv__msg" id="pf2-conv-msg">
-            Moving tokens between races is free and unlimited inside the week they were
-            committed. At the week roll a standing allocation becomes EBX and stays with its mission.
-          </div>
-        </div>`;
-
-      /* ── (f) THE FEED ─────────────────────────────────────────────────
-         "When in benefactor mode, it shows the users recent posts and
-         comments. When in member mode, it shows the users research posts
-         and other research posts they have contributed to."             */
-      const _postHTML = (post, note) => {
-        const m = (EBX.config.missions || []).find(x => x.id === post.mission_id);
-        const c = m ? causeById[m.cause_id] : (post.cause_id ? causeById[post.cause_id] : null);
-        // P3: a post opens as itself (its thread in News); yours can be
-        // edited forward as a new version.
-        const href = 'cause.html?thread=' + encodeURIComponent(post.id);
-        const edit = (!post.parent_id && note !== 'you contributed')
-          ? ` · <a href="post.html?edit=${encodeURIComponent(post.id)}&back=profile.html" style="color:inherit;">edit${post.version > 1 ? ' (v' + post.version + ')' : ''}</a>` : '';
-        const when = post.created_at
-          ? new Date(post.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-        const body = String(post.body || '');
-        return `<div class="pf2-post">
-          <div class="pf2-post__type" style="${c ? 'color:' + c.color : ''}">
-            ${post.parent_id ? 'comment' : (EBX.Post ? EBX.Post.kind(post) : (post.type || post.category || 'post'))}
-          </div>
-          <div style="min-width:0;flex:1 1 auto;">
-            <a class="pf2-post__t" href="${href}" style="color:inherit;text-decoration:none;">${
-              post.title || body.slice(0, 70) || '(untitled)'}</a>
-            ${post.title && body ? `<div class="pf2-post__b">${body.slice(0, 160)}</div>` : ''}
-            <div class="pf2-post__m">${[c && c.name, post.target_label || post.mission_id, when, note].filter(Boolean).join(' · ')}${edit}</div>
-          </div>
-        </div>`;
-      };
-      const _emptyFeed = t => `<div style="font-size:0.78rem;color:var(--clr-ink-light);padding:10px 0;">${t}</div>`;
-      if (!window._pfFeedTab) window._pfFeedTab = orgMode ? 'research' : 'all';
-      function feedFor(tab) {
-        const mine = window._myPosts || [];
-        if (tab === 'research') {
-          const own = (window._myResearch || []).map(x => _postHTML(x, 'yours'));
-          const other = (window._contributedResearch || []).map(x => _postHTML(x, 'you contributed'));
-          return (own.length + other.length)
-            ? own.concat(other).join('')
-            : _emptyFeed('No research yet. Background, Investigation and Analysis posts land here.');
-        }
-        if (tab === 'comments') {
-          const cs = mine.filter(x => x.parent_id);
-          return cs.length ? cs.map(x => _postHTML(x)).join('') : _emptyFeed('No comments yet.');
-        }
-        const rs = mine.filter(x => !x.parent_id);
-        return rs.length ? rs.map(x => _postHTML(x)).join('')
-                         : _emptyFeed('No posts yet. <a href="post.html?back=profile.html" style="color:var(--clr-moss);">Make your first post &rarr;</a>');
-      }
-      const _tabs = orgMode
-        ? [['research', 'Research']]
-        : [['all', 'Posts'], ['comments', 'Comments'], ['research', 'Research']];
-      const feedTabsHTML = _tabs.map(t =>
-        `<button class="${window._pfFeedTab === t[0] ? 'active' : ''}" onclick="pfFeedTab('${t[0]}')">${t[1]}</button>`).join('');
-      window.pfFeedTab = function (k) {
-        window._pfFeedTab = k;
-        const body = document.getElementById('pf2-feed-body');
-        if (body) body.innerHTML = feedFor(k);
-        document.querySelectorAll('.pf2-feed__tabs button').forEach((b, i) => {
-          b.classList.toggle('active', _tabs[i] && _tabs[i][0] === k);
-        });
-      };
-      // §1 (2026-08-28) — what stood here filtered the global 50-post feed on
-      // `post.author === p.handle`, but `author` is `author_type` ("ben" /
-      // "org"), so it never matched: "Your posts" was empty for every account
-      // that had ever posted. The page asks the server for this benefactor's
-      // own rows now (`GET /posts?ben_author_id=`).
-      const feedHistoryHTML = feedFor(window._pfFeedTab);
-
-      /* ── build-seq 5 (pass 35) → Build Phase 2 (B): org-mode face content.
-         Backed by REAL Membership rows + the org profile bundle now
-         (window._orgModeData, loaded by switchProfileMode('org')). ── */
-      let initiativeCoinsHTML = '', tasklistCardHTML = '';
-      if (orgMode) {
-        const od = window._orgModeData || null;
-        const myMems = (od && od.memberships) || [];
-        const selOrg = od && od.org;
-        const myRole = (myMems.find(m => od && m.org_id === od.selectedOrgId) || {}).role || 'community';
-        // Role separation (restructure 2026-07-10): rep/executive operate the org.
-        const isOperator = ['rep', 'executive'].includes(myRole);
-
-        if (!myMems.length) {
-          // Honest empty state: org access flows through Membership rows.
-          initiativeCoinsHTML = `<div class="coin-chip coin-chip--empty">No org memberships yet.<br/>
-            Register your organization (or claim a mission) to unlock org mode.</div>`;
-          tasklistCardHTML = `
-                <div class="choices-col-card">
-                  <div class="choices-col-header"><div class="choices-col-title">Your organization</div></div>
-                  <div style="font-size:0.82rem;line-height:1.6;padding:6px 0;color:var(--clr-ink-light);">
-                    You aren't a member of any organization. Organizations have their own accounts,
-                    separate from the one you vote with: claim or register yours, and Earthbux staff
-                    approve it — you become its administrator.
-                  </div>
-                  <a class="btn btn-forest btn-sm" style="text-decoration:none;" href="/org#apply">Register your organization →</a>
-                </div>`;
-        } else {
-          // Initiative coins = the org's mission candidacies (its bids/wins).
-          const cands = (od && od.candidacies) || [];
-          initiativeCoinsHTML = cands.length
-            ? cands.map(c => {
-                const cs = causes.find(x => (c.mission_id || '').startsWith((x.id || '').slice(0, 3)));
-                return `<a class="coin-chip" href="mission.html?mission=${c.mission_id}" title="${c.mission_id}">
-                  ${EBX.creditBadge(cs ? [{ causeIndex: cs.index, amount: c.p2_vote_tally || 0 }] : [], 40)}
-                  <div class="coin-chip__name">${c.mission_id}</div>
-                  <div class="coin-chip__ebx">${c.status === 'pending' ? 'not approved' : c.status}</div>
-                </a>`;
-              }).join('')
-            : `<div class="coin-chip coin-chip--empty">No mission candidacies yet.<br/>Register for a mission to mint one.</div>`;
-
-          let _done = {};
-          try { _done = JSON.parse(localStorage.getItem('ebx_org_tasks') || '{}'); } catch (e) { _done = {}; }
-          const _tasks = [
-            'Build your mission page',
-            'Submit a budget (phase 3)',
-            'Post a progress update',
-            'Respond to benefactor questions',
-            'Confirm beneficiary outreach',
-          ];
-          const orgPicker = myMems.length > 1
-            ? `<select style="font:inherit;font-size:0.78rem;border:1px solid var(--clr-border);border-radius:6px;padding:4px 8px;max-width:100%;"
-                       onchange="setOrgModeOrg(this.value)">
-                 ${myMems.map(m => `<option value="${m.org_id}" ${od.selectedOrgId === m.org_id ? 'selected' : ''}>${m.org_id}</option>`).join('')}
-               </select>`
-            : '';
-          const memberRows = ((od && od.members) || []).map(m =>
-            `<div style="display:flex;gap:8px;align-items:center;font-size:0.78rem;padding:3px 0;">
-               <span style="font-weight:600;">@${m.handle || m.ben_id}</span>
-               <span style="font-family:var(--font-mono);font-size:0.58rem;border:1px solid var(--clr-border);border-radius:4px;padding:1px 6px;">${m.role}</span>
-             </div>`).join('');
-          tasklistCardHTML = `
-                <div class="choices-col-card">
-                  <div class="choices-col-header">
-                    <div class="choices-col-title">${selOrg ? selOrg.name : (od ? od.selectedOrgId : 'Organization')}</div>
-                    ${orgPicker}
-                  </div>
-                  <div style="font-size:0.72rem;color:var(--clr-ink-light);margin-bottom:6px;">
-                    Your role: <b>${myRole}</b>${selOrg && selOrg.verified ? ' · ✓ EN-verified' : ''}
-                    ${cands.length ? `· <a href="mission.html?mission=${cands[0].mission_id}&org=${od ? od.selectedOrgId : ''}" style="color:var(--clr-moss);">mission page →</a>` : ''}
-                    ${isOperator ? `· <a href="admin.html?org=${od ? od.selectedOrgId : ''}" style="color:var(--clr-moss);">org admin →</a>` : ''}
-                  </div>
-                  ${myRole === 'beneficiary' ? `
-                  <div style="border:1px solid rgba(74,124,89,0.4);background:rgba(74,124,89,0.06);border-radius:8px;padding:8px 10px;font-size:0.76rem;line-height:1.5;margin-bottom:8px;">
-                    <b>Beneficiary voice</b> — you speak for those the mission serves. Your statement is
-                    surfaced at the start of every Phase-2 election this org enters. <i>(scaffold)</i>
-                  </div>` : ''}
-                  ${isOperator ? '' : `<div style="font-size:0.7rem;color:var(--clr-ink-light);margin-bottom:6px;">
-                    (editing &amp; org admin are held by rep/executive members)</div>`}
-                  <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0;${isOperator ? '' : 'opacity:0.55;pointer-events:none;'}">
-                    ${_tasks.map((t, i) => `
-                      <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;cursor:pointer;
-                                    ${_done[i] ? 'opacity:0.5;text-decoration:line-through;' : ''}">
-                        <input type="checkbox" ${_done[i] ? 'checked' : ''} onchange="toggleOrgTask(${i})" />
-                        ${t}
-                      </label>`).join('')}
-                  </div>
-                  ${memberRows ? `<div style="border-top:1px dashed var(--clr-border);margin-top:8px;padding-top:8px;">
-                    <div style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--clr-ink-light);margin-bottom:4px;">Members</div>
-                    ${memberRows}</div>` : ''}
-                </div>`;
-        }
-      }
-
-      root.innerHTML = `
-        <div style="background:var(--clr-bg);">
-          <div class="container">
-            <div class="pf2">
-
-            <!-- ══ the top row: (c) wallet · (b) allocations · (a) profile ══ -->
-            <div class="pf2-top">
-
-              <!-- (c) EBX wallet (credit coins). A coin here is SELECTABLE:
-                   (ab) is gated on one being picked. -->
-              <div class="pf2-card">
-                <div class="pf2-card__title">
-                  ${orgMode ? 'Initiative coins' : 'EBX wallet · credit coins'}
-                  <span class="pf2-spacer"></span>
-                  <span class="wallet-strip-card__nav">
-                    <button onclick="walletScroll(-1)" aria-label="Scroll wallet left">‹</button>
-                    <button onclick="walletScroll(1)" aria-label="Scroll wallet right">›</button>
-                  </span>
-                </div>
-                <div class="wallet-strip" id="wallet-strip">${orgMode ? initiativeCoinsHTML : walletHTML}</div>
-              </div>
-
-              <!-- (b) allocations — "This section will also be used for
-                   conversions." Same three sets of two as the election page. -->
-              <div class="pf2-card">
-                <div class="pf2-card__title">Allocations
-                  <span class="pf2-spacer"></span>
-                  <span style="text-transform:none;letter-spacing:0;font-size:0.6rem;">${allocTotalLabel}</span>
-                </div>
-                ${allocHTML}
-              </div>
-
-              <!-- (a) profile · aa settings · ab mode · ac sign out -->
-              <div class="pf2-card pf2-me">
-                <div>${hasCoin
-                    ? EBX.creditBadge(holdings, 56)
-                    : `<div class="profile-card__avatar" style="width:56px;height:56px;margin:0 auto;font-size:1.1rem;">${initials}</div>`}</div>
-                <div class="pf2-me__handle">@${p.handle}</div>
-                <div class="pf2-me__type">${orgMode ? 'Member mode' : (p.type === 'org' ? 'Organization' : 'Benefactor')}</div>
-                <div class="pf2-me__acts">
-                  <button class="pf2-act" onclick="openSettingsModal()" title="Settings">
-                    <span class="pf2-act__k">aa</span>Settings</button>
-                  ${orgMode
-                    ? `<button class="pf2-act" onclick="switchProfileMode('benefactor')">
-                         <span class="pf2-act__k">ab</span>Benefactor</button>`
-                    : `<button class="pf2-act" id="pf2-membermode"
-                          ${hasCoin && window._pickedCoin ? '' : 'disabled'}
-                          title="${hasCoin ? 'Pick a coin in the wallet, then enter member mode' : 'You need a credit coin to hold a membership'}"
-                          onclick="enterMemberMode()">
-                         <span class="pf2-act__k">ab</span>Member</button>`}
-                  <button class="pf2-act" onclick="if(confirm('Log out?')){EBX.Auth.clear();localStorage.removeItem('ebx_profile');location.reload();}">
-                    <span class="pf2-act__k">ac</span>Sign out</button>
-                </div>
-                ${isStaff ? `<button class="pf2-act" style="margin-top:6px;width:100%;"
-                      onclick="switchProfileMode('admin')">Admin console</button>` : ''}
-              </div>
-            </div>
-
-            <!-- ══ (e) the seven weekly windows around (d) the globe ══ -->
-            <div class="pf2-ring">
-              <div class="pf2-ring__top">${_windows[0] ? winCard(_windows[0], 'top', 0) : ''}</div>
-              <div class="pf2-ring__col pf2-ring__left">${
-                /* coming back UP the left side: weeks 6, 5, 4 read top-to-bottom */
-                [6, 5, 4].map(i => _windows[i] ? winCard(_windows[i], 'left', i) : '').join('')
-              }</div>
-              <div class="pf2-ring__globe">${globeSVG()}</div>
-              <div class="pf2-ring__col pf2-ring__right">${
-                /* falling DOWN the right side: weeks 1, 2, 3 */
-                [1, 2, 3].map(i => _windows[i] ? winCard(_windows[i], 'right', i) : '').join('')
-              }</div>
-            </div>
-
-            ${orgMode ? `<div class="pf2-card">${tasklistCardHTML}</div>` : ''}
-
-            <!-- ══ (f) THE FEED ══ -->
-            <div class="pf2-card">
-              <div class="pf2-card__title">${orgMode ? 'Research' : 'Your activity'}
-                <span class="pf2-spacer"></span>
-                <a class="pf2-newpost" id="pf2-newpost" href="post.html?back=profile.html" title="Make a post — general, research or a budget item">+ New post</a>
-                <span class="pf2-feed__tabs">${feedTabsHTML}</span>
-              </div>
-              <div id="pf2-feed-body">${feedHistoryHTML}</div>
-            </div>
-
-            </div>
-          </div>
-
-          <!-- ── Settings window (modal, opened from the gear) ── -->
-          <div id="settings-modal-bg" onclick="closeSettingsOnBg(event)"
-               style="display:none;position:fixed;inset:0;z-index:60;background:rgba(20,26,22,0.45);
-                      align-items:center;justify-content:center;padding:24px;">
-            <div style="background:var(--clr-paper,#fdfbf6);border:1px solid var(--clr-border,#ddd);
-                        border-radius:var(--radius-md,10px);max-width:480px;width:100%;
-                        max-height:85vh;overflow:auto;padding:var(--sp-xl,24px);box-shadow:0 18px 50px rgba(0,0,0,0.25);">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-md,12px);">
-                <div class="profile-feed-eyebrow" style="margin:0;">Settings</div>
-                <button onclick="closeSettingsModal()" aria-label="Close settings"
-                        style="background:none;border:none;cursor:pointer;font-size:1rem;opacity:0.6;">✕</button>
-              </div>
-              <div class="settings-group">
-                <div class="settings-group__title">Identity</div>
-                <div class="settings-row">
-                  <div><div class="settings-row__label">Handle</div><div class="settings-row__sub">@${p.handle}</div></div>
-                </div>
-                <div class="settings-row">
-                  <div><div class="settings-row__label">Email</div><div class="settings-row__sub">${p.email || '—'}</div></div>
-                </div>
-                <div class="settings-row">
-                  <div><div class="settings-row__label">Donation per cycle</div><div class="settings-row__sub">$${p.amount || 0} / 14 days</div></div>
-                  <button class="btn btn-ghost btn-sm">Change</button>
-                </div>
-              </div>
-              <div style="padding-top:var(--sp-md);display:flex;gap:var(--sp-sm);">
-                <button class="btn btn-ghost btn-sm" style="color:var(--clr-ink-light);font-size:0.7rem;"
-                  onclick="if(confirm('Clear local data?')){localStorage.removeItem('ebx_profile');localStorage.removeItem('ebx_choices');location.reload();}">
-                  Reset local data (dev)
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>`;
-
-      /* ── window helpers ── */
-      // build-seq 5 (pass 35) → Build Phase 2 (B): in-place mode switch backed
-      // by real Membership rows. Entering org mode loads /benefactors/me/
-      // memberships + the selected org's public profile bundle.
-      async function loadOrgModeData() {
-        const prev = window._orgModeData || {};
-        const d = { memberships: [], selectedOrgId: prev.selectedOrgId || null,
-                    org: null, candidacies: [], members: [], posts: [] };
-        try {
-          if (EBX.Auth && EBX.Auth.isLoggedIn && EBX.Auth.isLoggedIn()) {
-            const r = await EBX.Auth.fetchAuthed('/benefactors/me/memberships');
-            if (r && r.ok) d.memberships = await r.json();
-          }
-        } catch (e) {}
-        if (d.memberships.length && !d.memberships.some(m => m.org_id === d.selectedOrgId)) {
-          // prefer an org this ben OPERATES (rep/executive) as the default face
-          const op = d.memberships.find(m => ['rep', 'executive'].includes(m.role));
-          d.selectedOrgId = (op || d.memberships[0]).org_id;
-        }
-        if (d.selectedOrgId) {
-          try {
-            const pr = await fetch('/organizations/' + encodeURIComponent(d.selectedOrgId) + '/profile');
-            if (pr.ok) {
-              const p = await pr.json();
-              d.org = p.org; d.candidacies = p.candidacies || [];
-              d.members = p.members || []; d.posts = p.posts || [];
-            }
-          } catch (e) {}
-        }
-        window._orgModeData = d;
-      }
-      window.switchProfileMode = async function (mode) {
-        window._profileMode = (mode === 'org' || mode === 'admin') ? mode : 'benefactor';
-        if (window._profileMode === 'org') { try { await loadOrgModeData(); } catch (e) {} }
-        renderProfile(window._lastProfileData);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      };
-      window.setOrgModeOrg = async function (orgId) {
-        window._orgModeData = Object.assign(window._orgModeData || {}, { selectedOrgId: orgId });
-        try { await loadOrgModeData(); } catch (e) {}
-        renderProfile(window._lastProfileData);
-      };
-      window.toggleOrgTask = function (idx) {
-        let done = {};
-        try { done = JSON.parse(localStorage.getItem('ebx_org_tasks') || '{}'); } catch (e) { done = {}; }
-        done[idx] = !done[idx];
-        localStorage.setItem('ebx_org_tasks', JSON.stringify(done));
-        renderProfile(window._lastProfileData);
-      };
-      /* §1 (2026-08-28) — `toggleChoicesView` is gone with the two tables it
-         flipped between. Both columns of the choices table are on every window
-         card now, side by side, which is the whole point of the drawing: you
-         see the organization and the initiative of a week together instead of
-         switching between two lists of seven. */
-
-      /* (c) → (ab). "Member mode — must have a coin in c. selected." */
-      window._pickedCoin = window._pickedCoin || null;
-      window.pickCoin = function (key, ev) {
-        if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-        window._pickedCoin = (window._pickedCoin === key) ? null : key;
-        document.querySelectorAll('#wallet-strip .coin-chip').forEach(el => {
-          el.classList.toggle('is-picked', el.dataset.coin === window._pickedCoin);
-        });
-        const b = document.getElementById('pf2-membermode');
-        if (b) {
-          b.disabled = !window._pickedCoin;
-          b.title = window._pickedCoin
-            ? 'Enter member mode for this coin\u2019s mission'
-            : 'Pick a coin in the wallet first';
-        }
-      };
-      window.enterMemberMode = function () {
-        if (!window._pickedCoin) {
-          alert('Pick a credit coin in the wallet first — a membership belongs to a mission.');
-          return;
-        }
-        switchProfileMode('org');
-      };
-
-      /* (b) → the conversion row. One move, `POST /wallet/move`. */
-      window.pfConvert = async function () {
-        const msg = document.getElementById('pf2-conv-msg');
-        const from = document.getElementById('pf2-conv-from');
-        const to   = document.getElementById('pf2-conv-to');
-        const amt  = document.getElementById('pf2-conv-amt');
-        if (!from || !to || !amt) return;
-        const ct = Math.round((Number(amt.value) || 0) * 100);
-        const say = t => { if (msg) msg.textContent = t; };
-        if (ct <= 0) { say('Enter an amount to move.'); return; }
-        if (from.value === to.value) { say('Pick two different races.'); return; }
-        try {
-          const r = await EBX.Auth.fetchAuthed('/wallet/move', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ from_mission_id: from.value, to_mission_id: to.value, ct: ct })
-          });
-          if (r && r.ok) {
-            say('Moved.');
-            await loadMyWallet();
-            renderProfile(window._lastProfileData);
-          } else {
-            let d = ''; try { d = (await r.json()).detail || ''; } catch (e) {}
-            say(d || ('Move refused (HTTP ' + (r ? r.status : '?') + ').'));
-          }
-        } catch (e) { say('Move failed.'); }
-      };
-      window.walletScroll = function (dir) {
-        const strip = document.getElementById('wallet-strip');
-        if (strip) strip.scrollBy({ left: dir * 132, behavior: 'smooth' });
-      };
-      /* `a3Flip` is gone with the Annulus-3 placeholder it flipped. The centre
-         of this page is the globe now (d), and it has no faces — it turns. */
-      // §1 (2026-08-28) — the globe starts turning once the markup is in the
-      // document, and re-aims whenever a window card is selected. One rAF loop
-      // for the page; `renderProfile` can run again without stacking loops.
-      if (window._globeRaf) cancelAnimationFrame(window._globeRaf);
-      requestAnimationFrame(function () {
-        if (!document.getElementById('gl-grid')) return;
-        selectWindow(_selWindow);
-        _spin();
-        // Reinstate the coin selection across a repaint. `pickCoin` TOGGLES, so
-        // this paints the classes directly rather than calling it.
-        if (window._pickedCoin) {
-          document.querySelectorAll('#wallet-strip .coin-chip').forEach(el => {
-            el.classList.toggle('is-picked', el.dataset.coin === window._pickedCoin);
-          });
-          const b = document.getElementById('pf2-membermode');
-          if (b) b.disabled = false;
-        }
-      });
-
-      window.openSettingsModal = function () {
-        const bg = document.getElementById('settings-modal-bg');
-        if (bg) bg.style.display = 'flex';
-      };
-      window.closeSettingsModal = function () {
-        const bg = document.getElementById('settings-modal-bg');
-        if (bg) bg.style.display = 'none';
-      };
-      window.closeSettingsOnBg = function (e) {
-        if (e.target && e.target.id === 'settings-modal-bg') window.closeSettingsModal();
-      };
-    }
-
-
-    function getNextPoolDate() {
-      const cycleState = EBX.Cycle.now();
-      const idx = cycleState.activeCauseIndex;
-      const winStart = EBX.Cycle.windowStart(idx, cycleState.cycleNum);
-      const winEnd = new Date(winStart.getTime() + (EBX.config.causeLengthDays || 49) * EBX.Cycle.MS_PER_DAY);
-      return winEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-
-    EBX.initFooter && EBX.initFooter();
 
   })();
   </script>

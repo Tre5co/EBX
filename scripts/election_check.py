@@ -12,7 +12,9 @@ copy of `earthbucks.db` and asserts:
   * a decided initiative election refuses a new slate;
   * organization-election votes follow the doubling ladder
     (0 tokens = 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5);
-  * without an ME stake, only this week's organization election is open.
+  * ruling 20 (2026-10-09, replacing ruling 16): everyone has one vote in every
+    open organization election; only a voter in its initiative election may put
+    tokens into it.
 """
 import os
 import shutil
@@ -82,6 +84,19 @@ def ben_id(handle):
         return db.query(_m.BenefactorAccount).filter(_m.BenefactorAccount.handle == handle).one().id
     finally:
         db.close()
+
+
+def voted_in_me(handle, mission_id):
+    """Record a 0-token initiative-election vote in `mission_id` (its election has
+    already closed — this is how such a vote is left in the table)."""
+    db = SessionLocal()
+    b = db.query(_m.BenefactorAccount).filter(_m.BenefactorAccount.handle == handle).one()
+    m = db.get(_m.Mission, mission_id)
+    if not db.query(_m.VoteP1).filter(_m.VoteP1.ben_id == b.id, _m.VoteP1.mission_id == mission_id).first():
+        db.add(_m.VoteP1(ben_id=b.id, mission_id=mission_id, tiv_id=m.winning_tiv_id, share=1.0,
+                         ebx_committed=0, stake_ct=0, valence="helpful", committed=True))
+        db.commit()
+    db.close()
 
 
 def give(handle, tokens):
@@ -185,6 +200,9 @@ for h in (HC, HD, HE):
 before = {e["org_id"]: e["net_votes"] for e in c.get(f"/missions/{ACTIVE}/p2/tally").json()["entries"]}
 r = c.put("/wallet/org", headers=HC, json={"mission_id": ACTIVE, "org_id": orgs[0]})
 ok(r.status_code == 200, "anyone may vote in this week's race with no tokens", f"HTTP {r.status_code} {r.text[:100]}")
+# ruling 20 (2026-10-09): tokens take an initiative-election vote in the mission.
+voted_in_me("electcheckD", ACTIVE)
+voted_in_me("electcheckE", ACTIVE)
 c.post("/wallet/commit", headers=HD, json={"mission_id": ACTIVE, "target_ct": 20 * T, "org_id": orgs[0]})
 c.post("/wallet/commit", headers=HE, json={"mission_id": ACTIVE, "target_ct": 80 * T, "org_id": orgs[1]})
 after = {e["org_id"]: e["net_votes"] for e in c.get(f"/missions/{ACTIVE}/p2/tally").json()["entries"]}
@@ -193,16 +211,22 @@ ok(after.get(orgs[0], 0) - before.get(orgs[0], 0) == 1 + 3,
 ok(after.get(orgs[1], 0) - before.get(orgs[1], 0) == 5,
    "80 tokens = 5 votes", f"+{after.get(orgs[1], 0) - before.get(orgs[1], 0)}")
 row = next(x for x in c.get("/wallet", headers=HE).json()["rows"] if x["mission_id"] == ACTIVE)
-ok(row["my_votes"] == 5 and row["can_take_part"], "the row reports my_votes and can_take_part")
+ok(row["my_votes"] == 5 and row["can_take_part"] and row["can_commit"],
+   "the row reports my_votes, can_take_part and can_commit")
 
-section("without an ME stake, only this week's race is open")
+section("ruling 20 (2026-10-09): one vote in every race; tokens need an initiative-election vote")
 if FAR:
     r = c.put("/wallet/org", headers=HC, json={"mission_id": FAR, "org_id": orgs[0]})
-    ok(r.status_code == 400, "a far race refuses a free vote", f"HTTP {r.status_code}")
+    ok(r.status_code == 200, "a far race takes anyone's one vote (ruling 16's 'this week only' is gone)",
+       f"HTTP {r.status_code}")
     r = c.post("/wallet/commit", headers=HC, json={"mission_id": FAR, "target_ct": 10 * T})
-    ok(r.status_code == 400, "…and money", f"HTTP {r.status_code}")
+    ok(r.status_code == 400 and "initiative election" in r.json().get("detail", ""),
+       "…but not their money", f"HTTP {r.status_code}")
+    r = c.post("/wallet/commit", headers=HC, json={"mission_id": ACTIVE, "target_ct": 10 * T})
+    ok(r.status_code == 400, "…and this week's race refuses it too", f"HTTP {r.status_code}")
     far_row = next(x for x in c.get("/wallet", headers=HC).json()["rows"] if x["mission_id"] == FAR)
-    ok(not far_row["can_take_part"], "…and the row says so")
+    ok(far_row["can_take_part"] and not far_row["can_commit"] and far_row["my_votes"] == 1,
+       "…and the row says so: one vote, no tokens")
     r = c.put("/wallet/org", headers=HA, json={"mission_id": MID, "org_id": orgs[0]})
     ok(r.status_code == 200, "a backer of a mission's initiative election may vote in its race any week",
        f"HTTP {r.status_code} {r.text[:100]}")

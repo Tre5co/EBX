@@ -5,20 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Earthbux News — you donate, we follow</title>
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261004a" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261009a" />
   <style>
-    /* ── HOME (P2 · Home mods, 2026-09-30) ─────────────────────────────────
-       Top to bottom: THE HERO, left-aligned, with THE FIVE STEPS to its right
-       (resources/js/ebx_steps.js — five animated pages, 10 s each, the only
-       text a message per page); THE MISSION HUB (every mission, one row per
-       cause, the cause elections on the left; post-ME missions carry "Week x";
-       anything decided this week glows; a card opens its mission page); then
-       THE NETWORK and THE FEED, which have no toggles on Home — every filter,
-       search and thread is in News (cause.html).
-       The phase rows, the top card, the annulus and its six side cards came
-       off Home this pass; the annulus stays on the mission page (EBX.Wheel,
-       mission variant). History: INSTRUCTIONS.md › ARCHIVE › 2026-09-30 and
-       2026-09-25b; docs/structure.md §4.
+    /* ── HOME (10/9 Reshuffle, 2026-10-09) ─────────────────────────────────
+       Top to bottom: THE HERO, left-aligned, with THE FIVE STEPS and their
+       visual to its right — the step list now on the LEFT of the visual ("The
+       5 steps on home should be to the left of the visual"), step 5 Feedback;
+       THE THREE DOORS and "Make your impact" (Jax's copy, 2026-10-09); then
+       THE WEEKLY REPORT, "displayed on the home page at all times, updated each
+       week" (GET /inbox/weekly/report, backend/app/report.py).
+       Gone this pass: the missions hub (→ Missions, resources/js/ebx_hub.js)
+       and the feed (→ News) — "no more discussion on home".
+       History: INSTRUCTIONS.md › ARCHIVE › 2026-10-09, 2026-10-05, 2026-09-30;
+       docs/structure.md §4.
        ────────────────────────────────────────────────────────────────────── */
     body {
       background:
@@ -46,11 +45,12 @@
 
     /* ══ THE HERO + THE FIVE STEPS (2026-09-30) ═════════════════════════════
        The hero is left-aligned; the five steps (ebx_steps.js) sit to its right.
-       Below 900px they stack, hero first. */
+       Below 900px they stack, hero first. 10/9 Reshuffle: inside the visual's
+       cell the step list is on the LEFT of the animation. */
     .hx { display: grid; grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr); gap: clamp(24px, 3.5vw, 48px); align-items: center; }
     @media (max-width: 900px) { .hx { grid-template-columns: 1fr; } }
-    /* the visual and, to its right, the five steps stacked with arrows down */
-    .hx__vis { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; min-width: 0; }
+    /* the five steps stacked with arrows down and, to their right, the visual */
+    .hx__vis { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 18px; align-items: center; min-width: 0; }
     .ld-flow { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: stretch; min-width: 132px; }
     .ld-flow > li { display: block; }
     .ld-flow__i { width: 100%; }
@@ -130,160 +130,144 @@
     .ld-steps { min-width: 0; }
     .ld-cta:empty, .ld-cta[hidden] { display: none; }
 
-    /* ══ THE MISSION HUB (2026-09-30) ════════════════════════════════════════
-       Seven rows, one per cause. Column 0 is the cause's election; then its
-       missions, newest first. ‹ › move one column, « » one page. */
-    .mh { margin-top: 58px; }
-    .mh__head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-      border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px; }
-    .mh__title { font-family: var(--font-display, serif); font-weight: 800; margin: 0;
-      font-size: clamp(1.2rem, 2.6vw, 1.6rem); color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em; }
-    .mh__sub { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
-      text-transform: uppercase; color: rgba(245,240,232,0.45); }
-    .mh__sub b { color: var(--clr-honey, #e8a84c); font-weight: 400; }
-    .mh__nav { margin-left: auto; display: flex; gap: 4px; align-items: center; }
-    .mh__btn { font: inherit; font-size: 0.8rem; line-height: 1; cursor: pointer; min-width: 30px; height: 30px; padding: 0 9px;
-      border-radius: 8px; color: var(--clr-parchment, #f5f0e8); background: rgba(245,240,232,0.04);
-      border: 1px solid rgba(245,240,232,0.16); }
-    .mh__btn:hover:not([disabled]) { border-color: var(--clr-honey, #e8a84c); }
-    .mh__btn[disabled] { opacity: 0.3; cursor: default; }
-    .mh__btn:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
-    .mh__toggle { margin-left: 8px; font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; }
-    .mh__body { margin-top: 14px; }
-    /* collapsed: this week's two elections, each with its top three.
-       P2 · Home (2026-10-05): "This Week's Decisions", a standing column head
-       over each card (Initiative Election · Organization Election), and no
-       phase label inside the cards. */
-    .mh__week { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
-    .mh__wcol { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-    .mh__wh { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase;
-      color: rgba(245,240,232,0.5); padding: 0 2px; }
-    .mh__week[hidden] { display: none; }
-    @media (max-width: 760px) { .mh__week { grid-template-columns: 1fr; } }
-    .mw { --c: #e8a84c; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; padding: 14px 16px 12px;
-      border-radius: 12px; background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12); border-top: 3px solid var(--c);
-      transition: background .15s, border-color .15s; }
-    .mw:hover { background: rgba(245,240,232,0.055); border-color: rgba(245,240,232,0.28); border-top-color: var(--c); }
-    .mw:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
-    .mw.mc--now { border-color: color-mix(in srgb, var(--c) 70%, transparent); }
-    .mw__top { display: flex; align-items: baseline; gap: 10px; }
-    .mw__k { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.13em; text-transform: uppercase; color: color-mix(in srgb, var(--c) 75%, #f5f0e8); }
-    .mw__d { margin-left: auto; font-family: var(--font-mono, monospace); font-size: 0.62rem; font-weight: 700; color: var(--clr-honey, #e8a84c); white-space: nowrap; }
-    .mw__t { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.05rem; line-height: 1.25; color: var(--clr-parchment, #f5f0e8); }
-    .mw__lead { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
-    .mw__lead li { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 0.8rem; color: rgba(245,240,232,0.82); }
-    .mw__lead i { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.62rem; color: rgba(245,240,232,0.45); }
-    .mw__lead span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mw__lead b { font-family: var(--font-mono, monospace); font-size: 0.66rem; font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
-    .mw__lead li:first-child span { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
-    .mw__lab { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(245,240,232,0.5); margin-top: 2px; }
-    .mw__t small { display: block; margin-top: 3px; font-family: var(--font-mono, monospace); font-size: 0.66rem; font-weight: 700; letter-spacing: 0.02em; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
-    .mw__t em { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.6rem; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(245,240,232,0.55); display: block; margin-bottom: 2px; }
-    .mw__none { font-size: 0.8rem; color: rgba(245,240,232,0.5); font-style: italic; }
-    .mh__body[hidden] { display: none; }
-    /* P2 · Home (2026-10-05): "conserve space the same way we did in the
-       descriptions — we don't need a full border and can have shared borders."
-       One hairline grid, like the four doors; each card keeps its cause stripe. */
-    .mh__grid { display: grid; gap: 0; align-items: stretch;
-      border-top: 1px solid rgba(245,240,232,0.12); border-left: 1px solid rgba(245,240,232,0.12); }
-    .mh__grid > * { border-right: 1px solid rgba(245,240,232,0.12); border-bottom: 1px solid rgba(245,240,232,0.12); }
-    .mh__colhead { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em; text-transform: uppercase;
-      color: rgba(245,240,232,0.4); padding: 0 2px 2px; align-self: end; }
-    .mh__rowhead { display: flex; align-items: center; gap: 8px; text-decoration: none; min-width: 0;
-      font-weight: 700; font-size: 0.84rem; color: var(--clr-parchment, #f5f0e8); }
-    .mh__rowhead i { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent); }
-    .mh__rowhead span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .mh__rowhead:hover span { text-decoration: underline; }
-    .mc { --c: #e8a84c; position: relative; display: flex; flex-direction: column; gap: 3px; min-width: 0; min-height: 86px;
-      text-decoration: none; color: inherit; padding: 10px 12px 9px;
-      background: transparent; box-shadow: inset 0 3px 0 var(--c);
-      transition: background .15s; }
-    .mc:hover { background: rgba(245,240,232,0.055); }
-    .mc:focus-visible { outline: 2px solid var(--clr-honey, #e8a84c); outline-offset: 2px; }
-    .mc__k { font-family: var(--font-mono, monospace); font-size: 0.54rem; letter-spacing: 0.13em; text-transform: uppercase;
-      color: color-mix(in srgb, var(--c) 75%, #f5f0e8); line-height: 1.45; }   /* wraps: "phase · closes x" is read whole (2026-10-05) */
-    .mc__t { font-family: var(--font-display, serif); font-weight: 800; font-size: 0.9rem; line-height: 1.22; color: var(--clr-parchment, #f5f0e8);
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .mc__l { font-size: 0.72rem; color: rgba(245,240,232,0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mc__f { margin-top: auto; padding-top: 4px; display: flex; gap: 8px; align-items: baseline;
-      font-family: var(--font-mono, monospace); font-size: 0.6rem; color: rgba(245,240,232,0.48); }
-    .mc__f span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mc__f b { font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
-    .mc--ce { background: rgba(245,240,232,0.015); }
-    .mc--stalled { opacity: 0.62; }
-    /* decided this week — the glow */
-    .mc--now { animation: mcGlow 2.6s ease-in-out infinite alternate; }
-    .mc--now .mc__k { color: var(--clr-honey, #e8a84c); }
-    @keyframes mcGlow { from { box-shadow: inset 0 3px 0 var(--c), inset 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent), inset 0 0 14px -4px color-mix(in srgb, var(--c) 45%, transparent); }
-                        to { box-shadow: inset 0 3px 0 var(--c), inset 0 0 0 1px color-mix(in srgb, var(--c) 65%, transparent), inset 0 0 22px 0 color-mix(in srgb, var(--c) 50%, transparent); } }
-    .mw.mc--now { animation: none; }
-    @media (prefers-reduced-motion: reduce) { .mc--now { animation: none; } }
-    .mc--empty { background: none; min-height: 86px; }
-    .mh__loading { padding: 26px; text-align: center; font-size: 0.84rem; color: rgba(245,240,232,0.5); }
-    @media (max-width: 560px) { .mh__nav .mh__btn--page { display: none; } }
+    /* ══ THE WEEKLY REPORT (10/9 Reshuffle, 2026-10-09) ═══════════════════════
+       "This will be displayed on the home page at all times, updated each
+       week." One cause a week: three of its missions above the timeline, the
+       timeline itself (one dot per mission, placed by its age, numbered, in its
+       cause's colour), three more below it — last week's cause twice, next
+       week's once — then the cause elections and the exchange. The data is
+       GET /inbox/weekly/report (backend/app/report.py). On a wide screen each
+       card hangs from its dot by a thin line; on a phone the rows stack and
+       the lines go. */
+    .wr { --wc: #e8a84c; margin-top: 60px; }
+    .wr__head { display: flex; align-items: flex-end; gap: 14px 32px; flex-wrap: wrap;
+      border-top: 1px solid rgba(245,240,232,0.14); padding-top: 20px; }
+    .wr__kicker { font-family: var(--font-mono, monospace); font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(245,240,232,0.5); }
+    .wr__title { margin: 6px 0 0; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      font-family: var(--font-display, serif); font-weight: 800; font-size: clamp(1.6rem, 3.6vw, 2.5rem);
+      line-height: 1.05; letter-spacing: -0.02em; color: var(--clr-parchment, #f5f0e8); }
+    .wr__swatch { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--wc);
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--wc) 22%, transparent); }
+    .wr__sub { margin: 0 0 4px auto; max-width: 52ch; font-size: 0.9rem; line-height: 1.55; color: rgba(245,240,232,0.66); }
+    .wr__loading { padding: 34px 0; font-size: 0.9rem; color: rgba(245,240,232,0.55); }
 
-    /* ══ THE NETWORK + THE FEED — no toggles on Home (2026-09-30) ═══════════
-       The three tiles say what the network makes and link into News, filtered;
-       the feed is every post, newest first. Filters, search and threads are
-       News's. */
-    .hn { margin-top: 54px; }
-    .hn__head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-      border-top: 1px solid rgba(232,168,76,0.4); padding-top: 14px; margin-bottom: 14px; }
-    .hn__head .ep-src { margin: 0; }
-    .hn__title { font-family: var(--font-display, serif); font-weight: 800; margin: 0;
-      font-size: clamp(1.2rem, 2.6vw, 1.6rem); color: var(--clr-parchment, #f5f0e8); letter-spacing: -0.015em; }
-    .hn__sub { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.16em;
-      text-transform: uppercase; color: rgba(245,240,232,0.45); }
-    /* P3 (2026-09-29): Home's + — the composer, from the front door */
-    .hn__post { margin-left: auto; align-self: center; font-weight: 700; font-size: 0.86rem; text-decoration: none;
-      padding: 7px 16px; border-radius: 999px; background: var(--clr-honey, #e8a84c); color: #0f1a14; }
-    .hn__post:hover { filter: brightness(1.08); }
-    .hn__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-    .hn__tile { --tc: #e8a84c; text-decoration: none; color: inherit;
-      display: flex; flex-direction: column; gap: 6px; padding: 14px 16px;
-      background: rgba(245,240,232,0.03); border: 1px solid rgba(245,240,232,0.12); border-top: 3px solid var(--tc); border-radius: 12px;
-      transition: border-color .15s, background .15s; }
-    .hn__tile:hover { border-color: color-mix(in srgb, var(--tc) 60%, transparent); border-top-color: var(--tc); background: rgba(245,240,232,0.05); }
-    .hn__tile:focus-visible { outline: 2px solid var(--tc); outline-offset: 2px; }
-    .hn__tile--news { --tc: #e8a84c; } .hn__tile--research { --tc: #8ec5e8; } .hn__tile--budgeting { --tc: #8fce9d; }
-    .hn__top { display: flex; align-items: baseline; gap: 10px; }
-    .hn__name { font-family: var(--font-display, serif); font-weight: 800; font-size: 1.08rem; color: var(--clr-parchment, #f5f0e8); }
-    .hn__tag { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--tc); }
-    .hn__n { margin-left: auto; font-family: var(--font-mono, monospace); font-size: 0.66rem; color: rgba(245,240,232,0.5); }
-    @media (max-width: 760px) { .hn__row { grid-template-columns: 1fr; } }
+    /* the six updates — one grid row of three above the timeline, one below */
+    .wr__row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 24px; }
+    .wr__row--below { margin-top: 0; }
+    .wu { --c: #e8a84c; position: relative; display: flex; flex-direction: column; gap: 8px; min-width: 0;
+      padding: 16px 18px 18px; scroll-margin-top: 90px; }
+    .wu + .wu { border-left: 1px solid rgba(245,240,232,0.1); }
+    .wr__row--above .wu { box-shadow: inset 0 3px 0 var(--c);
+      background: linear-gradient(to bottom, color-mix(in srgb, var(--c) 8%, transparent), transparent 70%); }
+    .wr__row--below .wu { box-shadow: inset 0 -3px 0 var(--c);
+      background: linear-gradient(to top, color-mix(in srgb, var(--c) 8%, transparent), transparent 70%); }
+    .wu:target { outline: 2px solid color-mix(in srgb, var(--c) 70%, transparent); outline-offset: -2px; }
+    .wu__h { display: flex; align-items: center; gap: 10px; }
+    .wu__n { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+      background: var(--c); color: #0f1a14; font-family: var(--font-mono, monospace); font-size: 0.78rem; font-weight: 700; }
+    .wu__who { display: flex; flex-direction: column; min-width: 0; }
+    .wu__lab { font-weight: 700; font-size: 0.86rem; color: var(--clr-parchment, #f5f0e8); }
+    .wu__k { font-family: var(--font-mono, monospace); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: color-mix(in srgb, var(--c) 72%, #f5f0e8); }
+    .wu__t { margin: 2px 0 0; font-family: var(--font-display, serif); font-weight: 800; font-size: 1.14rem; line-height: 1.25;
+      color: var(--clr-parchment, #f5f0e8); }
+    .wu__t a { color: inherit; text-decoration: none; }
+    .wu__t a:hover { text-decoration: underline; text-decoration-color: var(--c); }
+    .wu__l { margin: 0; font-size: 0.86rem; line-height: 1.5; color: rgba(245,240,232,0.74); }
+    .wu__lead { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+    .wu__lead li { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 8px; align-items: baseline;
+      font-size: 0.83rem; color: rgba(245,240,232,0.8); }
+    .wu__lead i { font-style: normal; font-family: var(--font-mono, monospace); font-size: 0.62rem; color: rgba(245,240,232,0.45); }
+    .wu__lead span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wu__lead b { font-family: var(--font-mono, monospace); font-size: 0.68rem; font-weight: 700; color: color-mix(in srgb, var(--c) 70%, #f5f0e8); }
+    .wu__lead li:first-child span { color: var(--clr-parchment, #f5f0e8); font-weight: 600; }
+    .wu__facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 2px 0 0; }
+    .wu__facts div { display: flex; flex-direction: column; min-width: 0; }
+    .wu__facts dt { font-family: var(--font-mono, monospace); font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: rgba(245,240,232,0.48); }
+    .wu__facts dd { margin: 0; font-weight: 700; font-size: 0.92rem; color: var(--clr-parchment, #f5f0e8); }
+    .wu__go { margin-top: auto; padding-top: 6px; display: flex; gap: 6px 16px; flex-wrap: wrap; font-size: 0.86rem; }
+    .wu__go a { font-weight: 700; text-decoration: none; color: color-mix(in srgb, var(--c) 72%, #f5f0e8); }
+    .wu__go a + a { font-weight: 600; color: rgba(245,240,232,0.62); }
+    .wu__go a:hover { text-decoration: underline; }
+    .wu--missing .wu__t, .wu--missing .wu__l { color: rgba(245,240,232,0.45); }
 
-    /* the feed */
-    .hf { margin-top: 20px; }
-    .hf__all { font-size: 0.8rem; color: var(--clr-honey, #e8a84c); text-decoration: none; display: inline-block; margin-top: 16px; }
-    .hf__all:hover { text-decoration: underline; }
-    .hf__state { font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.14em;
-      text-transform: uppercase; color: rgba(245,240,232,0.45); margin-bottom: 10px; }
-    .hf__state b { color: var(--clr-parchment, #f5f0e8); font-weight: 400; }
-    /* Home pass (2026-10-01): "only 1 column for posts" */
-    .hf__list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; max-width: 820px; }
-    .hf__empty { grid-column: 1 / -1; padding: 28px 16px; text-align: center; font-size: 0.86rem; color: rgba(245,240,232,0.5);
-      border: 1px dashed rgba(245,240,232,0.16); border-radius: 12px; }
-    .hp { --tc: rgba(245,240,232,0.4); display: block; text-decoration: none; color: inherit;
-      padding: 13px 16px 12px; border-radius: 12px; border: 1px solid rgba(245,240,232,0.1);
-      border-left: 3px solid var(--tc); background: rgba(245,240,232,0.025); transition: border-color .15s, background .15s; }
-    .hp:hover { background: rgba(245,240,232,0.05); border-color: rgba(245,240,232,0.22); border-left-color: var(--tc); }
-    .hp--news { --tc: #e8a84c; } .hp--research { --tc: #8ec5e8; } .hp--budgeting { --tc: #8fce9d; } .hp--review { --tc: #c9a6d8; }
-    .hp__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
-      font-family: var(--font-mono, monospace); font-size: 0.6rem; letter-spacing: 0.06em; color: rgba(245,240,232,0.5); }
-    .hp__kind { text-transform: uppercase; letter-spacing: 0.12em; color: var(--tc); font-weight: 700; }
-    .hp__bia { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 4px;
-      font-weight: 800; font-size: 0.62rem; color: #0f1a14; background: var(--tc); letter-spacing: 0; }
-    .hp__cause { display: inline-flex; align-items: center; gap: 5px; }
-    .hp__cause i { width: 7px; height: 7px; border-radius: 50%; }
-    .hp__title { font-family: var(--font-display, serif); font-weight: 800; font-size: 1rem; line-height: 1.3;
-      margin: 7px 0 3px; color: var(--clr-parchment, #f5f0e8); }
-    .hp__body { margin: 4px 0 0; font-size: 0.84rem; line-height: 1.55; color: rgba(245,240,232,0.7);
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-    .hp__foot { display: flex; gap: 14px; margin-top: 9px; font-family: var(--font-mono, monospace);
-      font-size: 0.62rem; color: rgba(245,240,232,0.45); }
-    .hp__foot span:last-child { margin-left: auto; color: var(--clr-honey, #e8a84c); }
-    .hp__src { color: #8ec5e8; }
+    /* the timeline — x is a mission's age in weeks since its initiative was
+       elected (T); the axis runs from the initiative election's last weeks to
+       a week after budget day. */
+    .tl { position: relative; height: 150px; }
+    .tl__ph { position: absolute; top: 63px; height: 24px; box-sizing: border-box; display: flex; align-items: center;
+      padding: 0 10px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; overflow: hidden;
+      color: rgba(245,240,232,0.8); border-right: 2px solid #0f1a14; }
+    .tl__ph--me { background: rgba(142,197,232,0.2); border-radius: 999px 0 0 999px; }
+    .tl__ph--oe { background: rgba(232,168,76,0.18); }
+    .tl__ph--prep { background: rgba(143,206,157,0.2); }
+    .tl__ph--ex { background: rgba(201,166,216,0.2); border-radius: 0 999px 999px 0; border-right: 0; justify-content: flex-end; }
+    .tl__d { margin-left: 6px; font-size: 0.62rem; font-weight: 500; opacity: 0.72; }
+    .tl__wk { position: absolute; top: 87px; width: 1px; height: 5px; background: rgba(245,240,232,0.22); }
+    .tl__mk { position: absolute; top: 57px; width: 2px; height: 36px; margin-left: -1px; background: rgba(245,240,232,0.55); border-radius: 1px; }
+    .tl__mkl { position: absolute; top: 93px; transform: translateX(-50%); font-size: 0.62rem; white-space: nowrap; color: rgba(245,240,232,0.55); }
+    .tl__links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+    .tl__links line { stroke-width: 1.25; vector-effect: non-scaling-stroke; }
+    .tl__dot { --c: #e8a84c; position: absolute; z-index: 2; display: grid; place-items: center; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+      border-radius: 50%; background: var(--c); color: #0f1a14; text-decoration: none;
+      font-family: var(--font-mono, monospace); font-size: 0.78rem; font-weight: 700; box-shadow: 0 0 0 3px #0f1a14; }
+    .tl__dot:hover, .tl__dot:focus-visible { box-shadow: 0 0 0 3px #0f1a14, 0 0 0 5px var(--c); outline: none; }
+    .tl__dot--above { top: 34px; } .tl__dot--below { top: 116px; }
+    .tl__dot--missing { background: transparent; color: rgba(245,240,232,0.5); box-shadow: inset 0 0 0 1.5px rgba(245,240,232,0.35), 0 0 0 3px #0f1a14; }
+    .tl__stem { position: absolute; width: 0; border-left: 1.5px solid color-mix(in srgb, var(--c) 65%, transparent); margin-left: -0.75px; }
+    .tl__stem--above { top: 47px; height: 16px; } .tl__stem--below { top: 87px; height: 16px; }
+    .tl__lab { position: absolute; white-space: nowrap; font-size: 0.72rem; font-weight: 700; color: color-mix(in srgb, var(--c) 72%, #f5f0e8);
+      transform: translateX(-50%); }
+    .tl__lab--above { top: 2px; } .tl__lab--below { top: 132px; }
+    .tl__lab--start { transform: none; } .tl__lab--end { transform: translateX(-100%); }
+    /* wide: the cards hang from their dots, so the dots need no names */
+    @media (min-width: 861px) { .tl__lab { display: none; } .tl { height: 150px; } }
+
+    /* the cause elections and the exchange */
+    .wr__foot { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); margin-top: 36px;
+      border-top: 1px solid rgba(245,240,232,0.14); }
+    .wr__box { padding: 20px 22px 8px 0; min-width: 0; }
+    .wr__box + .wr__box { border-left: 1px solid rgba(245,240,232,0.1); padding-left: 22px; padding-right: 0; }
+    .wr__bh { margin: 0 0 12px; font-family: var(--font-display, serif); font-weight: 800; font-size: 1.2rem; color: var(--clr-parchment, #f5f0e8); }
+    .wr__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+    .wr__list li { --c: #e8a84c; display: grid; grid-template-columns: 12px minmax(0, 1fr); gap: 10px;
+      font-size: 0.88rem; line-height: 1.5; color: rgba(245,240,232,0.78); }
+    .wr__list li > i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); margin-top: 6px; }
+    .wr__list b { color: var(--clr-parchment, #f5f0e8); }
+    .wr__empty { font-size: 0.86rem; color: rgba(245,240,232,0.55); margin: 0; }
+    .wr__more { display: inline-block; margin-top: 14px; font-size: 0.86rem; font-weight: 700; color: var(--clr-honey, #e8a84c); text-decoration: none; }
+    .wr__more:hover { text-decoration: underline; }
+    .wx { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .wx th { text-align: left; font-family: var(--font-mono, monospace); font-size: 0.56rem; font-weight: 400; letter-spacing: 0.12em;
+      text-transform: uppercase; color: rgba(245,240,232,0.48); padding: 0 10px 7px 0; border-bottom: 1px solid rgba(245,240,232,0.12); }
+    .wx td { padding: 9px 10px 9px 0; border-bottom: 1px solid rgba(245,240,232,0.07); vertical-align: top; color: rgba(245,240,232,0.8); }
+    .wx th.num, .wx td.num { text-align: right; white-space: nowrap; }
+    .wx td.num { font-family: var(--font-mono, monospace); font-size: 0.78rem; }
+    .wx__m { display: grid; grid-template-columns: 10px minmax(0, 1fr); gap: 9px; }
+    .wx__m > i { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; }
+    .wx__m a { font-weight: 600; color: var(--clr-parchment, #f5f0e8); text-decoration: none; }
+    .wx__m a:hover { text-decoration: underline; }
+    .wx__m small { display: block; font-size: 0.74rem; color: rgba(245,240,232,0.52); }
+    .wx__note { margin: 10px 0 0; font-size: 0.78rem; line-height: 1.5; color: rgba(245,240,232,0.52); }
+
+    @media (max-width: 860px) {
+      .wr__row { grid-template-columns: 1fr; }
+      .wu + .wu { border-left: 0; border-top: 1px solid rgba(245,240,232,0.1); }
+      .tl__links { display: none; }
+      .tl { margin: 10px 0; }
+      .wr__foot { grid-template-columns: 1fr; }
+      .wr__box, .wr__box + .wr__box { border-left: 0; padding: 18px 0 6px; }
+      .wr__box + .wr__box { border-top: 1px solid rgba(245,240,232,0.1); }
+      .wr__sub { margin-left: 0; }
+    }
+    @media (max-width: 560px) {
+      .tl__ph { padding: 0 6px; font-size: 0.6rem; }
+      .tl__ph--me span, .tl__ph--ex span { display: none; }
+      .tl__mkl { font-size: 0.56rem; }
+      .tl__lab { font-size: 0.64rem; }
+    }
   </style>
 </head>
 
@@ -300,9 +284,9 @@
 
     <!-- ══ THE HERO, left · THE FIVE STEPS, right (2026-09-30) ═══════════════
          Home pass (2026-10-01): "The Social Network for Charities" is gone, and
-         "Decide what gets funded" replaces "Vote now". To the right of the
-         visual, the five steps stacked with arrows down, the one on screen
-         glowing (`#ld-flow`, driven by EBX.Steps' onChange). -->
+         "Decide what gets funded" replaces "Vote now". The five steps stacked
+         with arrows down, the one on screen glowing (`#ld-flow`, driven by
+         EBX.Steps' onChange) — LEFT of the visual since the 10/9 Reshuffle. -->
     <section class="hx">
       <div class="ld-a">
         <h1 class="ld-wordmark">Earthbux <em>News</em></h1>
@@ -310,8 +294,6 @@
         <div class="ld-cta" id="ld-cta"></div>
       </div>
       <div class="hx__vis">
-        <!-- Painted by `EBX.Steps` (resources/js/ebx_steps.js). -->
-        <div class="ld-steps" id="ebx-steps"></div>
         <ol class="ld-flow" id="ld-flow" aria-label="The five steps">
           <li><button type="button" class="ld-flow__i" data-flow="0">1. Cause</button></li>
           <li class="ld-flow__arr" aria-hidden="true">&darr;</li>
@@ -321,31 +303,35 @@
           <li class="ld-flow__arr" aria-hidden="true">&darr;</li>
           <li><button type="button" class="ld-flow__i" data-flow="3">4. Network</button></li>
           <li class="ld-flow__arr" aria-hidden="true">&darr;</li>
-          <li><button type="button" class="ld-flow__i" data-flow="4">5. Reporting</button></li>
+          <li><button type="button" class="ld-flow__i" data-flow="4">5. Feedback</button></li>
         </ol>
+        <!-- Painted by `EBX.Steps` (resources/js/ebx_steps.js). -->
+        <div class="ld-steps" id="ebx-steps"></div>
       </div>
     </section>
 
     <!-- ══ THE FOUR DOORS (Home pass, 2026-10-01) ═══════════════════════════
          "In between the mission hub and the hero will be navigation to the main
-         uses of the site." Jax's four, as written. -->
+         uses of the site." Copy rewritten by Jax on 2026-10-09 (10/9 Reshuffle)
+         with three of the suggested edits: $1 in every initiative election,
+         "week by week", "move your donation". -->
     <nav class="hk" id="hk" aria-label="What you can do on Earthbux">
       <section class="hk__card hk__card--decide">
         <h2 class="hk__h">Two key decisions</h2>
         <ol class="hk__list">
-          <li><b>What mission to fund.</b> We grant $1 to everybody each week to make this decision.</li>
-          <li><b>Which organization leads it.</b> To win money, a charity agrees to put it towards the elected mission.</li>
+          <li><b>What mission to fund.</b> We give everyone $1 to vote with in every initiative election.</li>
+          <li><b>Which organization leads it.</b> When an initiative wins, charities compete for the chance to lead the mission.</li>
         </ol>
         <a class="hk__go" href="mission.html">Decide what gets funded &rarr;</a>
       </section>
       <section class="hk__card hk__card--voice">
         <h2 class="hk__h">Every voice matters</h2>
-        <p class="hk__p">Public interest in charity is lacking. We&rsquo;re changing that by creating a social network for philanthropy. We believe your ideas and opinions can be as impactful as your money.</p>
+        <p class="hk__p">Ideas and opinions are as important as financial donations. On Earthbux, charities don&rsquo;t get funded until they agree to follow the will of the people.</p>
         <a class="hk__go" href="about.html">Who are we? &rarr;</a>
       </section>
       <section class="hk__card hk__card--news">
         <h2 class="hk__h">Feedback and accountability</h2>
-        <p class="hk__p">Our news team covers each mission independently, so that you are always equipped to make important decisions. Organizations don&rsquo;t receive money until there is a plan and trust in their ability to complete it.</p>
+        <p class="hk__p">Our news team reports on each mission so that progress is public, week by week. If it&rsquo;s moving too slowly, you can move your donation to a different mission.</p>
         <a class="hk__go" href="cause.html">Go to the discussion &rarr;</a>
       </section>
       <section class="hk__card hk__card--impact">
@@ -357,54 +343,38 @@
       </section>
     </nav>
 
-    <!-- ══ THE MISSION HUB (2026-09-30) ═════════════════════════════════════ -->
-    <section class="mh" id="mh" aria-labelledby="mh-title">
-      <div class="mh__head">
-        <h2 class="mh__title" id="mh-title">This Week&rsquo;s Decisions</h2>
-        <div class="mh__nav" id="mh-nav">
-          <button type="button" class="mh__btn mh__btn--page" data-mh="-page" aria-label="Back one page">&laquo;</button>
-          <button type="button" class="mh__btn" data-mh="-1" aria-label="Back one column">&lsaquo;</button>
-          <button type="button" class="mh__btn" data-mh="1" aria-label="On one column">&rsaquo;</button>
-          <button type="button" class="mh__btn mh__btn--page" data-mh="page" aria-label="On one page">&raquo;</button>
-          <button type="button" class="mh__btn mh__toggle" id="mh-toggle" aria-expanded="false" aria-controls="mh-body">Show all missions</button>
+    <!-- ══ THE WEEKLY REPORT (10/9 Reshuffle, 2026-10-09) ═══════════════════
+         "This will be displayed on the home page at all times, updated each
+         week." Three missions of this week's cause above the timeline, three
+         below it; the cause elections and the exchange at the bottom. Painted
+         from GET /inbox/weekly/report. The missions hub that stood here is on
+         the Missions page now, and the feed is News. -->
+    <section class="wr" id="wr" aria-labelledby="wr-title">
+      <div class="wr__head">
+        <div>
+          <div class="wr__kicker">Weekly report</div>
+          <h2 class="wr__title" id="wr-title">This week</h2>
         </div>
+        <p class="wr__sub" id="wr-sub"></p>
       </div>
-      <!-- Collapsed (the default, Home pass 2026-10-01): this week's two
-           election cards — the initiative election and the organization election
-           that decide this week — each with its top three. -->
-      <div class="mh__week" id="mh-week"></div>
-      <div class="mh__body" id="mh-body" hidden><div class="mh__loading">Loading the missions&hellip;</div></div>
-    </section>
-
-    <!-- ══ THE NETWORK + THE FEED ════════════════════════════════════════════
-         Nothing on Home toggles: the tiles open News filtered, a post opens its
-         thread in News. -->
-    <section class="hn" aria-label="Posts">
-      <!-- P2 · Home (2026-10-05): "Remove 'The Network' and 'What the network
-           made this week'; put the toggle options in the same row as +Post." -->
-      <div class="hn__head">
-        <div class="ep-src" id="hf-src" role="group" aria-label="Who the posts come from"></div>
-        <a class="hn__post" id="hn-post" href="post.html?back=%2F" title="Make a post — general, research or a budget item">+ Post</a>
-      </div>
-      <div class="hf">
-        <div class="hf__state" id="hf-state" aria-live="polite"></div>
-        <div class="hf__list" id="hf-list"><div class="hf__empty">Loading the feed&hellip;</div></div>
-        <a class="hf__all" id="hf-all" href="cause.html">Search, filter and reply in News &rarr;</a>
+      <div class="wr__row wr__row--above" id="wr-above"><div class="wr__loading">Loading this week&rsquo;s report&hellip;</div></div>
+      <div class="tl" id="wr-tl" role="img" aria-label="Where each mission in the report is in its life, from the initiative election to a week after budget day"></div>
+      <div class="wr__row wr__row--below" id="wr-below"></div>
+      <div class="wr__foot">
+        <section class="wr__box" id="wr-ce" aria-label="Cause elections"></section>
+        <section class="wr__box" id="wr-ex" aria-label="The exchange"></section>
       </div>
     </section>
 
   </div>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20261004a"></script>
+  <script src="resources/js/ebx_shared.js?v=20261009a"></script>
   <!-- the globe in the first step: d3-geo + Natural Earth land, vendored -->
   <script src="resources/js/vendor/d3-array.min.js"></script>
   <script src="resources/js/vendor/d3-geo.min.js"></script>
   <script src="resources/js/vendor/ebx_land110m.js"></script>
-  <!-- EBX.Wheel is not drawn on Home any more; the hub reads its data layer
-       (missions, initiatives, organizations, the slate, the OE tallies). -->
-  <script src="resources/js/ebx_wheel.js?v=20260930"></script>
-  <script src="resources/js/ebx_steps.js?v=20261001"></script>
+  <script src="resources/js/ebx_steps.js?v=20261009a"></script>
   <script>
   // b — the hero's call to action. Home pass tweaks (2026-10-01): "'Decide
   // what gets funded' and 'My profile' links in the hero should be gone" — the
@@ -462,398 +432,189 @@
     EBX.Steps.mount('#ebx-steps', { onChange: window.HomeFlow.paint });
   })();
 
-  // ══ THE MISSION HUB (P2 · Home mods, 2026-09-30) ══════════════════════════
-  // Rows: the seven causes, in wheel order. Column 0: the cause's open cause
-  // election (its first votable window on the slate). Then its missions,
-  // newest first. A mission's stage is read from its dates (T = mission
-  // started, T+8 organization elected, T+15 budget day) and its winners:
-  //   before T                 → initiative election
-  //   T … T+8, initiative won  → organization election   (Week x from here on)
-  //   T+8 … T+15, org elected  → framing
-  //   after T+15               → exchange
-  //   a date passed with no winner → "no initiative / organization elected"
-  // A card glows when its decision falls in this week (the week that ends at
-  // the next weekly boundary): an election closing, a budget day, or the cause
-  // election that confirms its window this week.
+  // ══ THE WEEKLY REPORT (10/9 Reshuffle, 2026-10-09) ═══════════════════════
+  // One read of GET /inbox/weekly/report (backend/app/report.py): this week's
+  // cause and three of its missions (above the timeline), last week's cause
+  // twice and next week's once (below), the cause elections and the exchange.
+  // Each row is in timeline order, so on a wide screen card i hangs from dot i.
   (function () {
-    const WK = 7 * 864e5;
+    const root = document.getElementById('wr');
+    if (!root) return;
     const $ = id => document.getElementById(id);
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
       c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const cfg = () => (window.EBX && EBX.config) || {};
-    const Wh = () => (window.EBX && EBX.Wheel) || null;
-    const fmt = d => d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
-    // Home pass (2026-10-01): "should be collapsed by default" — a new key, so
-    // everyone starts collapsed once; the choice is remembered from then on.
-    const st = { off: 0, open: false, slate: null, rows: [], cols: 1, vis: 1 };
-    try { st.open = localStorage.getItem('ebx_hub_open2') === '1'; } catch (e) {}
-
-    function weekEnd() {
-      try {
-        const n = EBX.Cycle.now();
-        return new Date(EBX.config.cycleStart.getTime() + (n.weekNum + 1) * WK);
-      } catch (e) { return new Date(Date.now() + WK); }
+    const fmt = iso => { const d = iso ? new Date(iso) : null; return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''; };
+    const tk = ct => { const t = (Number(ct) || 0) / 100; return Math.abs(t - Math.round(t)) < 0.05 ? Math.round(t).toLocaleString('en-US') : t.toFixed(1); };
+    // weeks since T on the axis: the initiative election's last weeks, to a
+    // week after budget day (T+15)
+    const AX = { from: -2.5, to: 16 };
+    const xPct = w => ((w - AX.from) / (AX.to - AX.from)) * 100;
+    function href(id) {
+      if (!id) return 'mission.html';
+      const m = ((window.EBX && EBX.config && EBX.config.missions) || []).find(x => x.id === id);
+      try { if (m && EBX.Slug && EBX.Slug.href) return EBX.Slug.href(m); } catch (e) {}
+      return 'mission.html?mission=' + encodeURIComponent(id);
     }
-    const thisWeek = d => { if (!d) return false; const e = weekEnd().getTime(), t = d.getTime(); return t > e - WK + 36e5 && t <= e + 36e5; };
-    const tivTitle = id => { const t = (cfg().initiatives || []).find(i => i.id === id); return t ? t.title : (id || ''); };
-    const orgName = id => { const o = (cfg().organizations || []).find(x => x.id === id); return o ? o.name : (id || ''); };
-    function hrefOf(m) {
-      try { if (EBX.Slug && EBX.Slug.href) return EBX.Slug.href(m); } catch (e) {}
-      return 'mission.html?mission=' + encodeURIComponent(m.id);
-    }
+    const newsHref = id => 'cause.html?mission=' + encodeURIComponent(id);
 
-    function stageOf(m) {
-      const d = EBX.Cycle.missionDates(m), T = d.missionStarted;
-      const o8 = new Date(T.getTime() + 8 * WK), b15 = new Date(T.getTime() + 15 * WK);
-      const now = Date.now(), wk = Math.max(0, Math.floor((now - T.getTime()) / WK));
-      if (now < T.getTime()) return { key: m.winning_tiv_id ? 'oe' : 'me', T, o8, b15, wk: null, when: m.winning_tiv_id ? o8 : T };
-      if (!m.winning_tiv_id) return { key: 'no-tiv', T, o8, b15, wk };
-      if (now < o8.getTime()) return { key: 'oe', T, o8, b15, wk, when: o8 };
-      if (!m.winning_org_id) return { key: 'no-org', T, o8, b15, wk };
-      if (now < b15.getTime()) return { key: 'fr', T, o8, b15, wk, when: b15 };
-      return { key: 'ex', T, o8, b15, wk };
-    }
+    // What each update is FOR, as one plain action.
+    const ACT = { new: 'Vote for its organization', oe_final: 'Vote before it closes', budget_day: 'Open the mission',
+                  entered_prep: 'Open the mission', left_prep: 'Open the mission', current_me: 'Vote with your 10 tokens' };
 
-    function missionCard(m, c) {
-      const s = stageOf(m), n = c.name + ' ' + ((m.cycle_num || 0) + 1);
-      const K = { me: 'Initiative election', oe: 'Organization election', fr: 'Framing', ex: 'Exchange',
-                  'no-tiv': 'Initiative election · closed', 'no-org': 'Organization election · closed' }[s.key];
-      // P2 · Home (2026-10-05): top row "phase · closes x"; then the title, a
-      // "Leading: x" line; bottom row "cause · started x". No "Week x".
-      let title, line, when = '';
-      if (s.key === 'me') {
-        const ins = (cfg().initiatives || []).filter(i => i.mission_id === m.id)
-          .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
-        const pool = ins.reduce((a, i) => a + (i.committed_ebx || 0), 0);
-        const lead = ins[0];
-        // "The initiative elections in the missions hub should say Leading to
-        // indicate that it isn't final yet."
-        title = n;
-        line = lead ? 'Leading: ' + lead.title + (pool ? ' · ' + Math.round((lead.committed_ebx || 0) / pool * 100) + '%' : '') +
-          ' · ' + ins.length + ' initiative' + (ins.length === 1 ? '' : 's') : 'No initiatives yet';
-        when = 'closes ' + fmt(s.T);
-      } else if (s.key === 'no-tiv') {
-        title = n; line = 'No initiative was elected'; when = 'closed ' + fmt(s.T);
-      } else {
-        title = tivTitle(m.winning_tiv_id);
-        if (s.key === 'oe') {
-          const t = Wh() && Wh().p2Tally ? Wh().p2Tally(m.id) : null;
-          const es = ((t && t.entries) || []).slice().sort((a, b) => (b.net_votes || 0) - (a.net_votes || 0));
-          const cands = Wh() && Wh().candidacies ? Wh().candidacies(m.id).length : 0;
-          line = es.length ? 'Leading: ' + orgName(es[0].org_id) : (cands ? cands + ' nominated' : 'No organizations yet');
-          when = 'closes ' + fmt(s.o8);
-        } else if (s.key === 'no-org') {
-          line = 'No organization was elected'; when = 'closed ' + fmt(s.o8);
-        } else if (s.key === 'fr') {
-          line = orgName(m.winning_org_id); when = 'budget day ' + fmt(s.b15);
-        } else {
-          line = orgName(m.winning_org_id); when = 'coin ' + (Number(m.credit_value) || 1).toFixed(2);
-        }
+    function leadersHTML(u) {
+      if (!u.leaders || !u.leaders.length) {
+        if (u.role === 'new') return '<p class="wu__l">No organization is running yet. <a href="' + esc(href(u.mission_id)) + '" style="color:inherit">Nominate one</a>.</p>';
+        if (u.role === 'current_me') return '';
+        return '';
       }
-      const now = !!(s.when && thisWeek(s.when));
-      if (now) when = (s.key === 'fr' ? 'budget day ' : 'decides ') + fmt(s.when);
-      const started = EBX.Cycle.missionDates(m).startedAt;
-      return { now, html: '<a class="mc mc--' + s.key + (now ? ' mc--now' : '') + (/^no-/.test(s.key) ? ' mc--stalled' : '') +
-        '" style="--c:' + esc(c.color) + '" href="' + esc(hrefOf(m)) + '" data-mission="' + esc(m.id) + '" title="' + esc(n + (now ? ' — decided this week' : '')) + '">' +
-        '<span class="mc__k">' + esc(K + (when ? ' · ' + when : '')) + '</span>' +
-        '<span class="mc__t">' + esc(title) + '</span>' +
-        '<span class="mc__l">' + esc(line) + '</span>' +
-        '<span class="mc__f"><span><b>' + esc(c.name) + '</b> · started ' + esc(fmt(started)) + '</span></span></a>' };
+      const val = l => u.leaders_kind === 'initiatives'
+        ? (l.share || 0) + '%'
+        : l.votes + ' vote' + (l.votes === 1 ? '' : 's');
+      return '<ol class="wu__lead">' + u.leaders.map((l, k) =>
+        '<li><i>' + (k + 1) + '</i><span>' + esc(l.name) + '</span><b>' + esc(val(l)) + '</b></li>').join('') + '</ol>';
     }
-
-    // Home pass (2026-10-01): "Say '<cause><number>', not 'holds'." A window
-    // becomes the next mission of the cause that holds it.
-    function windowName(c, slot) {
-      const holder = (slot && slot.holder_id && slot.holder_id !== c.id)
-        ? ((cfg().causes || []).find(x => x.id === slot.holder_id) || { id: slot.holder_id, name: slot.holder_name || slot.holder_id }) : c;
-      const ms = (cfg().missions || []).filter(m => m.cause_id === holder.id);
-      const next = ms.length ? Math.max(...ms.map(m => m.cycle_num || 0)) + 2 : 1;
-      return holder.name + ' ' + next;
-    }
-    function ceCard(c) {
-      const sl = st.slate, slot = sl ? (sl.slots || []).find(s => s.votable && s.incumbent_id === c.id) : null;
-      const byId = id => (cfg().causes || []).find(x => x.id === id);
-      if (!slot) return { now: false, html: '<a class="mc mc--ce" style="--c:' + esc(c.color) + '" href="mission.html?state=ce&amp;cause=' + encodeURIComponent(c.id) + '">' +
-        '<span class="mc__k">Cause election</span><span class="mc__t">' + esc(c.name) + '</span><span class="mc__l">no window open</span><span class="mc__f"><span><b>' + esc(c.name) + '</b></span></span></a>' };
-      const ch = slot.challenger_id ? byId(slot.challenger_id) : null;
-      const wait = slot.weeks_out - (sl.first_open_slot || slot.weeks_out);
-      const now = wait === 0;
-      return { now, html: '<a class="mc mc--ce' + (now ? ' mc--now' : '') + '" style="--c:' + esc(c.color) + '" href="mission.html?slot=' + slot.slot + '" data-slot="' + slot.slot + '"' +
-        (now ? ' title="Decided this week"' : '') + '>' +
-        '<span class="mc__k">Cause election · ' + (now ? 'confirmed this week' : 'confirms in ' + wait + ' wk' + (wait === 1 ? '' : 's')) + '</span>' +
-        '<span class="mc__t">' + esc(windowName(c, slot)) + '</span>' +
-        '<span class="mc__l">' + (ch ? esc(ch.name) + ' challenging · ' + (slot.streak || 0) + '/' + (slot.weeks_required || 6) : 'no challenger') + '</span>' +
-        '<span class="mc__f"><span><b>' + esc(c.name) + '</b> · ' + slot.weeks_out + ' wks out</span></span></a>' };
-    }
-
-    // Home pass (2026-10-01): "The current cause with a mission in week 0 should
-    // be the bottom row of the hub, and week 6 should be the top row." A cause's
-    // newest organization election is in week (active − index) mod 7.
-    function weekOf(c) {
-      let a = 0; try { a = EBX.Cycle.now().causeIndex; } catch (e) {}
-      return ((a - c.index) % 7 + 7) % 7;
-    }
-    function build() {
-      const cs = (cfg().causes || []).slice().sort((a, b) => weekOf(b) - weekOf(a));
-      st.rows = cs.map(c => {
-        const ms = (cfg().missions || []).filter(m => m.cause_id === c.id)
-          .sort((a, b) => new Date(b.started_at) - new Date(a.started_at) || (b.cycle_num || 0) - (a.cycle_num || 0));
-        return { c, cells: [ceCard(c)].concat(ms.map(m => missionCard(m, c))) };
-      });
-      st.cols = Math.max(1, ...st.rows.map(r => r.cells.length));
-    }
-
-    // Collapsed: "show this week's 2 election cards (ME and OE), and include
-    // the top 3 leaders." The initiative election and the organization election
-    // that decide this week; if none does, the next one to.
-    function weekPair() {
-      const all = (cfg().missions || []).map(m => ({ m, s: stageOf(m), c: (cfg().causes || []).find(x => x.id === m.cause_id) }))
-        .filter(x => x.c && x.s.when);
-      const pick = key => {
-        const xs = all.filter(x => x.s.key === key && x.s.when.getTime() > Date.now() - 36e5)
-          .sort((a, b) => a.s.when - b.s.when);
-        return xs.find(x => thisWeek(x.s.when)) || xs[0] || null;
-      };
-      return [pick('me'), pick('oe')];
-    }
-    function leaders(x) {
-      if (x.s.key === 'me') {
-        const ins = (cfg().initiatives || []).filter(i => i.mission_id === x.m.id)
-          .sort((a, b) => (b.committed_ebx || 0) - (a.committed_ebx || 0));
-        const pool = ins.reduce((a, i) => a + (i.committed_ebx || 0), 0);
-        return ins.slice(0, 3).map(i => ({ name: i.title, val: Math.round(i.committed_ebx || 0) + ' EBX committed' + (pool ? ' · ' + Math.round((i.committed_ebx || 0) / pool * 100) + '%' : '') }));
+    function factsHTML(u) {
+      const s = u.stats || {}, f = [];
+      if (u.role === 'budget_day' || u.role === 'entered_prep' || u.role === 'left_prep') {
+        if (u.org) f.push(['Run by', u.org.name]);
       }
-      const t = Wh() && Wh().p2Tally ? Wh().p2Tally(x.m.id) : null;
-      const es = ((t && t.entries) || []).slice().sort((a, b) => (b.net_votes || 0) - (a.net_votes || 0) || (b.ebx || 0) - (a.ebx || 0));
-      if (es.length) return es.slice(0, 3).map(e => ({ name: orgName(e.org_id), val: (e.net_votes || 0) + ' vote' + ((e.net_votes || 0) === 1 ? '' : 's') }));
-      const cands = Wh() && Wh().candidacies ? Wh().candidacies(x.m.id) : [];
-      return cands.slice(0, 3).map(c => ({ name: orgName(c.org_id), val: '0 votes' }));
+      f.push(['Members', String(s.members || 0)]);
+      f.push([u.role === 'left_prep' ? 'EBX' : 'Committed', tk(s.committed_ct) + ' tk']);
+      if (u.role === 'budget_day' || u.role === 'entered_prep') f.push(['Budget items', String(s.budget_items || 0)]);
+      if (u.role === 'current_me') f.push(['Initiatives', String(s.initiatives || 0)]);
+      return '<dl class="wu__facts">' + f.map(([k, v]) => '<div><dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd></div>').join('') + '</dl>';
     }
-    function paintWeek() {
-      const el = $('mh-week');
-      el.hidden = st.open;
-      if (st.open) return;
-      // P2 · Home (2026-10-05): a standing column head over each card; the card
-      // is titled "Leading initiative/organization: x" with its count, and the
-      // runners-up below.
-      const HEAD = { me: 'Initiative Election', oe: 'Organization Election' };
-      const LEAD = { me: 'Leading initiative', oe: 'Leading organization' };
-      const pair = weekPair();
-      el.innerHTML = ['me', 'oe'].map((key, i) => {
-        const x = pair[i];
-        let card;
-        if (!x) card = '<div class="mh__loading">No ' + HEAD[key].toLowerCase() + ' is open.</div>';
-        else {
-          const ls = leaders(x), now = thisWeek(x.s.when), top = ls[0], rest = ls.slice(1);
-          const what = x.c.name + ' ' + ((x.m.cycle_num || 0) + 1) + (key === 'oe' ? ' · ' + tivTitle(x.m.winning_tiv_id) : '');
-          card = '<a class="mw mw--' + key + (now ? ' mc--now' : '') + '" style="--c:' + esc(x.c.color) + '" href="' + esc(hrefOf(x.m)) + '" data-mission="' + esc(x.m.id) + '">' +
-            '<span class="mw__top"><span class="mw__k">' + esc(what) + '</span><span class="mw__d">' + (now ? 'decides ' : 'closes ') + fmt(x.s.when) + '</span></span>' +
-            (top ? '<span class="mw__t"><em>' + LEAD[key] + '</em>' + esc(top.name) + '<small>' + esc(top.val) + '</small></span>' +
-                   (rest.length ? '<span class="mw__lab">Runners-up</span><ol class="mw__lead" start="2">' + rest.map((l, k) => '<li><i>' + (k + 2) + '</i><span>' + esc(l.name) + '</span><b>' + esc(l.val) + '</b></li>').join('') + '</ol>' : '')
-                 : '<span class="mw__t"><em>' + LEAD[key] + '</em>&mdash;</span><span class="mw__none">' + (key === 'me' ? 'No initiatives yet' : 'No organizations nominated yet') + '</span>') +
-          '</a>';
-        }
-        return '<div class="mh__wcol"><div class="mh__wh">' + HEAD[key] + '</div>' + card + '</div>';
+    function card(u) {
+      const c = (u.cause && u.cause.color) || '#e8a84c';
+      if (u.missing) {
+        return '<article class="wu wu--missing" id="wu-' + u.role + '" style="--c:' + esc(c) + '">' +
+          '<header class="wu__h"><span class="wu__n">&middot;</span><span class="wu__who"><span class="wu__lab">' + esc(u.cause ? u.cause.name : '') + '</span>' +
+          '<span class="wu__k">' + esc(u.kicker) + '</span></span></header>' +
+          '<p class="wu__l">No ' + esc(u.cause ? u.cause.name : '') + ' mission is at this stage yet.</p></article>';
+      }
+      const title = u.title || (u.role === 'current_me' ? 'No votes yet' : u.label);
+      return '<article class="wu wu--' + u.role + '" id="wu-' + u.role + '" style="--c:' + esc(c) + '">' +
+        '<header class="wu__h"><span class="wu__n" aria-hidden="true">' + u.number + '</span>' +
+          '<span class="wu__who"><span class="wu__lab">' + esc(u.label) + '</span><span class="wu__k">' + esc(u.kicker) + '</span></span></header>' +
+        '<h3 class="wu__t"><a href="' + esc(href(u.mission_id)) + '">' + esc(title) + '</a></h3>' +
+        '<p class="wu__l">' + esc(u.line) + '</p>' +
+        leadersHTML(u) + factsHTML(u) +
+        '<div class="wu__go"><a href="' + esc(href(u.mission_id)) + '">' + ACT[u.role] + ' &rarr;</a>' +
+          '<a href="' + esc(newsHref(u.mission_id)) + '">News about it</a></div>' +
+      '</article>';
+    }
+
+    function timeline(d) {
+      const ph = d.timeline.phases.map(p => {
+        const a = p.key === 'me' ? AX.from : Math.max(p.from, AX.from);
+        const b = p.key === 'ex' ? AX.to : Math.min(p.to, AX.to);
+        const weeks = p.to - p.from;
+        const span = p.key === 'oe' || p.key === 'prep' ? '<small class="tl__d">' + weeks + ' weeks</small>' : '';
+        return '<div class="tl__ph tl__ph--' + p.key + '" style="left:' + xPct(a).toFixed(3) + '%;width:' + (xPct(b) - xPct(a)).toFixed(3) + '%" title="' + esc(p.label) + '">' +
+          '<span>' + esc(p.label) + '</span>' + span + '</div>';
       }).join('');
-    }
-
-    function paint() {
-      const body = $('mh-body');
-      body.hidden = !st.open;
-      paintWeek();
-      // "say 'See all missions' instead of expand and 'Collapse missions'"
-      $('mh-toggle').textContent = st.open ? 'Collapse missions' : 'Show all missions';
-      $('mh-toggle').setAttribute('aria-expanded', String(st.open));
-      const n = st.rows.reduce((a, r) => a + r.cells.filter(x => x.now).length, 0);
-      // P2 · Home (2026-10-05): "Instead of 'Missions', say 'This Week's
-      // Decisions'" (collapsed); open, it is every mission.
-      $('mh-title').textContent = st.open ? 'All missions' : 'This Week\u2019s Decisions';
-      void n;
-      const w = body.clientWidth || $('mh').clientWidth || 1000;
-      const lab = 0;   // no row labels: the cause is in every card (2026-10-05)
-      st.vis = Math.max(1, Math.min(st.cols, Math.floor((w - lab + 10) / 196)));
-      st.off = Math.max(0, Math.min(st.off, st.cols - st.vis));
-      document.querySelectorAll('#mh-nav [data-mh]').forEach(b => {
-        const d = b.dataset.mh, back = d.charAt(0) === '-';
-        b.disabled = !st.open || (back ? st.off <= 0 : st.off >= st.cols - st.vis);
-        b.hidden = !st.open;
+      let ticks = '';
+      for (let w = Math.ceil(AX.from); w < AX.to; w++) if (w > AX.from) ticks += '<i class="tl__wk" style="left:' + xPct(w).toFixed(3) + '%"></i>';
+      const marks = d.timeline.marks.map(m => '<i class="tl__mk" style="left:' + xPct(m.at).toFixed(3) + '%" title="' + esc(m.label) + '"></i>').join('');
+      const sides = { above: d.above, below: d.below };
+      let dots = '', links = '';
+      Object.keys(sides).forEach(side => {
+        sides[side].forEach((u, i) => {
+          const c = (u.cause && u.cause.color) || '#e8a84c';
+          const x = xPct(u.age + 0.5);
+          const lab = u.missing ? '' : u.label;
+          const align = x < 12 ? ' tl__lab--start' : (x > 88 ? ' tl__lab--end' : '');
+          const labX = x < 12 ? Math.max(0, x - 1.2) : (x > 88 ? Math.min(100, x + 1.2) : x);
+          dots += '<i class="tl__stem tl__stem--' + side + '" style="left:' + x.toFixed(3) + '%;--c:' + esc(c) + '"></i>' +
+            '<a class="tl__dot tl__dot--' + side + (u.missing ? ' tl__dot--missing' : '') + '" href="#wu-' + u.role + '" style="left:' + x.toFixed(3) + '%;--c:' + esc(c) + '"' +
+              ' title="' + esc((u.label || (u.cause ? u.cause.name : '')) + ' — ' + u.kicker) + '">' + (u.missing ? '&middot;' : u.number) + '</a>' +
+            (lab ? '<span class="tl__lab tl__lab--' + side + align + '" style="left:' + labX.toFixed(3) + '%;--c:' + esc(c) + '">' + esc(lab) + '</span>' : '');
+          // Card i hangs from dot i: on a wide screen each card's column
+          // contains its dot, so the pin is a straight drop from the card's
+          // edge to the dot.
+          links += side === 'above'
+            ? '<line x1="' + x.toFixed(2) + '" y1="0" x2="' + x.toFixed(2) + '" y2="21" stroke="' + esc(c) + '" stroke-opacity="0.6"/>'
+            : '<line x1="' + x.toFixed(2) + '" y1="129" x2="' + x.toFixed(2) + '" y2="150" stroke="' + esc(c) + '" stroke-opacity="0.6"/>';
+        });
       });
-      if (!st.open) return;
-      const cols = Array.from({ length: st.vis }, (_, k) => st.off + k);
-      // No row or column labels (2026-10-05): the cause is in every card.
-      let html = '<div class="mh__grid" style="grid-template-columns:repeat(' + st.vis + ', minmax(0, 1fr))">';
-      st.rows.forEach(r => {
-        html += cols.map(k => r.cells[k] ? r.cells[k].html : '<span class="mc--empty" aria-hidden="true"></span>').join('');
+      return '<svg class="tl__links" viewBox="0 0 100 150" preserveAspectRatio="none" aria-hidden="true">' + links + '</svg>' +
+        ph + ticks + marks + dots;
+    }
+
+    function causeElections(ce) {
+      const items = [];
+      (ce.secured || []).forEach(x => {
+        const c = x.holder || x.incumbent || {};
+        items.push('<li style="--c:' + esc(c.color || '#e8a84c') + '"><i></i><span>' + (x.outcome === 'took'
+          ? '<b>' + esc(c.name) + '</b> took the window that opens as <b>' + esc(x.window) + '</b>.'
+          : '<b>' + esc(c.name) + '</b> secured its window: <b>' + esc(x.window) + '</b>, whose initiative election closes ' + esc(fmt(x.closes)) + '.') + '</span></li>');
       });
-      body.innerHTML = html + '</div>';
+      (ce.won || []).forEach(x => {
+        const ch = x.challenger || {};
+        items.push('<li style="--c:' + esc(ch.color || '#e8a84c') + '"><i></i><span>' + (x.outcome === 'took'
+          ? '<b>' + esc(ch.name) + '</b> won six weeks in a row and replaces <b>' + esc((x.incumbent || {}).name) + '</b> in that window.'
+          : '<b>' + esc(ch.name) + '</b> won last week&rsquo;s vote for <b>' + esc(x.window) + '</b> against ' + esc((x.incumbent || {}).name) +
+            ' &middot; ' + (x.streak || 1) + ' of ' + (x.required || 6) + ' weeks.') + '</span></li>');
+      });
+      (ce.leading || []).forEach(x => {
+        const ch = x.challenger || {};
+        items.push('<li style="--c:' + esc(ch.color || '#e8a84c') + '"><i></i><span><b>' + esc(ch.name) + '</b> is leading this week&rsquo;s vote for <b>' +
+          esc(x.window) + '</b>.</span></li>');
+      });
+      const none = !(ce.won || []).length && !(ce.leading || []).length;
+      return '<h3 class="wr__bh">Cause elections</h3>' +
+        (items.length ? '<ul class="wr__list">' + items.join('') + '</ul>' : '') +
+        (none ? '<p class="wr__empty" style="margin-top:' + (items.length ? '12px' : '0') + '">No new cause has won a week&rsquo;s vote. Propose one, and it needs six weeks in a row to take a window.</p>' : '') +
+        '<a class="wr__more" href="mission.html?state=ce">Vote in the cause elections &rarr;</a>';
+    }
+    function exchange(ex) {
+      const rows = (ex.movers || []).map(r =>
+        '<tr><td><div class="wx__m"><i style="background:' + esc((r.cause && r.cause.color) || '#e8a84c') + '"></i><span>' +
+          '<a href="' + esc(href(r.mission_id)) + '">' + esc(r.title || r.label) + '</a><small>' + esc(r.label) + (r.org ? ' &middot; ' + esc(r.org) : '') + '</small></span></div></td>' +
+          '<td class="num">' + tk(r.ebx_held_ct) + '</td>' +
+          '<td class="num">' + (r.change_ct > 0 ? '+' : (r.change_ct < 0 ? '&minus;' : '+')) + tk(Math.abs(r.change_ct)) + '</td>' +
+          '<td class="num">' + (r.members || 0) + '</td></tr>').join('');
+      return '<h3 class="wr__bh">Exchange &middot; top movers</h3>' +
+        (rows ? '<table class="wx"><thead><tr><th>Mission</th><th class="num">EBX held</th><th class="num">This week</th><th class="num">Members</th></tr></thead><tbody>' + rows + '</tbody></table>'
+              : '<p class="wr__empty">No mission has reached the exchange yet.</p>') +
+        '<p class="wx__note">' + esc(ex.note || '') + '</p>';
     }
 
-    document.getElementById('mh-nav').addEventListener('click', e => {
-      const b = e.target.closest('button'); if (!b || b.disabled) return;
-      if (b.id === 'mh-toggle') {
-        st.open = !st.open;
-        try { localStorage.setItem('ebx_hub_open2', st.open ? '1' : '0'); } catch (e2) {}
-      } else {
-        const d = b.dataset.mh, sgn = d.charAt(0) === '-' ? -1 : 1;
-        st.off += sgn * (/page/.test(d) ? st.vis : 1);
-      }
-      paint();
-    });
-    let rt = 0;
-    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (st.rows.length) paint(); }, 120); });
-
-    async function load() {
-      if (!window.EBX || !EBX.Wheel) { $('mh-body').innerHTML = '<div class="mh__loading">The missions are unavailable right now.</div>'; return; }
-      await EBX.Wheel.data();
-      st.slate = (EBX.Wheel._state && EBX.Wheel._state.slate) || null;
-      try { if (EBX.Slug && EBX.Slug.load) await EBX.Slug.load(); } catch (e) {}
-      if (!(cfg().causes || []).length) { $('mh-body').innerHTML = '<div class="mh__loading">The missions are unavailable right now.</div>'; return; }
-      build(); paint();
-    }
-    // scripts/home_check.js drives the hub through this.
-    window.HomeHub = { state: st, reload: load, stageOf, thisWeek, weekOf, weekPair, windowName };
-    load();
-  })();
-
-  // ══ THE NETWORK + THE FEED ════════════════════════════════════════════════
-  // One read of GET /posts (roots, newest first). The three tiles count what
-  // each part of the network made and link into News with that filter; the
-  // feed is every root post, 12 of them. Nothing here toggles (2026-09-30):
-  // a filter, a search, a thread or a reply is News —
-  // cause.html?cat=<category> · ?thread=<post> · ?q=.
-  (function () {
-    const GROUPS = [
-      { key: 'news', name: 'News', tag: 'funded', cats: ['editorial', 'headline', 'mission_update'], newsCat: 'editorial' },
-      { key: 'research', name: 'Research', tag: 'wins rewards', cats: ['mission_support'], newsCat: 'mission_support' },
-      { key: 'budgeting', name: 'Budgeting', tag: 'drives the mission', cats: ['budgeting'], newsCat: 'budgeting' },
-    ];
-    const RESEARCH = { context: ['B', 'Background'], investigation: ['I', 'Investigation'], analysis: ['A', 'Analysis'] };
-    const BUDGET = { service: 'Service', supply: 'Supply', support: 'Support' };
-    const WEEK = 7 * 864e5;
-    const st = { posts: [], source: '', bySource: {} };
-    const $ = id => document.getElementById(id);
-    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g,
-      c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const cfg = () => (window.EBX && EBX.config) || {};
-    const causeOf = id => (cfg().causes || []).find(c => c.id === id) || null;
-    const groupOf = p => (GROUPS.find(g => g.cats.includes(p.category)) || {}).key || (p.category === 'review' || p.category === 'case' ? 'review' : 'other');
-
-    function missionName(id) {
-      if (!id) return null;
-      const m = (cfg().missions || []).find(x => x.id === id);
-      if (!m) return null;
-      const t = (cfg().initiatives || []).find(x => x.id === m.winning_tiv_id);
-      return t ? t.title : null;
-    }
-    function ago(iso) {
-      const t = new Date(iso).getTime(); if (!t) return '';
-      const s = Math.max(0, (Date.now() - t) / 1000);
-      if (s < 3600) return Math.max(1, Math.round(s / 60)) + 'm';
-      if (s < 86400) return Math.round(s / 3600) + 'h';
-      if (s < 2592000) return Math.round(s / 86400) + 'd';
-      return new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-    function who(p) {
-      if (p.author_name) return p.author_name;
-      if (p.author_type === 'earthbux') return 'Earthbux News';
-      if (p.author_type === 'org') return p.org_author_id || 'Organization';
-      return 'Benefactor #' + (p.ben_author_id || '—');
-    }
-    function kind(p) {
-      const g = groupOf(p);
-      if (g === 'research') { const r = RESEARCH[p.type]; return r ? '<span class="hp__bia" title="' + r[1] + '">' + r[0] + '</span><span class="hp__kind">' + r[1] + '</span>' : '<span class="hp__kind">Research</span>'; }
-      if (g === 'budgeting') return '<span class="hp__kind">' + (BUDGET[p.type] || 'Budget') + '</span>' +
-        (p.est_cost_usd ? '<span>$' + Math.round(p.est_cost_usd).toLocaleString('en-US') + '</span>' : '');
-      if (g === 'news') return '<span class="hp__kind">News</span>';
-      if (g === 'review') return '<span class="hp__kind">' + (p.type === 'evaluation' ? 'Evaluation' : 'Case') + '</span>';
-      if (window.EBX && EBX.Post) return '<span class="hp__kind">' + esc(EBX.Post.kind(p)) + '</span>';
-      return '<span class="hp__kind">' + esc((p.category || 'post').replace(/_/g, ' ')) + '</span>';
-    }
-    // A post may be a pulled-in news link: the first URL in it is its source.
-    function source(p) {
-      const m = /https?:\/\/([^\s/]+)[^\s]*/.exec(p.body || '');
-      return m ? '<span class="hp__src">&#8599; ' + esc(m[1].replace(/^www\./, '')) + '</span>' : '';
-    }
-
-    // Home pass tweaks (2026-10-01): "News research and budgeting tabs are
-    // still there. They should be gone." — the row is not drawn.
-    function row() {
-      if (!$('hn-row')) return;
-      const recent = p => Date.now() - new Date(p.created_at).getTime() < WEEK;
-      $('hn-row').innerHTML = GROUPS.map(g => {
-        const all = st.posts.filter(p => groupOf(p) === g.key);
-        const wk = all.filter(recent).length;
-        return '<a class="hn__tile hn__tile--' + g.key + '" data-group="' + g.key + '" href="cause.html?cat=' + g.newsCat + '" title="' + g.name + ', in News">' +
-          '<span class="hn__top"><span class="hn__name">' + g.name + '</span><span class="hn__tag">' + g.tag + '</span>' +
-          '<span class="hn__n">' + (wk ? wk + ' this week' : all.length + ' post' + (all.length === 1 ? '' : 's')) + '</span></span>' +
-          '</a>';   // the descriptions moved to about.html (Home pass, 2026-10-01)
-      }).join('');
-    }
-
-    function card(p) {
-      const g = groupOf(p), c = causeOf(p.cause_id), mn = missionName(p.mission_id);
-      const votes = (p.helpful_count || 0) - (p.harmful_count || 0);
-      return '<a class="hp hp--' + g + '" href="cause.html?thread=' + encodeURIComponent(p.id) + '" data-post="' + esc(p.id) + '">' +
-        '<div class="hp__meta">' + kind(p) + '<span>' + esc(who(p)) + '</span><span>&middot; ' + ago(p.created_at) + '</span>' +
-          (c ? '<span class="hp__cause"><i style="background:' + esc(c.color) + '"></i>' + esc(c.name) + '</span>' : '') +
-          (mn ? '<span>&middot; ' + esc(mn) + '</span>' : '') + source(p) + '</div>' +
-        (p.title ? '<h3 class="hp__title">' + esc(p.title) + '</h3>' : '') +
-        '<p class="hp__body">' + esc((p.body || '').slice(0, 400)) + '</p>' +
-        '<div class="hp__foot"><span>&#9650; ' + votes + '</span><span>Read &amp; reply in News &rarr;</span></div></a>';
-    }
-
-    // Posting pass (2026-10-01): the feed is the shared post card
-    // (EBX.Post.collapsed) — title left, account · date / type / cause right,
-    // ▲ votes ▼ and Discussion → along the foot, no colour coding — and "You
-    // should be able to vote on posts from home" (EBX.Post.bindVotes).
-    // Posting edits (2026-10-02): "The home page will have 3 toggles, based on
-    // the source of the post, and a fourth 'all' option. The 3 sources are
-    // Earthbux, Charities, and Individuals." A source is fetched on its own
-    // (GET /posts?source=), so a quiet one still shows its older posts.
-    const SOURCES = [['', 'All'], ['earthbux', 'Earthbux'], ['charity', 'Charities'], ['individual', 'Individuals']];
-    function paintSources() {
-      const el = $('hf-src'); if (!el) return;
-      el.innerHTML = SOURCES.map(([k, lab]) =>
-        '<button type="button" data-src="' + k + '" aria-pressed="' + (st.source === k) + '">' + lab + '</button>').join('');
-      el.onclick = async e => {
-        const b = e.target.closest('[data-src]'); if (!b) return;
-        st.source = b.dataset.src;
-        if (st.source && !st.bySource[st.source]) {
-          $('hf-list').innerHTML = '<div class="hf__empty">Loading&hellip;</div>';
-          try {
-            const r = await fetch((cfg().apiBase || '') + '/posts?roots_only=true&limit=40&sort=recent&source=' + st.source);
-            st.bySource[st.source] = r.ok ? await r.json() : [];
-          } catch (err) { st.bySource[st.source] = []; }
-          try { if (window.EBX && EBX.Post && EBX.Post.loadMine) await EBX.Post.loadMine(st.bySource[st.source].slice(0, 12).map(p => p.id)); } catch (err) {}
-        }
-        paint();
-      };
-    }
-    function paint() {
-      row();
-      paintSources();
-      const src = SOURCES.find(s => s[0] === st.source);
-      const empty = { earthbux: 'Earthbux has not posted yet.', charity: 'No charity has posted yet — organizations post once they claim their page.', individual: 'No posts from individuals yet.' };
-      $('hf-state').innerHTML = 'Showing <b>' + (st.source ? 'posts from ' + src[1] : 'all posts') + '</b> &middot; newest first';
-      const P = window.EBX && EBX.Post;
-      const list = (st.source ? (st.bySource[st.source] || []) : st.posts).slice(0, 12);
-      $('hf-list').innerHTML = list.length
-        ? list.map(p => P ? P.collapsed(p, { chars: 320 }) : card(p)).join('')
-        : '<div class="hf__empty">' + (empty[st.source] || 'No posts yet.') + '</div>';
-      if (P) P.bindVotes($('hf-list'));
+    function paint(d) {
+      const c = d.cause || {};
+      root.style.setProperty('--wc', c.color || '#e8a84c');
+      $('wr-title').innerHTML = '<span class="wr__swatch" aria-hidden="true"></span><span>' + esc(d.title) + '</span>';
+      const last = d.last_cause || {}, next = d.next_cause || {};
+      $('wr-sub').textContent = 'Above the line, three ' + (c.name || '') + ' missions at three stages of their lives. Below it, ' +
+        (last.name || 'last week’s cause') + ' from last week and ' + (next.name || 'next week’s cause') +
+        ' from next week. Each dot is a mission, placed by how many weeks have passed since its initiative was elected.';
+      const byAge = (a, b) => a.age - b.age;
+      d.above.sort(byAge); d.below.sort(byAge);
+      $('wr-above').innerHTML = d.above.map(card).join('');
+      $('wr-below').innerHTML = d.below.map(card).join('');
+      $('wr-tl').innerHTML = timeline(d);
+      $('wr-ce').innerHTML = causeElections(d.cause_elections || {});
+      $('wr-ex').innerHTML = exchange(d.exchange || {});
+      root.dataset.week = d.week;
     }
 
     async function load() {
-      try { if (window.EBX && EBX.loadCauses && !(cfg().causes || []).length) await EBX.loadCauses(); } catch (e) {}
       try {
-        const r = await fetch((cfg().apiBase || '') + '/posts?roots_only=true&limit=120&sort=recent');
-        st.posts = r.ok ? await r.json() : [];
-      } catch (e) { st.posts = []; }
-      try { if (window.EBX && EBX.Post && EBX.Post.loadMine) await EBX.Post.loadMine(st.posts.slice(0, 12).map(p => p.id)); } catch (e) {}
-      paint();
+        try { if (window.EBX && EBX.loadCauses && !((EBX.config || {}).causes || []).length) await EBX.loadCauses(); } catch (e) {}
+        try { if (window.EBX && EBX.loadMissions && !((EBX.config || {}).missions || []).length) await EBX.loadMissions(); } catch (e) {}
+        try { if (window.EBX && EBX.loadInitiatives && !((EBX.config || {}).initiatives || []).length) await EBX.loadInitiatives(); } catch (e) {}
+        try { if (window.EBX && EBX.Slug && EBX.Slug.load) await EBX.Slug.load(); } catch (e) {}
+        const r = await fetch(((window.EBX && EBX.config && EBX.config.apiBase) || '') + '/inbox/weekly/report');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        HomeReport.data = d;
+        paint(d);
+      } catch (e) {
+        $('wr-above').innerHTML = '<div class="wr__loading">The weekly report could not be loaded. Reload the page to try again.</div>';
+      }
     }
-    // scripts/home_check.js drives the feed through this.
-    window.HomeFeed = { state: st, reload: load, GROUPS };
+    // scripts/home_check.js and reshuffle_check.js read the report through this.
+    window.HomeReport = { reload: load, data: null, xPct, AX };
     load();
   })();
   </script>

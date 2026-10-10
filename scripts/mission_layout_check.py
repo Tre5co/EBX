@@ -29,6 +29,14 @@ Review 2026-09-24 (INSTRUCTIONS "P1. Mission"), also pinned here:
     all Initiatives" / "Show active missions", no link to the page you are on
   · the posting dialogue at the foot of the story + the full-screen composer
   · D13 stored slugs with history · D15 six weekly elections, no aggregate
+
+10/9 Reshuffle (2026-10-09) — the page gained the missions hub at its top
+(Home's, `EBX.Hub` in resources/js/ebx_hub.js) and lost the mission REPORT:
+"When News is filtered to a mission, that mission's report sits above its
+posts." The report, its thread and its reply composer are `EBX.MissionReport`
+(resources/js/ebx_report.js), and the page keeps a pointer to them
+(`#mb-news`). The nav is Home · Missions · News; the inbox is an icon beside
+the badge. Framing reads "Prep".
 """
 import re, sys, os
 R = lambda *p: os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', *p)
@@ -48,13 +56,14 @@ def ok(c, what, detail=''):
     if not c: bad += 1
     print('  %s  %s%s' % ('ok  ' if c else 'FAIL', what, ('  ' + detail) if detail else ''))
 
-print('\n=== main.html is a redirect, the nav has five tabs')
+print('\n=== main.html is a redirect, the nav has three tabs (10/9 Reshuffle)')
 ok(len(main.splitlines()) < 30 and "location.replace('mission.html' + location.search + location.hash)" in main,
    'main.html forwards to mission.html and keeps the query and hash')
 nav = re.search(r'var NAV_TABS = \[(.*?)\];', shared, re.S).group(1)
 labels = re.findall(r'label: "([^"]+)"', nav)
-ok(labels == ['Home', 'Missions', 'News', 'Inbox', 'Profile'], 'Home · Missions · News · Inbox · Profile', ' · '.join(labels))
-ok('href: "inbox.html"' in nav and 'data-ebx-inbox-badge' in shared, 'Inbox is linked, with its unread badge (P4, 2026-10-04)')
+ok(labels == ['Home', 'Missions', 'News'], 'Home · Missions · News — Profile is the badge, Inbox an icon beside it', ' · '.join(labels))
+ok('href: "inbox.html"' not in nav and 'class="ebx-inbox-ic' in shared and 'data-ebx-inbox-badge' in shared,
+   'the inbox is an icon beside the profile badge, carrying the unread count (P4, 2026-10-04; 10/9 Reshuffle)')
 ok('"Elect"' not in nav, 'no Elect tab')
 
 print('\n=== the ballots (kept from election_layout_check)')
@@ -76,9 +85,12 @@ print('\n=== the annulus row, and the order of the page')
 i_row = s.index('id="mx-row"'); i_ph = s.index('id="mx-phases"'); i_tabs = s.index('id="cause-tabs"')
 i_el3 = s.index('id="el3"'); i_tbl = s.index('id="init-table-body"')
 i_mb = s.index('id="mb"'); i_stage = s.index('id="mx-stage"'); i_recap = s.index('id="mx-recap"')
-i_post = s.index('id="mx-postbar"'); i_report = s.index('id="mb-report"')
-ok(i_tabs < i_row < i_stage < i_ph < i_post < i_recap < i_el3 < i_tbl < i_mb < i_report,
-   '7 causes → the row → the stage (the phase log | post button, recap, ballot, TABLE) → the report (P1 edits 2026-09-28)')
+i_post = s.index('id="mx-postbar"'); i_news = s.index('id="mb-news"'); i_hub = s.index('id="mx-hub"')
+ok(i_hub < i_tabs < i_row < i_stage < i_ph < i_post < i_recap < i_el3 < i_tbl < i_mb < i_news,
+   'the hub → 7 causes → the row → the stage (the phase log | post button, recap, ballot, TABLE) → the way to the report, in News (10/9 Reshuffle)')
+ok("EBX.Hub.mount('#mx-hub', { mode: 'leaders' })" in s and 'ebx_hub.js' in s and 'ebx_wheel.js' in s,
+   'the hub is EBX.Hub reading the leaders (moved from Home)')
+ok("'cause.html?mission=' + encodeURIComponent(MID) + '#mr'" in s, 'the pointer opens News on this mission, at its report')
 ok(s.index('id="mx-stage"') < i_tbl < s.index('<section class="mb"'), 'the table sits inside the ballot panel (review 2)')
 row = s[i_row:i_stage]
 ok(row.index('id="mx-toggler"') < row.index('id="mx-wheel"') < row.index('id="mx-overview"'),
@@ -162,22 +174,25 @@ for gone in ['id="alloc-mount"', 'id="oe-actions-mount"', 'id="show-all-inits"',
              'make your case', 'View Organizations']:
     ok(gone not in code, 'gone: ' + gone)
 ok(not re.search(r"href=\"mission\.html\?mission=' \+", s), 'no link to mission.html?mission= — the page you are on')
-for k in ["'context', 'Background'", "'investigation', 'Vetting'", "'analysis', 'Analysis'",
-          "'service', 'Service'", "'supply', 'Supply'", "'support', 'Support'"]:
-    ok(k in s, 'composer type ' + k.split(',')[1].strip())
-ok('id="mxc-bg"' in s and 'Make the image or video the post' in s and "C.cat === 'review'" in s,
-   'the full-screen composer: media drawn (P3), review is a reply to anything')
+for k in ["context: 'background'", "investigation: 'investigation'", "analysis: 'analysis'",
+          "service: 'service'", "supply: 'supply'", "support: 'support'"]:
+    ok(k in s[s.index('function composeHref'):s.index('function openComposer')], 'post.html opens on the type: ' + k.split(':')[0])
+ok('id="mxc-bg"' not in s and "location.href = composeHref(cat, type);" in s,
+   'a new post is written on post.html (P3); the reply composer went to News with the report (10/9 Reshuffle)')
+rep = rd('resources', 'js', 'ebx_report.js')
+ok("id=\"mxc-bg\"" in rep and 'function openReply' in rep and 'parent_id: _parent.id' in rep,
+   '…where a reply is written in the thread’s own composer (ebx_report.js)')
 print('\n=== review 2 (2026-09-25)')
 ok('function paintHow' not in mx and 'id="mx-how"' not in s and 'href="about.html#ab-phases"' in s,
    'P1 edits (2026-09-28): Process / Reason left for the About page; the log links there')
-ok('function budgetHTML' in s and 'data-budget="service"' in s and 'function renderBudget' in s
-   and 'id="mb-budget-add"' not in s and "if (!mission || !mission.winning_tiv_id) return '';" in s,
-   'P1 edits: budget posting + explanation live in the report, once the initiative is elected')
+ok('data-budget="service"' in rep and "const budgetAdd = !m.winning_tiv_id ? '' :" in rep and 'id="mb-budget-add"' not in s
+   and 'function renderBudget' not in s and 'id="mb-report"' not in s,
+   'P1 edits: budget posting lives in the report, once the initiative is elected — the report is EBX.MissionReport now (10/9 Reshuffle)')
 for k in ['Mission statement', 'Plan']:
-    ok("<h4>" + k + "</h4>" in s, 'the report has: ' + k)
-ok("['investigation', 'Vetting'" in s and "['context', 'Background'" in s and "['analysis', 'Analysis'" in s,
-   '…and Background · Organization · Analysis, each its leading post')
-ok('id="mxt-bg"' in s and "report.addEventListener('click', e =>" in s and 'openThread();' in s and '/react' in s,
+    ok("<h4>" + k + "</h4>" in rep, 'the report has: ' + k)
+ok("['investigation', 'Investigation'" in rep and "['context', 'Background'" in rep and "['analysis', 'Analysis'" in rep,
+   '…and Background · Investigation · Analysis, each its leading post')
+ok('id="mxt-bg"' in rep and "el.addEventListener('click', e =>" in rep and 'openThread();' in rep and '/react' in rep,
    'clicking the report opens its thread: read, rate (POST /posts/{id}/react), reply, write')
 ok('id="mp-cattabs"' not in s and 'id="mb-post"' not in s, 'budgeting and research are no longer two toggles of one list')
 
@@ -196,8 +211,11 @@ ok("(col === 'me' && (_mainMode !== 'tiv' || _tableTab !== 'me'))" in s, 'bug: l
 ok("const causeOf = causeF || ((typeof window.voteCauseId === 'function')" in s, 'bug: the initiative table is always one cause\u2019s')
 ok("_th('cause', 'Cause', 'Sort by cause')" not in s and 'init-table__cause" style' not in s, 'the initiative table has no Cause column')
 wal = rd('backend', 'app', 'wallet.py')
-ok('def _voted_in_me(' in wal and 'or _voted_in_me(db, ben_id, m.id)' in wal and wal.count('_voted_in_me(db, ben_id, mission_id)') == 2,
-   'bug: voting in a mission\u2019s initiative election opens its organization election in any week (ruling 16)')
+ok('def _voted_in_me(' in wal and 'or _voted_in_me(db, ben_id, m.id)' in wal
+   and '_check_takes_part(v, int(target_ct or 0) > have, _voted_in_me(db, ben_id, mission_id))' in wal
+   and '_check_takes_part(dst, True, _voted_in_me(db, ben_id, to_mission_id))' in wal,
+   'ruling 20 (10/9 Reshuffle, replaces 16): one vote for everyone in every open organization election; '
+   'tokens there only for those who voted in its initiative election — the row, a commit and a move agree')
 
 print('\n=== D13 · D15')
 ok(os.path.exists(R('backend', 'alembic', 'versions', 'c9e4a7d2b6f1_sep24_initiative_slugs.py'))
@@ -242,7 +260,7 @@ ok('vb-stake--ro' in s and "'Donate more' : 'Donate'" in s and 'id="vb-amt-\' + 
 ok('/row/{mission_id}' in walr and 'window._fetchOeRow' in s and 'derived = crud.p2_ebx_by_ben(db, mission_id)' in wal,
    'withdraw: the stake is read the way the page reads it, even outside the eight rows (the "no slate" bug)')
 ok('id="mx-pre"' in s and 'function paintPrePosts' in s, 'before the report: the posts on the causes / the initiatives below the table')
-ok('mb-budget__add--plan' in s and 'Budget items are how this mission gets planned' not in s,
+ok('mb-budget__add--plan' in rep and 'Budget items are how this mission gets planned' not in s + rep,
    'the budget suggestions sit in the plan; the budget description is gone')
 ok('/initiatives/descriptions-to-posts' in rd('backend', 'app', 'routers', 'admin.py') and 'def tiv_descriptions_to_posts' in crud,
    'initiative descriptions become Mission statements or Justifications (staff endpoint, dry run by default)')

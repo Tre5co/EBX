@@ -1,16 +1,21 @@
-// profile_check — the rebuilt profile page, driven in a real browser.
+// profile_check — the profile page, driven in a real browser.
 //
 //   node scripts/profile_check.js [http://127.0.0.1:8000]
 //
-// §1 (2026-08-28). What it guards is the SHAPE of the drawing in the build
-// sequence, because the shape is the argument: three cards across the top
-// (c wallet · b allocations · a profile), seven weekly windows around the
-// globe, the feed underneath. Each window is a WEEK and carries one initiative
-// election and one organization election, which is why every card has two
-// cause colours — and it is why the clockwise rule matters: the top card reads
-// organization-then-initiative left to right, the right column reads the same
-// pair top to bottom, and the left column reads it the other way round because
-// you are coming back UP that side.
+// REWRITTEN 2026-10-09 for the 10/9 Reshuffle (INSTRUCTIONS › BUILD SEQUENCE ›
+// 10/9 - Reshuffle time): "Profile doesn't need the globe and mission toggle,
+// just wallet, allocations, stats, choices-hub, and personal posts" · "There
+// should be 2 main allocations bars - committed and uncommitted" · the missions
+// hub on the profile "will show the selections of the user". The arch and the
+// globe went to News (news: scripts/feed_check.js). Pinned here: you · the
+// wallet's two bars on one scale (Uncommitted = granted + purchased, Committed
+// = ME · OE · Prep) · the grant as ten tokens in EVERY open initiative election
+// (ruling 19) · Add funds · the stats · the choices hub · your posts · phone width.
+//
+// (2026-10-07 header, kept for history:) the arch (top 3/7 of the annulus, one
+// mission per sector, three layers = ME · OE · budget day), the globe, You |
+// Wallet beside it, a panel per arch mission, the activity feed — and the
+// wallet itself: the grant as its own entity, Add funds, the committed split.
 const { chromium } = require('playwright');
 const fs = require('fs');
 function chromeExe() {
@@ -46,115 +51,86 @@ const section = t => console.log('\n=== ' + t);
   const token = (await r.json()).access_token;
   ok(!!token, 'and a session for it');
 
+  // a vote in this week's first open initiative election, so the bars have
+  // something on both sides: its ten granted tokens move to Committed
+  const W0 = await (await page.request.get(BASE + '/wallet', { headers: { Authorization: 'Bearer ' + token } })).json();
+  const els = (W0.grant && W0.grant.elections) || [];
+  ok(els.length >= 1 && els.every(e => e.left_ct === 1000), 'the grant: ten tokens in every open initiative election (ruling 19)',
+     els.length + ' open · ' + els.map(e => e.left_ct / 100).join(','));
+  const tivs = await (await page.request.get(BASE + '/initiatives')).json();
+  const first = els[0] && tivs.find(t => t.mission_id === els[0].mission_id);
+  if (first) {
+    r = await page.request.put(BASE + '/missions/' + els[0].mission_id + '/p1/votes',
+      { headers: { Authorization: 'Bearer ' + token }, data: { mission_id: els[0].mission_id, shares: { [first.id]: 1 }, ebx: 10 } });
+    ok(r.ok(), 'a vote in ' + els[0].mission_id + '\'s initiative election', 'HTTP ' + r.status());
+  }
+
   await page.goto(BASE + '/profile.html');
   await page.evaluate(t => localStorage.setItem('ebx_auth_token', t), token);
   await page.goto(BASE + '/profile.html');
-  await page.waitForSelector('.pf2-ring', { timeout: 15000 });
-  await page.waitForTimeout(1200);
+  await page.waitForSelector('#pf-wallet', { timeout: 15000 });
+  await page.waitForTimeout(1500);
+  const T = async sel => ((await page.textContent(sel)) || '').replace(/\s+/g, ' ').trim();
 
-  section('the top row — c | b | a');
-  ok(await page.$$eval('.pf2-top > .pf2-card', e => e.length === 3),
-     'three cards across the top');
-  ok(await page.$('#wallet-strip') !== null, '(c) the wallet strip');
-  ok(await page.$$eval('.pf2-alloc .pf2-set', e => e.length === 3),
-     '(b) allocations: three sets…');
-  // 2026-09-16 — EBX is one segment (held); FINAL is a figure in its key, not a
-  // segment, because a skim only marks finality and moves no money.
-  ok(await page.$$eval('.pf2-alloc .pf2-bar .pf2-seg', e => e.length === 5),
-     '…two, two, and EBX held as one (final is an overlay)');
-  const setNames = await page.$$eval('.pf2-set__name', e => e.map(x => x.textContent.trim()));
-  ok(/Unallocated/.test(setNames[0]) && /Committed/.test(setNames[1]) && /EBX/.test(setNames[2]),
-     '…named for the four states', setNames.slice(0, 3).join(' · '));
-  ok(await page.$('.pf2-conv') !== null, '…and the conversion row shares the panel');
-  const acts = await page.$$eval('.pf2-me__acts .pf2-act', e => e.map(x => x.textContent.replace(/\s+/g, ' ').trim()));
-  ok(acts.length === 3, '(a) three actions under the badge', acts.join(' | '));
-  ok(/aa/.test(acts[0]) && /ab/.test(acts[1]) && /ac/.test(acts[2]),
-     '…labelled aa · ab · ac, in the drawing’s order');
+  section('the arch and the globe are News\' now');
+  ok(await page.$('#pf-arch, .ar-arch, #pf-globe, .pf-weeknav, #pf-missions') === null, 'no arch, no globe, no week navigator, no mission panels');
+  ok(await page.$('.ebx-nav__tab[href="profile.html"], .ebx-nav__tab[href="inbox.html"]') === null && await page.$('.ebx-badge-row .ebx-inbox-ic') !== null,
+     'Profile and Inbox are not tabs: the badge and the inbox icon beside it');
 
-  section('(ab) is gated on a coin being SELECTED, not merely held');
-  const gate = await page.$eval('#pf2-membermode', b => b.disabled).catch(() => null);
-  ok(gate === true, 'member mode starts disabled');
-  const chip = await page.$('#wallet-strip .coin-chip[data-coin]');
-  if (chip) {
-    await page.evaluate(() => {
-      const c = document.querySelector('#wallet-strip .coin-chip[data-coin]');
-      window.pickCoin(c.dataset.coin);
-    });
-    ok(await page.$eval('#pf2-membermode', b => b.disabled) === false,
-       '…and opens once a coin is picked');
-    ok(await page.$$eval('.coin-chip.is-picked', e => e.length === 1), '…which is marked as picked');
-  } else {
-    ok(true, '…(no coin on this account — gate stays shut)', 'skipped');
-    ok(true, '…', 'skipped');
+  section('you');
+  ok((await T('.pf-me__h')) === '@' + handle, 'the handle', await T('.pf-me__h'));
+  await page.click('.pf-set summary');
+  const set = await T('.pf-set__menu');
+  ok(/Organization login/.test(set) && /Sign out/.test(set) && /Inbox/.test(set), 'settings: inbox, organization login, sign out', set.slice(0, 120));
+  await page.keyboard.press('Escape');
+
+  section('the wallet — two allocation bars');
+  const unc = await T('#pf-al-unc'), com = await T('#pf-al-com');
+  ok(/^Uncommitted/.test(unc) && /^Committed/.test(com), 'Uncommitted, then Committed');
+  const grantLeft = (els.length - (first ? 1 : 0)) * 10;
+  ok(new RegExp('Granted\\s*' + grantLeft + ' tk').test(unc), 'Granted: ten in each open initiative election, less the one used', 'expected ' + grantLeft + ' · ' + unc.slice(0, 120));
+  ok(/each of the .*open initiative election/.test(unc), '…and it says so');
+  ok(/Purchased\s*0 tk/.test(unc), 'Purchased: nothing yet');
+  ok(!first || /Initiative elections\s*10 tk/.test(com), 'Committed: the ten granted tokens in the initiative election', com.slice(0, 160));
+  ok(/Organization elections/.test(com) && /Prep/.test(com) && !/Framing/.test(com), '…by phase: initiative elections · organization elections · prep');
+  const widths = await page.$$eval('.pf-fill', e => e.map(x => x.getBoundingClientRect().width));
+  const tracks = await page.$$eval('.pf-track', e => e.map(x => x.getBoundingClientRect().width));
+  ok(widths.length === 2 && Math.abs(Math.max(...widths) - tracks[0]) <= 2 && (!first || Math.abs(widths[1] / widths[0] - 10 / grantLeft) < 0.05),
+     'one scale: the longer bar fills its track, the other is in proportion', widths.map(Math.round).join(' / ') + ' of ' + Math.round(tracks[0]));
+
+  section('add funds');
+  await page.click('#pf-wallet .pf-h [data-addfunds]');
+  await page.waitForSelector('#ebw-bg');
+  await page.click('#ebw-bg [data-c="500"]');
+  await page.click('#ebw-bg [data-go]');
+  await page.waitForTimeout(1800);
+  ok(/Purchased\s*50 tk/.test(await T('#pf-al-unc')), '$5 lands as 50 purchased tokens, uncommitted', (await T('#pf-al-unc')).slice(0, 160));
+  ok(await page.$('#pf-al-unc [data-withdraw]') !== null, '…and can be withdrawn');
+
+  section('your numbers, your choices, your posts');
+  ok(await page.$$eval('#pf-stats .pf-stat', e => e.length === 8), 'eight stats tiles');
+  ok((await T('#pf-stats')).includes('Elections voted'), '…elections voted among them');
+  await page.waitForSelector('#pf-hub .mh__title', { timeout: 10000 });
+  ok(await page.$('#pf-hub.mh--mine') !== null && /^Your choices/.test(await T('#pf-hub .mh__title')), 'the choices hub: the missions hub, reading YOUR selections', await T('#pf-hub .mh__title'));
+  if (first) {
+    await page.waitForTimeout(800);
+    const you = await page.$$eval('#pf-hub .mw__you, #pf-hub .mc--you', e => e.map(x => x.textContent.replace(/\s+/g, ' ').trim()));
+    const mine = tivs.find(t => t.id === first.id);
+    await page.click('#pf-hub [data-hub="toggle"]'); await page.waitForTimeout(500);
+    const all = await T('#pf-hub [data-hub="body"]');
+    ok(all.includes('You: ' + mine.title), 'your initiative vote is on its card', mine.title);
+    ok(await page.$$eval('#pf-hub .mc--notyou', e => e.length > 0), '…and the missions you have not touched are dimmed');
   }
+  ok(await page.$('#pf-posts .pf-btn--honey') !== null && /\+ New post/.test(await T('#pf-posts .pf-h')), 'your posts, with + New post');
 
-  section('(e) seven weekly windows, one per week');
-  ok(await page.$$eval('.pf2-win', e => e.length === 7), 'seven window cards');
-  ok(await page.$$eval('.pf2-ring__top .pf2-win', e => e.length === 1), 'one on top…');
-  ok(await page.$$eval('.pf2-ring__left .pf2-win', e => e.length === 3), '…three down the left…');
-  ok(await page.$$eval('.pf2-ring__right .pf2-win', e => e.length === 3), '…three down the right');
-  ok(await page.$$eval('.pf2-win .pf2-half', e => e.length === 14),
-     'each card holds two halves — one initiative, one organization');
+  section('phone width');
+  await page.setViewportSize({ width: 390, height: 860 });
+  await page.waitForTimeout(800);
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  ok(overflow <= 1, 'no sideways scroll at 390px', overflow + 'px');
 
-  section('…and time rotates clockwise');
-  ok(await page.$$eval('.pf2-ring__top .pf2-win', e => e[0].classList.contains('pf2-win--cols')),
-     'the top card is split into COLUMNS');
-  ok(await page.$$eval('.pf2-ring__left .pf2-win, .pf2-ring__right .pf2-win',
-       e => e.every(x => x.classList.contains('pf2-win--rows'))),
-     'the six side cards are split into ROWS');
-  const kindsOf = sel => page.$$eval(sel + ' .pf2-win',
-    e => e.map(x => [...x.querySelectorAll('.pf2-half__kind')].map(k => k.textContent.trim().split(' ')[0])));
-  const top = (await kindsOf('.pf2-ring__top'))[0];
-  ok(top[0] === 'Organization' && top[1] === 'Initiative',
-     'top: organization LEFT, initiative RIGHT', top.join(' | '));
-  ok((await kindsOf('.pf2-ring__right')).every(k => k[0] === 'Organization' && k[1] === 'Initiative'),
-     'right: organization on top, initiative below — falling clockwise');
-  ok((await kindsOf('.pf2-ring__left')).every(k => k[0] === 'Initiative' && k[1] === 'Organization'),
-     'left: initiative on top, organization below — coming back up');
-
-  section('two colours, because the two races are never the same cause');
-  const cols = await page.$$eval('.pf2-win',
-    e => e.map(x => [x.style.getPropertyValue('--c-o').trim(), x.style.getPropertyValue('--c-i').trim()]));
-  ok(cols.every(c => c[0] && c[1]), 'every card carries both cause colours');
-  ok(cols.filter(c => c[0] !== c[1]).length >= 6,
-     '…and they differ, because 8 weeks is not 7',
-     cols.filter(c => c[0] !== c[1]).length + ' of ' + cols.length);
-
-  section('(d) the globe turns, and the selection aims it');
-  ok(await page.$('#pf2-globe-svg') !== null, 'a globe is mounted');
-  ok(await page.$$eval('#gl-grid path', e => e.length > 6), '…with a graticule on it');
-  const lon1 = await page.evaluate(() => {
-    const p = document.querySelector('#gl-grid path'); return p && p.getAttribute('d');
-  });
-  await page.waitForTimeout(700);
-  const lon2 = await page.evaluate(() => {
-    const p = document.querySelector('#gl-grid path'); return p && p.getAttribute('d');
-  });
-  ok(lon1 !== lon2, '…and it is actually turning');
-  ok(await page.$$eval('.pf2-win.is-selected', e => e.length === 1), 'one window is selected');
-  await page.evaluate(() => window.selectWindow(3));
-  ok(await page.$eval('.pf2-win.is-selected', e => e.dataset.week) === '3',
-     '…and clicking another moves it');
-  ok((await page.$eval('#pf2-globe-cap', e => e.textContent)).includes('cause anchors'),
-     '…and the caption says these are cause anchors, not places',
-     'missions carry no coordinates yet');
-
-  section('(f) the feed answers for THIS benefactor');
-  ok(await page.$('#pf2-feed-body') !== null, 'the feed is mounted');
-  const tabs = await page.$$eval('.pf2-feed__tabs button', e => e.map(x => x.textContent.trim()));
-  ok(tabs.length === 3, 'three tabs in benefactor mode', tabs.join(' · '));
-  await page.evaluate(() => window.pfFeedTab('research'));
-  ok((await page.$eval('#pf2-feed-body', e => e.textContent)).length > 0, '…and research is one of them');
-
-  section('the old surfaces are gone');
-  for (const sel of ['.pf-grid', '#choices-table-inits', '#choices-table-orgs',
-                     '#toggle-inits', '#toggle-orgs', '.annulus3-card', '#a3-front'])
-    ok(await page.$(sel) === null, 'no ' + sel);
-
-  section('no script errors');
-  ok(errors.length === 0, 'the page ran clean', errors.slice(0, 3).join(' | '));
-
+  ok(errors.length === 0, 'no page errors', errors.join(' | ').slice(0, 200));
+  console.log('\n' + n + ' assertions · ' + (bad ? bad + ' FAILED' : 'PROFILE CLEAN'));
   await browser.close();
-  console.log('\n' + n + ' assertions · ' + (bad ? 'PROBLEMS: ' + bad : 'PROFILE CLEAN'));
   process.exit(bad ? 1 : 0);
 })();

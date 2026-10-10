@@ -104,20 +104,27 @@ ok(all(r["tiv_title"] for r in rows), "every row is labelled by its INITIATIVE")
 ok(all(r["my_stake_ct"] == 0 and r["my_org_id"] is None for r in rows),
    "signed out, nobody has a commitment")
 # ---------------------------------------------------------------------------
-section("the grant: ten tokens, stamped with this WEEK (never a cause)")
+section("the grant: ten tokens in EVERY initiative election (ruling 19, 2026-10-09)")
 w = wallet()
-ok(w["granted_this_week_ct"] == 10 * T, "a new account is granted 10 tokens")
-ok(w["wallet"]["free_ct"] == 10 * T, "…and holds them free")
-ok(w["wallet"]["next_grant_ct"] == 0, "holding 10 → next grant is 0")
-ok(w["wallet"]["available_ct"] == 10 * T, "…and 10 is what is votable next")
+ok(w["granted_this_week_ct"] == 0 and w["wallet"]["free_ct"] == 0,
+   "nothing is paid into the wallet: the grant belongs to the elections", str(w["wallet"]["free_ct"]))
+_g0 = w["grant"]
+ok(_g0["per_election_ct"] == 10 * T and w["rules"]["me_grant_ct"] == 10 * T,
+   "each initiative election carries ten granted tokens")
+ok(_g0["open"] >= 1 and len(_g0["elections"]) == _g0["open"],
+   "…and the wallet lists every open initiative election", f'{_g0["open"]} open')
+ok(all(e["left_ct"] == 10 * T and e["used_ct"] == 0 for e in _g0["elections"]),
+   "…with all ten unused in each, for a new account")
+ok(_g0["left_ct"] == 10 * T * _g0["open"], "…so the grant left is ten per open election")
+ok(w["wallet"]["next_grant_ct"] == 10 * T, "the grant is 10, whatever is held")
+ok(w["wallet"]["available_ct"] == 10 * T, "…and 10 is what one election takes before any purchased token")
 ok(w["grant_week"] == w["week"] and "grant_cause_id" not in w,
-   "the grant carries the WEEK it was issued in, and no cause (2026-09-16)",
-   str(w.get("grant_week")))
+   "the grant carries no cause (2026-09-16)", str(w.get("grant_week")))
 ok("commit_by" not in w and "commit_by_week" not in w,
    "…and no deadline, because a granted token is never both real and free")
 again = wallet()
-ok(again["granted_this_week_ct"] == 0, "a refresh does NOT pay a second grant")
-ok(again["wallet"]["free_ct"] == 10 * T, "…and the balance is unchanged")
+ok(again["granted_this_week_ct"] == 0, "a refresh does NOT pay anything")
+ok(again["wallet"]["free_ct"] == 0, "…and the balance is unchanged")
 ok(again["rules"]["ct_per_token"] == 100, "the unit rides along in the payload")
 ok(again["rules"]["me_skim"] == 0.10 and again["rules"]["oe_skim"] == 0.10,
    "so do the two skim rates")
@@ -130,13 +137,39 @@ ok("max_conversions" not in again["rules"],
 # ---------------------------------------------------------------------------
 section("inside its week an allocation is a POSITION — up, and down")
 mid = rows[0]["mission_id"]           # the race finalizing soonest = active
-# 2026-09-16: an organization-election stake is 0 or at least $1 (10 tokens), so
-# this account buys 10 more tokens to have room to move a position around.
+
+
+def voted_in_me(handle, mission_id):
+    """Ruling 20 (2026-10-09): only someone who voted in a mission's initiative
+    election may put tokens into its organization election. The races in the
+    table are already past their initiative election, so the check records the
+    vote the way a 0-token ballot leaves it: a share, no stake."""
+    _d = SessionLocal()
+    _b = _d.query(_m.BenefactorAccount).filter(_m.BenefactorAccount.handle == handle).first()
+    _mm = _d.get(_m.Mission, mission_id)
+    _t = _mm.winning_tiv_id or _d.query(_m.Initiative).filter(_m.Initiative.mission_id == mission_id).first().id
+    if not _d.query(_m.VoteP1).filter(_m.VoteP1.ben_id == _b.id, _m.VoteP1.mission_id == mission_id).first():
+        _d.add(_m.VoteP1(ben_id=_b.id, mission_id=mission_id, tiv_id=_t, share=1.0,
+                         ebx_committed=0, stake_ct=0, valence="helpful", committed=True))
+        _d.commit()
+    _d.close()
+
+
+voted_in_me("walletcheck1", mid)
+# 2026-09-16: an organization-election stake is 0 or at least $1 (10 tokens).
+# 2026-10-07 (D31): only PURCHASED tokens enter an organization election, so this
+# account adds $2 of funds through the real endpoint — 20 tokens — and the grant
+# stays behind for the week's initiative election.
+r = c.post("/wallet/add-funds", headers=H, json={"usd_cents": 200}).json()
+ok(r["added_ct"] == 20 * T and r["mode"] == "test", "add funds: $2 -> 20 purchased tokens (test mode)", str(r))
+ok(r["purchased_ct"] == 20 * T and r["free_ct"] == 20 * T, "…and they are the whole bar: no grant sits in it (ruling 19)")
 _db = SessionLocal()
-_b1 = _db.query(_m.BenefactorAccount).filter(_m.BenefactorAccount.handle == "walletcheck1").first()
-_b1.free_ct = int(_b1.free_ct or 0) + 10 * T
-_b1.purchased_ct = 10 * T
-_db.commit(); _db.close()
+_dep = _db.query(_m.Transaction).filter(_m.Transaction.bucket == "deposit").all()
+ok(any(int(t.amount_ebx) == 20 * T and "TEST" in (t.note or "") for t in _dep),
+   "…and the deposit is in the ledger, marked TEST")
+_db.close()
+r = c.post("/wallet/add-funds", headers=H, json={"usd_cents": 99999})
+ok(r.status_code == 400, "a deposit over the per-deposit cap is refused", f"HTTP {r.status_code}")
 before = total_ct(wallet())
 r = c.post("/wallet/commit", headers=H, json={"mission_id": mid, "target_ct": 4 * T})
 ok(r.status_code == 400 and "$1" in r.json().get("detail", ""),
@@ -144,7 +177,7 @@ ok(r.status_code == 400 and "$1" in r.json().get("detail", ""),
    r.json().get("detail", "")[:70])
 r = c.post("/wallet/commit", headers=H, json={"mission_id": mid, "target_ct": 12 * T}).json()
 ok(r["stake_ct"] == 12 * T, "set 12 tokens on a race")
-ok(r["free_ct"] == 8 * T, "…unallocated drops to 8")
+ok(r["free_ct"] == 8 * T and r["purchased_ct"] == 8 * T, "…unallocated drops to 8, all of it purchased")
 ok(total_ct(wallet()) == before, "conservation: nothing created", str(total_ct(wallet())))
 
 r = c.post("/wallet/commit", headers=H, json={"mission_id": mid, "target_ct": 16 * T}).json()
@@ -153,7 +186,7 @@ ok(r["free_ct"] == 4 * T, "…and takes the difference from the bar")
 
 r = c.post("/wallet/commit", headers=H, json={"mission_id": mid, "target_ct": 11 * T}).json()
 ok(r["stake_ct"] == 11 * T, "and it can go DOWN — this is a draft, not a ratchet")
-ok(r["free_ct"] == 9 * T, "…with the difference handed back to unallocated")
+ok(r["free_ct"] == 9 * T and r["purchased_ct"] == 9 * T, "…with the difference handed back to unallocated, as PURCHASED")
 ok(total_ct(wallet()) == before, "conservation holds on the way down too")
 
 r = c.post("/wallet/commit", headers=H, json={"mission_id": mid, "target_ct": -3 * T})
@@ -163,11 +196,11 @@ ok(r.status_code == 422, "a negative target is refused by the schema",
 r = c.post("/wallet/commit", headers=H, json={"mission_id": mid, "target_ct": 999 * T}).json()
 ok(r["stake_ct"] == 20 * T, "asking for more than exists lands on what there is",
    f'{r["stake_ct"]} ct')
-ok(r["free_ct"] == 0, "…and the bar floors at zero, never negative")
+ok(r["free_ct"] == 0 and r["grant_held_ct"] == 0, "…and the bar is empty: no grant waits in it, and none enters an organization election")
 ok(total_ct(wallet()) == before, "conservation holds at the clamp")
 w2 = wallet()
-ok(w2["wallet"]["committed_ct"] == before,
-   "everything is committed — segments agree with rows")
+ok(w2["wallet"]["committed_ct"] == 20 * T,
+   "everything purchased is committed — segments agree with rows")
 ok(w2["wallet"]["minted_ct"] == 0, "and none of it is EBX yet: the week has not rolled")
 ok("staked_ct" not in w2["wallet"] and "claimed_ct" not in w2["wallet"],
    "`staked` is `committed`, and `claimed` went back to meaning an org claim")
@@ -213,7 +246,7 @@ w3 = wallet()          # GET /wallet applies the roll lazily
 ok(w3["wallet"]["minted_ct"] == 20 * T, "the allocation minted into EBX",
    f'{w3["wallet"]["minted_ct"]} ct')
 ok(w3["wallet"]["committed_ct"] == 0, "…and left the committed segment")
-ok(w3["wallet"]["tokens_ct"] == 0, "…and the token bin entirely: EBX is not a token")
+ok(w3["wallet"]["tokens_ct"] == 0, "…and the token bin entirely")
 _row = next(x for x in w3["rows"] if x["mission_id"] == mid)
 ok(not _row["movable"], "hardened ct is not movable")
 ok(_row["my_minted_ct"] == 20 * T, "…and the row says so")
@@ -240,9 +273,17 @@ _rows3 = c.get("/wallet", headers=H3).json()["rows"]
 _a, _b = _rows3[0]["mission_id"], _rows3[1]["mission_id"]
 _db = SessionLocal()
 _b3 = _db.query(_m.BenefactorAccount).filter(_m.BenefactorAccount.handle == "walletcheck3").first()
-_b3.free_ct = int(_b3.free_ct or 0) + 40 * T
-_b3.purchased_ct = 40 * T
+_b3.free_ct = int(_b3.free_ct or 0) + 50 * T
+_b3.purchased_ct = 50 * T
 _db.commit(); _db.close()
+voted_in_me("walletcheck3", _a)
+c.post("/wallet/commit", headers=H3, json={"mission_id": _a, "target_ct": 50 * T})
+r = c.post("/wallet/move", headers=H3,
+           json={"from_mission_id": _a, "to_mission_id": _b, "ct": 10 * T, "org_id": _org_id})
+ok(r.status_code == 400 and "initiative election" in r.json().get("detail", ""),
+   "(ruling 20) nothing moves INTO a race whose initiative election this benefactor skipped",
+   f"HTTP {r.status_code}")
+voted_in_me("walletcheck3", _b)
 c.post("/wallet/commit", headers=H3, json={"mission_id": _a, "target_ct": 50 * T})
 r = c.post("/wallet/move", headers=H3,
            json={"from_mission_id": _a, "to_mission_id": _b, "ct": 1 * T, "org_id": _org_id})
@@ -289,36 +330,48 @@ _b4.purchased_ct = 15 * T                    # as a purchase would write it
 _db.commit()
 _db.close()
 w6 = c.get("/wallet", headers=H4).json()["wallet"]
-ok(w6["purchased_ct"] == 15 * T and w6["grant_held_ct"] == 10 * T,
-   "the bar draws granted and purchased apart")
+ok(w6["purchased_ct"] == 15 * T and w6["grant_held_ct"] == 0,
+   "the bar holds purchased tokens and nothing else (ruling 19)")
 r = c.post("/wallet/withdraw", headers=H4, json={"ct": 2 * T}).json()
 ok(r["withdrawn_ct"] == 2 * T, "purchased ct withdraws")
 ok(r["cash_ct"] == 2 * T, "…into CASH, never back into tokens")
-ok(r["purchased_ct"] == 13 * T and r["free_ct"] == 23 * T,
+ok(r["purchased_ct"] == 13 * T and r["free_ct"] == 13 * T,
    "…and both balances drop by exactly what left")
 r = c.post("/wallet/withdraw", headers=H4, json={"ct": 99 * T})
 ok(r.status_code == 400, "…and you cannot withdraw more purchased ct than you hold",
    f"HTTP {r.status_code}")
 
 # ---------------------------------------------------------------------------
-section("two doors: this week's race is open to everyone; the others need an ME stake (2026-09-17)")
+section("one vote everywhere; tokens only for initiative-election voters (ruling 20, 2026-10-09)")
 _rows4 = c.get("/wallet", headers=H4).json()["rows"]
 _active = _rows4[0]["mission_id"]
 _far = _rows4[-1]["mission_id"]
 ok(_rows4[0]["is_active_race"], "the race closing soonest is this week's")
 ok(not _rows4[-1]["is_active_race"], "…and the last row is not")
+ok(all(x["can_take_part"] for x in _rows4), "every open race takes this benefactor's one vote")
+ok(not any(x["can_commit"] for x in _rows4) and all(x["max_stake_ct"] == 0 for x in _rows4),
+   "…but none takes their tokens: they voted in none of these initiative elections")
 r = c.post("/wallet/commit", headers=H4,
            json={"mission_id": _far, "target_ct": 99 * T})
-ok(r.status_code == 400 and "this week" in r.json().get("detail", ""),
-   "a far race refuses a benefactor who did not back its initiative election",
+ok(r.status_code == 400 and "initiative election" in r.json().get("detail", ""),
+   "a far race refuses tokens from a benefactor who did not vote in its initiative election",
    f"HTTP {r.status_code}")
-r = c.put("/wallet/org", headers=H4, json={"mission_id": _far, "org_id": "earthbux"})
-ok(r.status_code == 400, "…and so does a free vote there", f"HTTP {r.status_code}")
 r = c.post("/wallet/commit", headers=H4,
-           json={"mission_id": _active, "target_ct": 99 * T}).json()
-ok(r["stake_ct"] == 23 * T,
-   "…while this week's race can take the whole balance", f'{r["stake_ct"]} ct')
-ok(r["free_ct"] == 0, "…leaving nothing unallocated")
+           json={"mission_id": _active, "target_ct": 99 * T})
+ok(r.status_code == 400, "…and so does this week's race — the old open door is gone", f"HTTP {r.status_code}")
+r = c.put("/wallet/org", headers=H4, json={"mission_id": _far, "org_id": "earthbux"})
+ok(r.status_code == 200, "…while the nominal vote is open in the far race", f"HTTP {r.status_code}")
+_rf = next(x for x in c.get("/wallet", headers=H4).json()["rows"] if x["mission_id"] == _far)
+ok(_rf["my_org_id"] == "earthbux" and _rf["my_votes"] == 1 and _rf["my_stake_ct"] == 0,
+   "…and counts once: 0 tokens = 1 vote", str((_rf["my_org_id"], _rf["my_votes"])))
+voted_in_me("walletcheck4", _far)
+_rf = next(x for x in c.get("/wallet", headers=H4).json()["rows"] if x["mission_id"] == _far)
+ok(_rf["can_commit"] and _rf["max_stake_ct"] == 13 * T,
+   "once they voted in its initiative election, the race takes their purchased tokens", str(_rf["max_stake_ct"]))
+r = c.post("/wallet/commit", headers=H4,
+           json={"mission_id": _far, "target_ct": 99 * T}).json()
+ok(r["stake_ct"] == 13 * T, "…every PURCHASED token", f'{r["stake_ct"]} ct')
+ok(r["free_ct"] == 0, "…leaving the bar empty")
 
 
 # ---------------------------------------------------------------------------
@@ -329,35 +382,34 @@ section("the initiative election: one amount, one slate, and the WALLET pays")
 # account now, and the slate is percentages of the one amount.
 H6 = signup("walletcheck6")
 _w6 = c.get("/wallet", headers=H6).json()
-from app import wallet as _wm6
-_cause6 = _wm6.active_cause_id()
+_open_ids6 = [e["mission_id"] for e in _w6["grant"]["elections"]]
 _db = SessionLocal()
-_open6 = [mm for mm in _db.query(_m.Mission).filter(
-    _m.Mission.winning_tiv_id.is_(None)).all() if mm.cause_id == _cause6]
 _target6 = None
-for mm in _open6:
-    _t = _db.query(_m.Initiative).filter(_m.Initiative.mission_id == mm.id).all()
+for _mid in _open_ids6:
+    _t = _db.query(_m.Initiative).filter(_m.Initiative.mission_id == _mid).all()
     if len(_t) >= 2:
-        _target6 = (mm.id, [x.id for x in _t[:2]])
+        _target6 = (_mid, [x.id for x in _t[:2]])
         break
-_other = next((mm.id for mm in _db.query(_m.Mission).filter(
-    _m.Mission.winning_tiv_id.is_(None)).all() if mm.cause_id != _cause6), None)
+_other = next((x for x in _open_ids6 if not _target6 or x != _target6[0]), None)
 _other_tivs = ([x.id for x in _db.query(_m.Initiative).filter(
     _m.Initiative.mission_id == _other).all()[:1]] if _other else [])
 _db.close()
 if _target6 is None:
-    ok(True, f"(no open initiative election for {_cause6} with two candidates)")
+    ok(True, "(no open initiative election with two candidates)")
 else:
     _mid6, _t6 = _target6
     r = c.put(f"/missions/{_mid6}/p1/votes", headers=H6,
               json={"mission_id": _mid6, "shares": {_t6[0]: 0.75, _t6[1]: 0.25},
                     "ebx": 8})
     ok(r.status_code == 200, "a slate with an amount is accepted", f"HTTP {r.status_code}")
-    _wal = c.get("/wallet", headers=H6).json()["wallet"]
-    ok(_wal["free_ct"] == 2 * T, "the WALLET paid for it — 8 of 10 tokens left the bar",
-       f'{_wal["free_ct"]} ct')
+    _x6 = c.get("/wallet", headers=H6).json()
+    _wal = _x6["wallet"]
+    ok(_wal["free_ct"] == 0, "the GRANT paid for it — the bar never held it", f'{_wal["free_ct"]} ct')
     ok(_wal["committed_ct"] == 8 * T,
        "…and the committed segment holds them, ME and OE in one number")
+    _e6 = next(e for e in _x6["grant"]["elections"] if e["mission_id"] == _mid6)
+    ok(_e6["used_ct"] == 8 * T and _e6["left_ct"] == 2 * T,
+       "…and that election shows 8 of its 10 granted tokens used")
     _db = SessionLocal()
     _b6 = _db.query(_m.BenefactorAccount).filter(
         _m.BenefactorAccount.handle == "walletcheck6").first()
@@ -371,11 +423,12 @@ else:
     _db.close()
     r = c.put(f"/missions/{_mid6}/p1/votes", headers=H6,
               json={"mission_id": _mid6, "shares": {_t6[0]: 1.0}, "ebx": 3})
-    _wal = c.get("/wallet", headers=H6).json()["wallet"]
-    ok(_wal["free_ct"] == 7 * T,
-       "lowering the amount hands the difference back — an ME allocation is soft",
-       f'{_wal["free_ct"]} ct')
-    ok(_wal["committed_ct"] == 3 * T, "…and the committed segment follows it down")
+    _x6 = c.get("/wallet", headers=H6).json()
+    _wal = _x6["wallet"]
+    ok(_wal["committed_ct"] == 3 * T,
+       "lowering the amount is allowed — an ME allocation is soft", f'{_wal["committed_ct"]} ct')
+    ok(_wal["free_ct"] == 0 and next(e for e in _x6["grant"]["elections"] if e["mission_id"] == _mid6)["left_ct"] == 7 * T,
+       "…and the grant it frees stays with its election; the wallet gains nothing")
     r = c.put(f"/missions/{_mid6}/p1/votes", headers=H6,
               json={"mission_id": _mid6,
                     "shares": {t: 1 for t in [_t6[0], _t6[1]]}, "ebx": 3})
@@ -395,17 +448,19 @@ else:
         _spent = sum(int(v.stake_ct or 0) for v in _db.query(_m.VoteP1).filter(
             _m.VoteP1.ben_id == _b6.id, _m.VoteP1.mission_id == _other).all())
         _db.close()
-        ok(_spent == 0,
-           "a granted token cannot enter ANOTHER cause's initiative election",
+        ok(_spent == 5 * T,
+           "ANOTHER initiative election takes its own grant — no door any more (ruling 19)",
            f"{_spent} ct landed")
+        ok(_wal2["free_ct"] == 0 and _wal2["committed_ct"] == 8 * T,
+           "…and still nothing came out of the wallet", f'{_wal2["committed_ct"]} ct committed')
     else:
-        ok(True, "(no second open initiative election to test the door with)")
+        ok(True, "(no second open initiative election to test with)")
 
 # ---------------------------------------------------------------------------
 section("one benefactor cannot see or spend another's money")
 H5 = signup("walletcheck5")
 w7 = c.get("/wallet", headers=H5).json()
-ok(w7["wallet"]["free_ct"] == 10 * T, "a fresh account gets its own 10")
+ok(w7["grant"]["left_ct"] == 10 * T * w7["grant"]["open"], "a fresh account gets its own ten in every election")
 ok(all(r["my_stake_ct"] == 0 for r in w7["rows"]),
    "…and sees none of anybody else's commitments")
 
@@ -600,6 +655,55 @@ else:
     _db.close()
 
 # ---------------------------------------------------------------------------
+section("ruling 19 (2026-10-09): grant first, purchased on top, last in first out")
+c.get("/missions")                                 # let the scheduler open the week's mission
+_db = SessionLocal()
+_door = _w.door_mission(_db)                       # the soonest-closing initiative election
+_door_id = _door.id if _door else None
+_door_cause = _door.cause_id if _door else None
+if _door_id:
+    for _i in range(2):
+        if _db.get(_m.Initiative, f"d31-{_i}") is None:
+            _db.add(_m.Initiative(id=f"d31-{_i}", title=f"D31 check {_i}", cause_id=_door_cause,
+                                  mission_id=_door_id, status="suggested", approved=True))
+    _db.commit()
+_db.close()
+if _door_id is None:
+    ok(True, "(no initiative election open)")
+else:
+    HD = signup("walletcheckd31")
+    c.post("/wallet/add-funds", headers=HD, json={"usd_cents": 100})
+    def _wd():
+        x = c.get("/wallet", headers=HD).json()
+        return x["wallet"], next(e for e in x["grant"]["elections"] if e["mission_id"] == _door_id), x
+    _wal, _e, _x = _wd()
+    ok(_e["left_ct"] == 10 * T and _wal["free_ct"] == 10 * T and _wal["purchased_ct"] == 10 * T,
+       "ten granted in the election, ten purchased in the bar", str(_e)[:90])
+    c.put(f"/missions/{_door_id}/p1/votes", headers=HD,
+          json={"mission_id": _door_id, "shares": {"d31-0": 1.0}, "ebx": 15})
+    _wal, _e, _x = _wd()
+    ok(_e["left_ct"] == 0 and _wal["purchased_ct"] == 5 * T,
+       "15 tokens in: the 10 granted go first, then 5 purchased")
+    c.put(f"/missions/{_door_id}/p1/votes", headers=HD,
+          json={"mission_id": _door_id, "shares": {"d31-0": 1.0}, "ebx": 10})
+    _wal, _e, _x = _wd()
+    ok(_wal["purchased_ct"] == 10 * T and _e["left_ct"] == 0,
+       "lowering to 10 hands the PURCHASED 5 back first")
+    c.put(f"/missions/{_door_id}/p1/votes", headers=HD,
+          json={"mission_id": _door_id, "shares": {"d31-0": 1.0}, "ebx": 4})
+    _wal, _e, _x = _wd()
+    ok(_e["left_ct"] == 6 * T and _wal["purchased_ct"] == 10 * T and _wal["free_ct"] == 10 * T,
+       "…and only then frees the grant — inside its election, never into the wallet")
+    _db = SessionLocal()
+    _bd = _db.query(_m.BenefactorAccount).filter(_m.BenefactorAccount.handle == "walletcheckd31").first()
+    _bd.last_grant_week = _w.current_week() - 1    # pretend the week changed
+    _bd.free_ct = int(_bd.free_ct or 0) + 7 * T    # …and a D31 weekly pile is still in the bar
+    _db.commit(); _bd_id = _bd.id; _db.close()
+    _wal, _e, _x = _wd()
+    ok(_wal["free_ct"] == 10 * T and _wal["purchased_ct"] == 10 * T and _x["expired_this_week_ct"] == 7 * T,
+       "the switch retires a weekly pile left in the bar; purchased tokens are untouched")
+    ok(_e["left_ct"] == 6 * T, "…and nothing about the week changes what the election still offers")
+
 section("final conservation sweep")
 _db = SessionLocal()
 for _handle in ("walletcheck1", "walletcheck3", "walletcheck4", "walletcheck5"):

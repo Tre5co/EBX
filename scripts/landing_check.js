@@ -10,6 +10,10 @@
 // (unchanged, D18 "You donate. We follow."), the five steps and the mission
 // hub (2026-09-30), THE NETWORK and a feed whose size is the API's, and the
 // explainer standing on about.html.
+//
+// 10/9 Reshuffle (2026-10-09): the steps stand LEFT of the visual, step 5 reads
+// "Feedback"; the mission hub went to Missions and the feed to News; Home
+// carries THE WEEKLY REPORT (GET /inbox/weekly/report) at all times.
 const { JSDOM, VirtualConsole } = require('jsdom');
 
 const BASE = process.argv[2] || 'http://127.0.0.1:8000';
@@ -37,7 +41,6 @@ async function page(file) {
 const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
 
 (async () => {
-  const roots = await fetch(BASE + '/posts?roots_only=true&limit=120&sort=recent').then(r => r.json());
   const { d, errors } = await page('index.html');
 
   console.log('\n=== Home · hero');
@@ -47,30 +50,33 @@ const txt = el => (el ? el.textContent.replace(/\s+/g, ' ').trim() : '');
   ok(!/Decide what gets funded|My profile/.test(d.getElementById('ld-cta').textContent), 'the hero carries no Decide / My profile links (tweaks 2026-10-01)');
 
   console.log('\n=== Home · the five steps (2026-09-30)');
-  ok(d.querySelector('.hx .ld-a') && d.querySelector('.hx #ebx-steps') && d.querySelectorAll('#ld-flow .ld-flow__i').length === 5, 'the hero, with the steps to its right and their list');
+  ok(d.querySelector('.hx .ld-a') && d.querySelector('.hx #ebx-steps') && d.querySelectorAll('#ld-flow .ld-flow__i').length === 5, 'the hero, with the steps and their list');
+  const flow = d.getElementById('ld-flow'), vis = d.getElementById('ebx-steps');
+  ok(flow && vis && flow.parentNode === vis.parentNode && !!(flow.compareDocumentPosition(vis) & d.defaultView.Node.DOCUMENT_POSITION_FOLLOWING),
+     'the list stands LEFT of the visual (10/9 Reshuffle)');
+  ok(txt(d.querySelectorAll('#ld-flow .ld-flow__i')[4]) === '5. Feedback', 'step 5 is Feedback, not Reporting', txt(d.querySelectorAll('#ld-flow .ld-flow__i')[4]));
   ok(d.querySelectorAll('#hk .hk__card').length === 4, 'the four doors');
+  const hk = txt(d.getElementById('hk'));
+  ok(/Two key decisions/.test(hk) && /We give everyone \$1 to vote with in every initiative election/.test(hk) && /Every voice matters/.test(hk)
+     && /Feedback and accountability/.test(hk) && /week by week/.test(hk) && /move your donation to a different mission/.test(hk),
+     'Jax\'s door copy of 2026-10-09, with the three edits');
   ok(d.querySelectorAll('#ebx-steps .sx__scene').length === 5, 'five pages');
   ok(txt(d.querySelector('#ebx-steps .sx__msg')) === 'A fresh focus each week', 'page 1 is Cause');
   ok(!d.getElementById('ebx-wheel') && !d.querySelector('.lw-phase, .lw-card'), 'the wheel block is off Home');
 
-  console.log('\n=== Home · the mission hub');
-  const missions = await fetch(BASE + '/missions').then(r => r.json());
-  // Home pass (2026-10-01): collapsed by default — open it to count
-  ok(d.getElementById('mh-body').hidden && d.querySelectorAll('#mh-week .mw').length >= 1, 'collapsed by default, with this week\'s elections');
-  d.getElementById('mh-toggle').click();
-  // P2 · Home (2026-10-05): no row or column labels — seven rows of cards
-  ok(!d.querySelector('#mh .mh__rowhead, #mh .mh__colhead') && d.querySelectorAll('#mh .mh__grid > *').length % 7 === 0, 'seven rows, no labels');
-  const hub = d.defaultView.HomeHub;
-  const cells = hub ? hub.state.rows.reduce((a, r) => a + r.cells.length, 0) : 0;
-  ok(cells === missions.length + 7, 'every mission, plus a cause election a row', cells + ' = ' + missions.length + ' + 7');
-  ok(d.querySelectorAll('#mh .mc--ce').length === 7, 'a cause election on every row');
-
-  console.log('\n=== Home · the Network + the feed');
-  ok(!d.querySelector('.hn__tile'), 'no Network tiles (tweaks 2026-10-01)');
-  const shown = d.querySelectorAll('#hf-list .ep--card').length;
-  ok(shown === Math.min(12, roots.length), 'the feed is every post, newest first', shown + ' of ' + roots.length);
-  // posting edits (2026-10-02): the only toggles on Home are the four sources
-  ok(!d.querySelector('.hn .hf-chip, .hn form, .hn [aria-pressed]:not(.ep__v):not(#hf-src [data-src])'), 'no toggles on Home but the four sources');
+  console.log('\n=== Home · the weekly report (10/9 Reshuffle)');
+  const rep = await fetch(BASE + '/inbox/weekly/report').then(r => r.json());
+  ok(!d.getElementById('mh') && !d.getElementById('hf-list') && !d.querySelector('.hn'),
+     'the mission hub went to Missions, the feed to News — no discussion on Home');
+  ok(txt(d.getElementById('wr-title')) === rep.title && /^[A-Z][a-z]+ \d+ – (?:[A-Z][a-z]+ )?\d+: \S/.test(rep.title),
+     'headed with the week and its cause', rep.title);
+  ok(d.querySelectorAll('#wr-above .wu').length === 3 && d.querySelectorAll('#wr-below .wu').length === 3,
+     'three updates above the timeline, three below', d.querySelectorAll('#wr-above .wu').length + ' + ' + d.querySelectorAll('#wr-below .wu').length);
+  ok((rep.above || []).length === 3 && (rep.below || []).length === 3 && (rep.timeline.dots || []).length >= 1,
+     '…as the endpoint has them, with the missions on the timeline', (rep.timeline.dots || []).length + ' dots');
+  ok(d.querySelectorAll('#wr-tl .tl__dot, #wr-tl [data-dot]').length >= 1 || /circle/.test(d.getElementById('wr-tl').innerHTML),
+     'the timeline draws its dots');
+  ok(txt(d.getElementById('wr-ce')).length > 10 && txt(d.getElementById('wr-ex')).length > 10, 'at the bottom: the cause elections and the exchange');
 
   console.log('\n=== about.html (the About reshape, 2026-10-05)');
   const a = await page('about.html');

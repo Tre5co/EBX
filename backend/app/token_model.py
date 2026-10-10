@@ -116,6 +116,7 @@ def _ceil_ct(x: float) -> int:
 #    election for that cause or its replacement. If there are >= 10 total
 #    tokens, that amount of tokens is available in the next election."
 #
+# SUPERSEDED 2026-10-07 (D31) — the floor below is gone; see `grant_ct`.
 # Which is a FLOOR, not a ration: hold six and four arrive, hold twenty and
 # twenty are votable. `grant_ct` and `available_ct` are the same rule read from
 # opposite ends, and both are here so neither the wallet nor the UI has to
@@ -131,21 +132,83 @@ WEEKLY_GRANT_CT = 10 * CT_PER_TOKEN          # 1000 ct = 10 tokens = $1
 #
 # A GRANT CARRIES ITS WEEK, NOT A CAUSE (Jax, 2026-09-16): "Grants do not have a
 # cause id, only a weekly id ... the active week's cause is different between
-# the 2 elections." A granted token may enter the initiative election or the
-# organization election that closes on its grant week. The week is
+# the 2 elections." 2026-10-07 (D31): a granted token may enter ONLY that
+# week's initiative election (the week's cause — the one that opened this
+# week), never an organization election, and it expires with its week. The week is
 # `BenefactorAccount.last_grant_week`; `grant_cause_id` was dropped by migration
 # e1a7c3b95d20.
+#
+# SUPERSEDED 2026-10-09 (ruling 19) — THE GRANT BELONGS TO THE ELECTION. Jax,
+# INSTRUCTIONS › 10/9 Reshuffle: "each of the ME elections should have 10
+# granted tokens available. You can logic it like this: if it is an initiative
+# election, there should be exactly 10 granted tokens available, no matter
+# what." So there is no weekly pile in the wallet any more and no door: every
+# open initiative election (seven at a time, one closing each week — still $1 a
+# week on average) carries its own ten, for every benefactor.
+#
+#   * the grant goes in FIRST: of a commit C in one initiative election,
+#     `min(C, 10 tokens)` is Earthbux's and `C − 10` (if any) is the
+#     benefactor's own purchased money (`me_grant_part` / `me_purchased_part`);
+#   * so it comes back out LAST (D31's last-in-first-out, unchanged): lowering a
+#     commit hands the purchased part back to the wallet first, and the grant
+#     never leaves its election — it is not in the wallet to hand back to;
+#   * unused, it simply never becomes money: nothing expires from the wallet
+#     when an initiative election closes.
+#
+# Grant-first is also what makes the split derivable rather than stored: a
+# benefactor never gains by spending their own money before Earthbux's, so the
+# granted part of any commit is `min(C, 10)` and needs no column.
+ME_GRANT_CT = 10 * CT_PER_TOKEN              # 1000 ct = 10 tokens = $1, per initiative election
+WEEKLY_GRANT_CT = ME_GRANT_CT                # the old name: still ten, but per election now
 
 
-def grant_ct(free_ct: int) -> int:
-    """This week's grant, given what the benefactor is already holding free."""
-    return max(0, WEEKLY_GRANT_CT - max(0, int(free_ct)))
+def grant_ct(free_ct: int = 0) -> int:
+    """The grant: ten tokens, whatever is held (D31) — and since 2026-10-09
+    (ruling 19) ten in EACH initiative election rather than ten a week. The
+    argument is kept so old callers still type-check; it never changes the
+    answer."""
+    return ME_GRANT_CT
+
+
+def me_grant_part(commit_ct: int) -> int:
+    """The part of one initiative-election commit that is Earthbux's grant: it
+    goes in first, so it is the first ten tokens (ruling 19)."""
+    return min(max(0, int(commit_ct or 0)), ME_GRANT_CT)
+
+
+def me_purchased_part(commit_ct: int) -> int:
+    """The part of one initiative-election commit that is the benefactor's own
+    (purchased) money: everything above the election's ten (ruling 19)."""
+    return max(0, int(commit_ct or 0) - ME_GRANT_CT)
+
+
+def me_ceiling_ct(held_ct: int, purchased_free_ct: int) -> int:
+    """The most one initiative election can hold for this benefactor: its own
+    ten granted tokens (or what is already in, if more) plus every purchased
+    token still unallocated (ruling 19)."""
+    return max(ME_GRANT_CT, max(0, int(held_ct or 0))) + max(0, int(purchased_free_ct or 0))
+
+
+def me_purchased_delta(held_ct: int, commit_ct: int) -> int:
+    """Purchased ct a change of commit takes from the wallet (positive) or hands
+    back to it (negative). The grant never moves through the wallet."""
+    return me_purchased_part(commit_ct) - me_purchased_part(held_ct)
+
+
+def retire_weekly_grant(free_ct: int, purchased_ct: int) -> tuple[int, int]:
+    """The switch to ruling 19, for one wallet: the unallocated bar holds only
+    purchased tokens from now on. Returns `(new_free_ct, retired_ct)` — what was
+    left of a D31 weekly grant is retired (it could only ever enter one
+    initiative election, and that election now carries its own ten)."""
+    free = max(0, int(free_ct))
+    purchased = min(max(0, int(purchased_ct)), free)
+    return purchased, free - purchased
 
 
 def available_ct(held_ct: int) -> int:
-    """What is votable in the next election: `max(10, held)`. The same
-    arithmetic as `grant_ct`, said the way Jax said it."""
-    return max(WEEKLY_GRANT_CT, max(0, int(held_ct)))
+    """What one initiative election can take before any purchased token:
+    `max(10, held)` (`me_ceiling_ct` with nothing purchased)."""
+    return max(ME_GRANT_CT, max(0, int(held_ct)))
 
 
 # ===========================================================================
@@ -627,7 +690,10 @@ def lots_total_ct(lots: Iterable[Lot]) -> int:
 class Wallet:
     """The four states, in ct. One bar, four segments, one invariant."""
     cash_ct: int = 0                # bought back or never spent; not a donation
-    free_ct: int = 0                # UNALLOCATED — granted or purchased
+    # UNALLOCATED. Since 2026-10-09 (ruling 19) only purchased tokens live here:
+    # the grant is each initiative election's own ten and never sits in the bar,
+    # so `grant_held_ct` reads 0 once `wallet.ensure_grant` has retired D31's pile.
+    free_ct: int = 0
     # The part of free that was BOUGHT rather than granted, and the only mobile
     # money in the model. A GRANTED token appears in its cause's election week,
     # cannot be transferred or withdrawn (there is no moment at which it exists
@@ -664,7 +730,9 @@ class Wallet:
 
     @property
     def next_grant_ct(self) -> int:
-        return grant_ct(self.free_ct)
+        """The grant each initiative election carries — ten tokens, whatever is
+        held (D31; per election since ruling 19)."""
+        return grant_ct()
 
     def as_dict(self) -> dict:
         purchased = min(max(0, self.purchased_ct), self.free_ct)
@@ -694,6 +762,7 @@ class Wallet:
             "usd_donated": usd(self.donated_ct),
             "ct_per_token": CT_PER_TOKEN,
             "weekly_grant_ct": WEEKLY_GRANT_CT,
+            "me_grant_ct": ME_GRANT_CT,          # ruling 19: ten in every initiative election
             "max_split_tivs": MAX_SPLIT_TIVS,
             "me_skim": ME_SKIM,
             "oe_skim": OE_SKIM,

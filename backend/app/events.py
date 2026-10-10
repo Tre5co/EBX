@@ -305,7 +305,7 @@ def on_org_elected(db: Session, mission_id: str, winner_org: str, voters: dict) 
     return record(db, "org_elected", who, mission_id=m.id, org_id=winner_org, tiv_id=m.winning_tiv_id,
                   dedupe=f"org_elected:{m.id}",
                   data={"org": _org_name(db, winner_org), "mission": _mission_label(db, m.id),
-                        "next": {"label": "Budget day (framing ends)", "date": _iso(budget_day(m))}})
+                        "next": {"label": "Budget day (prep ends)", "date": _iso(budget_day(m))}})
 
 
 # ── reading the inbox ───────────────────────────────────────────────────────
@@ -346,7 +346,7 @@ def describe(db: Session, ev: models.Event, detail: Optional[dict]) -> dict:
         out = det.get("outcome")
         title = f"{d.get('org')} will run {d.get('mission')}"
         body = {"won": "Your vote won. ",
-                "lost": "Your organization did not win — you can exchange into another mission during framing. ",
+                "lost": "Your organization did not win — you can exchange into another mission during prep. ",
                 "followed": "Your stake had no organization named, so it followed the winner. "}.get(out, "")
         nx = d.get("next") or {}
         body += f"Next: {nx.get('label')}" + (f" on {nx['date'][:10]}." if nx.get("date") else ".")

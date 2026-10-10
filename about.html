@@ -6,7 +6,7 @@
   <title>About Earthbux — you donate, we follow</title>
   <meta name="description" content="Earthbux is the social network for charities: a weekly pool that goes where its donors vote, and a newsroom that follows the money." />
   <link rel="icon" type="image/svg+xml" href="resources/favicon.svg" />
-  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261005a" />
+  <link rel="stylesheet" href="resources/css/ebx_frontend.css?v=20261009a" />
   <style>
     /* ── about.html — the About reshape (BACKLOG › ABOUT PAGE RESHAPE, 2026-10-05)
        "Don't need the hero. Rearrange everything on the page to fit into the
@@ -373,8 +373,9 @@
           <p>The weekly pool goes where benefactors vote, not where a grantmaker decides &mdash;
             cause, initiative, organization, every week, for every cause. Until budget day, the part of
             your stake that isn&rsquo;t final is <b>still yours to withdraw</b> or move to another mission.</p>
-          <p>So control is what we hand out: every member is granted <b>10 tokens a week</b> &mdash;
-            a dollar of real say in where the pool goes, whether or not you give a cent of your own.</p>
+          <p>So control is what we hand out: every member is granted <b>10 tokens in every initiative
+            election</b> &mdash; a new one opens each week &mdash; a dollar of real say in where the pool goes,
+            whether or not you give a cent of your own.</p>
           <div class="ld-dime" id="ld-dime-viz"></div>
           <div class="ld-runway" id="ld-runway"></div>
         </div>
@@ -453,7 +454,7 @@
       </div>
       <nav class="ab-toc" aria-label="On this tab">
         <a href="#ph-cause">1 &middot; Cause</a><a href="#ph-tiv">2 &middot; Initiative</a>
-        <a href="#ph-org">3 &middot; Organization</a><a href="#ph-frame">4 &middot; Framing</a>
+        <a href="#ph-org">3 &middot; Organization</a><a href="#ph-frame">4 &middot; Prep</a>
         <a href="#ph-ex">5 &middot; Exchange</a><a href="#earthbuck">The Earthbuck</a>
         <a href="#posting">How to post</a><a href="#compare">How we compare</a>
       </nav>
@@ -545,7 +546,7 @@
           <div class="ab-phase__num">4</div>
           <div>
             <div class="ab-phase__kick" data-copy="kicker">Week 15</div>
-            <h2>Mission Framing</h2>
+            <h2>Mission Prep</h2>
             <p class="ab-phase__title" data-copy="title"></p>
             <div class="ab-phase__cols">
               <div class="ab-phase__col"><h4>What happens</h4><p data-copy="what">Earthbux orients the organization and its benefactors, and the community builds the budget.</p></div>
@@ -588,7 +589,7 @@
                 </li>
               </ol>
             </div>
-            <a class="ab-phase__go" href="mission.html?state=fr">See the missions in framing &rarr;</a>
+            <a class="ab-phase__go" href="mission.html?state=fr">See the missions in prep &rarr;</a>
           </div>
         </article>
 
@@ -710,8 +711,8 @@
   </main>
 
   <div id="ebx-footer-mount"></div>
-  <script src="resources/js/ebx_shared.js?v=20261005a"></script>
-  <script src="resources/js/ebx_wheel.js?v=20260930"></script>
+  <script src="resources/js/ebx_shared.js?v=20261009a"></script>
+  <script src="resources/js/ebx_wheel.js?v=20261009a"></script>
   <script>
   // ── the About tabs ──────────────────────────────────────────────────────
   // A hash is either a tab (#story #goals #how #team) or a block inside one
@@ -798,7 +799,7 @@
         'font-size:9px;fill:#e8a84c;">10¢</text></svg>';
       dimeEl.innerHTML =
         '<div class="ld-dime__row">' + Array.from({ length: 10 }, coin).join('') + '</div>' +
-        '<div class="ld-dime__cap">10 tokens &middot; ten dimes &middot; $1 &middot; every week</div>';
+        '<div class="ld-dime__cap">10 tokens &middot; ten dimes &middot; $1 &middot; every initiative election</div>';
     }
     let s = null;
     try { const r = await fetch('/stats'); if (r.ok) s = await r.json(); } catch (e) {}
@@ -821,8 +822,9 @@
         '<div class="ld-runway__members" id="ld-active-users">' +
           '<b>' + active + '</b> active member' + (active === 1 ? '' : 's') +
         '</div>' +
-        '<div class="ld-runway__note">Everyone is granted <b>10 tokens per week</b> between the ' +
-          'two elections. Committed <b>$' + usd.toFixed(2) + '</b> &divide; <b>$' +
+        // ruling 19 (2026-10-09): ten in every initiative election — one opens a week
+        '<div class="ld-runway__note">Everyone is granted <b>10 tokens in every initiative election</b>, ' +
+          'and one opens each week. Committed <b>$' + usd.toFixed(2) + '</b> &divide; <b>$' +
           weekly.toFixed(2) + '</b> per week = <b>' + weeks + '</b> week' +
           (weeks === 1 ? '' : 's') + '. ' +
           (!s

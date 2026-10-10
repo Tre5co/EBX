@@ -5,8 +5,9 @@
 // Retired 2026-09-24 with the discussion box; brought back under the name P3's
 // "Done when" gives it, for what replaced the box: ONE composer (post.html),
 // reachable from everywhere. It checks
-//   · every entry point opens post.html — Home's +, News, a profile, a mission,
-//     the About page's post types (F16: the link preselects);
+//   · every entry point opens post.html — News, a profile, a mission, the
+//     About page's post types (F16: the link preselects); Home has no + since
+//     the 10/9 Reshuffle (2026-10-09) took its feed to News;
 //   · the link decides what is preselected — the type and the target;
 //   · each type posts from the page with no stake (the gates are gone), and
 //     lands on the target it named;
@@ -58,13 +59,14 @@ const J = (u, o) => fetch(BASE + u, o).then(r => r.json());
 
   // ── entry points ─────────────────────────────────────────────────────────
   section('entry points — every one opens post.html');
-  await open('/', '#hn-post');
-  ok(/post\.html/.test(await page.getAttribute('#hn-post', 'href')), "Home's + opens post.html");
+  await open('/', '#wr');
+  ok(await page.$('#hn-post, #hf-list') === null, 'Home has no + and no feed — they went to News (10/9 Reshuffle)');
   await open('/cause.html', '#fd-compose');
   ok(/post\.html/.test(await page.getAttribute('#fd-compose', 'href')), "News's + Post opens post.html");
-  await open('/profile.html', '#pf2-newpost');
-  ok(/post\.html/.test(await page.getAttribute('#pf2-newpost', 'href')), 'a profile has + New post');
-  await open('/about.html', '.ld-trio__link');
+  await open('/profile.html', '#pf-newpost');
+  ok(/post\.html/.test(await page.getAttribute('#pf-newpost', 'href')), 'a profile has + New post');
+  // About reshape (2026-10-05): the phase cards stand in the How it works tab
+  await open('/about.html#ab-phases', '#how .ld-trio__link');
   const trio = await page.$$eval('.ld-trio__link', as => as.map(a => a.getAttribute('href')).filter(h => /post\.html/.test(h)));
   ok(trio.length === 6 && trio.some(h => /type=background/.test(h)) && trio.some(h => /type=support/.test(h)),
      'About\'s research and budget cards link post.html, preselected (F16)', trio.join(' '));

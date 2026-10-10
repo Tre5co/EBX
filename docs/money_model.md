@@ -49,6 +49,7 @@ whom, and §14 says what was not.
   - [Built 2026-09-16](#built-2026-09-16)
   - [Built 2026-09-17](#built-2026-09-17)
   - [Built 2026-09-18](#built-2026-09-18)
+  - [Built 2026-10-09](#built-2026-10-09)
   - [Still true and still built](#still-true-and-still-built)
   - [Not built — the framing and exchange work list](#not-built--the-framing-and-exchange-work-list)
 - [13. The surfaces](#13-the-surfaces)
@@ -118,9 +119,60 @@ whatever an older section, doc or code comment said.
     1% per initiative on it, and adding tokens keeps the ratios.
 15. **Everyone can vote in an organization election.** Votes follow the stake on
     a doubling ladder: 0 tokens = 1 vote, 10 = 2, 20 = 3, 40 = 4, 80 = 5 (§9).
-16. **Without an ME stake in a mission, only this week's organization election is
+16. ~~**Without an ME stake in a mission, only this week's organization election is
     open.** A benefactor who backed a mission's initiative election may vote in
-    its organization election in any week.
+    its organization election in any week.~~ *Replaced by ruling 20 (2026-10-09).*
+
+*Added 2026-10-07 (D31, Jax: "each user gets 10 tokens per week and it must be
+used on that week's ME. Grants can materialize as soon as the ME opens, because
+they can only be used in the 1 election they are granted to"):*
+
+17. ~~**The grant is ten tokens every week, for that week's initiative election
+    only** — the initiative election of the week's cause, which opens that
+    week. It never enters an organization election (this replaces the "ME or
+    OE" of ruling 7). What is unused **expires at the week change**, and a
+    fresh ten arrive; purchased tokens never count against it (the floor of §4
+    is gone). Money coming back out of that election returns **last in, first
+    out**: the purchased part first, then the grant.~~ *Replaced by ruling 19
+    (2026-10-09); "never an organization election" and "last in, first out"
+    carry over.*
+18. **Funds come in through the wallet** (2026-10-07). "Add funds" turns
+    dollars into PURCHASED tokens ($1 = 10 tokens). Until a payment processor
+    is connected (D12) the server runs deposits in **test mode**: credited at
+    once, one `transfer / deposit` ledger row each, marked TEST, capped ($100
+    a deposit, $500 an account) — to be reversed before real money is used.
+
+*Added 2026-10-09 (the 10/9 Reshuffle — Jax: "each of the ME elections should
+have 10 granted tokens available … if it is an initiative election, there should
+be exactly 10 granted tokens available, no matter what" · "During the
+organization election, a user needs to have voted in the initiative election in
+order to commit more than the nominal 1 vote … Any tokens that carry over from
+the initiative election increase the weight of their OE vote." · and, asked
+which organization elections the nominal vote reaches: "Every open one"):*
+
+19. **Ten granted tokens in every initiative election.** Every open initiative
+    election carries exactly ten granted tokens for every benefactor — seven are
+    open at once, a new one each week — whatever else they hold. A grant belongs
+    to its election: it never enters an organization election, never sits in the
+    wallet, and can never be withdrawn as cash. **A commit spends the grant
+    first**: the first ten tokens of a stake in an initiative election are its
+    grant, anything above them is purchased. Money coming back out returns **last
+    in, first out** — the purchased part first. This replaces ruling 17's weekly
+    pile; a D31 grant still in a wallet is retired at its week change. (Built:
+    `token_model.me_grant_part · me_purchased_part · me_ceiling_ct`;
+    `GET /wallet` › `grant` lists every open election with its ten, used and
+    left.)
+20. **One vote for everyone in every open organization election; tokens only for
+    its initiative election's voters.** Anyone may cast the nominal vote (0
+    tokens = 1 vote on ruling 15's ladder) in any open organization election, in
+    any week. Committing tokens there — or moving tokens into it — needs a vote in
+    that mission's initiative election; tokens that carried over from it count
+    on the ladder either way. This replaces ruling 16.
+
+*Terminology (2026-10-09, "Framing needs to be switched to 'Prep'"):* the phase
+this document calls **framing** (T+8 → T+15) reads **Prep** everywhere a
+benefactor sees it. The model keeps its word until Jax rewrites these sections;
+the code keys (`frame`, `fr`, the "framing release" slice) are unchanged.
 
 ---
 
@@ -209,6 +261,17 @@ integer ct on both legs.
 
 > **10 tokens appear in your account each week. These tokens can only be used in
 > this week's elections.**
+>
+> **2026-10-09 (ruling 19):** ten granted tokens in **every** open initiative
+> election — exactly ten in each, whatever is held — and nowhere else. A commit
+> spends its election's ten first; nothing granted ever reaches the wallet, an
+> organization election or cash. With seven initiative elections open at once,
+> a new member can put 70 granted tokens to work in their first week.
+>
+> **2026-10-07 (ruling 17, D31):** only in this week's *initiative* election;
+> unused grant expires at the week change; the floor below is gone — ten arrive
+> every week whatever is held. *(Replaced by ruling 19.)* The bullets below are
+> kept as history where they disagree.
 
 - **A grant carries its week, never a cause** (§0.7). A granted token may be
   committed to the ME or the OE that closes on its grant week. The code keeps the
@@ -528,7 +591,7 @@ Earthbux seeding liquidity with charitable capital needs the same legal review a
 | Whole-percentage slates; decided elections refuse a slate | `tm.whole_percent_shares`, `crud.replace_p1_shares` |
 | ME sliders as percentages of one commit amount (§5) | main.html |
 | Organization votes on the doubling ladder; `my_votes` + `can_take_part` on each row | `tm.oe_votes`, `crud.p2_tally`, `wallet.oe_rows` |
-| Only this week's organization election without an ME stake | `wallet._check_takes_part` (`set_stake`, `set_org`) |
+| Only this week's organization election without an ME stake *(replaced 2026-10-09 by ruling 20)* | `wallet._check_takes_part` (`set_stake`, `set_org`) |
 | Staff: recount open initiative elections; elect an organization in a past race with none | `POST /admin/elections/me-reset`, `POST /admin/missions/{id}/backfill-org` |
 | A counted figure that drifted from its money (`ebx_committed` vs `stake_ct`) is repaired wherever it is, decided races included — a repair is not a re-vote | `crud.reset_open_me_slates` |
 | A re-listed loser's RATING starts empty too: a rating counts only votes cast in the race the initiative is running in | `crud.recompute_tiv_rating` |
@@ -543,10 +606,22 @@ Earthbux seeding liquidity with charitable capital needs the same legal review a
 | Electing an initiative is one code path for both — the effects of `finalize_p1` are `_elect_tiv` | `crud._elect_tiv` |
 | `election_check` (52) asserts the retroactive election, the refusal of one whose day has not come, and that the loser is still re-listed | `scripts/` |
 
+### Built 2026-10-09
+
+*The 10/9 Reshuffle (INSTRUCTIONS › BUILD SEQUENCE). No migration: the split of
+a commit into granted and purchased parts is derived from the commit itself.*
+
+| Change | Where |
+|---|---|
+| Ruling 19 — ten granted tokens in every open initiative election, spent first: `ME_GRANT_CT`, `me_grant_part`, `me_purchased_part`, `me_ceiling_ct`, `me_purchased_delta`; a slate's commit can reach ten whatever the wallet holds, and only the part above ten draws on purchased tokens | `token_model.py`, `crud.replace_p1_shares` |
+| The grant entity lists every open initiative election with its ten, used and left (`grant.elections`); `ensure_grant` pays nothing now — it retires a D31 weekly pile (`retire_weekly_grant`); `reset_grant` is gone | `wallet.grant_info`, `wallet.ensure_grant`, `wallet.open_initiative_elections` |
+| Ruling 20 — the nominal vote is everyone's in every open organization election; tokens there need a vote in its initiative election (`_check_takes_part(v, adding_tokens, voted_me)`), in `set_stake` and at the destination of `move_stake`; `set_org` refuses only a race with no elected initiative; rows and coins carry `can_take_part` / `can_vote` and `can_commit` | `wallet.py` |
+| `token_model_check`, `wallet_check` and `election_check` assert both rulings | `scripts/` |
+
 ### Still true and still built
 
 - centitoken arithmetic and the rounding rule (§3);
-- the grant as a floor, granted ct non-transferable (§4);
+- granted ct non-transferable and never withdrawn (§4, ruling 19);
 - the split-and-commit shape of an ME vote, `split_ct` by largest remainder (§5);
 - the vote-weight curve (§9);
 - `GET /wallet` · `GET /wallet/rows` · `POST /wallet/commit` · `POST /wallet/move` ·
@@ -593,9 +668,15 @@ In rough build order. **Framing (P3) first:**
 
 ### The allocations panel
 
-- **Unallocated** — granted · purchased. The granted part says which week's
-  elections it may enter. Purchased ct is withdrawable here.
-- **Committed** — to initiatives · to organizations.
+*Since the 10/9 Reshuffle (2026-10-09) the profile draws this as two bars on one
+scale — "There should be 2 main allocations bars - committed and uncommitted"
+(structure.md §5).*
+
+- **Uncommitted** (was Unallocated) — granted · purchased. The granted part is
+  ten tokens in each open initiative election not yet used there (ruling 19),
+  and says so; it never moves. Purchased ct is withdrawable here.
+- **Committed** — by where the mission is: initiative elections · organization
+  elections · prep (and the exchange, once anything reaches it).
 - **EBX** — held, one figure per mission once positions exist: EBX held, the
   mission's DEX price, and the holder's share of remaining capital. A swap starts
   here.
@@ -615,7 +696,9 @@ election closes and the rest stays withdrawable as cash until budget day.
 
 Eight rows, one per mission with an open organization election, sorted by
 deadline. A row is titled by its **initiative** and coloured by its cause. The
-commit dialog says another 10% becomes final at the close.
+commit dialog says another 10% becomes final at the close. Every row takes the
+reader's one nominal vote; only a row whose initiative election they voted in
+takes tokens (ruling 20), and the ballot says why when it does not.
 
 ### The DEX surface (unbuilt)
 

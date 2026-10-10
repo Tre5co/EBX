@@ -92,7 +92,8 @@ function route(u) {
   ok(rows.length === 2, 'two rows');
   ok(/Deciding the mission/.test(rows[0] && rows[0].textContent) && rows[0].querySelectorAll('.lw-phase').length === 3, 'row 1: deciding the mission — three elections');
   ok(/Planning, feedback and accountability/.test(rows[1] && rows[1].textContent) && rows[1].querySelectorAll('.lw-phase').length === 2, 'row 2: planning — framing and exchange');
-  ['Cause Election', 'Initiative Election', 'Organization Election', 'Mission Framing', 'Exchange'].forEach((t, i) =>
+  // 10/9 Reshuffle (2026-10-09): "Framing needs to be switched to 'Prep'."
+  ['Cause Election', 'Initiative Election', 'Organization Election', 'Mission Prep', 'Exchange'].forEach((t, i) =>
     ok(txt('.lw-phase:nth-child(1)') !== null && [...d.querySelectorAll('.lw-phase__t')][i].textContent === t, 'phase ' + (i + 1) + ' is "' + t + '"'));
   ok(d.querySelectorAll('.lw-row .lw-arrow').length === 3, 'arrows run left to right between phases');
   ok([...d.querySelectorAll('.lw-phase__vote')].every(a => /^mission\.html\?state=/.test(a.getAttribute('href'))), 'every Vote link goes to the mission page');
@@ -123,8 +124,9 @@ function route(u) {
   // P2: the explainer bands moved to about.html (D7).
   console.log('\n=== the bands left Home');
   ok(!d.querySelector('.ld-band') && !/bring you the news/i.test(d.body.textContent), 'no explainer bands on Home');
-  ok(fs.existsSync(R('about.html')) && /Vetting/.test(fs.readFileSync(R('about.html'), 'utf8')) &&
-     /bring you the news/.test(fs.readFileSync(R('about.html'), 'utf8')), 'about.html carries them, with Vetting');
+  // P3 (2026-09-29) renamed Vetting → Investigation; the About page says so
+  ok(fs.existsSync(R('about.html')) && /Investigation/.test(fs.readFileSync(R('about.html'), 'utf8')) &&
+     /bring you the news/.test(fs.readFileSync(R('about.html'), 'utf8')), 'about.html carries them, with Investigation');
 
   // the top sector must be the focused one: its path must contain the top point
   console.log('\n=== geometry');
@@ -160,7 +162,7 @@ function route(u) {
   const fr = d.querySelector('.lw-phase[data-step="frame"]');
   fr.querySelector('.lw-phase__p').dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   await new Promise(r => setTimeout(r, 30));
-  ok(fr.classList.contains('on') && /Mission Framing/.test(txt('.lw-top__kicker')), 'clicking a phase card selects it');
+  ok(fr.classList.contains('on') && /Mission Prep/.test(txt('.lw-top__kicker')), 'clicking a phase card selects it');
 
   console.log('\n' + (bad ? 'FAILED ' + bad + '/' + n : 'all ' + n + ' checks passed'));
   process.exit(bad ? 1 : 0);
